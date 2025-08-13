@@ -40,3 +40,5 @@ Thumbs.db
 # Frontend build artifacts
 static/frontend/
 templates/frontend/js/
+# templates/frontend/local_js/
+# templates/frontend/staging_js/
