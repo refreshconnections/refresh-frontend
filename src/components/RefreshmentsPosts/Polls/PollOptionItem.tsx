@@ -14,7 +14,7 @@ type PollOptionItemProps = {
 };
 
 const VotedPopover: React.FC = () => (
-  <IonContent class="ion-padding no-scroll">You voted for this one</IonContent>
+  <IonContent className="ion-padding no-scroll">You voted for this one</IonContent>
 );
 
 const PollOptionItem: React.FC<PollOptionItemProps> = ({ showResults, optionText, votePercentage, isWinner, userVote }) => {
@@ -42,15 +42,15 @@ const PollOptionItem: React.FC<PollOptionItemProps> = ({ showResults, optionText
 
       <IonLabel style={{ zIndex: 1 }} >
         <IonGrid>
-          <IonRow class="ion-align-items-center">
-            <IonCol size={showResults ? '10' : '12'} class="poll-option-text">
+          <IonRow className="ion-align-items-center">
+            <IonCol size={showResults ? '10' : '12'} className="poll-option-text">
               {userVote && <FontAwesomeIcon icon={faCheckCircle} onClick={(e) => presentPopover({
                 event: e.nativeEvent,
                 showBackdrop: false,
               })} />} {optionText}
             </IonCol>
             {showResults && (
-              <IonCol size="2" class="right-percentage">
+              <IonCol size="2" className="right-percentage">
                 {votePercentage % 1 === 0
                   ? votePercentage.toFixed(0)
                   : votePercentage.toFixed(1)}%

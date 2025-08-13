@@ -61,7 +61,7 @@ const OnboardingCardGenderIdentity: React.FC = () => {
       <IonCardContent className="w-checkboxes">
         <IonCardTitle>How do you identify?</IonCardTitle>
         <IonText>We use your gender identity to share your profile with potential connections. Choose as many as apply to you. These choices do not appear in your profile unless you choose to show them. </IonText>
-        <IonItem class="scrollable-list">
+        <IonItem className="scrollable-list">
           <IonList>
             <IonItem>
               <IonCheckbox slot="start" value="woman" onIonChange={e => addGenderSexualityCheckbox(e)} />

@@ -927,7 +927,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   return (
     <IonPage >
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Filters</IonTitle>
           <IonButtons slot="start" color="secondary">
             <IonButton onClick={handleDone}>Done</IonButton>
@@ -950,16 +950,16 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
         ]}
       ></IonToast>
       <IonContent className="adv-filters">
-        <IonRow class="pad-bottom">
+        <IonRow className="pad-bottom">
           <IonButton size="small" fill="outline" href="/tips">How to use filters</IonButton>
           <IonButton size="small" fill="outline" color="danger" onClick={clearFilterAlert}>Clear filters</IonButton>
         </IonRow>
         <IonRow className="ion-justify-content-center">
           <IonButton size="small" fill="outline" onClick={showIgnoredAgain}>Show previously ignored</IonButton>
         </IonRow>
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
 
-          <IonText class="ion-padding ion-text-wrap">I am looking for someone who is</IonText>
+          <IonText className="ion-padding ion-text-wrap">I am looking for someone who is</IonText>
         </IonRow>
         <IonItem button detail={true} onClick={whatAge} lines="none">
           <IonLabel>
@@ -1003,14 +1003,14 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           </IonItem>
         <IonAccordionGroup >
           <IonAccordion >
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">Covid Behaviors</IonLabel> {hasOrDoesNotHavePrecaution !== "none" ?
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">Covid Behaviors</IonLabel> {hasOrDoesNotHavePrecaution !== "none" ?
               <IonBadge color="primary">1 filter</IonBadge>
               : <></>
             }</IonItem>
 
             <IonGrid className="filter-grid" slot="content">
               <IonItem button detail={true} onClick={whatBasedOnPrecautions}>
-                <IonLabel class="ion-text-wrap">
+                <IonLabel className="ion-text-wrap">
                   <h3>Filter by Covid Behavior?</h3>
                   {hasOrDoesNotHavePrecaution == "none" ?
                     <p>No</p>
@@ -1019,7 +1019,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonItem>
               {hasOrDoesNotHavePrecaution !== "none" ?
                 <IonItem button detail={true} onClick={whatPrecautions}>
-                  <IonLabel class="ion-text-wrap ">
+                  <IonLabel className="ion-text-wrap ">
                     <h3>Which behavior?</h3>
                     {precautionsSS == null ?
                       <p>(You have not chosen a behavior)</p>
@@ -1035,7 +1035,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
         {lookingForSS == "Long Covid support" ?
           <IonAccordionGroup value="first">
             <IonAccordion value="first">
-              <IonItem slot="header"><IonLabel class="ion-text-wrap">Long Covid Support</IonLabel><IonBadge color="primary">{lcCount} filters</IonBadge></IonItem>
+              <IonItem slot="header"><IonLabel className="ion-text-wrap">Long Covid Support</IonLabel><IonBadge color="primary">{lcCount} filters</IonBadge></IonItem>
               <IonItem >
 
 
@@ -1090,7 +1090,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
         <IonAccordionGroup >
           <IonAccordion>
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">Gender and Sexuality</IonLabel>
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">Gender and Sexuality</IonLabel>
             {gsCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsCount} filters</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
@@ -1108,11 +1108,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonRow className="lr-pad">
 
                 {anyOrAll == "all" ?
-                  <IonText color="danger" class="ion-text-wrap">
+                  <IonText color="danger" className="ion-text-wrap">
                     <p>Remember: searching by "all" results in far fewer Picks!</p>
 
                   </IonText> : <></>}
-                <IonText class="ion-padding ion-text-wrap">
+                <IonText className="ion-padding ion-text-wrap">
                   I am looking for someone who is <i>{anyOrAll}</i> of the following:
                 </IonText>
               </IonRow>
@@ -1206,9 +1206,9 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup class="blue-bg">
+        <IonAccordionGroup className="blue-bg">
           <IonAccordion>
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">My Profile Visibility Preferences</IonLabel>
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">My Profile Visibility Preferences</IonLabel>
             {limitCount > 0?<IonBadge color={(dontShowAnyOrAll == "any" || onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{limitCount} preferences</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
@@ -1216,14 +1216,14 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                 <IonButton size="small" color="danger" fill="outline" onClick={async ()=>await clearLimits()}>Clear preferences</IonButton>
               </IonRow>
               <IonRow >
-                <IonText class="ion-padding ion-text-wrap" style={{fontSize: "14px"}}>
+                <IonText className="ion-padding ion-text-wrap" style={{fontSize: "14px"}}>
                 ● Only show my profile to people who:
                 </IonText>
               </IonRow>
               <IonItem>
                 <IonCheckbox slot="start" disabled={greaterThanFilter == null && lessThanFilter == null} checked={(currentProfileData?.dontshow_outside_ages && (greaterThanFilter != null || lessThanFilter !== null)) ? true : false} onIonChange={async e => await updateCurrentUserProfile({ dontshow_outside_ages: e.detail.checked})} />
                 
-                <IonLabel class="ion-text-wrap"> Are in my specified age range {
+                <IonLabel className="ion-text-wrap"> Are in my specified age range {
                   greaterThanFilter == null && lessThanFilter !== null ?
                     <p> Younger than {lessThanFilter}</p>
                     :
@@ -1234,14 +1234,14 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonItem>
               <IonItem>
                 <IonCheckbox slot="start" disabled={true} value="man" checked={false} />
-                <IonLabel class="ion-text-wrap"> Live within __ kilometers / miles </IonLabel>
+                <IonLabel className="ion-text-wrap"> Live within __ kilometers / miles </IonLabel>
                 <IonBadge color="gray">Under construction!</IonBadge>
               </IonItem>
 
-              <IonAccordionGroup class="blue-bg">
+              <IonAccordionGroup className="blue-bg">
                 <IonAccordion value="first">
                   <IonItem slot="header">
-                    <IonLabel style={{paddingLeft: 0}} class="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
+                    <IonLabel style={{paddingLeft: 0}} className="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
                     {onlyshowSexualityFilterChecked.length > 0? <IonBadge color={(onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{onlyshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
@@ -1264,19 +1264,19 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                     <>
                     {onlyShowTooRestrictive ?
                       <IonRow className="lr-pad">
-                      <IonText color="danger" class="ion-padding ion-text-wrap">
+                      <IonText color="danger" className="ion-padding ion-text-wrap">
                         This combination is too restrictive and will not save. Loosen your selected preferences or set to "any".
                       </IonText>
                     </IonRow> :
                      <IonRow className="lr-pad">
-                     <IonText class="ion-padding ion-text-wrap">
+                     <IonText className="ion-padding ion-text-wrap">
                      <FontAwesomeIcon style={{color: "var(--ion-color-danger)"}} icon={faTriangleExclamation} /> Warning: The Only Show All preference can be very restrictive. 
                      </IonText>
                     </IonRow> 
                     }
                     </> :<></>}
                     <IonRow className="lr-pad">
-                      <IonText class="ion-padding ion-text-wrap">
+                      <IonText className="ion-padding ion-text-wrap">
                         Only show my profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
                       </IonText>
                       </IonRow>
@@ -1371,7 +1371,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                 </IonAccordion>
                 <IonAccordion value="second">
                   <IonItem slot="header">
-                    <IonLabel class="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
+                    <IonLabel className="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
                     {dontshowSexualityFilterChecked.length > 0 ? <IonBadge color={(dontShowAnyOrAll == "any") ? "danger" : "primary"}>{dontshowSexualityFilterChecked.length} preferences</IonBadge> :<></>}
                   </IonItem>
                   <div slot="content">
@@ -1394,19 +1394,19 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                     <>
                     {dontShowTooRestrictive ?
                       <IonRow className="lr-pad">
-                      <IonText color="danger" class="ion-padding ion-text-wrap">
+                      <IonText color="danger" className="ion-padding ion-text-wrap">
                         This combination is too restrictive and will not save. Loosen your selected preferences or set to "all".
                       </IonText>
                     </IonRow> :
                      <IonRow className="lr-pad">
-                     <IonText class="ion-padding ion-text-wrap">
+                     <IonText className="ion-padding ion-text-wrap">
                      <FontAwesomeIcon style={{color: "var(--ion-color-danger)"}} icon={faTriangleExclamation} /> Warning: The Don't Show Any preference can be very restrictive. 
                      </IonText>
                     </IonRow> 
                     }
                     </> :<></>}
                     <IonRow className="lr-pad">
-                      <IonText class="ion-padding ion-text-wrap">
+                      <IonText className="ion-padding ion-text-wrap">
                         Only show my profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
                       </IonText>
                     </IonRow>
@@ -1503,7 +1503,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
               </IonAccordionGroup>
               <IonRow className="lr-pad">
-                <IonText style={{fontSize: "10pt"}} class="ion-padding ion-text-wrap">
+                <IonText style={{fontSize: "10pt"}} className="ion-padding ion-text-wrap">
                   *Using visibility preferences does not guarantee that your profile will only be shown to people with your choices. 
                   Members self-select any number of attributes and can change them at any time. 
                   Using preferences should not lower the caution you take in what you reveal on your profile. 

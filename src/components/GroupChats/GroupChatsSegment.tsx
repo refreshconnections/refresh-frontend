@@ -79,7 +79,7 @@ const GroupChatsSegment: React.FC<Props> = (props) => {
     return (
         <>
             {groupChats?.data && groupChats?.data.length == 0 && groupChatInvites?.data && groupChatInvites?.data.length == 0 ?
-                <IonRow class="empty-chats">
+                <IonRow className="empty-chats">
                     <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" />
                     <IonText>
                         <br /><br />
@@ -91,7 +91,7 @@ const GroupChatsSegment: React.FC<Props> = (props) => {
             <IonList id="wl" lines="full">
                 {groupChats?.data.map((item: any, index: number) => (
                     <li key={index}>
-                        <IonItem class="chat-item" button detail={true} onClick={() => openGroupTextModal(item)}>
+                        <IonItem className="chat-item" button detail={true} onClick={() => openGroupTextModal(item)}>
                             <IonText className="name">{item.group_name !== null ? item.group_name : "New group"}</IonText>
                         </IonItem>
                     </li>
@@ -99,7 +99,7 @@ const GroupChatsSegment: React.FC<Props> = (props) => {
             </IonList>
             {groupChatInvites?.data.length > 0 ?
                 <div>
-                    <IonRow class="page-title">
+                    <IonRow className="page-title">
                         <IonText>
                             <h2>Invites</h2>
                         </IonText>
@@ -107,7 +107,7 @@ const GroupChatsSegment: React.FC<Props> = (props) => {
                     <IonList id="wl" lines="full">
                         {groupChatInvites?.data.map((item: any, index: number) => (
                             <li key={index}>
-                                <IonItem class="chat-item" button detail={true} onClick={() => openGroupDetailsModal(item)}>
+                                <IonItem className="chat-item" button detail={true} onClick={() => openGroupDetailsModal(item)}>
                                     <IonText className="name">{item.group_name !== null ? item.group_name : "New group"}</IonText>
                                 </IonItem>
                             </li>
@@ -115,7 +115,7 @@ const GroupChatsSegment: React.FC<Props> = (props) => {
                     </IonList>
                 </div>
                 : <></>}
-            <IonFab class="very-bottom larger-font" slot="fixed" vertical="bottom" horizontal="end">
+            <IonFab className="very-bottom larger-font" slot="fixed" vertical="bottom" horizontal="end">
                 {/* {currentUserProfile.subscription_level == "pro" && currentUserProfile.settings_create_groups ?
                     <IonFabButton onClick={() => openCreateGroupModal()}>
                         <FontAwesomeIcon icon={faMessagePlus} />

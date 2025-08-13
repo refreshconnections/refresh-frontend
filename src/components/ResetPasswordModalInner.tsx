@@ -77,7 +77,7 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Reset</IonTitle>
                     <IonButtons slot="end">
                         <IonButton href="/">Cancel</IonButton>

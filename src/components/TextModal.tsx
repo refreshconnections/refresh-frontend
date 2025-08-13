@@ -28,7 +28,7 @@ import { PhotoProvider, PhotoView } from "react-photo-view";
 import { useMessageFile } from "../hooks/api/chats/message-file";
 import { GenericResponse, RecordingData } from "capacitor-voice-recorder/dist/esm/definitions";
 import { faStop } from "@fortawesome/pro-solid-svg-icons/faStop";
-import { Plugins } from "@capacitor/core";
+// import { Plugins } from "@capacitor/core";
 import { faCommentHeart, faInfo, faMessageXmark, faTrash } from "@fortawesome/pro-solid-svg-icons";
 
 import AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
@@ -874,7 +874,7 @@ const TextModal: React.FC<Props> = (props) => {
                         <IonIcon className="message-back" slot="icon-only" color="primary" icon={chevronBackOutline}></IonIcon>
                     </IonButtons>
 
-                    <IonTitle class="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
+                    <IonTitle className="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
                         <div className="text-header ">
                             <IonAvatar>
                                 <img alt={profileDetails?.pic1_alt || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
@@ -904,7 +904,7 @@ const TextModal: React.FC<Props> = (props) => {
 
 
 
-                <IonList class="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
+                <IonList className="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
 
 
 
@@ -926,9 +926,9 @@ const TextModal: React.FC<Props> = (props) => {
                                             :
                                             <IonItemSliding key={item.id}>
                                                 <div ref={(page === 0 && index === 0) ? messagesEndRef : null} ></div>
-                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} class={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
+                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
                                                     {item?.text ?
-                                                        <IonLabel class="ion-text-wrap the-actual-message">
+                                                        <IonLabel className="ion-text-wrap the-actual-message">
 
                                                             <IonText>
                                                                 {item?.id === -1 && (
@@ -960,12 +960,12 @@ const TextModal: React.FC<Props> = (props) => {
                                                 </IonItem>
                                                 <IonItemOptions side={item?.out === true ? "end" : "start"}>
                                                     <div className="sliding-options-div">
-                                                        <IonItemOption disabled={true} class="message-timestamp">{getTime(item?.sent)}</IonItemOption>
+                                                        <IonItemOption disabled={true} className="message-timestamp">{getTime(item?.sent)}</IonItemOption>
                                                         {/* {(item?.file && getExpirationTime(currentUser, item.file) > 0) &&
-                                                <IonItemOption disabled={true} class="message-timestamp">Expires in {getExpirationTime(currentUser, item.file)} days</IonItemOption>
+                                                <IonItemOption disabled={true} className="message-timestamp">Expires in {getExpirationTime(currentUser, item.file)} days</IonItemOption>
                                             } */}
                                                         {(item?.out && limits?.chats_removed < 5 && recentlySent(item?.sent)) &&
-                                                            <IonItemOption class="message-timestamp"><IonButton style={{ fontSize: "10px" }} size="small" color={limits?.chats_removed == 4 ? "danger" : "black"} fill="outline" onClick={() => removeMessageAlert(item.id)}>Unsend</IonButton></IonItemOption>
+                                                            <IonItemOption className="message-timestamp"><IonButton style={{ fontSize: "10px" }} size="small" color={limits?.chats_removed == 4 ? "danger" : "black"} fill="outline" onClick={() => removeMessageAlert(item.id)}>Unsend</IonButton></IonItemOption>
                                                         }
                                                     </div>
                                                 </IonItemOptions>
@@ -1001,7 +1001,7 @@ const TextModal: React.FC<Props> = (props) => {
                         ((!!othersChatSettings?.data?.conversation_starter_text || !!yourChatSettings?.data?.conversation_starter_text) && messages?.pages.length == 1 && messages?.pages[0].count > 0 && !(messages?.pages[0].data[messages?.pages[0].data.length - 1]?.id == -1) && messages?.pages[0].count < 10)
                             ?
                             <>
-                                <IonRow class="ion-justify-content-center">
+                                <IonRow className="ion-justify-content-center">
                                     <IonButton size="small" fill="outline" onClick={() => showNeedContext(needContext ? false : true)}>
                                         {needContext ? "Hide Context" : "Need Context?"}
                                     </IonButton>
@@ -1014,7 +1014,7 @@ const TextModal: React.FC<Props> = (props) => {
                             <></>
                     }
 
-                    <IonRow class="ion-justify-content-center">
+                    <IonRow className="ion-justify-content-center">
                         {retrievedMessages.hasNextPage &&
                             <IonButton size="small" fill="outline" onClick={() => retrievedMessages.fetchNextPage()}>See more</IonButton>
                         }
@@ -1036,10 +1036,10 @@ const TextModal: React.FC<Props> = (props) => {
                     },
                 ]}
             ></IonToast>
-            <IonFooter id="footer" class="send-message">
+            <IonFooter id="footer" className="send-message">
                 <IonGrid>
                     {!uiConnected && (
-                    <IonRow class="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
+                    <IonRow className="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
                         {showReconnect ? (
                         <IonButton onClick={handleManualReconnect}>
                             Reconnect
@@ -1054,13 +1054,13 @@ const TextModal: React.FC<Props> = (props) => {
                             <IonCol size="1">
                             </IonCol>
                             <IonCol size="9.5" style={{ gap: "10pt", display: "flex" }}>
-                                <IonButton shape="round" class="message-send" onClick={uploadPhoto} disabled={recording?.recording || recording?.audio || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_images_global}>
+                                <IonButton shape="round" className="message-send" onClick={uploadPhoto} disabled={recording?.recording || recording?.audio || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_images_global}>
                                     <FontAwesomeIcon icon={faImage} />
                                 </IonButton>
-                                <IonButton shape="round" class="message-send" color={recording?.recording || recording?.audio ? "danger" : "primary"} disabled={!!image || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_audio_global} onClick={recording?.recording ? async () => await stopVoiceRecording() : recording?.audio ? async () => await deleteVoiceRecordingConfirm() : async () => await uploadVoiceRecording()}>
+                                <IonButton shape="round" className="message-send" color={recording?.recording || recording?.audio ? "danger" : "primary"} disabled={!!image || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_audio_global} onClick={recording?.recording ? async () => await stopVoiceRecording() : recording?.audio ? async () => await deleteVoiceRecordingConfirm() : async () => await uploadVoiceRecording()}>
                                     <FontAwesomeIcon icon={recording?.recording ? faStop : recording?.audio ? faTrash : faMicrophoneLines} />
                                 </IonButton>
-                                <IonButton shape="round" class="message-send" fill="outline" onClick={() => attachmentsInfoShow()}>
+                                <IonButton shape="round" className="message-send" fill="outline" onClick={() => attachmentsInfoShow()}>
                                     <FontAwesomeIcon icon={faInfo} />
                                 </IonButton>
                             </IonCol>
@@ -1098,7 +1098,7 @@ const TextModal: React.FC<Props> = (props) => {
 
                     <IonRow>
                         <IonCol size="1">
-                            <IonButton fill="clear" shape="round" class="message-attachments" disabled={canText ? false : true} color="navy" onClick={() => setShowAttachments(showAttachments ? false : true)}>
+                            <IonButton fill="clear" shape="round" className="message-attachments" disabled={canText ? false : true} color="navy" onClick={() => setShowAttachments(showAttachments ? false : true)}>
                                 <FontAwesomeIcon icon={faPaperclip} />
                             </IonButton>
                         </IonCol>
@@ -1123,7 +1123,7 @@ const TextModal: React.FC<Props> = (props) => {
                                 </IonCol>
                             }
                             <IonCol size={image ? "9" : "12"}>
-                                <IonItem counter={true} lines="none" >
+                                <IonItem lines="none" >
                                     <IonTextarea value={messageInput}
                                         name="message_input"
                                         onIonChange={e => {
@@ -1139,6 +1139,7 @@ const TextModal: React.FC<Props> = (props) => {
                                         spellcheck
                                         maxlength={500}
                                         autoGrow
+                                        counter
                                         rows={image ? 4 : 1}
                                     />
 
@@ -1146,7 +1147,7 @@ const TextModal: React.FC<Props> = (props) => {
                             </IonCol>
                         </IonCol>
                         <IonCol size="1.5">
-                            <IonButton class="message-send" disabled={!(messageInput || image || audioRef?.src) ? true : (attachmentErrorToastOpen || waitBeforeSendingMore) ? true : canText ? false : false} color="tertiary" onClick={sendHandler}>
+                            <IonButton className="message-send" disabled={!(messageInput || image || audioRef?.src) ? true : (attachmentErrorToastOpen || waitBeforeSendingMore) ? true : canText ? false : false} color="tertiary" onClick={sendHandler}>
                                 <FontAwesomeIcon icon={faMessageArrowUp as IconProp} />
                             </IonButton>
                         </IonCol>

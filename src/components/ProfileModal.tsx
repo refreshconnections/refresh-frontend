@@ -311,8 +311,8 @@ const ProfileModal: React.FC<Props> = (props) => {
                 {cardData?.name ?
                     <>
                         {cardData?.latest_opener_text &&
-                            <IonRow class="message-bubble"><p><FontAwesomeIcon icon={faCommentHeart}></FontAwesomeIcon> {cardData.name} sent you a message along with a Like!</p>
-                                <IonCard class="message-bubble"><h5>{cardData?.latest_opener_text}</h5></IonCard>
+                            <IonRow className="message-bubble"><p><FontAwesomeIcon icon={faCommentHeart}></FontAwesomeIcon> {cardData.name} sent you a message along with a Like!</p>
+                                <IonCard className="message-bubble"><h5>{cardData?.latest_opener_text}</h5></IonCard>
                             </IonRow>
                         }
                         <ProfileCard cardData={cardData} pro={pro ? true : false} settingsAlt={settingsAlt} />
@@ -322,14 +322,14 @@ const ProfileModal: React.FC<Props> = (props) => {
                         <IonSpinner name="bubbles"></IonSpinner>
                     </IonRow>
                 }
-                <IonFab class="very-top " slot="fixed" vertical="top" horizontal="start">
+                <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton onClick={handleDismissProfile} color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
                 </IonFab>
                 {profiletype == "self" ?
                     <></> :
-                    <IonFab class="very-bottom" slot="fixed" vertical="bottom" horizontal="start">
+                    <IonFab className="very-bottom" slot="fixed" vertical="bottom" horizontal="start">
                         <IonFabButton disabled={buttonLoading} color="secondary">
                             <IonIcon icon={profiletype == "unconnected" ? bugIcon : ellipsisIcon}></IonIcon>
                         </IonFabButton>
@@ -369,7 +369,7 @@ const ProfileModal: React.FC<Props> = (props) => {
                     {profiletype == "connected" || profiletype == "self" || profiletype == "connected-nodismiss" ?
                         <></> :
                         profiletype == "unconnected-nodismiss" ?
-                            <IonFab class="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
+                            <IonFab className="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
                                 <IonFabButton disabled={buttonLoading} onClick={() => presentLikeMessageModal({
                                     cssClass: 'like-message-alert-modal',
                                 })}>
@@ -377,7 +377,7 @@ const ProfileModal: React.FC<Props> = (props) => {
                                 </IonFabButton>
                             </IonFab>
                             :
-                            <IonFab class="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
+                            <IonFab className="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
                                 <IonFabButton disabled={buttonLoading} onClick={() => addMutualConnection(cardData.user, currentUserProfile?.name)}>
                                     <IonIcon icon={heartIcon}></IonIcon>
                                 </IonFabButton>
@@ -386,7 +386,7 @@ const ProfileModal: React.FC<Props> = (props) => {
                 </>
 
             </IonContent>
-            <IonRow class="just-some-extra-space">
+            <IonRow className="just-some-extra-space">
             </IonRow>
         </IonPage>
     );

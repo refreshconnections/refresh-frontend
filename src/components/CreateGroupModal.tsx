@@ -102,7 +102,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Create Group</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>

@@ -169,19 +169,19 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
     <IonPage>
       
       <IonContent>
-        <IonRow class="login-page-title">
+        <IonRow className="login-page-title">
             <img src="../static/img/navylogo.png" alt="Refresh Connections logo" className="dark-dont-show"/>
             <img src="../static/img/refresh-connections-white-v2.png" alt="Refresh Connections logo" className="dark-show"/>
         </IonRow>
         <form className="ion-padding" onSubmit={handleSave}>
-          <IonItem class="userpass">
+          <IonItem className="userpass">
             <IonInput value={email}
               name="email"
               onIonChange={e => setEmail(e.detail.value!)}
               placeholder="Email"
               type="text" />
           </IonItem>
-          <IonItem class="userpass">
+          <IonItem className="userpass">
             <IonInput value={password}
               name="password"
               onIonChange={e => setPassword(e.detail.value!)}

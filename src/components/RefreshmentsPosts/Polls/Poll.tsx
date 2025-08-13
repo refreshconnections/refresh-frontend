@@ -48,15 +48,15 @@ const Poll: React.FC<PollProps> = ({ id }) => {
 
 
     return (
-        <IonRow class="poll" style={{ display: "flex", flexDirection: "column" }}>
+        <IonRow className="poll" style={{ display: "flex", flexDirection: "column" }}>
             <p style={{ fontWeight: "bold", fontSize: "13pt" }}>{pollDetails?.question}</p>
             {pollVotesIsLoading ?
                 <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow>
                 :
 
                 <>
-                    {(!showResults && pollVotes?.user_vote !== null) && <IonRow class="ion-padding">
-                        <IonNote color="primary" class="ion-text-center">Thanks for voting! This poll displays results after {pollDetails?.show_votes_after_x_votes - pollVotes?.total_votes} more votes. Remind your connections to vote, and check back soon!</IonNote></IonRow>}
+                    {(!showResults && pollVotes?.user_vote !== null) && <IonRow className="ion-padding">
+                        <IonNote color="primary" className="ion-text-center">Thanks for voting! This poll displays results after {pollDetails?.show_votes_after_x_votes - pollVotes?.total_votes} more votes. Remind your connections to vote, and check back soon!</IonNote></IonRow>}
                     <IonList lines="none">
 
                         <ul style={{ listStyle: "none" }}>
@@ -74,7 +74,7 @@ const Poll: React.FC<PollProps> = ({ id }) => {
                                 pollDetails?.options.map((pollOption: any, index: number) => (
                                     <li key={index}>
 
-                                        <IonButton expand="block" class="ion-text-wrap" disabled={(!showResults && pollVotes?.user_vote !== null)} onClick={async () => await vote(pollOption.id)}>
+                                        <IonButton expand="block" className="ion-text-wrap" disabled={(!showResults && pollVotes?.user_vote !== null)} onClick={async () => await vote(pollOption.id)}>
                                             {pollOption.option_text}
                                         </IonButton>
 
@@ -83,7 +83,7 @@ const Poll: React.FC<PollProps> = ({ id }) => {
                         </ul>
                     </IonList>
                     {showResults &&
-                        <IonRow style={{ width: "100%", display: "flex" }} class="ion-justify-content-end">
+                        <IonRow style={{ width: "100%", display: "flex" }} className="ion-justify-content-end">
                             <IonNote>
                                 {pollDetails?.show_number_of_votes ? pollVotes?.total_votes + " votes • " : ""}
                                 {moment().isAfter(moment(pollDetails?.close_date))

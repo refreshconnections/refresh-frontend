@@ -177,14 +177,14 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
 
                     {altShow === 1 ?
-                        <IonRow class="show-alt-profile">
+                        <IonRow className="show-alt-profile">
                             <IonText>{cardData.pic1_alt}</IonText>
                         </IonRow>
                         : <></>}
                 </div>
 
 
-                <IonCardHeader class="leave-end-room">
+                <IonCardHeader className="leave-end-room">
                     {settingsAlt && cardData.pic1_alt ?
                         <IonButton className="alt-desc-profile" fill="clear" size="small" onClick={altShow !== 1 ? () => setAltShow(1) : () => setAltShow(null)}>
                             <FontAwesomeIcon icon={faSubtitles} />
@@ -201,13 +201,13 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                     <IonGrid className="profile-grid">
                         <IonRow className="bio css-fix">{cardData.bio} </IonRow>
                         {amINewHere(cardData.registrationDate) ?
-                            <IonRow class="ion-justify-content-center">
+                            <IonRow className="ion-justify-content-center">
                                 <IonBadge>
                                     <FontAwesomeIcon icon={faHandWave} /> &nbsp; I'm new here!
                                 </IonBadge>
                             </IonRow>
                             : <></>}
-                        <IonAccordionGroup class="profile-card" value={["first"]}>
+                        <IonAccordionGroup className="profile-card" value={["first"]}>
                             <IonAccordion value="first">
                                 <IonItem slot="header" lines="none">
                                     <IonLabel>The Basics</IonLabel>
@@ -228,13 +228,13 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                 </IonRow>
                                             </IonGrid>
                                         </IonItem>
-                                        <IonItem class="icons">
+                                        <IonItem className="icons">
                                             <IonGrid style={{ "paddingLeft": "0px" }}>
                                                 <IonRow style={{ "paddingLeft": "0px" }}>
                                                     <IonLabel><p>Looking for:</p> </IonLabel>
                                                 </IonRow>
                                                 <IonRow style={{ "paddingLeft": "0px", "paddingRight": "0px" }}>
-                                                    <IonButton disabled={cardData.looking_for.includes("friendship") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("friendship") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("friendship")
@@ -242,7 +242,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     } id="looking-for-popover-friendship">
                                                         <FontAwesomeIcon icon={faUserPlus as IconProp} visibility={cardData.looking_for.includes("friendship") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("romance") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("romance") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("romance")
@@ -250,7 +250,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faHeart as IconProp} visibility={cardData.looking_for.includes("romance") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("housing") ? false : true} class="looking-for-buttons" fill="clear" id="looking-for-popover" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("housing") ? false : true} className="looking-for-buttons" fill="clear" id="looking-for-popover" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("housing / roommate")
@@ -258,7 +258,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faHouseUser as IconProp} visibility={cardData.looking_for.includes("housing") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("job") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("job") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("job")
@@ -266,7 +266,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faBriefcase as IconProp} visibility={cardData.looking_for.includes("job") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("virtual connection") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("virtual connection") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("virtual connection")
@@ -274,7 +274,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faComment as IconProp} visibility={cardData.looking_for.includes("virtual connection") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("virtual only") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("virtual only") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("virtual connection ONLY")
@@ -282,7 +282,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faWifi as IconProp} visibility={cardData.looking_for.includes("virtual only") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("families") ? false : true} class="looking-for-buttons" fill="clear" onClick={(e: any) => {
+                                                    <IonButton disabled={cardData.looking_for.includes("families") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,
                                                         }); setPopover("families")
@@ -307,7 +307,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                             <IonItem> <IonLabel><p>Gender and Sexuality:</p> <h2 className="wrap ion-text-wrap">{cardData.gender_and_sexuality_info}</h2></IonLabel> </IonItem> : <></>}
                                         {cardData.settings_show_gender_sexuality ?
                                             <IonItem >
-                                                <IonLabel class="ion-text-wrap" style={{ textWrap: "balance" }}><p style={{ textAlign: "center" }}>&bull;
+                                                <IonLabel className="ion-text-wrap" style={{ textWrap: "balance" }}><p style={{ textAlign: "center" }}>&bull;
                                                     {cardData.gender_sexuality_choices.includes("straight") ? <> Straight &bull;</> : <></>}
                                                     {cardData.gender_sexuality_choices.includes("gay") ? <> Gay &bull;</> : <></>}
                                                     {cardData.gender_sexuality_choices.includes("lesbian") ? <> Lesbian &bull;</> : <></>}
@@ -336,38 +336,38 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 </IonCardContent>
                             </IonAccordion>
                         </IonAccordionGroup>
-                        <IonAccordionGroup class="profile-card" value={["second"]}>
+                        <IonAccordionGroup className="profile-card" value={["second"]}>
                             <IonAccordion value="second">
                                 <IonItem slot="header" lines="none">
                                     <IonLabel>Covid Behaviors</IonLabel>
                                 </IonItem>
                                 <IonCardContent slot="content">
-                                    <IonNote class="covid-note">{cardData.covid_precaution_info}</IonNote>
+                                    <IonNote className="covid-note">{cardData.covid_precaution_info}</IonNote>
                                     <IonList lines="none">
-                                        {cardData.covid_precautions.includes(10) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I am living with Long Covid</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(17) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I am a caregiver</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(4) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull;  I'm immunocompromised/have a high-risk health condition</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(7) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I only leave home/outdoors for medically necessary reasons</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(10) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I am living with Long Covid</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(17) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I am a caregiver</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(4) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull;  I'm immunocompromised/have a high-risk health condition</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(7) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I only leave home/outdoors for medically necessary reasons</h2></IonLabel></IonItem> : null}
 
                                         <IonItem> <IonLabel><p>Work / School:</p> </IonLabel> </IonItem>
-                                        {cardData.covid_precautions.includes(1) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I work from home </h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(9) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I go to work/school but always in a high quality mask </h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(16) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; My work requires poor/no masking </h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(1) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I work from home </h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(9) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I go to work/school but always in a high quality mask </h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(16) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; My work requires poor/no masking </h2></IonLabel></IonItem> : null}
 
                                         <IonItem> <IonLabel><p>Home:</p> </IonLabel> </IonItem>
-                                        {cardData.covid_precautions.includes(18) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I have no routine daily exposures </h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(8) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I live alone/with others who share my level of Covid caution</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(3) ? <IonItem><IonLabel class="ion-text-wrap wrap"><h2> &bull;  I live with non-Covid cautious people </h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(11) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I use air purifiers and HEPA filters</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(18) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I have no routine daily exposures </h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(8) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I live alone/with others who share my level of Covid caution</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(3) ? <IonItem><IonLabel className="ion-text-wrap wrap"><h2> &bull;  I live with non-Covid cautious people </h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(11) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I use air purifiers and HEPA filters</h2></IonLabel></IonItem> : null}
 
                                         <IonItem> <IonLabel><p>Play:</p> </IonLabel> </IonItem>
-                                        {cardData.covid_precautions.includes(15) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I do takeout from restaurants</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(2) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I eat outdoors at restaurants with good airflow and spacing</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(5) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I attend outdoor events</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(6) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I attend indoor events with a mask on</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(12) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I attend outdoor events with a mask on</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(13) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I ask for testing before all meetups</h2></IonLabel></IonItem> : null}
-                                        {cardData.covid_precautions.includes(14) ? <IonItem><IonLabel class="ion-text-wrap"><h2> &bull; I ask for testing before indoor meetups</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(15) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I do takeout from restaurants</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(2) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I eat outdoors at restaurants with good airflow and spacing</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(5) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I attend outdoor events</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(6) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I attend indoor events with a mask on</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(12) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I attend outdoor events with a mask on</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(13) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I ask for testing before all meetups</h2></IonLabel></IonItem> : null}
+                                        {cardData.covid_precautions.includes(14) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I ask for testing before indoor meetups</h2></IonLabel></IonItem> : null}
 
                                     </IonList>
 
@@ -376,19 +376,19 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                             </IonAccordion>
                         </IonAccordionGroup>
                         {cardData.settings_show_long_covid ?
-                            <IonAccordionGroup class="profile-card">
+                            <IonAccordionGroup className="profile-card">
                                 <IonAccordion value="second">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Long Covid Support</IonLabel>
                                     </IonItem>
                                     <IonCardContent slot="content">
                                         <IonRow>
-                                            {cardData.long_covid_choices.includes("I have LC") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I am living with Long Covid</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("LC caretaker") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I care for someone with Long Covid</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I could help local") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I could provide local support </h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I could help remote") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I could provide remote support</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I need help local") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I could use local support</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I need help remote") ? <IonItem lines="none"><IonLabel class="ion-text-wrap"><h2> &bull; I could use remote support</h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("I have LC") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I am living with Long Covid</h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("LC caretaker") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I care for someone with Long Covid</h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("I could help local") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could provide local support </h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("I could help remote") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could provide remote support</h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("I need help local") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could use local support</h2></IonLabel></IonItem> : null}
+                                            {cardData.long_covid_choices.includes("I need help remote") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could use remote support</h2></IonLabel></IonItem> : null}
 
                                         </IonRow>
 
@@ -543,7 +543,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 : null}
                         </Swiper>
                         {somethingInLetsTalkAbout(cardData) ?
-                            <IonAccordionGroup class="profile-card" value={["third"]}>
+                            <IonAccordionGroup className="profile-card" value={["third"]}>
                                 <IonAccordion value="third">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Let's Talk About</IonLabel>
@@ -579,7 +579,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     {cardData.fave_sport_play ? <IonItem> <IonLabel><p>Sport to play:</p> <h2 className="wrap">{cardData.fave_sport_play}</h2></IonLabel> </IonItem> : <></>}
                                                 </> : <></>}
                                         </IonList>
-                                        {!(pro || currentStreak?.streak_count >= 3) ? <IonRow class="ion-justify-content-center"><IonButton size="small" fill="outline" onClick={() => setShowStoreAlert(true)}>Want to see more?</IonButton>
+                                        {!(pro || currentStreak?.streak_count >= 3) ? <IonRow className="ion-justify-content-center"><IonButton size="small" fill="outline" onClick={() => setShowStoreAlert(true)}>Want to see more?</IonButton>
                                             <IonAlert
                                                 isOpen={showStoreAlert}
                                                 onDidDismiss={() => setShowStoreAlert(false)}
@@ -605,12 +605,12 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                         </IonRow> : <></>}
                                         {(!pro && currentStreak?.streak_count >= 3) &&
 
-                                            <IonRow class="ion-justify-content-center"><IonButton fill="clear" onClick={
+                                            <IonRow className="ion-justify-content-center"><IonButton fill="clear" onClick={
                                                 () => { { showStreakLetsTalkAbouts ? setShowStreakLetsTalkAbouts(false) : setShowStreakLetsTalkAbouts(true) } }
                                             }>
                                                 <FontAwesomeIcon icon={faStarShooting as IconProp} />
                                             </IonButton>
-                                                {showStreakLetsTalkAbouts && <IonNote class="ion-text-center">Your {currentStreak?.streak_count} day streak means you can view all Let's Talk About conversation starters!</IonNote>}</IonRow>}
+                                                {showStreakLetsTalkAbouts && <IonNote className="ion-text-center">Your {currentStreak?.streak_count} day streak means you can view all Let's Talk About conversation starters!</IonNote>}</IonRow>}
                                     </IonCardContent>
                                 </IonAccordion>
                             </IonAccordionGroup>

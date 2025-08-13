@@ -144,9 +144,9 @@ const OnboardingCardPictures: React.FC = () => {
         <IonCardTitle>Now add a couple more pictures!</IonCardTitle>
 
         <IonText>You can add a bunch more later. Add two, and a caption for each, now!</IonText>
-        <IonItem class="no-bottom-line" style={{ overflow: "auto" }}>
+        <IonItem className="no-bottom-line" style={{ overflow: "auto" }}>
           {data ?
-            <IonGrid class="pics">
+            <IonGrid className="pics">
               <IonRow>
                 <IonCol size="12">
                   <div style={{ alignItems: "center", display: "flex" }}>
@@ -159,7 +159,7 @@ const OnboardingCardPictures: React.FC = () => {
                     <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic2")}><FontAwesomeIcon icon={faPenToSquare}/>&nbsp; Upload</IonButton>
                   </div>
                 </IonCol>
-                <IonCol size="12" class="col-right-padding">
+                <IonCol size="12" className="col-right-padding">
                   <CaptionsSelect onboarding={true} picture="pic2_caption" current_caption={data && data.pic2_caption ? data.pic2_caption : null} />
                 </IonCol>
               </IonRow>
@@ -175,7 +175,7 @@ const OnboardingCardPictures: React.FC = () => {
                     <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic3")}><FontAwesomeIcon icon={faPenToSquare}/>&nbsp; Upload</IonButton>
                   </div>
                 </IonCol>
-                <IonCol size="12" class="col-right-padding">
+                <IonCol size="12" className="col-right-padding">
                   <CaptionsSelect onboarding={true} picture="pic3_caption" current_caption={data && data.pic3_caption ? data.pic3_caption : null} />
                 </IonCol>
               </IonRow>
@@ -195,7 +195,7 @@ const OnboardingCardPictures: React.FC = () => {
         <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic2 !== null && data.pic3 !== null ? false : true}>Next</IonButton>
       </IonRow>
     </IonCard>
-    <IonRow class="notyet">
+    <IonRow className="notyet">
     <IonButton fill="clear" onClick={() => stayPausedOpen()}>Don't feel like adding pictures yet?</IonButton>
   </IonRow>
   </>

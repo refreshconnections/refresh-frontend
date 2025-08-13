@@ -94,8 +94,8 @@ const Onboarding: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <IonRow class="page-title">
-            <IonText class="bold">
+          <IonRow className="page-title">
+            <IonText className="bold">
               <h1>Hi!</h1>
             </IonText>
           </IonRow>

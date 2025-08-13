@@ -124,8 +124,8 @@ const Help: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent class="help">
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+            <IonContent className="help">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink="/me" routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
@@ -138,24 +138,24 @@ const Help: React.FC = () => {
                     buttons={['OK']}
                 />
 
-                <IonRow class="page-title bigger">
+                <IonRow className="page-title bigger">
                     <img className="color-invertible" src="../static/img/help.png" alt="help" />
                 </IonRow>
                 <IonCard>
-                <IonRow class="help-buttons">
+                <IonRow className="help-buttons">
                         <Link to="tips">
-                        <IonButton class="ion-text-wrap" fill="outline" style={{width: "50pt"}}>How To</IonButton>
+                        <IonButton className="ion-text-wrap" fill="outline" style={{width: "50pt"}}>How To</IonButton>
                         </Link>
                         
                         <Link to="faqs">
-                        <IonButton class="ion-text-wrap" fill="outline" style={{width: "50pt"}}>FAQs</IonButton>
+                        <IonButton className="ion-text-wrap" fill="outline" style={{width: "50pt"}}>FAQs</IonButton>
                         </Link>
                         
                     </IonRow>
                 <IonItem>
                     <IonLabel position="stacked">How can we help?</IonLabel>
                     
-                    <IonSelect class="help-select" value={reason} placeholder="Reason" onIonChange={e => setReason(e.detail.value!)}>
+                    <IonSelect className="help-select" value={reason} placeholder="Reason" onIonChange={e => setReason(e.detail.value!)}>
                         <IonSelectOption value="report">Report someone</IonSelectOption>
                         <IonSelectOption value="subscription">Subscription issue</IonSelectOption>
                         <IonSelectOption value="idea">Idea / feature request</IonSelectOption>

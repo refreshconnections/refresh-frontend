@@ -145,7 +145,7 @@ const RegisterModal: React.FC = () => {
     return (
         <IonModal ref={modal} trigger="reg-modal">
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Sign up</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={dismiss}>Close</IonButton>

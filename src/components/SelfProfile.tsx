@@ -684,20 +684,20 @@ const SelfProfile: React.FC = () => {
         return (
             <div>
                 <IonCard className="margins">
-                    <IonRow class="ion-justify-content-center">
-                        <IonButton onClick={async () => openModal(currentUserProfile)} class="ion-text-wrap">
+                    <IonRow className="ion-justify-content-center">
+                        <IonButton onClick={async () => openModal(currentUserProfile)} className="ion-text-wrap">
                             <FontAwesomeIcon icon={faFaceViewfinder as IconProp} />
                             &nbsp; See how others see your profile
                         </IonButton>
                     </IonRow>
-                    <IonCardContent class="no-gutter">
-                        <IonGrid class="editgrid">
+                    <IonCardContent className="no-gutter">
+                        <IonGrid className="editgrid">
                             <IonAccordionGroup>
-                                <IonAccordion value="first" class="not-the-bottom">
+                                <IonAccordion value="first" className="not-the-bottom">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>The Basics</IonLabel>
                                     </IonItem>
-                                    <IonCardContent class="no-padding-cc " slot="content">
+                                    <IonCardContent className="no-padding-cc " slot="content">
                                         <IonItem>
                                             <IonLabel><p>Name:</p> <h2>{currentUserProfile.name}</h2> </IonLabel>
                                             <IonButton fill="outline"  color="primary" onClick={() => showContactSupport('name', 'name')} slot="end">
@@ -752,7 +752,7 @@ const SelfProfile: React.FC = () => {
                                             </IonItem> : null} */}
 
                                         {editpronouns ?
-                                            <IonItem class="pronoun-select" color={editpronouns ? "lightyellow" : ""}>
+                                            <IonItem className="pronoun-select" color={editpronouns ? "lightyellow" : ""}>
                                                 <IonItem color={editpronouns ? "lightyellow" : ""}>
                                                     <IonSelect placeholder="Select" onIonChange={e => setPronounsSelector(e.detail.value!)}>
                                                         <IonSelectOption value="she/her">she/her</IonSelectOption>
@@ -775,8 +775,8 @@ const SelfProfile: React.FC = () => {
 
 
                                         <IonItem>
-                                            <IonList class="looking-for-list" lines="none" className={editlookingFor ? "lightyellowitems" : ""} style={{ width: "100%" }}>
-                                                <IonItem class="looking-for-list-title">
+                                            <IonList lines="none" className={editlookingFor ? "looking-for-list lightyellowitems" : "looking-for-list"} style={{ width: "100%" }}>
+                                                <IonItem className="looking-for-list-title">
                                                     <IonLabel><p>Looking for:</p></IonLabel>
                                                     {editlookingFor ?
                                                         <>
@@ -829,7 +829,7 @@ const SelfProfile: React.FC = () => {
 
 
                                         {/* <IonItem color={editbio ? "lightyellow" : ""} >
-                                        <IonLabel class="ion-text-wrap"> Bio: {currentUserProfile.bio} </IonLabel>
+                                        <IonLabel className="ion-text-wrap"> Bio: {currentUserProfile.bio} </IonLabel>
                                             {editbio ? 
                                                 <IonTextarea value={bio}
                                                 name="bio"
@@ -849,7 +849,7 @@ const SelfProfile: React.FC = () => {
                                     </IonItem> */}
 
                                         <IonItem color={editbio ? "lightyellow" : ""}>
-                                            <IonLabel class="ion-text-wrap"> <p>Bio:</p> <h2 className="css-fix">{currentUserProfile.bio}</h2> </IonLabel>
+                                            <IonLabel className="ion-text-wrap"> <p>Bio:</p> <h2 className="css-fix">{currentUserProfile.bio}</h2> </IonLabel>
                                             {editbio ?
                                                 <IonButton color="danger" onClick={() => seteditBio(false)} slot="end">
                                                     <FontAwesomeIcon icon={faX} />
@@ -861,14 +861,15 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editbio ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonTextarea value={bio}
                                                     name="bio"
                                                     onIonChange={e => setBio(e.detail.value!)}
                                                     placeholder="Update here"
                                                     maxlength={1000}
                                                     autoCapitalize='sentences'
-                                                    autoGrow={true} />
+                                                    autoGrow={true} 
+                                                    counter/>
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditBio) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
                                                 </IonButton>
@@ -894,7 +895,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editheight ?
-                                            <IonItem class="height-select" color={editheight ? "lightyellow" : ""}>
+                                            <IonItem className="height-select" color={editheight ? "lightyellow" : ""}>
                                                 <IonItem color={editheight ? "lightyellow" : ""}>
                                                     <IonLabel position="floating">Feet</IonLabel>
                                                     <IonSelect onIonChange={e => setHeightFeet(e.detail.value!)}>
@@ -937,7 +938,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editjob ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonInput value={job}
                                                     name="job"
                                                     onIonChange={e => setJob(e.detail.value!)}
@@ -945,6 +946,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => updateProfileSingle(seteditJob)} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -967,7 +969,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editschool ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonInput value={school}
                                                     name="school"
                                                     onIonChange={e => setSchool(e.detail.value!)}
@@ -975,6 +977,7 @@ const SelfProfile: React.FC = () => {
                                                     autoCapitalize='words'
                                                     maxlength={80}
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditSchool) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -999,7 +1002,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                             {editkidsinfo ?
-                                            <IonItem class="kids-select" color={editkidsinfo ? "lightyellow" : ""}>
+                                            <IonItem className="kids-select" color={editkidsinfo ? "lightyellow" : ""}>
                                                 <IonItem color={editkidsinfo ? "lightyellow" : ""}>
                                                     <IonSelect placeholder="Select" onIonChange={e => setKidsInfo(e.detail.value!)}>
                                                         <IonSelectOption value="I'm a parent">I'm a parent</IonSelectOption>
@@ -1025,7 +1028,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {edithometown ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonInput value={hometown}
                                                     name="hometown"
                                                     onIonChange={e => setHometown(e.detail.value!)}
@@ -1033,6 +1036,7 @@ const SelfProfile: React.FC = () => {
                                                     autoCapitalize='words'
                                                     maxlength={80}
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditHometown) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1053,7 +1057,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editpolitics ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonInput value={politics}
                                                     name="politics"
                                                     onIonChange={e => setPolitics(e.detail.value!)}
@@ -1061,7 +1065,8 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
-                                                    type="text" />
+                                                    type="text" 
+                                                    counter/>
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditPolitics) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
                                                 </IonButton>
@@ -1208,7 +1213,7 @@ const SelfProfile: React.FC = () => {
                                         </IonAccordionGroup >
 
                                         <IonItem color={editgenderandsexualityinfo ? "lightyellow" : ""}>
-                                            <IonLabel class="ion-text-wrap"> <p>More gender and sexuality info:</p> <h2 className="css-fix">{currentUserProfile.gender_and_sexuality_info}</h2> </IonLabel>
+                                            <IonLabel className="ion-text-wrap"> <p>More gender and sexuality info:</p> <h2 className="css-fix">{currentUserProfile.gender_and_sexuality_info}</h2> </IonLabel>
                                             {editgenderandsexualityinfo ?
                                                 <IonButton color="danger" onClick={() => seteditgenderandsexualityinfo(false)} slot="end">
                                                     <FontAwesomeIcon icon={faX} />
@@ -1221,13 +1226,14 @@ const SelfProfile: React.FC = () => {
                                         </IonItem>
                                         
                                         {editgenderandsexualityinfo ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem color="lightyellow">
                                                 <IonTextarea value={genderandsexualityinfo}
                                                     name="gender_and_sexuality_info"
                                                     onIonChange={e => setgenderandsexualityinfo(e.detail.value!)}
                                                     placeholder="Update me or leave me blank!"
                                                     maxlength={200}
                                                     autoCapitalize='sentences'
+                                                    counter
                                                     autoGrow={true} />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditgenderandsexualityinfo) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1313,11 +1319,11 @@ const SelfProfile: React.FC = () => {
                                 </IonAccordion>
                             </IonAccordionGroup>
                             <IonAccordionGroup>
-                                <IonAccordion value="second" class="not-the-bottom">
+                                <IonAccordion value="second" className="not-the-bottom">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Covid Behaviors</IonLabel>
                                     </IonItem>
-                                    <IonCardContent class="no-padding-cc" className="ion-padding" slot="content">
+                                    <IonCardContent className="no-padding-cc ion-padding" slot="content">
                                         <IonItem>
                                             <IonLabel><p>Check all that apply:</p></IonLabel>
                                             {editcovidPrecautions ?
@@ -1335,7 +1341,7 @@ const SelfProfile: React.FC = () => {
                                                 </IonButton>
                                             }
                                         </IonItem>
-                                        <IonList lines="none" class={editcovidPrecautions ? "lightyellowitems" : ""}>
+                                        <IonList lines="none" className={editcovidPrecautions ? "lightyellowitems" : ""}>
                                         <IonItem lines="none"><IonLabel>Home:</IonLabel></IonItem>
                                             
                                             <IonItem lines="none">
@@ -1425,7 +1431,7 @@ const SelfProfile: React.FC = () => {
                                             <h2 style={{ paddingTop: "20px" }}>Add anything else about your Covid behaviors that you think people you interact with might want to know!</h2>
                                         </IonNote>
                                         <IonItem color={editcovidPrecautionInfo ? "lightyellow" : ""}>
-                                            <IonLabel class="ion-text-wrap"> <p>More about Covid:</p> <h2>{currentUserProfile.covid_precaution_info}</h2> </IonLabel>
+                                            <IonLabel className="ion-text-wrap"> <p>More about Covid:</p> <h2>{currentUserProfile.covid_precaution_info}</h2> </IonLabel>
                                             {editcovidPrecautionInfo ?
 
 
@@ -1441,7 +1447,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcovidPrecautionInfo ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonTextarea value={covidPrecautionInfo}
                                                     name="covidPrecautionInfo"
                                                     onIonChange={e => setCovidPrecautionInfo(e.detail.value!)}
@@ -1457,11 +1463,11 @@ const SelfProfile: React.FC = () => {
                                 </IonAccordion>
                             </IonAccordionGroup>
                             <IonAccordionGroup>
-                                <IonAccordion value="second-half" class="not-the-bottom">
+                                <IonAccordion value="second-half" className="not-the-bottom">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Long Covid Support</IonLabel>
                                     </IonItem>
-                                    <IonCardContent class="no-padding-cc" className="ion-padding" slot="content">
+                                    <IonCardContent className="no-padding-cc ion-padding" slot="content">
                                         <IonItem>
                                             <IonText className="ion-text-wrap">
                                                 <p> Choose as many as describe you. These choices are used when other members filter their Picks. You can choose whether or not to show them on your profile.</p>
@@ -1528,7 +1534,7 @@ const SelfProfile: React.FC = () => {
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Let's Talk About</IonLabel>
                                     </IonItem>
-                                    <IonCardContent class="no-padding-cc" slot="content">
+                                    <IonCardContent className="no-padding-cc" slot="content">
                                         <IonNote><h2>Fill out as many or as few as you'd like. Anything you leave blank will not be included on your profile.</h2></IonNote>
                                         <IonItem color={editfreetime ? "lightyellow" : ""}>
                                             <IonLabel> <p>Freetime:</p> {currentUserProfile.freetime} </IonLabel>
@@ -1543,7 +1549,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfreetime ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={freetime}
                                                     name="freetime"
                                                     onIonChange={e => setFreetime(e.detail.value!)}
@@ -1551,6 +1557,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFreetime) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1570,7 +1577,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {edittogetherIdea ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={togetherIdea}
                                                     name="togetherIdea"
                                                     onIonChange={e => setTogetherIdea(e.detail.value!)}
@@ -1578,6 +1585,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditTogetherIdea) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1597,7 +1605,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {edithobby ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={hobby}
                                                     name="hobby"
                                                     onIonChange={e => setHobby(e.detail.value!)}
@@ -1605,6 +1613,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditHobby) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1624,7 +1633,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editpetPeeve ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={petPeeve}
                                                     name="petpeeve"
                                                     onIonChange={e => setPetPeeve(e.detail.value!)}
@@ -1632,6 +1641,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditPetPeeve) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1651,7 +1661,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {edittalents ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={talents}
                                                     name="talents"
                                                     onIonChange={e => setTalents(e.detail.value!)}
@@ -1659,6 +1669,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditTalents) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1680,7 +1691,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveBook ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveBook}
                                                     name="faveBook"
                                                     onIonChange={e => setFaveBook(e.detail.value!)}
@@ -1688,6 +1699,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveBook) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1707,7 +1719,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveMovie ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveMovie}
                                                     name="faveMovie"
                                                     onIonChange={e => setFaveMovie(e.detail.value!)}
@@ -1715,6 +1727,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveMovie) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1734,7 +1747,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveTopic ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveTopic}
                                                     name="faveTopic"
                                                     onIonChange={e => setFaveTopic(e.detail.value!)}
@@ -1742,6 +1755,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveTopic) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1761,7 +1775,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveTv ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveTv}
                                                     name="faveTv"
                                                     onIonChange={e => setFaveTv(e.detail.value!)}
@@ -1769,6 +1783,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveTv) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1788,7 +1803,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveAlbum ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveAlbum}
                                                     name="faveAlbum"
                                                     onIonChange={e => setFaveAlbum(e.detail.value!)}
@@ -1796,6 +1811,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveAlbum) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1815,7 +1831,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveMusicalArtist ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveMusicalArtist}
                                                     name="faveMusicalArtist"
                                                     onIonChange={e => setFaveMusicalArtist(e.detail.value!)}
@@ -1823,6 +1839,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveMusicalArtist) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1842,7 +1859,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveGame ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveGame}
                                                     name="faveGame"
                                                     onIonChange={e => setFaveGame(e.detail.value!)}
@@ -1850,6 +1867,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveGame) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1869,7 +1887,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveSportWatch ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveSportWatch}
                                                     name="faveSportWatch"
                                                     onIonChange={e => setFaveSportWatch(e.detail.value!)}
@@ -1877,6 +1895,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveSportWatch) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1896,7 +1915,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editfaveSportPlay ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={faveSportPlay}
                                                     name="faveSportPlay"
                                                     onIonChange={e => setFaveSportPlay(e.detail.value!)}
@@ -1904,6 +1923,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditFaveSportPlay) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1926,7 +1946,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrBook ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currBook}
                                                     name="currBook"
                                                     onIonChange={e => setCurrBook(e.detail.value!)}
@@ -1934,6 +1954,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrBook) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1953,7 +1974,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrMovie ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currMovie}
                                                     name="currMovie"
                                                     onIonChange={e => setCurrMovie(e.detail.value!)}
@@ -1961,6 +1982,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrMovie) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -1980,7 +2002,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrTopic ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currTopic}
                                                     name="currTopic"
                                                     onIonChange={e => setCurrTopic(e.detail.value!)}
@@ -1988,6 +2010,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='sentences'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrTopic) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -2007,7 +2030,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrTv ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currTv}
                                                     name="currTv"
                                                     onIonChange={e => setCurrTv(e.detail.value!)}
@@ -2015,6 +2038,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrTv) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -2034,7 +2058,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrAlbum ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currAlbum}
                                                     name="currAlbum"
                                                     onIonChange={e => setCurrAlbum(e.detail.value!)}
@@ -2042,6 +2066,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrAlbum) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -2061,7 +2086,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrMusicalArtist ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currMusicalArtist}
                                                     name="currMusicalArtist"
                                                     onIonChange={e => setCurrMusicalArtist(e.detail.value!)}
@@ -2069,6 +2094,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrMusicalArtist) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -2088,7 +2114,7 @@ const SelfProfile: React.FC = () => {
                                             }
                                         </IonItem>
                                         {editcurrGame ?
-                                            <IonItem counter={true} color="lightyellow">
+                                            <IonItem  color="lightyellow">
                                                 <IonInput value={currGame}
                                                     name="currGame"
                                                     onIonChange={e => setCurrGame(e.detail.value!)}
@@ -2096,6 +2122,7 @@ const SelfProfile: React.FC = () => {
                                                     maxlength={80}
                                                     autoCapitalize='words'
                                                     clearInput={true}
+                                                    counter
                                                     type="text" />
                                                 <IonButton color="success" onClick={() => { updateProfileSingle(seteditCurrGame) }} slot="end">
                                                     <FontAwesomeIcon icon={faCheck} />
@@ -2106,7 +2133,7 @@ const SelfProfile: React.FC = () => {
                                 </IonAccordion>
                             </IonAccordionGroup>
                             {anyEdits() ?
-                                <IonRow class="ion-justify-content-center">
+                                <IonRow className="ion-justify-content-center">
                                     <IonButton onClick={updateProfile}>Make these changes to my profile</IonButton>
                                 </IonRow>
                                 : <></>}
@@ -2114,7 +2141,7 @@ const SelfProfile: React.FC = () => {
                         
                     </IonCardContent>
                 </IonCard>
-                <IonGrid class="picture-grid">
+                <IonGrid className="picture-grid">
                     <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic1_main} dataPicCaption={"profile picture"} picNumber={1} updateProfileFunc={updateProfile} delete_allowed={false} altText={currentUserProfile?.pic1_alt}/>
                     <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic2} dataPicCaption={currentUserProfile.pic2_caption} picNumber={2} updateProfileFunc={updateProfile} delete_allowed={false} altText={currentUserProfile?.pic2_alt}/>
                     <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic3} dataPicCaption={currentUserProfile.pic3_caption} picNumber={3} updateProfileFunc={updateProfile} delete_allowed={false} altText={currentUserProfile?.pic3_alt}/>

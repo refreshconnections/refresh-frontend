@@ -95,7 +95,7 @@ const ChangePasswordModal: React.FC<Props> = (props) => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title ">
+                <IonToolbar className="modal-title ">
                     <IonTitle>Change Password</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>

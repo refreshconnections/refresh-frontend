@@ -220,14 +220,14 @@ const GroupTextModal: React.FC<Props> = (props) => {
                     <IonButtons slot="start" onClick={onDismiss}>
                         <IonIcon className="message-back " slot="icon-only" color="primary" icon={chevronBackOutline}></IonIcon>
                     </IonButtons>
-                    <IonTitle class="ion-text-center" id={"profile-modal"} onClick={() => { openGroupDetailsModal(groupTextModalData) }}>
+                    <IonTitle className="ion-text-center" id={"profile-modal"} onClick={() => { openGroupDetailsModal(groupTextModalData) }}>
                         {groupTextModalData?.group_name} &nbsp;
                         <FontAwesomeIcon className="medium-gray" icon={faAngleRight} />
                         </IonTitle>
                 </IonToolbar>
             </IonHeader>
             <IonContent ref={textContentRef} >
-                <IonList class="messages" id="wl " lines="full">
+                <IonList className="messages" id="wl " lines="full">
                     {messages?.map((item: any, index: number) => (
                         <li key={index}>
                             {(index == 0) ? <div style={{ textAlign: "center", paddingTop: "10px" }}>{getDay(messages[index].sent)}</div>
@@ -239,21 +239,21 @@ const GroupTextModal: React.FC<Props> = (props) => {
                                 <>{ isToday(item.sent) && (messages.length() >= 1 && !isToday(messages[index-1].sent)) ? <IonNote className="today">Today</IonNote> : <></> }</> : <></>} */}
                                 {!item.out ?
                                     <>
-                                    <IonItem class="groupincoming" color="background" >
+                                    <IonItem className="groupincoming" color="background" >
                                         <IonAvatar slot="start">
                                             <img alt="chat avatar" src={groupTextModalData.members?.find((x: { id: number; }) => x.id === Number(item.sender))?.profile_pic} onError={(e) => onImgError(e)} />
                                         </IonAvatar>
                                         <IonLabel>{item.text}</IonLabel>
                                     </IonItem>
-                                    <IonText class="group-sender-label">
+                                    <IonText className="group-sender-label">
                                         {groupTextModalData.members?.find((x: { id: number; }) => x.id === Number(item.sender))?.name}
                                     </IonText>
                                     </>
                                     :
-                                    <IonItem class="outgoing" color="primary">{item.text}</IonItem>
+                                    <IonItem className="outgoing" color="primary">{item.text}</IonItem>
                                 }
                                 <IonItemOptions side={(item.out === false) ? "start" : "end"}>
-                                    <IonItemOption disabled={true} class="message-timestamp">{getTime(item.sent)}</IonItemOption>
+                                    <IonItemOption disabled={true} className="message-timestamp">{getTime(item.sent)}</IonItemOption>
                                 </IonItemOptions>
                             </IonItemSliding>
                         </li>
@@ -263,7 +263,7 @@ const GroupTextModal: React.FC<Props> = (props) => {
                     </li>
                 </IonList>
             </IonContent>
-            <IonFooter class="send-message">
+            <IonFooter className="send-message">
                 <IonRow>
                     <IonCol size="10">
                         <IonTextarea value={messageInput}

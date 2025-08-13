@@ -273,7 +273,7 @@ useEffect(() => {
   return (
     <IonPage >
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Filters</IonTitle>
           <IonButtons slot="start" color="secondary">
             <IonButton onClick={handleDone}>Done</IonButton>
@@ -284,7 +284,7 @@ useEffect(() => {
       <IonContent className="adv-filters">
 
         <IonItem lines="none">
-          <IonLabel class="ion-text-wrap">
+          <IonLabel className="ion-text-wrap">
             <span style={{ fontSize: "17px" }}>Local posts</span>
           </IonLabel>
           <IonToggle
@@ -296,7 +296,7 @@ useEffect(() => {
 
         </IonItem>
         {(!currentUserProfile?.location_point_lat || !currentUserProfile?.location_point_long) && (
-          <IonRow class="ion-padding ion-text-center ion-justify-content-center">
+          <IonRow className="ion-padding ion-text-center ion-justify-content-center">
             <IonNote>Share your Location to turn on local posts.</IonNote>
             <IonButton onClick={() => locationPresent()}>Share location</IonButton>
           </IonRow>)}
@@ -306,7 +306,7 @@ useEffect(() => {
           <>
             {isPro(currentUserProfile?.subscription_level) &&
               <IonItem lines="none">
-                <IonLabel class="ion-text-wrap">
+                <IonLabel className="ion-text-wrap">
                   <span style={{ fontSize: "17px" }}>Show local posts from everywhere</span>
                 </IonLabel>
                 <IonToggle
@@ -318,8 +318,8 @@ useEffect(() => {
             }
 
             {(!localPostsEverywhere) &&
-              <IonCard color="white" class="distance-radius">
-                <IonRow class="ion-justify-content-center" style={{ paddingTop: "20pt" }}>
+              <IonCard color="white" className="distance-radius">
+                <IonRow className="ion-justify-content-center" style={{ paddingTop: "20pt" }}>
                   <IonNote color="black">Distance Radius (km)</IonNote>
                 </IonRow>
 
@@ -330,15 +330,15 @@ useEffect(() => {
                   </IonRange>
                 </IonItem>
                 {radius &&
-                  <IonRow class="ion-padding ion-justify-content-center">
+                  <IonRow className="ion-padding ion-justify-content-center">
                     <IonNote onClick={whatDistanceRadius} color="navy"> <u>{radius}</u> kilometers ≅ {(radius / 1.609344).toFixed(1)} miles</IonNote>
                   </IonRow>
                 }
-                <IonRow class="ion-padding">
+                <IonRow className="ion-padding">
                   <IonNote> Local posts will also be filtered using your category selections.</IonNote>
                 </IonRow>
                 {isCommunityPlus(currentUserProfile?.subscription_level) &&
-                  <IonCard color="midblue" class="distance-radius">
+                  <IonCard color="midblue" className="distance-radius">
                     <IonItem color="midblue" lines="none">
                       <IonLabel>
                         <p style={{ fontSize: "11pt", fontWeight: "bold" }}>
@@ -372,7 +372,7 @@ useEffect(() => {
                     {/* Add Location Button */}
 
                     {((isPro(currentUserProfile?.subscription_level) && savedLocations?.length < 4) || (isCommunityPlus(currentUserProfile?.subscription_level) && savedLocations?.length < 2)) && (
-                      <IonRow style={{ width: "100%" }} class="ion-justify-content-center">
+                      <IonRow style={{ width: "100%" }} className="ion-justify-content-center">
                         <IonButton
                           expand="block"
                           size="small"
@@ -395,7 +395,7 @@ useEffect(() => {
           </>}
         <IonAccordionGroup>
           <IonAccordion value="first">
-            <IonItem slot="header"><IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Sort by</span></IonLabel>
+            <IonItem slot="header"><IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Sort by</span></IonLabel>
               <IonBadge >{sortOptions.find(option => option.value === sortSelected)?.label}</IonBadge>
 
             </IonItem>
@@ -428,7 +428,7 @@ useEffect(() => {
         </IonAccordionGroup>
         <IonAccordionGroup>
           <IonAccordion value="first">
-            <IonItem slot="header"><IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Categories</span></IonLabel>
+            <IonItem slot="header"><IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Categories</span></IonLabel>
               {barsProp == 'all' ? <IonBadge color={barsProp == "all" ? "primary" : "danger"}>Showing {barsProp == 'all' ? "all" : "some"} categories</IonBadge> : <></>}
 
             </IonItem>
@@ -439,7 +439,7 @@ useEffect(() => {
 
                 <IonList lines="none">
                   {options.map((option) => (
-                    <IonItem key={option.value} class="dont-grey-disabled">
+                    <IonItem key={option.value} className="dont-grey-disabled">
                       <IonCheckbox
                         slot="start"
                         onIonChange={(e) => handleCheckboxChange(option.value, e.detail.checked)}
@@ -471,12 +471,12 @@ useEffect(() => {
 
 
               </IonRow>
-              <IonRow class="ion-padding ion-justify-content-center">
+              <IonRow className="ion-padding ion-justify-content-center">
                 <IonButton size="small" onClick={localPosts ? () => setSelectedValues(allValues.concat(allValuesLocal)) : () => setSelectedValues(allValues)}>Select all</IonButton>
               </IonRow>
               {(!isCommunityPlus(currentUserProfile?.subscription_level) && ((localPosts && (selectedValues.length <= (allValues.length + allValuesLocal.length - 2))) || (!localPosts && (selectedValues.length <= (options.length - 2))))) &&
-                <IonRow class="ion-padding ion-text-align-center ion-justify-content-center">
-                  <IonNote class="ion-text-center">
+                <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
+                  <IonNote className="ion-text-center">
                     Upgrade to a subscription level to filter by more categories.
                   </IonNote>
                 </IonRow>
@@ -486,8 +486,8 @@ useEffect(() => {
         </IonAccordionGroup>
 
         {(!isCommunityPlus(currentUserProfile?.subscription_level)) &&
-          <IonRow class="ion-padding ion-text-align-center ion-justify-content-center">
-            <IonNote class="ion-text-center">
+          <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
+            <IonNote className="ion-text-center">
               <FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /> Upgrade to a subscription level for more sort options, filters, and additional locations and increased radius for local posts.
             </IonNote>
           </IonRow>}

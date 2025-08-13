@@ -33,7 +33,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
                 <>
                     {showSearch ?
                         <>
-                            <IonRow class="filter-row ">
+                            <IonRow className="filter-row ">
                                 <IonSearchbar debounce={1500} value={search} onIonChange={e => setSearch(e.detail.value!)} color="navy" placeholder="Looking for someone specific?"></IonSearchbar>
                             </IonRow >
                             {search ?
@@ -45,13 +45,13 @@ const ChatsSegment: React.FC<Props> = (props) => {
                                             </li>
                                         ))}
                                         {searchedChats?.length == 0 ?
-                                            <IonRow class="ion-padding ion-justify-content-center">
+                                            <IonRow className="ion-padding ion-justify-content-center">
                                                 <IonNote>Couldn't find anyone &nbsp;<FontAwesomeIcon icon={faFrown}/></IonNote>
-                                                <IonNote class="ion-padding ion-justify-content-center">Please note: Unmatched and blocked connections are removed from your chats.</IonNote>
+                                                <IonNote className="ion-padding ion-justify-content-center">Please note: Unmatched and blocked connections are removed from your chats.</IonNote>
                                             </IonRow>
 
                                             : searchedChats?.length == 1 && currentUserProfile?.blocked_connections?.includes(searchedChats[0]) ?
-                                            <IonRow class="ion-padding ion-justify-content-center">
+                                            <IonRow className="ion-padding ion-justify-content-center">
                                                  <IonNote>Couldn't find anyone &nbsp;<FontAwesomeIcon icon={faFrown}/></IonNote>
                                             </IonRow>
                                             
@@ -71,7 +71,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
                     : <></>}
                 </>
                 :
-                <IonRow class="ion-justify-content-center ion-padding-top" style={{ padding: "30pt" }}>
+                <IonRow className="ion-justify-content-center ion-padding-top" style={{ padding: "30pt" }}>
                     <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" style={{ width: "50%" }} />
                     <IonText style={{ textAlign: "center" }}>
                         <br /><br />

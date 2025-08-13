@@ -110,8 +110,8 @@ const ForgotPasswordModal: React.FC = () => {
     return (
         <IonModal ref={modal} trigger="fp-modal">
             <IonHeader>
-                <IonToolbar class="modal-title">
-                    <IonTitle class="ion-text-wrap">Login help</IonTitle>
+                <IonToolbar className="modal-title">
+                    <IonTitle className="ion-text-wrap">Login help</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={dismiss}>Cancel</IonButton>
                     </IonButtons>
@@ -154,7 +154,7 @@ const ForgotPasswordModal: React.FC = () => {
                 </form>
                 :
                 <form className="ion-padding" key="form">
-                    <IonItem class="forgot-email-reset">
+                    <IonItem className="forgot-email-reset">
                     <IonLabel position="stacked">Phone number</IonLabel>
                         <PhoneInput
                             placeholder={"(888) 888-8888"}
@@ -171,7 +171,7 @@ const ForgotPasswordModal: React.FC = () => {
                     
                 </form>}
             </IonContent>
-            <IonFooter class="ion-text-center ion-padding">
+            <IonFooter className="ion-text-center ion-padding">
                 <IonText color="navy">Need assistance? Send us an email at <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a>.</IonText>
             </IonFooter>
         </IonModal>

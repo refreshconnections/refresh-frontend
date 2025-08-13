@@ -71,7 +71,7 @@ const GroupDetailsModal: React.FC<Props> = (props) => {
     return (
         <IonPage>
             <IonContent fullscreen scrollEvents={true}>
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton onClick={onDismiss} color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
@@ -101,7 +101,7 @@ const GroupDetailsModal: React.FC<Props> = (props) => {
                         <IonText>
                             Admin:
                         </IonText>
-                        <IonItem class="chat-item">
+                        <IonItem className="chat-item">
                             <IonAvatar>
                                 <img alt="chat avatar" src={groupDetailsData?.owner.profile_pic} onError={(e) => onImgError(e)} />
                             </IonAvatar>
@@ -116,13 +116,13 @@ const GroupDetailsModal: React.FC<Props> = (props) => {
                             Members:
                         </IonText>
                         <IonList>
-                            {groupDetailsData?.members.length < 2 ? <IonItem class="chat-item">No one has joined yet</IonItem> :
+                            {groupDetailsData?.members.length < 2 ? <IonItem className="chat-item">No one has joined yet</IonItem> :
                             <>
                             {groupDetailsData?.members.map((item: any, index: number) => (
                                 <>
                                 { item.id !== groupDetailsData.owner.id ?
                                 <li key={index}>
-                                    <IonItem class="chat-item">
+                                    <IonItem className="chat-item">
                                         <IonAvatar>
                                             <img alt="chat avatar" src={item.profile_pic} onError={(e) => onImgError(e)} />
                                         </IonAvatar>
@@ -150,7 +150,7 @@ const GroupDetailsModal: React.FC<Props> = (props) => {
                                 <IonList>
                                     {groupDetailsData?.requested_members.map((item: any, index: number) => (
                                         <li key={index}>
-                                            <IonItem class="chat-item">
+                                            <IonItem className="chat-item">
                                                 <IonAvatar>
                                                     <img alt="chat avatar" src={item.profile_pic} onError={(e) => onImgError(e)} />
                                                 </IonAvatar>

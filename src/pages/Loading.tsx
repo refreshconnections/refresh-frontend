@@ -4,7 +4,7 @@ import "./Loading.css"
 const Loading: React.FC = () => {
 
     return (
-        <IonPage class="sls">
+        <IonPage className="sls">
             <img alt="loading-page" src={"../static/img/loading-refresh-faster.gif"}></img>
         </IonPage>
     )

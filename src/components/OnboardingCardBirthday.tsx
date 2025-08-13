@@ -138,7 +138,8 @@ const OnboardingCardBasic: React.FC = () => {
             {(isValid === false && birthday) ? <IonNote slot="error">You must be at least 18.</IonNote> : <></>}
 
             <IonModal keepContentsMounted={true}>
-              <IonDatetime id="datetime" preferWheel={true} placeholder="Select your birthday" max={eighteenYearsAtLeast()} presentation="date" value={birthday ?? "2000-01-01"}  onIonChange={e => setBirthday(e.detail.value)} showDefaultButtons={true}></IonDatetime>
+              // TODO label "Select your birthday"
+              <IonDatetime id="datetime" preferWheel={true} max={eighteenYearsAtLeast()} presentation="date" value={birthday ?? "2000-01-01"}  onIonChange={e => setBirthday(e.detail.value)} showDefaultButtons={true}></IonDatetime>
             </IonModal>
             <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>

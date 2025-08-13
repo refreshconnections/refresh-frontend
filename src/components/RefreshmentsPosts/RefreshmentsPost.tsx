@@ -82,7 +82,7 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
 
     return (
         <IonRow id={`#${post_id}`}>
-            <IonItem class="refreshments-category" lines="none"
+            <IonItem className="refreshments-category" lines="none"
                 color={staticContentPost?.category == "science" ? "tertiary" :
                     staticContentPost?.category == "families" ? "families" :
                     staticContentPost?.category == "pop" ? "pop" :
@@ -95,7 +95,7 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
                     staticContentPost?.category == "recommendations" ? "secondary" :
                     staticContentPost?.category == "events" ? "secondary" :
                                             "primary"} />
-            <IonItem lines="none" class="refreshments-category-label"
+            <IonItem lines="none" className="refreshments-category-label"
                 color={staticContentPost?.category == "science" ? "tertiary" :
                     staticContentPost?.category == "families" ? "families" :
                     staticContentPost?.category == "pop" ? "pop" :
@@ -131,15 +131,15 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
             <IonCard className="refreshments-card-in-list ">
                 {(currentProfileRefreshments?.hidden_announcements?.includes(post_id) || currentProfileRefreshments?.hidden_authors?.includes(staticContentPost?.user))
                 ?
-                <IonRow class="hidden ion-justify-content-center">
-                    <IonText class="ion-text-center">You have hidden this post or author.</IonText>
+                <IonRow className="hidden ion-justify-content-center">
+                    <IonText className="ion-text-center">You have hidden this post or author.</IonText>
                     <IonButton size="small" fill="outline">Show anyway</IonButton>
                 </IonRow> 
                 :
                 (staticContentPost?.sensitive && !settingsCurrentProfile?.settings_show_sensitive_content)?
-                <IonRow class="sensitive ion-justify-content-center">
-                    <IonText class="ion-text-center" style={{fontWeight: "bold", color: "var(--ion-color-black)"}}>This post contains sensitive content.</IonText>
-                    {staticContentPost?.sensitive_description && <IonText class="ion-text-center"style={{paddingTop: "10pt", paddingBottom: "10pt"}} >{staticContentPost?.sensitive_description}</IonText>}
+                <IonRow className="sensitive ion-justify-content-center">
+                    <IonText className="ion-text-center" style={{fontWeight: "bold", color: "var(--ion-color-black)"}}>This post contains sensitive content.</IonText>
+                    {staticContentPost?.sensitive_description && <IonText className="ion-text-center"style={{paddingTop: "10pt", paddingBottom: "10pt"}} >{staticContentPost?.sensitive_description}</IonText>}
                     <IonButton size="small" fill="outline">Show anyway</IonButton>
                 </IonRow> 
                 :

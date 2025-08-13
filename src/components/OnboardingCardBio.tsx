@@ -42,12 +42,13 @@ const OnboardingCardBio: React.FC = () => {
       <IonCardContent>
         <IonCardTitle>You're just about done!</IonCardTitle>
         <IonText>Anything else you want to tell people? Fill out the bio section! This is free space for you to say whatever you want about yourself (you know, within reason). Update this at any time. It will be shown front and center on your profile!</IonText>
-        <IonItem counter={true}>
+        <IonItem>
           <IonTextarea value={bio}
             name="bio"
             onIonChange={e => setBio(e.detail.value!)}
             placeholder=""
             maxlength={400}
+            counter
             autoGrow={true} 
             autoCapitalize='sentences'
             />

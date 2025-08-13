@@ -137,14 +137,14 @@ const EmailBuilder: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent class="builder">
-                <IonFab class="very-top " slot="fixed" vertical="top" horizontal="start">
+            <IonContent className="builder">
+                <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink="/action" routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
                 </IonFab>
 
-                <IonRow class="page-title">
+                <IonRow className="page-title">
                     <img className="color-invertible" src="../static/img/navy-emailbuilder.png" style={{maxHeight: "50pt"}} alt="help" />
                 </IonRow>
                 <IonCard>
@@ -173,7 +173,7 @@ const EmailBuilder: React.FC = () => {
                             {emailDraft?.recipient?.email  ? 
                             <>
                             <IonItem className="input">
-                                <IonLabel position="stacked" class="has-button ">Subject &nbsp;<IonButton size="small" onClick={()=>getARandomOne(handleRandomSubject)}><FontAwesomeIcon icon={faRotate}/></IonButton></IonLabel>
+                                <IonLabel position="stacked" className="has-button ">Subject &nbsp;<IonButton size="small" onClick={()=>getARandomOne(handleRandomSubject)}><FontAwesomeIcon icon={faRotate}/></IonButton></IonLabel>
                                 <IonTextarea
                                     onIonChange={e => setEmailDraft({...emailDraft!, subject: e.detail.value!})}
                                     value={emailDraft?.subject ?? ''}
@@ -188,7 +188,7 @@ const EmailBuilder: React.FC = () => {
                                             {item == 1 ?
                                                 <IonItem key={item} >
                                                     
-                                                            <IonLabel position="stacked" class="has-button">
+                                                            <IonLabel position="stacked" className="has-button">
                                                                 Purpose &nbsp;
                                                             <IonButton size="small" slot="end" onClick={()=>getARandomOne(handleRandomStatement)}><FontAwesomeIcon icon={faRotate}/></IonButton>
                                                             </IonLabel>
@@ -206,7 +206,7 @@ const EmailBuilder: React.FC = () => {
                                                 </IonItem>
                                                 : item == 2 ?
                                                     <IonItem key={item} >
-                                                        <IonLabel position="stacked" class="has-button">Body &nbsp;<IonButton size="small" onClick={()=>getARandomOne(handleRandomBody)}><FontAwesomeIcon icon={faRotate}/></IonButton></IonLabel>
+                                                        <IonLabel position="stacked" className="has-button">Body &nbsp;<IonButton size="small" onClick={()=>getARandomOne(handleRandomBody)}><FontAwesomeIcon icon={faRotate}/></IonButton></IonLabel>
                                                         <IonTextarea
                                                             onIonChange={e => setEmailDraft({...emailDraft!, body: e.detail.value!})}
                                                             value={emailDraft?.body ?? ''}

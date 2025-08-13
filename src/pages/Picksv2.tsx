@@ -310,7 +310,7 @@ const Picksv2: React.FC = () => {
   if (!filterData.created_profile || filterData.deactivated_profile || filterData.paused_profile) {
     return <IonPage>
       <IonContent>
-        <IonRow class="page-title bigger">
+        <IonRow className="page-title bigger">
           <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
         </IonRow>
         <CantAccessCard tabName="Picks" />
@@ -427,7 +427,7 @@ const Picksv2: React.FC = () => {
                 settingsAlt={filterData.settings_alt_text}
               />
             </div>
-            <IonRow class="ion-justify-content-center">
+            <IonRow className="ion-justify-content-center">
               <IonButton
                 fill="clear"
                 size="small"
@@ -468,7 +468,7 @@ const Picksv2: React.FC = () => {
           </>
         ) : shouldShowNoProfiles ? (
           <>
-            <IonRow class="page-title bigger">
+            <IonRow className="page-title bigger">
               <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
             </IonRow>
             <IonCard className="prelaunch">
@@ -487,7 +487,7 @@ const Picksv2: React.FC = () => {
                 Plus, join the discussion at the Refreshments Bar (community forum).
               </IonCardContent>
             </IonCard>
-            <IonCard class="out-of-profiles">
+            <IonCard className="out-of-profiles">
               <IonRow className="ion-justify-content-center spinning-flower-wrapper">
                 <img
                   className={buttonLoading ? "flower-mask spin" : "flower-mask"}
@@ -495,9 +495,9 @@ const Picksv2: React.FC = () => {
                   alt="refresh-mask"
                 />
               </IonRow>
-              <IonRow class="picks-buttons">
+              <IonRow className="picks-buttons">
                 <IonButton
-                  class="clearfilters"
+                  className="clearfilters"
                   onClick={extraTimeWithRefetch}
                   disabled={buttonLoading}
                 >

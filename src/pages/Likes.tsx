@@ -186,13 +186,13 @@ const Likes: React.FC = () => {
             <IonRefresherContent />
           </IonRefresher>
 
-          <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+          <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
             <IonFabButton routerLink="/chats" routerDirection="back" color="light" onClick={handleLeaveLikes}>
               <IonIcon icon={chevronBackOutline} />
             </IonFabButton>
           </IonFab>
 
-          <IonRow class="page-title bigger">
+          <IonRow className="page-title bigger">
             <img className="color-invertible" src="../static/img/refresh_likes_navy.png" alt="likes" />
           </IonRow>
 
@@ -211,9 +211,9 @@ const Likes: React.FC = () => {
                     <IonRow className="like-card-grid">
                       {paginatedVisibleConnections.flat().map((conn) => (
                         <IonCol size="6" key={conn.user}>
-                          <IonCard onClick={() => openModal(conn)} class="like-cards">
+                          <IonCard onClick={() => openModal(conn)} className="like-cards">
                             <img src={conn.pic1_main || "../static/img/null.png"} onError={onImgError} />
-                            <IonCardTitle class="like-cards-name">{conn.name}</IonCardTitle>
+                            <IonCardTitle className="like-cards-name">{conn.name}</IonCardTitle>
                             {conn.latest_opener_text && (
                               <FontAwesomeIcon icon={faCommentHeart} className="message-icon" />
                             )}
@@ -236,7 +236,7 @@ const Likes: React.FC = () => {
                     </IonInfiniteScroll>
                   </>
                 ) : (
-                  <IonRow class="empty-likes">
+                  <IonRow className="empty-likes">
                     <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" />
                     <IonText>
                       <br /><br />
@@ -245,7 +245,7 @@ const Likes: React.FC = () => {
                       This would be a great time to join us at the Refreshments Bar!
                     </IonText>
                     {mutuals?.length > 0 && (
-                      <IonCard class="new-connections-card">
+                      <IonCard className="new-connections-card">
                         <IonRow className="ion-text-center" style={{ flexDirection: 'column', alignItems: 'center' }}>
                           <IonText color="dark" style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>
                             <p><strong>Plus, it looks like you've still got some new connections waiting to chat!</strong></p>
@@ -260,21 +260,21 @@ const Likes: React.FC = () => {
                 )} </>) : (
               <>
                 {firstVisibleConnection && (
-                  <IonRow class="ion-justify-content-center">
-                    <IonCard button onClick={() => openModal(firstVisibleConnection)} class="like-cards-free">
+                  <IonRow className="ion-justify-content-center">
+                    <IonCard button onClick={() => openModal(firstVisibleConnection)} className="like-cards-free">
                       <img
                         src={firstVisibleConnection.pic1_main || "../static/img/null.png"}
                         alt="Profile"
                         onError={onImgError}
                       />
-                      <IonCardTitle class="like-cards-name">{firstVisibleConnection.name}</IonCardTitle>
+                      <IonCardTitle className="like-cards-name">{firstVisibleConnection.name}</IonCardTitle>
                       {firstVisibleConnection.latest_opener_text && (
                         <FontAwesomeIcon icon={faCommentHeart} className="message-icon" />
                       )}
                     </IonCard>
                     {(paginatedVisibleConnections.length >= 1 && paginatedVisibleConnections[0].length >= 1) ? 
-                    <IonRow class="ion-justify-content-center ion-padding">
-                      <IonButton onClick={() => setShowStoreAlert(true)} fill="clear" class="ion-text-wrap">You have {paginatedVisibleConnections[0].length > 6 ? "5+ " : ""} more likes waiting for you!</IonButton>
+                    <IonRow className="ion-justify-content-center ion-padding">
+                      <IonButton onClick={() => setShowStoreAlert(true)} fill="clear" className="ion-text-wrap">You have {paginatedVisibleConnections[0].length > 6 ? "5+ " : ""} more likes waiting for you!</IonButton>
                     </IonRow>  
                       : <></>}
                       <IonAlert
@@ -304,7 +304,7 @@ const Likes: React.FC = () => {
 
                 {!hasNextPage && !firstVisibleConnection && !isFetchingNextPage && (
                   currentUserProfile?.initiate_mode === false ? (
-                    <IonRow class="empty-likes">
+                    <IonRow className="empty-likes">
                       <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" />
                       <IonText>
                         <br /><br />
@@ -313,7 +313,7 @@ const Likes: React.FC = () => {
                         This would be a great time to join us at the Refreshments Bar!
                       </IonText>
                       {mutuals?.length > 0 && (
-                        <IonCard class="new-connections-card">
+                        <IonCard className="new-connections-card">
                           <IonRow className="ion-text-center" style={{ flexDirection: 'column', alignItems: 'center' }}>
                             <IonText color="dark" style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>
                               <p><strong>Plus, it looks like you've still got some new connections waiting to chat!</strong></p>
@@ -326,7 +326,7 @@ const Likes: React.FC = () => {
                       )}
                     </IonRow>
                   ) : (
-                    <IonRow class="empty-likes">
+                    <IonRow className="empty-likes">
                       <IonText>
                         <br /><br />
                         You are in Initiate mode. Turn this off in Settings if you want others to be able to Like you first.
@@ -350,12 +350,12 @@ const Likes: React.FC = () => {
         </IonContent>
       ) : (
         <IonContent>
-          <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+          <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
             <IonFabButton routerLink="/chats" routerDirection="back" color="light">
               <IonIcon icon={chevronBackOutline} />
             </IonFabButton>
           </IonFab>
-          <IonRow class="page-title bigger">
+          <IonRow className="page-title bigger">
             <img className="color-invertible" src="../static/img/refresh_likes_navy.png" alt="likes" />
           </IonRow>
           {littleLoading ? <LoadingCard /> : <CantAccessCard tabName="Likes" />}

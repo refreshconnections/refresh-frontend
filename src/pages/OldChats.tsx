@@ -341,7 +341,7 @@ const OldChats: React.FC = () => {
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
-          <IonRow class="page-title" >
+          <IonRow className="page-title" >
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
           {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
@@ -358,7 +358,7 @@ const OldChats: React.FC = () => {
           {currSegment == "chats" ?
             <>
               {chats?.data && chats?.data.length == 0 && newChats?.length == 0 ?
-                <IonRow class="empty-chats">
+                <IonRow className="empty-chats">
                   <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" />
                   <IonText>
                     <br /><br />
@@ -371,7 +371,7 @@ const OldChats: React.FC = () => {
                 {chats?.data.map((item: any, index: number) => (
                   <li key={index}>
                     { (!(currentUserProfile?.hidden_dialogs.includes(parseInt(item.other_user_id))) && !(currentUserProfile?.blocked_connections.includes(parseInt(item.other_user_id)) )) ?
-                    <IonItem class="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
+                    <IonItem className="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
                       <IonAvatar>
                         <img alt="chat avatar" src={data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png"} onError={(e) => onImgError(e)} />
                       </IonAvatar>
@@ -391,7 +391,7 @@ const OldChats: React.FC = () => {
 
               {newChats.length > 0 ?
                 <div>
-                  <IonRow class="page-title">
+                  <IonRow className="page-title">
                     <IonText>
                       <h2>Start a new chat!</h2>
                     </IonText>
@@ -400,7 +400,7 @@ const OldChats: React.FC = () => {
                     {newChats?.map((item: any, index: number) => (
                       <li key={index}>
                         {!(currentUserProfile?.hidden_dialogs.includes(parseInt(item.user))) ?
-                        <IonItem class="chat-item" button detail={true} onClick={() => { openModal({ other_user_id: item.user.toString() }, item.name, item.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
+                        <IonItem className="chat-item" button detail={true} onClick={() => { openModal({ other_user_id: item.user.toString() }, item.name, item.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
                           <IonAvatar>
                             <img alt="chat avatar" src={item.pic1_main} onError={(e) => onImgError(e)} />
                           </IonAvatar>
@@ -425,7 +425,7 @@ const OldChats: React.FC = () => {
                         {chats?.data.map((item: any, index: number) => (
                           <li key={index}>
                             {currentUserProfile?.hidden_dialogs.includes(parseInt(item.other_user_id)) ?
-                            <IonItem class="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
+                            <IonItem className="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
                               <IonAvatar>
                                 <img alt="chat avatar" src={data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png"} onError={(e) => onImgError(e)} />
                               </IonAvatar>
@@ -451,7 +451,7 @@ const OldChats: React.FC = () => {
                       {chats?.data.map((item: any, index: number) => (
                           <li key={index}>
                             {currentUserProfile?.blocked_connections.includes(parseInt(item.other_user_id)) ?
-                            <IonItem class="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name || "Blocked User", data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
+                            <IonItem className="chat-item" button detail={true} onClick={() => { openModal(item, data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.name || "Blocked User", data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png", currentUserProfile.name) }}>
                               <IonAvatar>
                                 <img alt="chat avatar" src={data?.find((x: { user: number; }) => x.user === Number(item.other_user_id))?.pic1_main || "../static/img/null.png"} onError={(e) => onImgError(e)} />
                               </IonAvatar>
@@ -478,7 +478,7 @@ const OldChats: React.FC = () => {
             :
             <>
               {groupChats?.data && groupChats?.data.length == 0 && groupChatInvites?.data && groupChatInvites?.data.length == 0 ?
-                <IonRow class="empty-chats">
+                <IonRow className="empty-chats">
                   <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" />
                   <IonText>
                     <br /><br />
@@ -490,7 +490,7 @@ const OldChats: React.FC = () => {
               <IonList id="wl" lines="full">
                 {groupChats?.data.map((item: any, index: number) => (
                   <li key={index}>
-                    <IonItem class="chat-item" button detail={true} onClick={() => openGroupTextModal(item)}>
+                    <IonItem className="chat-item" button detail={true} onClick={() => openGroupTextModal(item)}>
                       <IonText className="name">{item.group_name !== null ? item.group_name : "New group"}</IonText>
                     </IonItem>
                   </li>
@@ -498,7 +498,7 @@ const OldChats: React.FC = () => {
               </IonList>
               {groupChatInvites?.data.length > 0 ?
                 <div>
-                  <IonRow class="page-title">
+                  <IonRow className="page-title">
                     <IonText>
                       <h2>Invites</h2>
                     </IonText>
@@ -506,7 +506,7 @@ const OldChats: React.FC = () => {
                   <IonList id="wl" lines="full">
                     {groupChatInvites?.data.map((item: any, index: number) => (
                       <li key={index}>
-                        <IonItem class="chat-item" button detail={true} onClick={() => openGroupDetailsModal(item)}>
+                        <IonItem className="chat-item" button detail={true} onClick={() => openGroupDetailsModal(item)}>
                           <IonText className="name">{item.group_name !== null ? item.group_name : "New group"}</IonText>
                         </IonItem>
                       </li>
@@ -514,7 +514,7 @@ const OldChats: React.FC = () => {
                   </IonList>
                 </div>
                 : <></>}
-              <IonFab class="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
+              <IonFab className="very-bottom" slot="fixed" vertical="bottom" horizontal="end">
                 {currentUserProfile.subscription_level == "pro" && currentUserProfile.settings_create_groups ?
                   <IonFabButton onClick={() => openCreateGroupModal()}>
                     <FontAwesomeIcon icon={faMessagePlus} />
@@ -547,7 +547,7 @@ const OldChats: React.FC = () => {
         </IonContent>
         :
         <IonContent>
-          <IonRow class="page-title">
+          <IonRow className="page-title">
             <img src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
           {loading ? <LoadingCard /> : <CantAccessCard tabName="Chats" />}

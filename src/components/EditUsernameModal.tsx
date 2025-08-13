@@ -102,20 +102,20 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
   return (
   <IonPage>
     <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
             <IonTitle>{currentUserProfile?.username? "Edit": "Create"} Your Username</IonTitle>
             <IonButtons slot="start">
                 <IonButton onClick={onDismiss}>Cancel</IonButton>
             </IonButtons>
         </IonToolbar>
     </IonHeader>
-    <IonContent class="create-post">
+    <IonContent className="create-post">
     <IonCard  className="onboarding-slide">
       <IonCardContent>
         <IonCardTitle>Want to {currentUserProfile?.username? "change": "create"} your Refreshments username?</IonCardTitle>
             <IonText>Your username keeps your preferred first name hidden at the Refreshments Bar, but know that anyone who can see your profile can also see your username.</IonText>
             <p> You can only change your username every 60 days.</p>
-            <IonItem counter={true}>
+            <IonItem >
             <IonInput value={username}
                             name="username"
                             required={true}
@@ -123,6 +123,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
                             placeholder={currentUserProfile?.username}
                             onIonChange={e => setUsername(e.detail.value!)}
                             maxlength={30}
+                            counter
                             type="text" />
             </IonItem>
             {error ? <IonNote slot="error">{error}</IonNote> : <></>}

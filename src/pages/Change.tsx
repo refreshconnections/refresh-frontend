@@ -62,7 +62,7 @@ const Change: React.FC = () => {
     <IonPage>
       <IonContent fullscreen >
 
-        <IonRow class="page-title bigger">
+        <IonRow className="page-title bigger">
           <img className="color-invertible " src="../static/img/change.png" alt="change" />
         </IonRow>
 
@@ -70,10 +70,10 @@ const Change: React.FC = () => {
 
         {projects?.length == 0 ?
         <>
-          <IonRow class="padding ion-text-wrap ion-justify-content-center ion-text-center" style={{paddingTop: "30pt"}}>
-            <IonNote class="ion-padding" style={{fontSize:"16pt"}} color="navy">More change projects coming soon!</IonNote>
+          <IonRow className="padding ion-text-wrap ion-justify-content-center ion-text-center" style={{paddingTop: "30pt"}}>
+            <IonNote className="ion-padding" style={{fontSize:"16pt"}} color="navy">More change projects coming soon!</IonNote>
           </IonRow>
-           <IonRow class="ion-padding ion-text-wrap ion-justify-content-center" style={{paddingTop: "30pt"}}>
+           <IonRow className="ion-padding ion-text-wrap ion-justify-content-center" style={{paddingTop: "30pt"}}>
            <IonNote style={{fontSize:"30pt"}} color="navy"> <FontAwesomeIcon icon={faBoltLightning} /></IonNote>
          </IonRow>
          </>
@@ -83,13 +83,13 @@ const Change: React.FC = () => {
 
         <IonRow>
 
-          <IonList class="change-projects" lines="none">
+          <IonList className="change-projects" lines="none">
 
             {projects?.slice(0, length).map((p: any) => (
 
               <IonItem color="white" key={p.id} button detail={true} detailIcon={currentUserProfile?.participated_in?.includes(p.id) ? checkmarkCircle : chevronForward} routerLink={p.campaign_type == "emailbuilder" ? `/change/emailbuilder/${p.email_builder}` : `/change/other/${p.other}`}>
 
-                <IonLabel color="navy" class="ion-text-wrap">
+                <IonLabel color="navy" className="ion-text-wrap">
                   <h2>
                     {p.campaign_type == "emailbuilder" ?
                       <FontAwesomeIcon icon={faPaperPlane} />
@@ -105,7 +105,7 @@ const Change: React.FC = () => {
               </IonItem>
             ))}
             <IonItem color="midblue" button onClick={() => changeProjectSuggestionPresent()}>
-              <IonLabel color="navy" class="ion-text-wrap">
+              <IonLabel color="navy" className="ion-text-wrap">
                 <h2>
                   <FontAwesomeIcon icon={faHammer} />
 
@@ -116,7 +116,7 @@ const Change: React.FC = () => {
                 </p>
               </IonLabel>
             </IonItem>
-            <IonRow class="ion-justify-content-center">
+            <IonRow className="ion-justify-content-center">
               {projects?.length > length ?
                 <IonButton size="small" fill="outline" onClick={() => setLength(length + 5)}>See more</IonButton>
                 : <></>
@@ -125,9 +125,9 @@ const Change: React.FC = () => {
           </IonList>
         </IonRow>
 
-        {/* <IonRow class="surrounding-room ion-justify-content-center">
+        {/* <IonRow className="surrounding-room ion-justify-content-center">
         <img  src="../static/img/mapcomingsoon.png" alt="Refresh Connections Action Map coming soon" />
-        <IonText class="ion-text-center"><h3>Plus, get ready to put Covid Conscientious on the map!</h3></IonText>
+        <IonText className="ion-text-center"><h3>Plus, get ready to put Covid Conscientious on the map!</h3></IonText>
         </IonRow> */}
         {changeStatus?.active && (changeStatus?.header || changeStatus?.message) && isBeforeExpiration ?
           <StatusToast isToastOpen={true} setIsToastOpen={setIsToastOpen} header={changeStatus?.header} message={changeStatus?.message} />

@@ -186,19 +186,19 @@ const EmailBuilderDetails: React.FC = () => {
     return (
         <IonPage>
             <IonContent>
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink={`/change/#${id}`} routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
                 </IonFab>
 
-                <IonRow class="page-title">
+                <IonRow className="page-title">
                     <img className="color-invertible" src="../../static/img/navy-emailbuilder.png" style={{maxHeight: "50pt"}} alt="email builder" />
                 </IonRow>
 
-                <IonCard class="email-builder">
+                <IonCard className="email-builder">
 
-                    <IonRow class="ion-align-items-center">
+                    <IonRow className="ion-align-items-center">
                             <IonCol size="11">
                             <IonCardTitle>
                             {purpose?.purpose ?  purpose?.purpose : ""}
@@ -223,7 +223,7 @@ const EmailBuilderDetails: React.FC = () => {
 
                     </IonCardContent>
                     {emailbuilder?.link?
-                          <IonRow class="ion-justify-content-center" style={{paddingBottom: "0px"}}>
+                          <IonRow className="ion-justify-content-center" style={{paddingBottom: "0px"}}>
                         <IonButton fill="outline" href={emailbuilder?.link}>Learn more</IonButton>
                         </IonRow>
                         : <></>}
@@ -232,49 +232,49 @@ const EmailBuilderDetails: React.FC = () => {
                 </IonCard>
 
                 <IonCard>
-                    <IonItem class="ion-text-wrap" color="white" lines="none">
+                    <IonItem className="ion-text-wrap" color="white" lines="none">
                         <IonLabel position="stacked">Personal Statement:</IonLabel>
                         <IonTextarea autoGrow autoCapitalize="sentences" debounce={1000} rows={3} autoCorrect="on" spellcheck={true} placeholder="(Optional, but makes your email far more powerful. If you are local to this issue, DEFINITELY put that here.)"  value={personal} onIonChange={(e)=>setPersonal(e.detail.value!)}/>
                     </IonItem>
                 </IonCard>
 
-                <IonRow class="ion-text-center">
+                <IonRow className="ion-text-center">
                     <IonText style={{padding: "25px"}}>You can edit any part of the sample email started for you.</IonText>
                 </IonRow>
-                <IonRow class="ion-justify-content-center">
+                <IonRow className="ion-justify-content-center">
                     <IonButton onClick={()=>getARandomOne()}><FontAwesomeIcon icon={faDice}/> &nbsp; Randomize email </IonButton>
                 </IonRow>   
                 
 
-                <IonCard class="email-builder-creation ">
-                    <IonItem color="white" lines="full" class="ion-text-wrap">
+                <IonCard className="email-builder-creation ">
+                    <IonItem color="white" lines="full" className="ion-text-wrap">
 
                     <IonLabel position="stacked">Subject:</IonLabel>
                         <IonInput value={emailDraft?.subject ?? ''} onIonChange={(e)=>setEmailDraft({...emailDraft!, subject: e.detail.value!})}/>
                     </IonItem>
 
                     {emailbuilder?.recipient ?
-                    <IonItem class="ion-text-wrap" color="white" lines="none">
+                    <IonItem className="ion-text-wrap" color="white" lines="none">
                         <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={intro} onIonChange={(e)=>setIntro(e.detail.value!)}/>
                     </IonItem>
                     : <></>}
 
 
                     {personal ?
-                    <IonItem class="ion-text-wrap" color="white" lines="none">
+                    <IonItem className="ion-text-wrap" color="white" lines="none">
                         <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={personal} onIonChange={(e)=>setPersonal(e.detail.value!)}/>
                     </IonItem>
                     : <></>}
                     
-                    <IonItem class="ion-text-wrap" color="white" lines="none">
+                    <IonItem className="ion-text-wrap" color="white" lines="none">
                         <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={emailDraft?.body ?? ''} onIonChange={(e)=>setEmailDraft({...emailDraft!, body: e.detail.value!})}/>
                     </IonItem>
                     
                 </IonCard>
-                <IonRow class="ion-justify-content-center email-ready-to-send-button">
+                <IonRow className="ion-justify-content-center email-ready-to-send-button">
                         <IonButton href={createEmail()}>Open in email app</IonButton>
                 </IonRow>
-                <IonCard class="email-builder" style={{paddingBottom: "35px", marginBottom: "25px"}}>
+                <IonCard className="email-builder" style={{paddingBottom: "35px", marginBottom: "25px"}}>
                     <IonRow>
                         <IonText style={{padding: "25px"}}>
                         Once you've sent the email, come back here and let us know!

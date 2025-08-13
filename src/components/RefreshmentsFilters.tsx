@@ -18,7 +18,7 @@ interface FiltersInterface {
 const RefreshmentsFilters: React.FC<FiltersInterface> = ({search, setSearch}) => {
 
     return (
-        <IonRow class="filter-row ">
+        <IonRow className="filter-row ">
       
             <IonSearchbar debounce={1500} value={search} onIonChange={e => setSearch(e.detail.value!)} color="navy" placeholder="Looking for something specific?"></IonSearchbar>
 

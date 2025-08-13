@@ -59,7 +59,7 @@ const Participated: React.FC<Props> = (props) => {
         <>
         {currentUserProfile ?
        
-        <IonRow class="participated">
+        <IonRow className="participated">
             <IonItem lines="none" color="white">
             <IonCheckbox checked={participated} onIonChange={async e => markOrUnMark(e)}></IonCheckbox>
             <IonLabel> &nbsp; I participated in this.</IonLabel>

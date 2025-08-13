@@ -135,14 +135,14 @@ function handleSendEmail() {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar class="modal-title">
-          <IonTitle class="ion-text-wrap">Retrieve your email</IonTitle>
+        <IonToolbar className="modal-title">
+          <IonTitle className="ion-text-wrap">Retrieve your email</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Go back</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent class="receive-a-text">
+      <IonContent className="receive-a-text">
       <IonAlert
                 isOpen={showTextSentAlert}
                 onDidDismiss={onDismiss}
@@ -165,7 +165,7 @@ function handleSendEmail() {
 
         
 
-        <IonCard class="recieve-a-text-card">
+        <IonCard className="recieve-a-text-card">
         
             <IonCardContent>
 
@@ -222,8 +222,8 @@ function handleSendEmail() {
                 /> */}
               
             </IonCardContent>
-            <IonFooter class="ion-text-center">
-            <IonText class="ion-padding"><a href="https://refreshconnections.com/terms">Terms and Conditions</a> | <a href="https://refreshconnections.com/privacy">Privacy Policy</a></IonText>
+            <IonFooter className="ion-text-center">
+            <IonText className="ion-padding"><a href="https://refreshconnections.com/terms">Terms and Conditions</a> | <a href="https://refreshconnections.com/privacy">Privacy Policy</a></IonText>
             </IonFooter>
 
         </IonCard>

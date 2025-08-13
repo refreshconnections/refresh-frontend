@@ -41,14 +41,14 @@ const ChangeSuggestionModal: React.FC<Props> = (props) => {
         <IonPage>
             
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Change Idea</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent class="create-report">
+            <IonContent className="create-report">
                 <IonAlert
                     isOpen={showAlert}
                     onDidDismiss={emailSendSuccessful}
@@ -71,7 +71,7 @@ const ChangeSuggestionModal: React.FC<Props> = (props) => {
                     </IonItem>
                     <IonItem>
                         <IonCheckbox checked={myProject} onIonChange={(e) => setMyProject(e.detail.checked)} />
-                        <IonLabel class="ion-text-wrap">I help run this project.</IonLabel>
+                        <IonLabel className="ion-text-wrap">I help run this project.</IonLabel>
                     </IonItem>
                     <IonItem>
                         <IonLabel position="stacked">Your name</IonLabel>

@@ -174,7 +174,7 @@ const Chats: React.FC = () => {
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
-          <IonRow class="page-title" >
+          <IonRow className="page-title" >
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
           {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
@@ -197,13 +197,13 @@ const Chats: React.FC = () => {
             <IonCol size="2">
               {(incomingCount) ?
                 <>
-                  <IonBadge class="chats-likes-badge" color="danger">{incomingCount > 5 ? "5+" : incomingCount}</IonBadge>
-                  <IonButton routerLink="/likes" color="navy" class="likes-in-chats-segment" style={{ height: "2.0em" }}>
+                  <IonBadge className="chats-likes-badge" color="danger">{incomingCount > 5 ? "5+" : incomingCount}</IonBadge>
+                  <IonButton routerLink="/likes" color="navy" className="likes-in-chats-segment" style={{ height: "2.0em" }}>
                     <FontAwesomeIcon icon={faHeart} />
                   </IonButton>
                 </>
                 :
-                <IonButton size="small" routerLink="/likes" class="likes-in-chats-segment" color="navy">
+                <IonButton size="small" routerLink="/likes" className="likes-in-chats-segment" color="navy">
                   <FontAwesomeIcon icon={faHeart} />
                 </IonButton>
               }
@@ -226,7 +226,7 @@ const Chats: React.FC = () => {
         </IonContent>
         :
         <IonContent>
-          <IonRow class="page-title">
+          <IonRow className="page-title">
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
           {(chatsLoading || currentUserProfileLoading) ? <LoadingCard /> : <CantAccessCard tabName="Chats" />}

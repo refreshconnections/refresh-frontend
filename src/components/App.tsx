@@ -79,7 +79,7 @@ import {
   Purchases,
   PurchasesOfferings, // Types for TypeScript
 } from '@revenuecat/purchases-capacitor';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapApp } from "@capacitor/app";
 import { Device } from '@capacitor/device';
 import Activity from '../pages/Activity';
@@ -194,24 +194,36 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android' || !isSamsung()) return;
+  if (Capacitor.getPlatform() !== 'android' || !isSamsung()) return;
 
-    const showListener = Keyboard.addListener('keyboardWillShow', info => {
+  let showSub: PluginListenerHandle | undefined;
+  let hideSub: PluginListenerHandle | undefined;
+  let cancelled = false;
+
+  (async () => {
+    showSub = await Keyboard.addListener('keyboardWillShow', info => {
       const offset = `${info.keyboardHeight}px`;
-      document.body.classList.add('samsung-keyboard-opend');
+      document.body.classList.add('samsung-keyboard-opened');
       document.documentElement.style.setProperty('--keyboard-offset', offset);
     });
 
-    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
-      document.body.classList.remove('samsung-keyboard-opend');
-      document.documentElement.style.setProperty('--keyboard-offset', '0px');
+    hideSub = await Keyboard.addListener('keyboardWillHide', () => {
+      document.body.classList.remove('samsung-keyboard-opened');
+      document.documentElement.style.removeProperty('--keyboard-offset');
     });
 
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
+    if (cancelled) {
+      showSub?.remove();
+      hideSub?.remove();
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+    showSub?.remove();
+    hideSub?.remove();
+  };
+}, []);
 
 
 

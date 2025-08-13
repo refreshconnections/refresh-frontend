@@ -191,7 +191,7 @@ const PostDetails: React.FC<Props> = (props) => {
 
 
   return (
-    <IonList class="comments">
+    <IonList className="comments">
       {data.map((item: any, index: number) => (
             <>
             <IonItemSliding key={index}>
@@ -223,7 +223,7 @@ const PostDetails: React.FC<Props> = (props) => {
               </IonItem>
               : <></>}
               <IonItemOptions side="start">
-                <IonItemOption disabled={true} class="message-timestamp">{getTime(item.uploadDateTime)}</IonItemOption>
+                <IonItemOption disabled={true} className="message-timestamp">{getTime(item.uploadDateTime)}</IonItemOption>
               </IonItemOptions>
               {me?.user !== item.user ?
               <IonItemOptions side="end">
@@ -237,7 +237,7 @@ const PostDetails: React.FC<Props> = (props) => {
       {loading || me?.username ?
         <IonRow>
           <IonCol size="10">
-            <IonItem className="inputted" counter={true}>
+            <IonItem className="inputted" >
               <IonTextarea value={commentInput}
                 name="comment_input"
                 onIonChange={e => setCommentInput(e.detail.value!)}
@@ -245,6 +245,7 @@ const PostDetails: React.FC<Props> = (props) => {
                 maxlength={400}
                 placeholder={closed ? "Discussion closed. Want to start a new one?" : "Leave your own comment"}
                 autoCapitalize='sentences'
+                counter
               />
             </IonItem>
           </IonCol>

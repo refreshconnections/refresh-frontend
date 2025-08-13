@@ -411,14 +411,14 @@ const EditLocationModal: React.FC<Props> = (props) => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Edit Your Location</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Done</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent class="create-post">
+      <IonContent className="create-post">
         {loading?
         <div>
           <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif"

@@ -66,7 +66,7 @@ const CommentReplies = ({
       )}
 
       {shouldShowAllReplies && (
-        <IonList class="comments" id="wl" lines="none">
+        <IonList className="comments" id="wl" lines="none">
           <div className="borderwtail">
             <ul style={{ margin: 0, padding: 0 }}>
               {replies?.pages?.flatMap((page) =>

@@ -35,7 +35,7 @@ interface Hi {
 
 type Props = {
     onDismiss: () => void;
-  };
+};
 
 const ProfileCreationModal: React.FC<Props> = (props) => {
 
@@ -75,7 +75,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
     const [alcohol, setAlcohol] = useState("");
     const [cigarettes, setCigarettes] = useState("");
 
-    
+
 
     useEffect(() => {
 
@@ -213,7 +213,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
         date.setFullYear(year - 18);
         const stringDate: string = moment(date).format('YYYY-MM-DD')
         return stringDate
-        
+
     }
 
     const handleCropDismiss = async () => {
@@ -229,7 +229,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
         picDb: picDb,
         imageName: imageName,
         onDismiss: handleCropDismiss
-      });
+    });
 
     return (
         <IonPage>
@@ -245,81 +245,86 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                 <form className="ion-padding" onSubmit={updateProfile}>
                     <IonNote>You will NOT be able to change these after you have created your profile. They will not be shown on your profile.</IonNote>
                     <IonList inset={true} className="prof-creation">
-                    <IonItem>
-                        <IonLabel position="stacked">Birthday</IonLabel>
-                        <IonNote>Used to determine your age which will be shown.</IonNote>
-                        <IonInput 
-                            value={birthday}
-                            name="birthday"
-                            placeholder=""
-                            max={eighteenYearsAtLeast()} 
-                            onIonChange={e => setBirthday(e.detail.value!)}
-                            type="date" />
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="stacked">Gender</IonLabel>
-                        <IonNote>Used for potential connections to filter based on preference.</IonNote>
-                        <IonSelect onIonChange={e => setGender(e.detail.value!)}>
-                            <IonSelectOption value="man">man</IonSelectOption>
-                            <IonSelectOption value="woman">woman</IonSelectOption>
-                            <IonSelectOption value="nonbinary">nonbinary</IonSelectOption>
-                        </IonSelect>
-                    </IonItem>
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Zipcode</IonLabel>
-                        <IonNote>Used to filter based on location.</IonNote>
-                        <IonInput value={zipcode}
-                            name="zipcode"
-                            required={true}
-                            placeholder="#####"
-                            maxlength={5}
-                            inputmode="numeric"
-                            pattern="\d{5}"
-                            onIonChange={e => setZipcode(e.detail.value!)}
-                            type="text" />
-                    </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Birthday</IonLabel>
+                            <IonNote>Used to determine your age which will be shown.</IonNote>
+                            <IonInput
+                                value={birthday}
+                                name="birthday"
+                                placeholder=""
+                                max={eighteenYearsAtLeast()}
+                                onIonChange={e => setBirthday(e.detail.value!)}
+                                type="date" />
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Gender</IonLabel>
+                            <IonNote>Used for potential connections to filter based on preference.</IonNote>
+                            <IonSelect onIonChange={e => setGender(e.detail.value!)}>
+                                <IonSelectOption value="man">man</IonSelectOption>
+                                <IonSelectOption value="woman">woman</IonSelectOption>
+                                <IonSelectOption value="nonbinary">nonbinary</IonSelectOption>
+                            </IonSelect>
+                        </IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">Zipcode</IonLabel>
+                            <IonNote>Used to filter based on location.</IonNote>
+                            <IonInput value={zipcode}
+                                name="zipcode"
+                                required={true}
+                                placeholder="#####"
+                                maxlength={5}
+                                inputmode="numeric"
+                                pattern="\d{5}"
+                                onIonChange={e => setZipcode(e.detail.value!)}
+                                type="text" />
+                            counter
+                        </IonItem>
                     </IonList>
 
                     <IonNote>You will be able to change the following fields later. Fill them out now just to get your profile started.</IonNote>
                     <IonList inset={true} className="prof-creation ">
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Location</IonLabel>
-                        <IonInput value={location}
-                            name="location"
-                            required={true}
-                            onIonChange={e => setLocation(e.detail.value!)}
-                            maxlength={30}
-                            type="text" />
-                    </IonItem>
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Job</IonLabel>
-                        <IonInput value={job}
-                            name="job"
-                            required={true}
-                            onIonChange={e => setJob(e.detail.value!)}
-                            placeholder=""
-                            maxlength={30}
-                            type="text" />
-                    </IonItem>
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Politics</IonLabel>
-                        <IonInput value={politics}
-                            name="politics"
-                            onIonChange={e => setPolitics(e.detail.value!)}
-                            placeholder=""
-                            maxlength={30}
-                            type="text" />
-                    </IonItem>
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">School</IonLabel>
-                        <IonInput value={school}
-                            name="school"
-                            onIonChange={e => setSchool(e.detail.value!)}
-                            placeholder=""
-                            maxlength={30}
-                            type="text" />
-                    </IonItem>
-                    {/* <IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">Location</IonLabel>
+                            <IonInput value={location}
+                                name="location"
+                                required={true}
+                                onIonChange={e => setLocation(e.detail.value!)}
+                                maxlength={30}
+                                counter
+                                type="text" />
+                        </IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">Job</IonLabel>
+                            <IonInput value={job}
+                                name="job"
+                                required={true}
+                                onIonChange={e => setJob(e.detail.value!)}
+                                placeholder=""
+                                maxlength={30}
+                                counter
+                                type="text" />
+                        </IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">Politics</IonLabel>
+                            <IonInput value={politics}
+                                name="politics"
+                                onIonChange={e => setPolitics(e.detail.value!)}
+                                placeholder=""
+                                maxlength={30}
+                                counter
+                                type="text" />
+                        </IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">School</IonLabel>
+                            <IonInput value={school}
+                                name="school"
+                                onIonChange={e => setSchool(e.detail.value!)}
+                                placeholder=""
+                                maxlength={30}
+                                counter
+                                type="text" />
+                        </IonItem>
+                        {/* <IonItem>
                         <IonLabel position="floating">Sexual Orientation</IonLabel>
                         <IonInput value={sexualOrientation}
                             name="sexualOrientation"
@@ -327,181 +332,183 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             placeholder=""
                             type="text" />
                     </IonItem> */}
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Hometown</IonLabel>
-                        <IonInput value={hometown}
-                            name="hometown"
-                            onIonChange={e => setHometown(e.detail.value!)}
-                            placeholder=""
-                            maxlength={30}
-                            type="text" />
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="stacked">Height (Feet)</IonLabel>
-                        <IonSelect onIonChange={e => setHeightFeet(e.detail.value!)}>
-                            <IonSelectOption value="3">3</IonSelectOption>
-                            <IonSelectOption value="4">4</IonSelectOption>
-                            <IonSelectOption value="5">5</IonSelectOption>
-                            <IonSelectOption value="6">6</IonSelectOption>
-                            <IonSelectOption value="7">7</IonSelectOption>
-                        </IonSelect>
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="stacked">Height (Inches)</IonLabel>
-                        <IonSelect onIonChange={e => setHeightInches(e.detail.value!)}>
-                            <IonSelectOption value="0">0</IonSelectOption>
-                            <IonSelectOption value="1">1</IonSelectOption>
-                            <IonSelectOption value="2">2</IonSelectOption>
-                            <IonSelectOption value="3">3</IonSelectOption>
-                            <IonSelectOption value="4">4</IonSelectOption>
-                            <IonSelectOption value="5">5</IonSelectOption>
-                            <IonSelectOption value="6">6</IonSelectOption>
-                            <IonSelectOption value="7">7</IonSelectOption>
-                            <IonSelectOption value="8">8</IonSelectOption>
-                            <IonSelectOption value="9">9</IonSelectOption>
-                            <IonSelectOption value="10">10</IonSelectOption>
-                            <IonSelectOption value="11">11</IonSelectOption>
-                        </IonSelect>
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="stacked">Looking For</IonLabel>
-                        <IonList lines="none">
-                            <IonItem>
-                                <IonCheckbox slot="start" value="friendship" onIonChange={e => addLookingForCheckbox(e)} />
-                                Friendships
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="romance" onIonChange={e => addLookingForCheckbox(e)} />
-                                Romance
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="virtual connection" onIonChange={e => addLookingForCheckbox(e)} />
-                                Virtual Connection
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="virtual only" onIonChange={e => addLookingForCheckbox(e)} />
-                                Virtual Connection Only
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="job" onIonChange={e => addLookingForCheckbox(e)} />
-                                Job
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="roommate" onIonChange={e => addLookingForCheckbox(e)} />
-                                Roommate
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value="housing" onIonChange={e => addLookingForCheckbox(e)} />
-                                Housing
-                            </IonItem>
-                        </IonList>
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="stacked">Covid Precautions</IonLabel>
-                        <IonList lines="none">
-                            <IonItem>
-                                <IonCheckbox slot="start" value={1} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I work from home
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={2} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I eat outside at restaurants
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={3} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I have non-covid cautious roommates / live-in family members
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={4} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I'm immunocompromised
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={5} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I attend outdoor events, concerts, crowds, etc.
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={6} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I attend events, concerts, crowds, etc with a mask on
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={7} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I only leave home / outdoors for medically necessary reasons
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={8} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I live alone / with other people with shared levels of covid precaution
-                            </IonItem>
-                            <IonItem>
-                                <IonCheckbox slot="start" value={9} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                I go to work / school but I wear a quality mask the whole time
-                            </IonItem>
-                        </IonList>
-                    </IonItem>
-                    <IonItem counter={true}>
-                        <IonLabel position="stacked">Bio</IonLabel>
-                        <IonTextarea value={bio}
-                            name="bio"
-                            onIonChange={e => setBio(e.detail.value!)}
-                            placeholder=""
-                            autoGrow={true}
-                            maxlength={400}
+                        <IonItem >
+                            <IonLabel position="stacked">Hometown</IonLabel>
+                            <IonInput value={hometown}
+                                name="hometown"
+                                onIonChange={e => setHometown(e.detail.value!)}
+                                placeholder=""
+                                maxlength={30}
+                                counter
+                                type="text" />
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Height (Feet)</IonLabel>
+                            <IonSelect onIonChange={e => setHeightFeet(e.detail.value!)}>
+                                <IonSelectOption value="3">3</IonSelectOption>
+                                <IonSelectOption value="4">4</IonSelectOption>
+                                <IonSelectOption value="5">5</IonSelectOption>
+                                <IonSelectOption value="6">6</IonSelectOption>
+                                <IonSelectOption value="7">7</IonSelectOption>
+                            </IonSelect>
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Height (Inches)</IonLabel>
+                            <IonSelect onIonChange={e => setHeightInches(e.detail.value!)}>
+                                <IonSelectOption value="0">0</IonSelectOption>
+                                <IonSelectOption value="1">1</IonSelectOption>
+                                <IonSelectOption value="2">2</IonSelectOption>
+                                <IonSelectOption value="3">3</IonSelectOption>
+                                <IonSelectOption value="4">4</IonSelectOption>
+                                <IonSelectOption value="5">5</IonSelectOption>
+                                <IonSelectOption value="6">6</IonSelectOption>
+                                <IonSelectOption value="7">7</IonSelectOption>
+                                <IonSelectOption value="8">8</IonSelectOption>
+                                <IonSelectOption value="9">9</IonSelectOption>
+                                <IonSelectOption value="10">10</IonSelectOption>
+                                <IonSelectOption value="11">11</IonSelectOption>
+                            </IonSelect>
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Looking For</IonLabel>
+                            <IonList lines="none">
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="friendship" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Friendships
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="romance" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Romance
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="virtual connection" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Virtual Connection
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="virtual only" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Virtual Connection Only
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="job" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Job
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="roommate" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Roommate
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value="housing" onIonChange={e => addLookingForCheckbox(e)} />
+                                    Housing
+                                </IonItem>
+                            </IonList>
+                        </IonItem>
+                        <IonItem>
+                            <IonLabel position="stacked">Covid Precautions</IonLabel>
+                            <IonList lines="none">
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={1} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I work from home
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={2} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I eat outside at restaurants
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={3} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I have non-covid cautious roommates / live-in family members
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={4} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I'm immunocompromised
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={5} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I attend outdoor events, concerts, crowds, etc.
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={6} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I attend events, concerts, crowds, etc with a mask on
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={7} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I only leave home / outdoors for medically necessary reasons
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={8} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I live alone / with other people with shared levels of covid precaution
+                                </IonItem>
+                                <IonItem>
+                                    <IonCheckbox slot="start" value={9} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
+                                    I go to work / school but I wear a quality mask the whole time
+                                </IonItem>
+                            </IonList>
+                        </IonItem>
+                        <IonItem >
+                            <IonLabel position="stacked">Bio</IonLabel>
+                            <IonTextarea value={bio}
+                                name="bio"
+                                onIonChange={e => setBio(e.detail.value!)}
+                                placeholder=""
+                                autoGrow={true}
+                                maxlength={400}
+                                counter
                             />
-                    </IonItem>
-                    <IonGrid class="picture-grid">
-                    <IonRow>
-                        <IonCol size="5">
-                            <div style={{alignItems: "center", display: "flex"}}>
-                            {data && data.pic1_main !== null ?
-                                <img alt="Picture 1" src={data.pic1_main} onError={(e) => onImgError(e)}/>
-                                : <img alt="Picture 1 null" src={"../static/img/null.png"} />
-                            }
-                            <label className="custom-file-upload">
-                                <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic1_main")} />
-                                <i className="fa fa-cloud-upload"></i>
-                                <FontAwesomeIcon icon={faPenToSquare} />
-                            </label>
-                            </div>
-                        </IonCol>
-                        <IonCol size="7" class="col-right-padding">
-                        </IonCol>
-                    </IonRow>
-                    <IonRow>
-                        <IonCol size="5">
-                            <div style={{alignItems: "center", display: "flex"}}>
-                            {data && data.pic2 !== null ?
-                                <img alt="Picture 1" src={data.pic2} onError={(e) => onImgError(e)}/>
-                                : <img alt="Picture 1 null" src={"../static/img/null.png"} />
-                            }
-                            <label className="custom-file-upload">
-                                <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic2")} />
-                                <i className="fa fa-cloud-upload"></i>
-                                <FontAwesomeIcon icon={faPenToSquare} />
-                            </label>
-                            </div>
-                        </IonCol>
-                        <IonCol size="7" class="col-right-padding">
-                        <CaptionsSelect picture="pic2_caption" current_caption={data && data.pic2_caption ? data.pic2_caption : null } />
-                        </IonCol>
-                    </IonRow>
-                    <IonRow>
-                        <IonCol size="5">
-                            <div style={{alignItems: "center", display: "flex"}}>
-                            {data && data.pic3 !== null ?
-                                <img alt="Picture 1" src={data.pic3} onError={(e) => onImgError(e)}/>
-                                : <img alt="Picture 1 null" src={"../static/img/null.png"} />
-                            }
-                            <label className="custom-file-upload">
-                                <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic3")} />
-                                <i className="fa fa-cloud-upload"></i>
-                                <FontAwesomeIcon icon={faPenToSquare} />
-                            </label>
-                            </div>
-                        </IonCol>
-                        <IonCol size="7" class="col-right-padding">
-                        <CaptionsSelect picture="pic3_caption" current_caption={data && data.pic3_caption ? data.pic3_caption : null } />
-                        </IonCol>
-                    </IonRow>
-                    </IonGrid>
+                        </IonItem>
+                        <IonGrid className="picture-grid">
+                            <IonRow>
+                                <IonCol size="5">
+                                    <div style={{ alignItems: "center", display: "flex" }}>
+                                        {data && data.pic1_main !== null ?
+                                            <img alt="Picture 1" src={data.pic1_main} onError={(e) => onImgError(e)} />
+                                            : <img alt="Picture 1 null" src={"../static/img/null.png"} />
+                                        }
+                                        <label className="custom-file-upload">
+                                            <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic1_main")} />
+                                            <i className="fa fa-cloud-upload"></i>
+                                            <FontAwesomeIcon icon={faPenToSquare} />
+                                        </label>
+                                    </div>
+                                </IonCol>
+                                <IonCol size="7" className="col-right-padding">
+                                </IonCol>
+                            </IonRow>
+                            <IonRow>
+                                <IonCol size="5">
+                                    <div style={{ alignItems: "center", display: "flex" }}>
+                                        {data && data.pic2 !== null ?
+                                            <img alt="Picture 1" src={data.pic2} onError={(e) => onImgError(e)} />
+                                            : <img alt="Picture 1 null" src={"../static/img/null.png"} />
+                                        }
+                                        <label className="custom-file-upload">
+                                            <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic2")} />
+                                            <i className="fa fa-cloud-upload"></i>
+                                            <FontAwesomeIcon icon={faPenToSquare} />
+                                        </label>
+                                    </div>
+                                </IonCol>
+                                <IonCol size="7" className="col-right-padding">
+                                    <CaptionsSelect picture="pic2_caption" current_caption={data && data.pic2_caption ? data.pic2_caption : null} />
+                                </IonCol>
+                            </IonRow>
+                            <IonRow>
+                                <IonCol size="5">
+                                    <div style={{ alignItems: "center", display: "flex" }}>
+                                        {data && data.pic3 !== null ?
+                                            <img alt="Picture 1" src={data.pic3} onError={(e) => onImgError(e)} />
+                                            : <img alt="Picture 1 null" src={"../static/img/null.png"} />
+                                        }
+                                        <label className="custom-file-upload">
+                                            <input type="file" accept="image/*" onChange={(ev) => updatePhoto(ev, "pic3")} />
+                                            <i className="fa fa-cloud-upload"></i>
+                                            <FontAwesomeIcon icon={faPenToSquare} />
+                                        </label>
+                                    </div>
+                                </IonCol>
+                                <IonCol size="7" className="col-right-padding">
+                                    <CaptionsSelect picture="pic3_caption" current_caption={data && data.pic3_caption ? data.pic3_caption : null} />
+                                </IonCol>
+                            </IonRow>
+                        </IonGrid>
                     </IonList>
                     {/* <IonItem>
                 <IonLabel position="floating">Alcohol</IonLabel>

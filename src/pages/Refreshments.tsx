@@ -171,7 +171,7 @@ const Refreshments: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <IonRow class="page-title" id="refreshments-top" style={{ marginBottom: "10pt" }}>
+        <IonRow className="page-title" id="refreshments-top" style={{ marginBottom: "10pt" }}>
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show" />
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show" />
         </IonRow>
@@ -180,7 +180,7 @@ const Refreshments: React.FC = () => {
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
-        <IonRow class="filter-buttons">
+        <IonRow className="filter-buttons">
           <IonButton onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
           {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} /> }
           </IonButton>
@@ -245,7 +245,7 @@ const Refreshments: React.FC = () => {
             <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif" style={{paddingTop: "40pt", width: "30%"}}></img>
                 </IonRow>}     
         {/* {posts?.length > length ?
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
           <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
         </IonRow>
         : <></>
@@ -261,7 +261,7 @@ const Refreshments: React.FC = () => {
         >
           <IonInfiniteScrollContent loadingSpinner="bubbles" style={{ minHeight: "14px" }}></IonInfiniteScrollContent>
         </IonInfiniteScroll>
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
           {posts?.length > length ?
             <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
 

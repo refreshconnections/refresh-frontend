@@ -204,8 +204,8 @@ const Profile: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <IonRow class="page-title">
-            <IonText class="bold">
+          <IonRow className="page-title">
+            <IonText className="bold">
               <h1>Hi!</h1>
             </IonText>
           </IonRow>
@@ -218,18 +218,18 @@ const Profile: React.FC = () => {
     return (
       <IonPage>
         <IonContent fullscreen>
-          <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+          <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
             <IonFabButton routerLink="/me" routerDirection="back" color="light">
               <IonIcon icon={chevronBackOutline}></IonIcon>
             </IonFabButton>
           </IonFab>
-          <IonRow class="page-title">
-            <IonText class="bold">
+          <IonRow className="page-title">
+            <IonText className="bold">
               <h1>Hi {data?.name ?? "there"}!</h1>
             </IonText>
           </IonRow>
           {data?.deactivated_profile ?
-              <IonRow class="unpause-profile">
+              <IonRow className="unpause-profile">
                 {moderation?.moderator_deactivated? 
                 <>
                 <IonNote>Your account has been temporarily suspended by a moderator.</IonNote>
@@ -242,7 +242,7 @@ const Profile: React.FC = () => {
                 </>}
               </IonRow> :
               data?.paused_profile ?
-              <IonRow class="unpause-profile">
+              <IonRow className="unpause-profile">
                 <IonNote>Your profile is currently paused.</IonNote>
                 {moderation?.moderator_email_sent ?
                   <IonText> It is under review by a moderator.</IonText> :
@@ -253,10 +253,10 @@ const Profile: React.FC = () => {
               <></>}
           {data?.created_profile ?
             <SelfProfile /> :
-            <IonCard class="created-no-shadow ">
-              <IonCardContent class="ion-justify-content-center" style={{ display: "flex", flexDirection: "column" }}>
+            <IonCard className="created-no-shadow ">
+              <IonCardContent className="ion-justify-content-center" style={{ display: "flex", flexDirection: "column" }}>
                 <img alt="loading-freshy" src="../static/img/flower-mask.png" style={{ width: "40%", alignSelf: "center" }}></img>
-                <IonRow class="ion-justify-content-center" style={{ width: "100%" }}>
+                <IonRow className="ion-justify-content-center" style={{ width: "100%" }}>
                   <IonButton fill="clear" onClick={() => window.location.reload()}><FontAwesomeIcon icon={faArrowsRotate} /></IonButton>
                 </IonRow>
               </IonCardContent>
@@ -264,7 +264,7 @@ const Profile: React.FC = () => {
           }
           
           {data?.name &&
-          <IonRow class="ion-justify-content-center">
+          <IonRow className="ion-justify-content-center">
             Subscription: {data?.subscription_level == "pro" ? "Pro" : data?.subscription_level == "communityplus" ? "Community+" : data?.subscription_level == "personalplus" ? "Personal+" :"none"}
           </IonRow>
           }

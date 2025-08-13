@@ -56,7 +56,7 @@ const OnboardingCardCovid: React.FC = () => {
       <IonCardContent className="w-checkboxes">
         <IonCardTitle>How are you dealing with Covid?</IonCardTitle>
         <IonText>These will be shown on your profile. You can change these at any time. </IonText>
-        <IonItem class="scrollable-list">
+        <IonItem className="scrollable-list">
           <IonList lines="none">
           <IonItem lines="none"><IonLabel>Home:</IonLabel></IonItem>
                                             <IonItem lines="none">

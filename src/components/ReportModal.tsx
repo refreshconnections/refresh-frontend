@@ -75,14 +75,14 @@ const ReportModal: React.FC<Props> = (props) => {
         <IonPage>
             
             <IonHeader>
-                <IonToolbar color="danger" class="modal-title">
+                <IonToolbar color="danger" className="modal-title">
                     <IonTitle>Submit Report</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent class="create-report">
+            <IonContent className="create-report">
                 <IonAlert
                     isOpen={showAlert}
                     onDidDismiss={reportSubmitSuccessful}

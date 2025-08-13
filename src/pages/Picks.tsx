@@ -493,8 +493,8 @@
 // return (
 //   <IonPage>
 //     {filterData && filterData?.created_profile && !(filterData?.deactivated_profile) && !(filterData?.paused_profile) ? (
-//       <IonContent fullscreen scrollEvents={true} class="picks-offset">
-//         <IonRow class="picks-filters">
+//       <IonContent fullscreen scrollEvents={true} className="picks-offset">
+//         <IonRow className="picks-filters">
 //           <IonButton onClick={openAdvancedFilterModal}>
 //             <FontAwesomeIcon icon={faBarsFilter} /> &nbsp; Filters
 //           </IonButton>
@@ -504,7 +504,7 @@
 //         {profileDetails && data && data.length > 0 && reorderedAndFilteredData.length > 0 && !profileDetails.deactivated_profile ? (
 //           (picksLoading || profileDetailsIsLoading || nextLoading || filtersLoading) ? (
 //             <>
-//               <IonRow class="page-title bigger">
+//               <IonRow className="page-title bigger">
 //                 <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
 //               </IonRow>
 //               <LoadingCard />
@@ -516,14 +516,14 @@
 //                 pro={isPersonalPlus(filterData.subscription_level)}
 //                 settingsAlt={filterData.settings_alt_text}
 //               />
-//               <IonFab class="bigger" slot="fixed" vertical="bottom" horizontal="end">
+//               <IonFab className="bigger" slot="fixed" vertical="bottom" horizontal="end">
 //                 <IonFabButton disabled={buttonLoading} onClick={() => {
 //                   presentLikeMessageModal({ cssClass: 'like-message-alert-modal' });
 //                 }}>
 //                   <IonIcon icon={heartIcon}></IonIcon>
 //                 </IonFabButton>
 //               </IonFab>
-//               <IonFab class="very-bottom" slot="fixed" vertical="bottom" horizontal="start">
+//               <IonFab className="very-bottom" slot="fixed" vertical="bottom" horizontal="start">
 //                 <IonFabButton disabled={buttonLoading} color="secondary">
 //                   <IonIcon icon={bugIcon}></IonIcon>
 //                 </IonFabButton>
@@ -543,7 +543,7 @@
 //           )
 //         ) : shouldShowManualLoadingCard || shouldShowNoProfiles ? (
 //           <>
-//             <IonRow class="page-title bigger">
+//             <IonRow className="page-title bigger">
 //               <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
 //             </IonRow>
 //             <IonCard className="prelaunch">
@@ -562,7 +562,7 @@
 //                 Plus, join the discussion at the Refreshments Bar (community forum).
 //               </IonCardContent>
 //             </IonCard>
-//             <IonCard class="out-of-profiles">
+//             <IonCard className="out-of-profiles">
 //               <IonRow className="ion-justify-content-center spinning-flower-wrapper">
 //                 <img
 //                   className={manualRefreshLoading ? "flower-mask spin" : "flower-mask"}
@@ -570,9 +570,9 @@
 //                   alt="refresh-mask"
 //                 />
 //               </IonRow>
-//               <IonRow class="picks-buttons">
+//               <IonRow className="picks-buttons">
 //                 <IonButton
-//                   class="clearfilters"
+//                   className="clearfilters"
 //                   onClick={async () => {
 //                     setManualRefreshLoading(true);
 //                     await delay(1000);
@@ -603,7 +603,7 @@
 //       </IonContent>
 //     ) : (
 //       <IonContent>
-//         <IonRow class="page-title bigger">
+//         <IonRow className="page-title bigger">
 //           <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
 //         </IonRow>
 //         {!filterDataIsLoading && filterData && (!filterData.created_profile || filterData.deactivated_profile || filterData.paused_profile) ? (

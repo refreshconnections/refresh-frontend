@@ -89,21 +89,21 @@ const EditGenderModal: React.FC<Props> = (props) => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Update your gender</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onDismiss}>Cancel</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent class="create-post">
+      <IonContent className="create-post">
         <IonCard className="onboarding-slide">
           <IonCardContent>
             <IonCardTitle>Want to update the gender on your profile?</IonCardTitle>
             <IonText>We don't show your gender on your profile and only use it when others filter their Picks by gender.</IonText>
             <IonText>You can share more in the "More gender and sexuality info" part of the profile. </IonText>
             <p> You can only update your gender identity every 60 days.</p>
-            <IonItem counter={true}>
+            <IonItem>
               <IonItem>
                 <IonSelect placeholder="Gender Identity" onIonChange={e => setGender(e.detail.value!)}
                   disabled={!(currentUserProfile?.gender_last_updated == null || greaterThanThirtyDays(currentUserProfile?.gender_last_updated))}>

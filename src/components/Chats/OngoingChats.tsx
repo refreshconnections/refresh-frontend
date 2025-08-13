@@ -47,7 +47,7 @@ const OngoingChats: React.FC<Props> = (props) => {
         ))}
       </IonList>
       {chatsList?.length > length ?
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
           <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
         </IonRow>
         : <></>

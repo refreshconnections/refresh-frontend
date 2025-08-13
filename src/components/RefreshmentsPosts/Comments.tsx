@@ -80,7 +80,7 @@ const Comments: React.FC<Props> = (props) => {
         <>
           {dynamicContentPost?.comment_count > 0 &&
 
-            <IonRow class="ion-align-items-center ion-padding ion-space-around ion-justify-content-around">
+            <IonRow className="ion-align-items-center ion-padding ion-space-around ion-justify-content-around">
               <IonLabel>Sort comments by</IonLabel>
               <IonSelect
                 value={sortByRecentActivity ? 'activity' : 'timeline'}
@@ -101,7 +101,7 @@ const Comments: React.FC<Props> = (props) => {
               </IonSelect>
 
             </IonRow>}
-          <IonList lines="full" class="comments">
+          <IonList lines="full" className="comments">
             {topLevelComments?.pages?.map((page) =>
               page.results.map((comment) => (
                 <CommentItem key={comment.id} comment={comment} showSidenotes={showSidenotes} setReplyTo={setReplyTo} replyTo={replyTo} isAReply={false} onLikeUnlike={onLikeUnlike} forceShowReplies={forceShowRepliesFor.has(comment.id)} />

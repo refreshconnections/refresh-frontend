@@ -72,7 +72,7 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                 </IonButton>
             ) : (
                 <div className="moderation-note" onClick={openModal}>
-                    <IonRow class="moderation-description">
+                    <IonRow className="moderation-description">
                         <IonCol size="2" style={{ textAlign: "center" }}>
                             <FontAwesomeIcon style={{ color: "var(--ion-color-secondary)" }} className="alt-desc" icon={faMemoCircleInfo} />
                         </IonCol>

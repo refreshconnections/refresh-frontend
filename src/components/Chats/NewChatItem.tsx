@@ -68,7 +68,7 @@ const NewChatItem: React.FC<Props> = (props) => {
     return (
         <>
             {(!(currentUserProfile?.hidden_dialogs.includes(user)) && !(currentUserProfile?.blocked_connections.includes(user))) ?
-                <IonItem class="chat-item" button disabled={!profileDetails} detail={true} 
+                <IonItem className="chat-item" button disabled={!profileDetails} detail={true} 
                 onClick={() => 
                 { openModal() }}>
                     <IonAvatar>

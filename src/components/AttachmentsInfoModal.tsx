@@ -25,17 +25,17 @@ const AttachmentsInfoModal: React.FC<Props> =  (props) => {
   return (
   <IonPage>
     <IonHeader>
-        <IonToolbar class="modal-title">
-            <IonTitle class="ion-text-wrap">Attachments info</IonTitle>
+        <IonToolbar className="modal-title">
+            <IonTitle className="ion-text-wrap">Attachments info</IonTitle>
             <IonButtons slot="start">
                 <IonButton onClick={onDismiss}>Back</IonButton>
             </IonButtons>
         </IonToolbar>
     </IonHeader>
-    <IonContent class="create-post">
+    <IonContent className="create-post">
     <IonCard  className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle class="ion-justify-content-start ion-padding">
+        <IonCardTitle className="ion-justify-content-start ion-padding">
           Images
         </IonCardTitle>
           <IonText>
@@ -43,7 +43,7 @@ const AttachmentsInfoModal: React.FC<Props> =  (props) => {
             <h2>For Personal+ users, images are available for 1 month. </h2>
             <h2>For Pro users, images are available for 6 months.</h2>
             </IonText>
-          <IonCardTitle class="ion-justify-content-start ion-padding">
+          <IonCardTitle className="ion-justify-content-start ion-padding">
           Audio messages
         </IonCardTitle>
         <IonText>
@@ -54,7 +54,7 @@ const AttachmentsInfoModal: React.FC<Props> =  (props) => {
         {!(currentUserProfile?.subscription_level === "pro") &&
         <IonButton style={{width: "50%", alignSelf: "center"}} href="/store">Upgrade/subscribe</IonButton>
         }
-        <IonCardTitle class="ion-justify-content-start ion-text-left ion-padding" style={{paddingTop: "40pt"}}>
+        <IonCardTitle className="ion-justify-content-start ion-text-left ion-padding" style={{paddingTop: "40pt"}}>
           Why can't I add attachments to my messages with this person?
         </IonCardTitle>
         <IonText>

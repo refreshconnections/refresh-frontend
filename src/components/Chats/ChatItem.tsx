@@ -61,7 +61,7 @@ const ChatItem: React.FC<Props> = (props) => {
     return (
         <>
             {(!(currentUserProfile?.hidden_dialogs.includes(user)) && !(currentUserProfile?.blocked_connections.includes(user))) ?
-                <IonItem class="chat-item" button disabled={!profileDetails} detail={true} 
+                <IonItem className="chat-item" button disabled={!profileDetails} detail={true} 
                 onClick={() => 
                 { openModal() }}>
                     <IonAvatar>
@@ -77,7 +77,7 @@ const ChatItem: React.FC<Props> = (props) => {
                                   chatDetails?.unread_count + " new"
                                   : "New message"}
                       </IonBadge>
-                        : chatDetails?.last_message?.out == false && chatDetails?.last_message?.heart == false && currentUserProfile?.settings_chats_next_reminder? <IonBadge class="ion-text-wrap" color="gray" slot="end" style={{maxWidth: "30%"}}>Keep it going!</IonBadge>
+                        : chatDetails?.last_message?.out == false && chatDetails?.last_message?.heart == false && currentUserProfile?.settings_chats_next_reminder? <IonBadge className="ion-text-wrap" color="gray" slot="end" style={{maxWidth: "30%"}}>Keep it going!</IonBadge>
                       : <></>}
 
                 </IonItem>

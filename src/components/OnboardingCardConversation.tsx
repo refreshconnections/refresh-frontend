@@ -41,7 +41,7 @@ const OnboardingCardConversation: React.FC = () => {
 
   return (
     <IonCard className="onboarding-slide ">
-      <IonCardContent class="talkabouts">
+      <IonCardContent className="talkabouts">
         <IonCardTitle>One last thing.</IonCardTitle>
         <IonText>Give people an easy conversation starter! Fill out one now - or all of them if you want! You can add more in the Let's Talk About section of your profile later.</IonText>
         <IonItem>

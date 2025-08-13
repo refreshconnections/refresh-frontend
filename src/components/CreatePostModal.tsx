@@ -274,14 +274,14 @@ const CreatePostModal: React.FC<Props> = (props) => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Create Post</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent class="create-post">
+            <IonContent className="create-post">
                 <IonAlert
                     isOpen={showAlert}
                     onDidDismiss={postSubmitSuccessful}
@@ -290,7 +290,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     buttons={['OK']}
                 />
                 {siteSettings?.allow_free_users_to_submit_posts &&
-                    <IonCard class="ion-padding limited ion-text-center">
+                    <IonCard className="ion-padding limited ion-text-center">
                         <IonText color="navy"><span style={{ fontWeight: "bold", fontSize: "15pt" }}>We're trying something out!</span></IonText>
                         <p style={{ fontWeight: "bold", fontSize: "20pt" }}><FontAwesomeIcon icon={faTimer} /></p>
                         <p>For a limited time, all users can submit up to 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
@@ -326,7 +326,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         <IonCard >
                             <IonItem color="white" lines="none">
                                 <IonCheckbox slot="start" checked={local} onIonChange={e => setLocal(e.detail.checked)} />
-                                <IonLabel class="ion-text-wrap">Local Post <p style={{ color: "var(--ion-color-medium)" }}>Check if your post is tied to a location.</p></IonLabel>
+                                <IonLabel className="ion-text-wrap">Local Post <p style={{ color: "var(--ion-color-medium)" }}>Check if your post is tied to a location.</p></IonLabel>
                             </IonItem>
 
                             {local && (
@@ -336,7 +336,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonInput value={location} placeholder="Click to select"/>
                                 </IonItem>
                                 <IonItem color="white" lines="none">
-                                    <IonLabel position="stacked" class="ion-text-wrap"><p>Location label</p>{location && <p style={{color: "var(--ion-color-medium"}}>Change this if you'd like the post to show something different than the city (like a post for a whole state or region)</p>}</IonLabel>
+                                    <IonLabel position="stacked" className="ion-text-wrap"><p>Location label</p>{location && <p style={{color: "var(--ion-color-medium"}}>Change this if you'd like the post to show something different than the city (like a post for a whole state or region)</p>}</IonLabel>
                                     <IonInput value={locationLabel} onIonChange={e => setLocationLabel(e.detail.value!)}
                                     type="text"
                                     placeholder="What the post labels as the location"
@@ -387,12 +387,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 <IonCard >
                                     <IonItem color="white" lines="full">
                                         <IonCheckbox slot="start" checked={includeProfile} onIonChange={e => setIncludeProfile(e.detail.checked)} disabled={byline === "Anonymous"} />
-                                        <IonLabel class="ion-text-wrap">Show Profile <p style={{ color: "var(--ion-color-medium)" }}>Visible only if Connect from Refreshments is enabled.</p></IonLabel>
+                                        <IonLabel className="ion-text-wrap">Show Profile <p style={{ color: "var(--ion-color-medium)" }}>Visible only if Connect from Refreshments is enabled.</p></IonLabel>
                                     </IonItem>
 
                                     <IonItem color="white" lines="full">
                                         <IonCheckbox slot="start" checked={sensitiveContent} onIonChange={e => setSensitiveContent(e.detail.checked)} />
-                                        <IonLabel class="ion-text-wrap">Sensitive Content <p style={{ color: "var(--ion-color-medium)" }}>Check if your post needs a content warning.</p></IonLabel>
+                                        <IonLabel className="ion-text-wrap">Sensitive Content <p style={{ color: "var(--ion-color-medium)" }}>Check if your post needs a content warning.</p></IonLabel>
                                     </IonItem>
 
                                     {sensitiveContent &&
@@ -411,7 +411,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     {(bar === "mingle" || bar === "families") && (
                                         <IonItem color="white">
                                             <IonCheckbox slot="start" checked={requestSupportive} onIonChange={e => setRequestSupportive(e.detail.checked)} />
-                                            <IonLabel class="ion-text-wrap">Request Supportive Comments Only</IonLabel>
+                                            <IonLabel className="ion-text-wrap">Request Supportive Comments Only</IonLabel>
                                         </IonItem>
                                     )}
                                 </IonCard>
@@ -468,8 +468,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 {/* Submit Button */}
 
                                 {(!title || !content || !byline || !bar) &&
-                                    <IonRow class="ion-padding ion-text-center">
-                                        <IonNote class="ion-text-center">Please make sure all required sections have been filled out.</IonNote>
+                                    <IonRow className="ion-padding ion-text-center">
+                                        <IonNote className="ion-text-center">Please make sure all required sections have been filled out.</IonNote>
                                     </IonRow>
                                 }
 
@@ -484,21 +484,21 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
                     :
                     !isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ?
-                        <IonCard color="white" class="ion-padding ion-text-center">
-                            <IonText class="ion-text-center"><p>Your account needs to be at least 2 weeks old to submit a post. </p>
+                        <IonCard color="white" className="ion-padding ion-text-center">
+                            <IonText className="ion-text-center"><p>Your account needs to be at least 2 weeks old to submit a post. </p>
                                 <p>Or become a Community+ or Pro member to submit a post now.</p>
                             </IonText>
                             <IonButton href="/store">Upgrade</IonButton>
                         </IonCard>
                         :
                         limits?.posts_submitted >= 2  ?
-                            <IonCard color="white" class="ion-padding ion-text-center">
-                                <IonText class="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
+                            <IonCard color="white" className="ion-padding ion-text-center">
+                                <IonText className="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
                                 <IonButton href="/store">Upgrade</IonButton>
                             </IonCard>
                             :
-                            <IonCard color="white" class="ion-padding ion-text-center">
-                                <IonText class="ion-text-center">Something went wrong and you can't submit a post right now.</IonText>
+                            <IonCard color="white" className="ion-padding ion-text-center">
+                                <IonText className="ion-text-center">Something went wrong and you can't submit a post right now.</IonText>
                             </IonCard>
                 }
             </IonContent>
