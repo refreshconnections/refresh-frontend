@@ -1,0 +1,22 @@
+.help-section ion-accordion-group.help-faqs {
+    background: white !important;
+    border-radius: 10pt
+}
+
+.help-section ion-accordion-group.help-faqs ion-accordion ion-item {
+    --background: none !important
+}
+
+.help-section ion-accordion-group.help-faqs ion-accordion ion-item ion-label{
+    font-size: 17px !important
+}
+
+
+
+.help-section ion-row ion-text {
+    font-size: 17px !important
+}
+
+.help-section ion-row.top-border  {
+    border-top: dotted;
+}

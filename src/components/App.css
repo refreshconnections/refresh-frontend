@@ -1,0 +1,79 @@
+
+:root.md {
+  ion-content {
+    --padding-top: 28px; /* Remove env() for md platform */
+  }
+}
+
+ion-tab-bar {
+  padding-top: 5pt;
+  --background: var(--ion-color-white);
+}
+
+:root.ios ion-tab-bar {
+  padding-bottom: max(12px, min(env(safe-area-inset-bottom), 50px));
+}
+
+:root.md ion-tab-bar {
+  padding-bottom: 12px;
+}
+
+ion-content, body {
+  background: var(--ion-background-color);           /* already theme‑aware */
+}
+
+:root.ios ion-content, :root.ios body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+ion-tab-bar ion-tab-button {
+  max-width: 25%;
+  --padding-end: 0;
+  --padding-start: 0;
+  line-height: 1;   
+}
+
+ion-tab-bar ion-tab-button ion-label.md{
+  font-size: 1em;
+  overflow: visible;
+  white-space: pre-wrap;
+}
+
+ion-tab-bar ion-tab-button ion-icon {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+ion-toast.streak-toast {
+  transform: translate(100%,100px);
+  --background: var(--ion-color-statushighlight);
+  --color: var(--ion-color-black);
+  --border-color: var(--ion-color-secondary);
+  --border-width: 10pt;
+  --border-style: solid;
+  --border-radius: 10pt;
+  max-width: 50%;
+  right: 0;
+}
+
+ion-toast.streak-toast::part(header) {
+  font-size: 15pt;
+}
+
+ion-toast.streak-toast::part(button) {
+  color: var(--ion-color-black);
+  font-size: 18px;
+  font-weight: bold
+}
+
+:root.ion-palette-dark.ios, :root.ion-palette-dark.md {
+  .color-invertible {
+    filter: brightness(100);
+  }
+}
+
+body.samsung-keyboard-open ion-footer {
+  transform: translateY(calc(-1 * calc(var(--keyboard-offset, 0px) + 50px)));
+  transition: transform 150ms ease-in-out;
+  z-index: 1000; /* if needed to stay above keyboard */
+}

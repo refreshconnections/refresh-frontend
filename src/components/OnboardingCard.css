@@ -1,0 +1,201 @@
+ion-card.onboarding-slide {
+    margin-top: 0;
+    margin-inline: 0;
+    box-shadow: none;
+    background-color: var(--ion-background-color);
+    display: flex;
+    align-items: center;
+    flex-direction: column
+}
+
+ion-card.onboarding-slide,.extra-padding {
+    padding-top:50pt
+}
+
+ion-card.onboarding-slide .onboarding-slide-buttons {
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    height:15%;
+    justify-content:space-around;
+    width:100%
+}
+
+ion-card.onboarding-slide ion-item {
+    --background: var(--ion-color-white);
+    --border-radius: 10px;
+    --inner-border-width: 0;
+    margin-bottom: 10px;
+}
+
+ion-card.onboarding-slide ion-item.tb-padding {
+    --inner-padding-bottom: 10pt;
+    --inner-padding-top: 10pt;
+}
+
+
+
+ion-card.onboarding-slide ion-item.prof {
+    --background: var(--ion-background-color);
+}
+
+ion-card.onboarding-slide ion-item ion-input {
+    --padding-top: 20px;
+    --padding-bottom: 20px;
+}
+
+ion-card.onboarding-slide .scrollable-list {
+   overflow: auto;
+    --background: var(--ion-color-white);
+    border-radius: 10px;
+    --padding-top: 15px;
+    --padding-bottom: 15px;
+    --inner-border-width: 0
+}
+
+ion-card.onboarding-slide .scrollable-list ion-list{
+   --background: var(--ion-color-white);
+   background: var(--ion-color-white);
+ }
+
+ion-card.onboarding-slide .scrollable-list ion-item{
+    --background: var(--ion-color-white)
+}
+
+ion-card.onboarding-slide .onboarding-slide-buttons ion-button {
+    width:40%
+}
+
+ion-card.onboarding-slide ion-card-title {
+    display: flex;
+    justify-content: center;
+    text-align: center
+}
+
+ion-card.onboarding-slide ion-text {
+    padding-top: 20px;
+    padding-bottom: 20px
+}
+
+ion-item.no-bottom-line {
+    --inner-border-width: 0
+}
+
+ion-card.onboarding-slide ion-card-content {
+    height:70%;
+    flex-direction: column;
+    justify-content: center;
+    display: flex;
+    padding: 40px
+    
+}
+
+ion-card.onboarding-slide ion-card-content.w-checkboxes {
+    max-height: 500px;
+    flex-direction: column;
+    justify-content: center;
+    display: flex;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 20px
+    
+}
+
+ion-card.onboarding-slide .photo-caps ion-select {
+    max-width:100%
+}
+
+ion-card.onboarding-slide ion-grid.pics ion-row {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+}
+
+ion-card.onboarding-slide ion-grid.pics img {
+    max-width: 40%;
+    padding-right: 5px
+}
+
+ion-button.onboarding-pic-upload {
+    font-size: 15pt
+}
+
+ion-item.phone-number-onboarding .PhoneInputInput {
+    border: none;
+    background: var(--ion-color-white);
+}
+
+/* ion-datetime-button button::part(native) {
+    margin: 0px !important;
+    margin-inline: 0px !important;
+} */
+
+ion-item ion-label.always-visible {
+   overflow: visible !important
+}
+ion-datetime-button {
+    width: 100%
+}
+ion-datetime-button::part(native) {
+    margin: 0px !important;
+    margin-inline: 0px !important;
+    opacity: 0;
+    display: block;
+    width: 100%;
+  }
+
+ion-card.onboarding-slide ion-row.with-button {
+    align-items: center;
+    justify-content: space-between
+}
+
+ion-card.onboarding-slide ion-row.with-button ion-item{
+    margin-bottom: 0pt;
+}
+
+@media only screen and (max-width: 450px) {
+    .no-bottom-line img{
+      max-width: 65%;
+    }
+
+    ion-card.onboarding-slide ion-text {
+        padding-top: 10px;
+        padding-bottom: 20px;
+        font-size: 10pt;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .no-bottom-line ion-grid {
+        max-width: 65%;
+    }
+
+    .scrollable-list {
+        max-height: 200pt;
+    }
+
+    ion-card.onboarding-slide ion-card-title {
+        font-size: 20px;
+    }
+
+    ion-card.onboarding-slide ion-card-content {
+        padding-top: 20px;
+        padding-left: 20pt;
+        padding-right: 20pt;
+        padding-bottom: 10pt;
+    }
+  }
+
+@media only screen and (max-height: 700px) {
+    ion-card.onboarding-slide {
+        padding-top: 30pt;
+    }
+}
+
+ion-row.notyet {
+    position: absolute;
+    bottom: 10px;
+    justify-content: center;
+    width: 100%;
+}

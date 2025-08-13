@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "39389344957",
+    "project_id": "refresh-connections",
+    "storage_bucket": "refresh-connections.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:39389344957:android:a2308fb1a139d7163cb3d4",
+        "android_client_info": {
+          "package_name": "com.refreshconnections.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBlLpCqurXh6z9zmoteapLhS5-P7T4M-Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

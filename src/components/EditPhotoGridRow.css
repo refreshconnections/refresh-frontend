@@ -1,0 +1,27 @@
+ion-grid.picture-grid img{
+    width: 100px;
+    height: 100px;
+  }
+  
+input[type="file"] {
+    display: none;
+}
+.custom-file-upload {
+    border-radius: 10pt;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    height: 50px;
+}
+
+ion-grid.picture-grid .image-column {
+    display: flex;
+    align-items: center;
+}
+
+.edit-image-buttons ion-button{
+    display: "flex";
+    flex-direction: "column";
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}

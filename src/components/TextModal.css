@@ -1,0 +1,272 @@
+ion-list.messages {
+    flex-direction: column-reverse;
+    display: flex;
+}
+
+ion-list.messages .per-page {
+    flex-direction: column-reverse;
+    display: flex
+}
+
+.messages ion-item {
+    margin-top: 5px;
+    --inner-padding-top: 0px;
+    --inner-padding-bottom: 0px;
+}
+
+ion-label.the-actual-message {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+    white-space: pre-wrap !important;
+}
+
+.messages ion-item.outgoing {
+    margin-left: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-primary);
+    color: var(--ion-color-white);
+    white-space: pre-wrap;
+    user-select: all;
+    -webkit-user-select: all;
+}
+
+.messages ion-item.outgoing-sending {
+    margin-left: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-navy);
+    color: var(--ion-color-white);
+    white-space: pre-wrap;
+    --border-width: 0;
+}
+
+.messages ion-item.incoming {
+    margin-right: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-gray);
+    white-space: pre-wrap;
+    color: black;
+    user-select: all;
+    -webkit-user-select: all;
+    --border-width: 0;
+}
+
+.messages .removed-item {
+    display: flex;
+    justify-content: center
+}
+
+.messages .removed-item ion-item {
+    --background: var(--ion-color-background);
+    --border-width: 0;
+    color: var(--ion-color-black);
+    font-size: 11pt;
+}
+
+.messages ion-item.groupincoming {
+    --border-width: 0 0 0 0;
+    --inner-padding-bottom: 20px;
+}
+
+ion-toolbar.text-name .text-header {
+    display:flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+ion-toolbar.text-name .text-header ion-avatar {
+    width: 30px;
+    height: 30px;
+    margin-right: 5pt;
+}
+
+
+
+
+.messages ion-item.groupincoming::part(native) {
+    margin-right: 100px;
+    max-width: calc(100% - 100px);
+    background: var(--ion-color-background);
+    padding-inline-start: 5px;
+}
+
+.messages ion-item.groupincoming ion-avatar {
+    margin-right: 5px;
+}
+
+.messages ion-item.groupincoming ion-label {
+    background: var(--ion-color-gray);
+    border-top-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 10px;
+    padding-left: 20px;
+    margin: 0;
+    text-wrap: wrap;
+}
+
+.messages ion-text.group-sender-label {
+    position: absolute;
+    bottom: 0px;
+    left: 50px;
+    color: var(--ion-color-medium)
+}
+
+ion-icon.message-back {
+    font-size: 40px! important
+}
+
+ion-footer.send-message ion-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+}
+
+ion-footer.send-message ion-row {
+    color: var(--ion-color-black);
+}
+
+ion-footer.send-message ion-textarea {
+    padding: 5px;
+    border: solid;
+    border-radius: 10px;
+    border-color: var(--ion-color-white);
+    background: var(--ion-color-white);
+    padding-left: 10pt;
+    max-height: 200pt !important;
+    overflow: scroll;
+}
+
+ion-footer.send-message {
+    padding-bottom: 30px;
+    justify-content: center;
+    display: flex;
+    background: var(--ion-background-color);
+}
+
+ion-footer.send-message ion-row {
+    width: 95%;
+}
+
+ion-item-option.message-timestamp {
+    background: var(--ion-color-background);
+    color: var(--ion-color-black);
+    font-size: 8pt
+}
+
+ion-item-options {
+    border-bottom-width: 0px!important;
+}
+
+ion-list ion-item-sliding ion-note.today {
+    display: flex;
+    justify-content: center;
+    padding-top: 5px
+}
+
+ion-toolbar.text-name {
+    padding-top: 50px! important;
+}
+
+ion-button.send-button {
+    --padding-start: 10px;
+    --padding-end: 10px;
+    padding-left: 5pt
+}
+
+.medium-gray {
+    color: var(--ion-color-medium)
+}
+
+ion-list.messages ion-item-sliding .in-heart {
+    left: calc(100% - 120px);
+    font-size: 14pt;
+    position: absolute;
+    z-index: 999;
+    top: 3pt;
+    color: var(--ion-color-primary);
+    padding: 5pt;
+    border-radius: 11pt;
+}
+
+ion-list.messages ion-item-sliding .in-heart-red {
+    left: calc(100% - 120px);
+    font-size: 14pt;
+    position: absolute;
+    z-index: 999;
+    top: 3pt;
+    color: white;
+    background: var(--ion-color-primary);
+    border-radius: 11pt;
+    padding: 5pt
+}
+
+ion-list.messages ion-item-sliding .out-heart-red {
+    right: calc(100% - 115px);
+    font-size: 14pt;
+    position: absolute;
+    z-index: 999;
+    top: 0;
+    color: white;
+    background: var(--ion-color-danger);
+    border-radius: 11pt;
+    padding: 5pt;
+}
+
+ion-list.messages ion-item.outgoing ion-label.the-actual-message a {
+    color: var(--ion-color-white)
+
+}
+
+ion-list.messages ion-item.incoming ion-label.the-actual-message a {
+    color: var(--ion-color-navy)
+
+}
+
+ion-footer ion-button.message-attachments {
+    --padding-start: 5px;
+    --padding-end: 0px;
+    font-size: larger
+}
+
+ion-footer ion-button.message-send {
+    margin-left: 5pt;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    min-width: 35pt;
+}
+
+.beating-icon {
+    --fa-beat-fade-opacity: 0.1; 
+    --fa-beat-fade-scale: 1.25;
+}
+
+.rhap_container {
+    background-color: var(--ion-color-white);
+    box-shadow: var(--ion-color-white);
+    border-radius: 10pt
+}
+
+.rhap_horizontal .rhap_controls-section {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+    align-items: center;
+}
+
+ion-item-options .sliding-options-div {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}

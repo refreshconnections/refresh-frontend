@@ -1,0 +1,58 @@
+ion-text.name {
+  padding: 10px
+}
+
+ion-item.chat-item {
+  --min-height: 80px;
+}
+
+ion-item.chat-item ion-avatar {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+}
+
+/* ion-row.page-title img {
+  max-width: 25%;
+} */
+
+ion-row.empty-chats {
+  padding: 30px;
+  justify-content: center;
+}
+
+ion-row.empty-chats ion-text{
+  text-align: center;
+  
+}
+
+ion-row.empty-chats img{
+  max-width: 40%
+}
+
+ion-row.segments {
+  padding: 20px;
+  align-items: center;
+}
+
+ion-row.segments ion-badge.chats-likes-badge {
+  width: 20pt;
+  height: 20pt;
+  top: -12px;
+  right: -10%;
+  z-index: 3;
+  position: absolute;
+  font-size: 13pt;
+  border-radius: 10pt;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+
+
+}
+
+ion-row.segments ion-button.likes-in-chats-segment {
+  justify-content: end;
+  display: grid;
+}

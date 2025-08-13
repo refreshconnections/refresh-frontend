@@ -1,0 +1,46 @@
+ion-content.builder ion-item {
+    --background: var(--ion-color-white);
+    --border-radius: 10px;
+    --inner-border-width: 0;
+    margin-bottom: 10px;
+}
+
+ion-content.builder ion-item ion-input {
+    --padding-top: 20px;
+    --padding-bottom: 20px;
+}
+
+ion-content.builder ion-card {
+    margin: 10pt;
+    box-shadow: none;
+    background-color: var(--ion-background-color);
+    display: flex;
+    flex-direction: column
+}
+
+ion-row.send {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 20pt;
+    margin-right: 20pt;
+}
+
+ion-content.help ion-row.help-buttons {
+    justify-content: center;
+    padding-top: 10pt;
+    padding-bottom: 10pt
+}
+
+ion-content.builder ion-item ion-label.has-button {
+    pointer-events: all !important;
+    display: flex;
+    align-items: center;
+}
+
+ion-content.builder ion-item ion-label.has-button ion-button{
+    --padding-start: 0.3em;
+    --padding-end: 0.3em;
+    --padding-bottom: 0;
+    height: 1.5em;
+}

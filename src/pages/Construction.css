@@ -1,0 +1,16 @@
+ion-content.construction {
+  --background: #5f7fd0;
+  display: flex;
+}
+
+ion-content.construction ion-card {
+  background: #5f7fd0;
+  margin-top: 30%;
+  display: flex;
+  justify-content: center;
+  box-shadow: none
+}
+
+ion-content.construction ion-card img{
+  max-width: 80%
+}

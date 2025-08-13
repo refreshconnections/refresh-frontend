@@ -1,0 +1,35 @@
+button .alert-radio-label.sc-ion-alert-ios {
+    white-space: wrap;
+    
+}
+
+button.select-interface-option.ios.alert-radio-button.alert-tappable.alert-radio.ion-focusable.sc-ion-alert-ios {
+    min-height: 44px;
+    max-height: 80px;
+    contain: none;
+    height: auto;
+}
+
+button .alert-button-inner.sc-ion-alert-ios {
+    height: auto;
+
+}
+
+.photo-caps ion-select {
+    --padding-start: 0;
+    
+}
+
+.photo-caps ion-select::part(text) {
+    white-space: pre-line;
+    overflow: visible
+}
+
+.photo-caps ion-select::part(placeholder) {
+    white-space: pre-line;
+    overflow: visible;
+}
+
+.photo-caps-onboarding ion-select {
+    max-width: 80%
+}

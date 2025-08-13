@@ -1,0 +1,11 @@
+ion-popover {
+    --width: auto;
+    --background: var(--ion-color-white);
+  }
+  
+ion-popover ion-content.no-scroll {
+--overflow: hidden;
+text-align: center;
+z-index: 10000000000000000 !important;
+--background: var(--ion-color-white);
+}

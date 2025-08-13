@@ -1,0 +1,65 @@
+ion-card.like-cards {
+    box-shadow: none;
+    position: relative
+}
+
+ion-card.like-cards-free {
+    box-shadow: none;
+    margin-top: 30%;
+    margin-bottom: 10%
+}
+
+ion-card.like-cards img {
+    max-height: 300px;
+    width: 100%;
+}
+
+ion-card.like-cards-free img {
+    height: 250px;
+    width: 250px;
+}
+
+ion-card.like-cards .like-cards-name {
+    text-align: center;
+    font-weight: normal
+}
+
+ion-card.like-cards-free .like-cards-name {
+    text-align: center;
+}
+
+ion-row.empty-likes {
+    padding: 30px;
+    justify-content: center;
+}
+
+ion-row.empty-likes img {
+    max-width: 40%;
+}
+
+ion-row.empty-likes ion-text{
+    text-align: center;
+}
+
+.message-icon {
+    position: absolute; /* Position it absolutely inside the card */
+    top: 10px; /* Adjust the distance from the top */
+    right: 10px; /* Adjust the distance from the right */
+    font-size: 40px; /* Adjust the size of the icon */
+    color: white; /* Icon color (blue in this case) */
+    z-index: 1; /* Ensure the icon is above other content */
+  }
+
+ion-card.new-connections-card {
+    background: var(--ion-color-light); /* White or light background */
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    max-width: 90%;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  

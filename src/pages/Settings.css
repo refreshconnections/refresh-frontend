@@ -1,0 +1,13 @@
+ion-content.settings ion-note {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  background: #22215e;
+  color: white;
+  font-size: 14pt;
+  padding: 10pt;
+}
+
+ion-content.settings ion-label {
+  font-size: 17px !important
+}

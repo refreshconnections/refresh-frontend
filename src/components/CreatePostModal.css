@@ -1,0 +1,28 @@
+ion-toolbar.modal-title {
+    padding-top: 50px! important;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
+
+ion-content.create-post form ion-card {
+    box-shadow: none
+}
+
+ion-content.create-post ion-grid.pics ion-row {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+}
+
+ion-content.create-post ion-grid.pics img {
+    max-width: 40%;
+    padding-right: 5px
+}
+
+ion-content.create-post ion-button.onboarding-pic-upload {
+    font-size: 15pt
+}
+
+ion-card.limited {
+    box-shadow: none;
+}

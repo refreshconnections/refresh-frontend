@@ -1,0 +1,257 @@
+.filter-button ion-button {
+    display: flex;
+    justify-content: center;
+    width: 35%;
+    --background: #f2f2fd;
+    padding-bottom: 20px;
+}
+
+.filter-button {
+    justify-content: center;
+    display: flex;
+}
+
+ion-content.picks-offset {
+  --offset-bottom: 0px !important;
+  --padding-bottom: 40pt
+}
+
+/* ion-row.picks-filters {
+  padding-top: 30pt;
+  background: #22215d;
+  padding-left: 10pt;
+  padding-bottom: 10pt;
+  min-height: 100pt;
+  display: flex;
+  align-content: flex-end;
+} */
+
+ion-card.out-of-profiles {
+  box-shadow: none;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  min-height: 30%;
+}
+
+ion-card.prelaunch {
+  box-shadow: none;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  
+}
+
+ion-modal#filter-modal {
+    --height: 80%;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+  
+  ion-modal#filter-modal::part(backdrop) {
+    background: rgba(209, 213, 219);
+    opacity: 1;
+  }
+  
+  ion-modal#filter-modal ion-toolbar {
+    --background: #5f7fd0;
+    --color: var(--ion-color-white);
+  }
+
+  ion-modal#filter-modal ion-label {
+    width: 25%
+  }
+
+  ion-modal#filter-modal ion-label.age {
+    text-align: left;
+    width: 50%
+  }
+
+  ion-modal#filter-modal ion-input.distance {
+    text-align: right
+  }
+  ion-modal#filter-modal ion-label.unit {
+    width: 40%
+  }
+
+  ion-modal#filter-modal ion-range {
+    width: 75%
+  }
+
+  ion-modal#filter-modal ion-list ion-item ion-list {
+    width: 75%
+  }
+
+  ion-modal#filter-modal .filter-clear-button {
+    text-align:center;
+  }
+
+  .prelaunch ion-card-title {
+    background: var(--ion-color-white);
+    padding: 20px;
+    border-radius: 10pt;
+    color: var(--ion-color-primary);
+    font-size: 14pt;
+    text-align: center;
+  }
+
+  ion-button.clearfilters {
+    margin-top: 35px;
+  }
+
+  ion-note.errornote   {
+    justify-content: center;
+    display: flex;
+    background: red;
+    color: var(--ion-color-white);
+    padding: 10px;
+  }
+  ion-note.greynote   {
+    justify-content: center;
+    display: flex;
+    background: var(--ion-color-medium);
+    color: var(--ion-color-white);
+    padding: 10px;
+  }
+
+  ion-fab.bigger ion-fab-button{
+    margin-bottom: 20px;
+    height: 70px;
+    width: 70px;
+  }
+  
+  ion-fab.bigger ion-fab-button ion-icon {
+    font-size: 35px;
+  }
+
+  ion-fab.bigger ion-fab-button .fab-button-fa-icon {
+    font-size: 35px;
+  }
+
+  ion-card.out-of-profiles img {
+    width: 40%
+  }
+
+  ion-content.picks-offset ion-fab ion-fab-button.fab-button-disabled {
+    opacity: 1;
+    filter: grayscale(60%);
+  }
+
+  ion-content.picks-offset ion-fab ion-fab-button.fab-button-disabled ion-icon{
+    filter: opacity(0.5);
+  }
+
+
+  ion-fab-list.with-label ion-fab-button[data-label] {
+    position: relative;
+  } 
+  ion-fab-list.with-label ion-fab-button[data-label]::after {
+    position: absolute;
+    content: attr(data-label);
+    z-index: 1;
+    left: 75px;
+    bottom: 15px;
+    background-color: #d7d8daba;
+    padding: 9px;
+    border-radius: 15px;
+    color: black;
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12);
+  }
+  
+  ion-fab-list.with-label.fab-list-side-top {
+    bottom: 20px
+  }
+
+  ion-row.picks-buttons ion-button{
+    width: 100%;
+    text-wrap: wrap;
+    --padding-top: 15pt;
+    --padding-bottom: 15pt;
+  }
+
+.flower-mask {
+  width: 120px;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.flower-mask.spin {
+  animation: spin 1.25s linear infinite;
+  transform-origin: center center;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.profile-card-container {
+  animation: fadeSlideIn 300ms ease-in-out;
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* === Picks.css (replace previous toolbar rules) === */
+
+ion-row.picks-filters {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  /* one solid colour all the way up */
+  background: #22215d;
+
+  /* 30 pt top pad for the island + 10 pt bottom pad for breathing room */
+  padding: 30pt 10pt 10pt;
+
+  /* overall depth (30 + 10 + button area ≈ 100 pt) */
+  min-height: 100pt;
+
+  display: flex;
+  align-items: flex-end;        /* button hugs bottom edge */
+  justify-content: left;
+
+  /* slide-in animation */
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform .28s ease, opacity .28s ease;
+  z-index: 100;
+}
+ion-row.picks-filters.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* move content VISUALLY (no reflow) when the bar is visible */
+.profile-card-container,
+.page-title {
+  transition: transform .28s ease;
+}
+.filters-visible .profile-card-container,
+.filters-visible .page-title {
+  transform: translateY(100pt);   /* same depth as the bar */
+}
+
+/* NEW: empty-state cards */
+.prelaunch,                      /* “No new Profiles to view!” */
+ion-card.out-of-profiles {       /* flower + refresh button   */
+  transition: transform .28s ease;
+}
+
+/* when bar is visible, move ALL of them down 100 pt */
+.filters-visible .profile-card-container,
+.filters-visible .page-title,
+.filters-visible .prelaunch,
+.filters-visible ion-card.out-of-profiles {
+  transform: translateY(100pt);   /* same depth as picks-filters */
+}

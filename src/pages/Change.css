@@ -1,0 +1,22 @@
+ion-row.surrounding-room {
+  margin: 20pt;
+}
+
+
+ion-list.change-projects {
+  width: 100%;
+  padding-top: 15pt;
+  padding-left: 10pt;
+  padding-right: 10pt
+}
+
+ion-list.change-projects ion-item{
+  border-radius: 8pt;
+  margin: 5pt
+  
+}
+
+ion-list.change-projects ion-item ion-label h2{
+  font-size: 20px;
+  
+}

@@ -1,0 +1,55 @@
+.convo-starter ion-label.the-actual-message {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+    white-space: pre-wrap !important;
+}
+
+.convo-starter ion-label.the-actual-message-but-small {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    white-space: pre-wrap !important;
+}
+
+.convo-starter ion-item.outgoing {
+    margin-left: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-primary);
+    color: var(--ion-color-white);
+    white-space: pre-wrap;
+    user-select: all;
+    -webkit-user-select: all;
+}
+
+.convo-starter ion-item.outgoing {
+    margin-left: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-primary);
+    color: var(--ion-color-white);
+    white-space: pre-wrap;
+    user-select: all;
+    -webkit-user-select: all;
+    font-size: 10pt
+}
+
+.convo-starter ion-item.incoming {
+    margin-right: 100px;
+    max-width: calc(100% - 100px);
+    border-top-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    --background: var(--ion-color-gray);
+    white-space: pre-wrap;
+    color: black;
+    user-select: all;
+    -webkit-user-select: all;
+    --border-width: 0;
+}
+

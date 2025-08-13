@@ -1,0 +1,8 @@
+ion-toast.websocket-toast-offset {
+   transform: translateY(-80px);
+   --box-shadow: none;
+}
+
+ion-toast.md::part(toast) {
+  box-shadow: none !important;
+}

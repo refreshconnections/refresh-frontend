@@ -1,0 +1,37 @@
+ion-row.filter-row {
+    background: #22215e;
+}
+
+ion-row.filter-row ion-item {
+    --background: #22215e;
+    width: 100%
+}
+
+ion-row.filter-row ion-item ion-label{
+    color: white !important
+}
+
+ion-row.filter-row ion-item ion-label p{
+    color: lightgray
+}
+
+ion-row.filter-row ion-searchbar {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none
+}
+
+ion-item.dont-grey-disabled ion-label {
+    --opacity: 1;
+    opacity: 1 !important;
+  }
+  
+/* Optional: force the checkmark color to match active theme */
+ion-item.dont-grey-disabled ion-checkbox {
+    color: var(--ion-color-primary);
+    --opacity: 1;
+    opacity: 1 !important;
+}
+
+ion-card.distance-radius {
+    box-shadow: none
+}

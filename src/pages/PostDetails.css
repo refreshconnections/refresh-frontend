@@ -1,0 +1,173 @@
+ion-row.post-padding-top-bottom {
+  padding-top: 30pt;
+  padding-bottom: 40pt;
+}
+
+ion-card.post-card {
+  box-shadow: none;
+  background: var(--ion-color-white);
+  padding: 20px;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+ion-card.post-card ion-card-title {
+  padding: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
+}
+
+
+ion-card.post-card ion-card-subtitle {
+  padding: 5px;
+  padding-top: 10px;
+  padding-bottom: 0px;
+}
+
+ion-card.post-card ion-card-subtitle .justify-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+ion-card.post-card ion-card-subtitle .justify-center {
+  display: flex;
+  justify-content: center;
+}
+
+ion-card.post-card ion-card-content {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+ion-card.post-card .post-likes{
+  padding: 10px;
+}
+
+ion-card.post-card .post-likes ion-button {
+  height: 1em;
+  --padding-top: 0;
+  --padding-start: 0;
+  font-size: 25px
+}
+
+ion-card.post-card .post-likes ion-text {
+  display: flex;
+  align-self: center;
+}
+
+.css-fix {
+  white-space: pre-wrap; /* or pre-line */
+}
+
+ion-row.controls {
+  justify-content: center;
+  padding-bottom: 15pt;
+}
+
+ion-row.filters-and-post {
+  justify-content: space-around;
+  padding-top: 30px;
+}
+
+ion-row.filter-buttons {
+  margin-top: 30px;
+  background: #22215e;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+ion-col.filter-column {
+  padding-left: 10px;
+  padding-right: 10px
+}
+
+ion-col.filter-column ion-chip {
+  background: var(--ion-color-gray)
+}
+
+ion-footer.add-comment ion-textarea {
+  padding: 5px;
+  border: solid;
+  border-radius: 10px;
+  border-color: var(--ion-color-white);
+  background: var(--ion-color-white);
+  padding-left: 10pt
+}
+
+ion-footer.add-comment {
+  justify-content: center;
+  display: flex;
+  background: #f2f2fd;
+  padding-bottom: 10pt;
+  padding-top: 10pt;
+}
+
+ion-footer.add-comment ion-row {
+  width: 95%;
+}
+
+
+ion-button.send-button {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  padding-left: 5pt
+}
+
+ion-list.comments {
+  background: var(--ion-color-white);
+}
+
+ion-list.comments ion-item.selfwritten{
+  --background: var(--ion-color-midblue);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.selfwritten ion-label{
+  padding-left: 5pt
+}
+
+ion-list.comments ion-item.written{
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.written ion-label{
+  padding-left: 5pt
+}
+
+ion-list.comments ion-item.inputted{
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-label {
+  white-space: normal !important
+}
+
+ion-list.comments ion-label h3{
+  font-size: 13pt;
+}
+
+ion-list.comments ion-label h4{
+  color: var(--ion-color-black);
+  font-size: 11pt;
+}
+
+ion-label .name-avatar {
+  display: flex;
+  align-items: center;
+}
+
+ion-label .name-avatar ion-avatar {
+  width: 20pt;
+  height: 20pt;
+  margin-right: 5pt;
+}
+
+ion-row.comment-username ion-button{
+  width: 100%;
+  text-wrap: wrap;
+  --padding-top: 15pt;
+  --padding-bottom: 15pt;
+}

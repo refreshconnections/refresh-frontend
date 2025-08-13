@@ -1,0 +1,224 @@
+.scroll {
+    justify-content: flex-start; 
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+  }
+  .scroll ion-col { 
+      display: flex;
+      flex-wrap: nowrap;
+  }
+
+ion-card .fit-card {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom-left-radius: 8pt;
+  border-bottom-right-radius: 8pt;
+}
+
+ion-card.margins {
+  margin-top: 0;
+  margin-inline: 0;
+  border-top-left-radius: 0pt;
+  border-top-right-radius: 0pt;
+  box-shadow: none;
+}
+
+ion-card.margins ion-row.banner{
+  padding-top: 0;
+  background: #22215d;
+  justify-content: center;
+}
+
+ion-row.bio {
+  margin-bottom: 8pt;
+  padding-left: 0px;
+}
+
+ion-text.bold {
+  font-weight: 600;
+}
+
+ion-card .no-padding {
+  padding-left: 0px;
+}
+
+.swiper {
+  margin-top: 20px
+}
+
+.swiper-slide ion-card {
+  background-color: var(--ion-color-white);
+  margin: 0px;
+  box-shadow: none;
+}
+
+.profile-grid .swiper-slide ion-card img{
+  width: 100%;
+  max-height: 360px;
+}
+
+.swiper-slide ion-card ion-card-subtitle{
+  text-align: center;
+  text-transform: none;
+  min-height: 12pt
+}
+
+ion-card.margins .alt-desc-profile {
+    position: absolute;
+    top: 10pt;
+    right: 20pt;
+}
+
+ion-card.margins ion-card-header.leave-end-room ion-card-title{
+  max-width: 85%
+}
+
+ion-card.margins ion-card-header.leave-end-room ion-card-subtitle{
+  max-width: 85%
+}
+
+.swiper-slide ion-card ion-card-subtitle .alt-desc{
+  position: absolute;
+  right: 10pt
+}
+
+.profilepic-wrapper {
+  width: 100%;
+  max-height: 400px;
+  aspect-ratio: 1 / 1; /* maintain square shape or adjust to your needs */
+  background-color: var(--ion-background-color); /* light grey placeholder */
+  overflow: hidden;
+  position: relative;
+}
+
+.profilepic {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+ion-item.icons svg {
+  padding: 2px
+}
+
+ion-accordion-group .profile-card {
+  border-radius: 10px;
+}
+  
+.profile-card ion-accordion {
+  background: var(--ion-color-white);
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.profile-card ion-accordion ion-list {
+  background: var(--ion-color-white);
+}
+
+.profile-card ion-accordion ion-item {
+  --background: var(--ion-color-white);
+  color: var(--ion-color-black)
+}
+
+.profile-card ion-accordion ion-note.covid-note {
+  color: var(--ion-color-black)
+}
+
+ion-button.looking-for-buttons {
+  --padding-start: 0;
+  --padding-end: 0;
+  font-size: 21px;
+}
+
+ion-popover {
+  --width: auto
+}
+
+ion-popover ion-content.no-scroll {
+  --overflow: hidden;
+  text-align: center;
+  z-index: 10000000000000000 !important
+}
+
+.swiper-horizontal {
+  max-height: 400px;
+}
+
+.swiper-pagination {
+  padding-top: 5px;
+  position: relative !important;
+}
+
+.css-fix {
+  white-space: pre-wrap; /* or pre-line */
+}
+
+ion-label h2.wrap {
+  text-wrap: wrap;
+  white-space: normal;
+}
+
+ion-list.limitheight {
+  max-height: 160pt
+}
+
+
+
+ion-row.show-alt {
+  position: absolute;
+  bottom: 15pt;
+  padding: 10pt;
+  border-radius: 10pt;
+  width: 100%;
+}
+
+ion-row.show-alt ion-text{
+  min-width: 100%;
+  background: var(--ion-color-white);
+  padding: 10pt;
+  border-radius: 10pt;
+  text-align: center;
+}
+
+
+ion-row.show-alt-profile {
+    position:absolute;
+    bottom: 10pt;
+    padding: 10pt;
+    border-radius: 10pt;
+    width: 100%;
+}
+
+ion-row.show-alt-profile ion-text{
+  min-width: 100%;
+  background: var(--ion-color-white);
+  padding: 10pt;
+  border-radius: 10pt;
+  text-align: center;
+}
+
+.alert-radio-label.sc-ion-alert-md {
+  overflow: visible;
+  white-space: pre-wrap;
+}
+
+.profilepic-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.profilepic.loading {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.profilepic.loaded {
+  opacity: 1;
+  transition: opacity 0.2s ease-in-out;
+}

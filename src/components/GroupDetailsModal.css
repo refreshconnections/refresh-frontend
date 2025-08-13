@@ -1,0 +1,11 @@
+ion-card.group-details{
+    margin-top: 20%;
+    margin-inline: 0;
+    border-top-left-radius: 0pt;
+    border-top-right-radius: 0pt;
+    box-shadow: none;
+}
+
+ion-card.group-details ion-item {
+  --inner-border-width: 0
+}

@@ -1,0 +1,60 @@
+ion-row.poll {
+    background: var(--ion-color-white);
+    padding: 40px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0pt;
+    padding-bottom: 0;
+}
+
+ion-card.opened-post ion-row.poll {
+    padding: 10px 10px 40px 10px !important
+    
+}
+
+ion-row.poll ion-list{
+    background: var(--ion-color-white);
+    
+}
+
+ion-row.poll ion-list ul{
+    padding-inline-start: 0
+    
+}
+
+
+
+
+ion-row.poll ion-list ion-item{
+    --background: var(--ion-color-white);
+    --padding-start: 0
+    --padding-end: 0
+    
+}
+
+ion-row.poll ion-list ion-item.selfvote{
+    /* border: dotted; */
+    box-shadow: 0 0 10px rgba(var(--ion-color-success-rgb), 0.5);
+    
+}
+
+ion-col.right-percentage {
+    display:flex;
+    justify-content: right;
+    --inner-padding: 0
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+ion-col.poll-option-text {
+  word-break: break-word;
+  white-space: normal;
+}
+
+ion-popover ion-content.no-scroll {
+  --overflow: hidden;
+  text-align: center;
+  z-index: 10000000000000000 !important
+}

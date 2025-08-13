@@ -1,0 +1,65 @@
+
+
+ion-grid.store-grid ion-grid,ion-col{
+    padding: 0
+}
+
+ion-grid.store-grid ion-row.section-title{
+    margin-top: 20pt;
+    padding: 10pt;
+    background: #22215e;
+    color: white;
+    font-size: 18pt;
+    justify-content: center;
+}
+
+ion-grid.store-grid ion-card {
+    background: var(--ion-color-primary);
+    margin: 10pt;
+    padding-top: 10pt;
+    padding-bottom: 10pt;
+}
+
+ion-grid.store-grid ion-card.change ion-row {
+    justify-content: center
+}
+
+ion-grid.store-grid ion-card.change img {
+    max-width: 50%;
+}
+
+
+ion-grid.store-grid ion-card-title {
+    color: var(--ion-color-white);
+    font-size: 14pt;
+    text-align: center;
+    padding-left: 10pt;
+    padding-right: 10pt
+}
+
+ion-grid.store-grid ion-card-subtitle {
+    color: var(--ion-color-white);
+    font-size: 10pt;
+    text-align: center;
+}
+
+ion-col.sub-description {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+ion-col.sub-description ul{
+    padding-inline-start: 20px;
+}
+
+ion-col.sub-description li{
+    font-size: 12pt;
+    color: var(--ion-color-navy);
+}
+
+ion-row.content-bottom {
+    background-color: var(--ion-background-color);
+    justify-content: center;
+    padding-bottom: 10px;
+}

@@ -1,0 +1,23 @@
+ion-content.activity ion-note.header {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    background: #22215e;
+    color: white;
+    font-size: 14pt;
+    padding: 10pt;
+  }
+
+
+  
+ion-item.streak {
+    border-radius: 8pt;
+    margin: 5pt
+    
+}
+  
+ion-item.streak ion-label h2{
+    font-size: 20px;
+    
+}
+  

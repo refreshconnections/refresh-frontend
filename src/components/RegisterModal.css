@@ -1,0 +1,11 @@
+ion-toolbar.modal-title {
+    padding-top: 50px! important;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
+
+ion-item.terms {
+    --padding-top: 20px;
+    --padding-bottom: 10px;
+    --border-style: 0;
+}

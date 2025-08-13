@@ -1,0 +1,8 @@
+.profile-photos-cropper .reactEasyCrop_Container {
+    width: 100%;
+    height: 100%
+}
+
+.profile-photos-cropper .reactEasyCrop_Container img{
+    max-width: none;
+}

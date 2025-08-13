@@ -1,0 +1,15 @@
+ion-toolbar.modal-title {
+    padding-top: 50px! important;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
+
+ion-list.prof-creation ion-item {
+    --background: var(--ion-color-white)
+}
+
+ion-list.prof-creation  {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background: var(--ion-color-white)
+}

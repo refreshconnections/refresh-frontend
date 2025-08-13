@@ -1,0 +1,8 @@
+ion-card.error-img {
+    text-align: center;
+}
+
+ion-card.error-img img{
+    max-width: 50%;
+    padding-top: 30px
+}

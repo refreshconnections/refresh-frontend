@@ -1,0 +1,9 @@
+ion-card.loading-card {
+    box-shadow: none;
+    display: flex;
+    justify-content: center;
+}
+
+ion-card.loading-card img {
+    max-width: 50%
+}

@@ -1,0 +1,51 @@
+
+  
+  ion-card.email-builder {
+    box-shadow: none;
+    background: var(--ion-color-white);
+    padding: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    width: 100%;
+    margin-bottom: 0;
+    margin-right: 0;
+    margin-left: 0;
+    margin-top: 30pt;
+  }
+
+  ion-card h2.css-fix {
+    white-space: pre-wrap; /* or pre-line */
+  }
+  
+  ion-card.email-builder ion-card-title {
+    padding-top: 10px;
+    padding-bottom: 0px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  ion-card.email-builder ion-card-subtitle {
+    padding: 16px;
+  }
+
+  .css-fix {
+    white-space: pre-wrap; /* or pre-line */
+  }
+
+
+  
+  ion-card.email-builder-creation {
+    box-shadow: none;
+    background: var(--ion-color-white);
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 0;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  ion-row.email-ready-to-send-button {
+    padding: 20px
+  }
+
+  

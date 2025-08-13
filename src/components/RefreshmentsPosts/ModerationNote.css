@@ -1,0 +1,26 @@
+.moderation-modal {
+  --backdrop-opacity: 0 !important; /* Safety: removes background dimming if still applied */
+}
+
+.moderation-modal .modal-wrapper {
+  height: 80vh;
+  max-height: 80vh;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  background: #f7f7fc; /* or your app's card/modal background */
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); /* gives floating sheet feel */
+  overflow: hidden;
+}
+
+.moderation-description {
+    font-size: 10pt;
+    align-items: center;
+    border-radius: 10pt;
+    background: var(--ion-background-color);
+    padding: 2pt;
+}
+
+.moderation-wrapper .moderation-description ion-text{
+    font-size: 9pt;
+    color: var(--ion-color-navy);
+}

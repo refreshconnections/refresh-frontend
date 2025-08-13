@@ -1,0 +1,150 @@
+/* Modal content container itself */
+ion-modal.like-message-alert-modal::part(content) {
+  width: 90%;
+  max-width: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  background: var(--ion-background-color);
+  display: flex;
+  flex-direction: column;
+  height: 65vh;
+}
+
+/* Expand modal when keyboard is open */
+ion-modal.like-message-alert-modal.keyboard-open::part(content) {
+  height: 95vh;
+}
+
+ion-modal.like-message-alert-modal ion-header {
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+ion-modal.like-message-alert-modal ion-toolbar {
+  --min-height: 44px;
+  height: 44px;
+  padding-top: 0 !important;
+  padding-bottom: 0;
+}
+
+ion-modal.like-message-alert-modal .like-message-toolbar {
+  --padding-start: 0;
+  --padding-end: 0;
+  padding: 0;
+  height: 56px; /* Match native IonToolbar height */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+ion-modal.like-message-alert-modal .toolbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 12px;
+  overflow: hidden;
+}
+
+ion-modal.like-message-alert-modal .toolbar-side {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+ion-modal.like-message-alert-modal .toolbar-title {
+  flex: 0 1 auto;
+  text-align: center;
+  font-weight: 500;
+  font-size: 17px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+/* Prevent stretching from IonContent */
+/* .like-message-alert-modal-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  overflow: hidden;
+} */
+
+.like-message-alert-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: 100%; /* Do not grow larger than modal */
+  overflow: hidden;
+}
+
+/* Actual modal container */
+.like-message-alert-modal-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  padding-bottom: 10px;
+  height: 100%;
+
+}
+
+/* Ensure IonContent behaves properly */
+.like-message-alert-modal-wrapper ion-content {
+  overflow: hidden;
+}
+
+/* Modal inner spacing */
+.modal-body {
+  padding: 16px;
+  overflow: scroll;
+  flex-grow: 1;
+}
+
+/* Textarea styling */
+.textarea-item {
+  --background: var(--ion-color-white);
+  border-radius: 12px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --min-height: 40px;
+}
+
+/* Character counter */
+.char-count {
+  float: right;
+  font-size: 0.8em;
+  padding-right: 4px;
+  margin-top: 4px;
+  color: var(--ion-color-medium);
+}
+
+/* Footer button spacing */
+.modal-footer {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease;
+  overflow: scroll;
+}
+
+.floating-send-button {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 32px);
+  max-width: 400px;
+  padding: 0 16px;
+  box-sizing: border-box;
+}

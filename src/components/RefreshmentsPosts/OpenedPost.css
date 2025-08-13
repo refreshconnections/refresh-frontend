@@ -1,0 +1,164 @@
+
+  
+  ion-card.opened-post {
+    box-shadow: none;
+    background: var(--ion-color-white);
+    padding: 20px;
+    width: 100%;
+    margin-bottom: 0;
+    margin-right: 0;
+    margin-left: 0;
+    margin-top: 30pt;
+  }
+  
+  ion-card.opened-post ion-card-title {
+    padding: 16px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  ion-card.opened-post ion-card-subtitle {
+    padding: 16px;
+    font-weight: normal;
+    color: var(--ion-color-darkposttext)
+  }
+
+  ion-card.opened-post ion-card-content {
+    color: var(--ion-color-darkposttext)
+  }
+
+  .css-fix {
+    white-space: pre-wrap; /* or pre-line */
+  }
+
+  ion-footer.create-comment {
+    border-top: solid;
+    background: var(--ion-color-white);
+    border-color: var(--ion-color-navy);
+  }
+
+  ion-footer.create-comment ion-item{
+    --background: var(--ion-color-white);
+    padding-bottom: 5pt
+  }
+
+  ion-footer.create-comment ion-textarea {
+    padding: 5px;
+    border: solid;
+    border-radius: 10px;
+    border-color: var(--ion-color-white);
+    background: var(--ion-color-white);
+    padding-left: 10pt;
+  }
+  
+
+  ion-footer.create-comment ion-item.inputted ion-label.reply {
+    background: var(--ion-color-navy);
+    color: var(--ion-color-white);
+    padding: 5pt;
+    border-radius: 5pt
+  }
+  
+  ion-footer.create-comment ion-item.inputted ion-label.reply p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: var(--ion-color-white);
+
+}
+ion-footer.create-comment ion-item.inputted ion-button.x {
+    --padding-start: 0.2em;
+    --padding-end: 0.2em;
+}
+
+.action-sheet-group button.disabled-action-button {
+    cursor: default;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+ion-card-content.post-markdown {
+  padding-inline-start: 16px;
+  padding-inline-end: 16px;
+}
+
+ion-card-content.post-markdown hr{
+  height: 1px;
+  border-width: 1pt;
+  border-style: solid;
+  box-sizing: border-box;
+}
+
+ion-card-content.post-markdown p {
+  font-size: 16px
+}
+
+.post-markdown ul {
+    margin-block-start: 0em;
+    margin-block-end: 0em;
+    line-height: 1.1;
+    padding-inline-start: 15pt;
+
+}
+
+.post-markdown strong {
+    color: var(--ion-color-black)
+}
+
+.post-markdown h1 {
+    font-size: 22px;
+    font-weight: 700
+}
+
+.post-markdown h2 {
+    font-size: 20px;
+    font-weight: 700
+}
+
+.post-markdown h3 {
+    font-weight: 700;
+    color: var(--ion-color-danger)
+}
+
+.post-markdown h4 {
+    background: var(--ion-color-lightyellow);
+    display: inline-flex
+}
+
+.post-markdown h5 {
+    background: var(--ion-color-tertiary);
+    display: inline-flex
+}
+
+ion-card-subtitle ion-col.byline-col {
+    display: flex;
+    align-items: center;
+}
+
+ion-row.sensitivity-note {
+  justify-content: center;
+  background: var(--ion-color-midblue);
+  padding: 10pt;
+  border-radius: 10pt;
+  margin-bottom: 10pt;
+}
+
+ion-row.comment-instructions-note {
+    justify-content: center;
+    background: var(--ion-color-lightyellow);
+    padding: 10pt;
+    border-radius: 10pt;
+    margin-bottom: 10pt;
+}
+
+ion-row.comment-instructions-note ion-note{
+    color: var(--ion-color-black)
+}
+
+ion-textarea.comment-creator {
+  max-height: 300pt;
+  overflow: scroll;
+}

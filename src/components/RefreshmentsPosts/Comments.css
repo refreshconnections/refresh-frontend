@@ -1,0 +1,99 @@
+ion-list.comments {
+  background: var(--ion-color-white);
+}
+
+ion-list.comments ion-item.replyingto{
+  --background: var(--ion-color-lightyellow);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.selfwritten{
+  --background: var(--ion-color-midblue);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.written{
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.selfrecent{
+  --background: var(--ion-color-longcovid);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item.selfrecent ion-label, ion-list.comments ion-item.writtenrecent ion-label{
+  color: black
+}
+
+ion-list.comments ion-item.selfrecent h4, ion-list.comments ion-item.writtenrecent h4{
+  color: black
+}
+
+ion-list.comments ion-item.writtenrecent{
+  --background: var(--ion-color-pop);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-item ion-label{
+  padding-left: 5pt
+}
+
+ion-list.comments ion-item.inputted{
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+}
+
+ion-list.comments ion-label {
+  white-space: normal !important
+}
+
+ion-list.comments ion-label h3{
+  font-size: 13pt;
+}
+
+ion-list.comments ion-label h4{
+  color: var(--ion-color-black);
+  font-size: 11pt;
+}
+
+ion-label .name-avatar {
+  display: flex;
+  align-items: center;
+}
+
+ion-label .name-avatar ion-avatar {
+  width: 20pt;
+  height: 20pt;
+  margin-right: 5pt;
+}
+
+ion-row.comment-username ion-button{
+  width: 100%;
+  text-wrap: wrap;
+  --padding-top: 15pt;
+  --padding-bottom: 15pt;
+}
+
+.borderwtail {
+  margin: 0px;
+  border-bottom-left-radius: 15pt;
+  border-style: solid;
+  border-width: 0pt 0pt 0pt 10pt;
+  border-color: var(--ion-color-medium)
+}
+
+ion-item .commentdiv {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-top: 5pt;
+}
+
+.borderwtail ul{
+  padding-left: 10pt;
+}
+
+.borderwtail ul ion-item .commentdiv {
+  padding-left: 5pt;
+}

@@ -1,0 +1,83 @@
+ion-fab.very-top ion-fab-button {
+  margin-top: 20px
+}
+
+:root.md {
+  ion-fab.very-top ion-fab-button {
+    margin-top: 28px;
+  }
+}
+
+ion-fab.very-bottom ion-fab-button{
+  margin-bottom: 20px;
+  height: 70px;
+  width: 70px;
+}
+
+ion-fab-button.very-bottom-small{
+  margin-bottom: 20px;
+  height: 40px;
+  width: 40px;
+}
+
+ion-fab-button.navy{
+  --background: var(--ion-color-navy);
+  --color: var(--ion-color-white)
+}
+
+ion-fab-button.very-bottom-larger-font{
+  font-size: 15pt;
+  margin-bottom: 20px;
+  height: 70px;
+  width: 70px;
+}
+
+ion-fab.very-bottom ion-fab-button ion-icon {
+  font-size: 35px;
+}
+
+ion-row.just-some-extra-space {
+  margin-top: 40px
+}
+
+
+ion-fab-list.with-label ion-fab-button[data-label] {
+  position: relative;
+} 
+ion-fab-list.with-label ion-fab-button[data-label]::after {
+  position: absolute;
+  content: attr(data-label);
+  z-index: 1;
+  left: 75px;
+  bottom: 15px;
+  background-color: var(--ion-color-gray);
+  padding: 9px;
+  border-radius: 15px;
+  color: black;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12);
+}
+
+ion-fab-list.with-label.fab-list-side-top {
+  bottom: 20px
+}
+
+ion-row.message-bubble {
+  padding-top: 100px;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+ion-row.message-bubble ion-card {
+  padding: 10pt;
+  width: 100%;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 0px;
+  --background: var(--ion-color-gray);
+  white-space: pre-wrap;
+  color: black;
+  user-select: all;
+  -webkit-user-select: all;
+  --border-width: 0;
+}

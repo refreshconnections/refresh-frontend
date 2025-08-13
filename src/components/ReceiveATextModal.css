@@ -1,0 +1,25 @@
+ion-content.receive-a-text ion-card.recieve-a-text-card{
+  margin-top: 0;
+  margin-inline: 0;
+  box-shadow: none;
+  background-color: var(--ion-background-color);
+  display: flex;
+  align-items: center;
+  flex-direction: column
+}
+
+ion-card.recieve-a-text-card ion-card-content {
+  height:70%;
+  flex-direction: column;
+  justify-content: center;
+  display: flex;
+  padding: 40px
+  
+}
+
+ion-card.recieve-a-text-card ion-card-content .choice-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 60px;
+}

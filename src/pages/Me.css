@@ -1,0 +1,49 @@
+ion-content ion-row.me-title {
+    padding-top: 50px;
+    justify-content: center;
+    background: #22215d;
+    padding-bottom: 10px
+}
+
+ion-content ion-row.me-title img{
+    max-width: 50%
+}
+
+ion-grid.me-dashboard ion-grid,ion-col{
+    padding: 0
+}
+
+ion-grid.me-dashboard ion-row{
+    margin-top: 10pt
+}
+
+ion-grid.me-dashboard ion-card {
+    background: var(--ion-color-primary);
+    margin: 10pt;
+    padding-top: 10pt;
+    padding-bottom: 10pt;
+}
+
+ion-grid.me-dashboard ion-card-title {
+    position: absolute;
+    top: 40%;
+    left: 46%;
+    color: white;
+    font-size: 1.3em;
+    max-width: 60%;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none
+}
+
+@media only screen and (max-width: 380px) {
+    ion-grid.me-dashboard ion-card-title {
+        position: absolute;
+        top: 40%;
+        left: 42%;
+        color: white;
+        font-size: 1.2em;
+        max-width: 60%;
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none
+    }
+}

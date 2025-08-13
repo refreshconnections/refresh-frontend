@@ -1,0 +1,30 @@
+ion-row.unpause-profile  {
+    text-align: center;
+    padding: 30pt;
+    justify-content: center
+}
+
+ion-card.create-profile-button {
+    box-shadow: none;
+}
+
+ion-card.create-profile-button ion-card-title {
+    text-align: center;
+    padding: 10pt
+}
+
+ion-card.create-profile-button ion-card-subtitle {
+    text-align: center;
+    padding: 10pt
+}
+
+ion-card.created-no-shadow {
+    box-shadow: none;
+}
+
+.alert-button .disabled-alert-button {
+    cursor: default;
+    opacity: 0.5;
+    pointer-events: none;
+}
+

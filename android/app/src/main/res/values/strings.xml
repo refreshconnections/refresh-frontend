@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Refresh Connections</string>
+    <string name="title_activity_main">Refresh Connections</string>
+    <string name="package_name">com.</string>
+    <string name="custom_url_scheme">com.refresh-connections.app</string>
+</resources>

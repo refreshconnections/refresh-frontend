@@ -1,0 +1,162 @@
+.scroll {
+    justify-content: flex-start; 
+    flex-wrap: nowrap;
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+  }
+  .scroll ion-col { 
+      display: flex;
+      flex-wrap: nowrap;
+  }
+
+ion-card .fit-card {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom-left-radius: 8pt;
+  border-bottom-right-radius: 8pt;
+}
+
+ion-card.margins {
+  margin-top: 0;
+  margin-inline: 0;
+  border-top-left-radius: 0pt;
+  border-top-right-radius: 0pt;
+  box-shadow: none;
+}
+
+ion-card.margins ion-card-content.no-gutter {
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+}
+
+ion-row.bio {
+  margin-bottom: 8pt;
+  padding-left: 0px;
+}
+
+ion-text.bold {
+  font-weight: 600;
+}
+
+ion-card .no-padding {
+  padding-left: 0px;
+}
+
+ion-card-content .no-padding-cc {
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-inline-start: 0px;
+  padding-inline-end: 0px;
+}
+
+ion-card-content .no-padding-cc ion-list{
+  background: var(--ion-color-white)
+}
+
+ion-card-content.no-padding-cc ion-item {
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+ion-card-content.no-padding-cc ion-grid.editgrid ion-accordion-group ion-accordion-group.in-list {
+  width: 100% !important;
+}
+
+ion-accordion-group.in-list ion-accordion {
+  border-radius: 0pt
+}
+
+ion-card-content.no-padding-cc ion-note h2 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+ion-grid.picture-grid {
+  margin-left: 20px;
+
+}
+ion-grid.picture-grid ion-row {
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+ion-grid.picture-grid ion-row label {
+  margin-left: 10px;
+}
+
+ion-grid.picture-grid img{
+  width: 100px;
+  height: 100px;
+}
+
+input[type="file"] {
+  display: none;
+}
+.custom-file-upload {
+  border-radius: 10pt;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  height: 50px;
+}
+
+ion-list ion-item.looking-for-list-title {
+  --inner-padding-end: 0;
+  --padding-start: 0px;
+  --padding-end: 0px;
+}
+
+ion-list.looking-for-list {
+  width: 100%;
+  background: var(--ion-color-white);
+}
+
+ion-col.col-right-padding {
+  padding-right: 20px
+}
+
+ion-item.height-select ion-item {
+  width: 50%
+}
+
+ion-item.pronoun-select ion-item {
+  width: 100%;
+  --padding-start: 0;
+}
+
+ion-grid.editgrid {
+  background: var(--ion-color-white);
+  border-radius: 10pt;
+}
+
+ion-grid.editgrid ion-accordion {
+  border-radius: 10pt;
+  background-color: var(--ion-color-white) !important
+}
+
+ion-grid.editgrid ion-item {
+  --background: var(--ion-color-white);
+  color: var(--ion-color-black)
+}
+
+ion-grid.editgrid ion-accordion.not-the-bottom {
+  margin-bottom: 5pt;
+}
+
+.css-fix {
+  white-space: pre-wrap; /* or pre-line */
+}
+
+ion-row.list-button-row {
+  justify-content: end;
+  padding-right: 20pt;
+}
+
+ion-list.lightyellowitems ion-item{
+  --background: var(--ion-color-lightyellow)
+}
+
+ion-grid.editgrid ion-checkbox.checkbox-disabled {
+  opacity: 0.6
+}

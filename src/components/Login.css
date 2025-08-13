@@ -1,0 +1,47 @@
+
+
+ion-item.userpass {
+    --background: var(--ion-color-white);
+    --border-radius: 10px;
+    --inner-border-width: 0;
+    margin-bottom: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+ion-item.userpass ion-input {
+    --padding-top: 20px;
+    --padding-bottom: 20px;
+}
+
+ion-row.login-buttons {
+    margin: 15px
+}
+
+ion-row.forgot-password {
+    justify-items: center;
+    display: flex;
+    justify-content: center;
+}
+
+ion-content ion-row.login-page-title {
+    justify-content: center;
+    padding-top: 40pt;
+}
+
+ion-content ion-row.login-page-title img {
+    padding-top:20px;
+    max-height: 130pt;
+}
+
+:root.ion-palette-dark.ios ion-row.login-page-title img.dark-dont-show, :root.ion-palette-dark.md ion-row.login-page-title img.dark-dont-show {
+    display: none;
+  }
+  
+ion-row.login-page-title img.dark-show, ion-row.login-page-title img.dark-show {
+    display: none;
+}
+  
+:root.ion-palette-dark.ios ion-row.login-page-title img.dark-show, :root.ion-palette-dark.md ion-row.login-page-title img.dark-show {
+    display: block !important;
+}

@@ -1,0 +1,27 @@
+
+  
+  ion-card.other {
+    box-shadow: none;
+    background: var(--ion-color-white);
+    padding: 20px;
+    padding-bottom: 10px;
+    width: 100%;
+    margin-bottom: 0;
+    margin-right: 0;
+    margin-left: 0;
+    margin-top: 30pt;
+  }
+  
+  ion-card.other ion-card-title {
+    padding-top: 25px;
+    padding-bottom: 0px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  ion-card.other ion-card-subtitle {
+    padding: 16px;
+  }
+
+
+  

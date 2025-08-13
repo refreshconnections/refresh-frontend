@@ -1,0 +1,27 @@
+ion-content ion-row.page-title {
+    padding-top: 50px;
+    justify-content: center
+}
+
+ion-content ion-row.page-title ion-text h1 {
+    font-weight: 700;
+}
+
+ion-content ion-row.page-title img {
+    padding-top:20px;
+    max-height: 40pt
+}
+
+ion-content ion-row.page-title.bigger img {
+    padding-top:20px;
+    max-height: 45pt
+}
+
+ion-button.profile-save-button {
+    margin-bottom: 80px
+}
+
+.medium-gray {
+    color: var(--ion-color-medium)
+}
+
