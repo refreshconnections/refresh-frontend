@@ -49,23 +49,23 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
   const [presentRadiusAlert] = useIonAlert();
 
-const hasSetLocalPostsEverywhere = useRef(false);
+  const hasSetLocalPostsEverywhere = useRef(false);
 
-const [localPostsEverywhere, setLocalPostsEverywhereRaw] = useState<boolean>(false);
+  const [localPostsEverywhere, setLocalPostsEverywhereRaw] = useState<boolean>(false);
 
-const setLocalPostsEverywhere = (val: boolean) => {
-  hasSetLocalPostsEverywhere.current = true;
-  setLocalPostsEverywhereRaw(val);
-};
+  const setLocalPostsEverywhere = (val: boolean) => {
+    hasSetLocalPostsEverywhere.current = true;
+    setLocalPostsEverywhereRaw(val);
+  };
 
-useEffect(() => {
-  if (!currentUserProfile) return; // Wait for profile to load
-  if (hasSetLocalPostsEverywhere.current) return;
+  useEffect(() => {
+    if (!currentUserProfile) return; // Wait for profile to load
+    if (hasSetLocalPostsEverywhere.current) return;
 
-  if (isPro(currentUserProfile.subscription_level) && radius && radius > 5000) {
-    setLocalPostsEverywhereRaw(true);
-  }
-}, [currentUserProfile, radius]);
+    if (isPro(currentUserProfile.subscription_level) && radius && radius > 5000) {
+      setLocalPostsEverywhereRaw(true);
+    }
+  }, [currentUserProfile, radius]);
 
 
   const options = [
@@ -284,14 +284,12 @@ useEffect(() => {
       <IonContent className="adv-filters">
 
         <IonItem lines="none">
-          <IonLabel className="ion-text-wrap">
-            <span style={{ fontSize: "17px" }}>Local posts</span>
-          </IonLabel>
           <IonToggle
             onIonChange={async e => setLocalPosts(e.detail.checked)}
             checked={localPosts}
             disabled={(!currentUserProfile?.location_point_lat || !currentUserProfile?.location_point_long)}
           >
+            Local posts
           </IonToggle>
 
         </IonItem>
@@ -306,13 +304,11 @@ useEffect(() => {
           <>
             {isPro(currentUserProfile?.subscription_level) &&
               <IonItem lines="none">
-                <IonLabel className="ion-text-wrap">
-                  <span style={{ fontSize: "17px" }}>Show local posts from everywhere</span>
-                </IonLabel>
                 <IonToggle
                   onIonChange={async e => setLocalPostsEverywhereRaw(e.detail.checked)}
                   checked={localPostsEverywhere}
                 >
+                  Show local posts from everywhere
                 </IonToggle>
               </IonItem>
             }
@@ -402,20 +398,19 @@ useEffect(() => {
             <IonGrid className="filter-grid" slot="content">
 
 
-              <IonRow>
+              <IonRow className="ion-padding">
 
-                <IonList className="refreshments-filters-list">
-                  <IonRadioGroup value={sortSelected} onIonChange={e => setSortSelected(e.detail.value)}>
+                <IonList className="sort-filters">
+                  <IonRadioGroup value={sortSelected} onIonChange={e => setSortSelected(e.detail.value)} >
                     {sortOptions.map((option) => (
-                      <IonItem key={option.value}>
+
                         <IonRadio
                           slot="start"
                           value={option.value}
                           disabled={!isCommunityPlus(currentUserProfile?.subscription_level) && option.value !== sortOptions[0].value}
-                        />
-                        <IonLabel>{option.label} {option.value !== sortOptions[0].value && <FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} />}</IonLabel>
+                        >{option.label} {option.value !== sortOptions[0].value && <FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} />}
+                        </IonRadio>
 
-                      </IonItem>
                     ))}
 
                   </IonRadioGroup>
@@ -437,16 +432,17 @@ useEffect(() => {
 
               <IonRow>
 
-                <IonList lines="none">
+                <IonList lines="none" class="categories-filters">
                   {options.map((option) => (
                     <IonItem key={option.value} className="dont-grey-disabled">
                       <IonCheckbox
-                        slot="start"
+                        labelPlacement="end"
                         onIonChange={(e) => handleCheckboxChange(option.value, e.detail.checked)}
                         disabled={selectedValues.includes(option.value) && !isCommunityPlus(currentUserProfile?.subscription_level) && ((localPosts && (selectedValues.length <= (allValues.length + allValuesLocal.length - 2))) || (!localPosts && (selectedValues.length <= (options.length - 2))))}
                         checked={selectedValues.includes(option.value)}
-                      />
-                      <IonLabel>{option.label}</IonLabel>
+                      >
+                      {option.label}
+                      </IonCheckbox>
 
                     </IonItem>
                   ))}
@@ -454,11 +450,11 @@ useEffect(() => {
                     localOptions.map((option) => (
                       <IonItem key={option.value}>
                         <IonCheckbox
-                          slot="start"
+                          labelPlacement="end"
                           onIonChange={(e) => handleCheckboxChange(option.value, e.detail.checked)}
                           checked={selectedValues.includes(option.value)}
-                        />
-                        <IonLabel>{option.label}</IonLabel>
+                        >
+                       {option.label}</IonCheckbox>
 
                       </IonItem>
                     ))}

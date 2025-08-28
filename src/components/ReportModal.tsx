@@ -138,7 +138,7 @@ const ReportModal: React.FC<Props> = (props) => {
                             name="details"
                             autoGrow={true}
                             autoCapitalize='sentences'
-                            onIonChange={e => setDetails(e.detail.value!)}
+                            onIonInput={e => setDetails(e.detail.value!)}
                             placeholder="Add specifics for the moderation team to check out."
                         />
                     </IonItem>

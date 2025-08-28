@@ -121,7 +121,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
                             required={true}
                             disabled={!(currentUserProfile?.username_last_updated == null || greaterThanThirtyDays(currentUserProfile?.username_last_updated))}
                             placeholder={currentUserProfile?.username}
-                            onIonChange={e => setUsername(e.detail.value!)}
+                            onIonInput={e => setUsername(e.detail.value!)}
                             maxlength={30}
                             counter
                             type="text" />

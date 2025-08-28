@@ -97,3 +97,39 @@ ion-item .commentdiv {
 .borderwtail ul ion-item .commentdiv {
   padding-left: 5pt;
 }
+
+.sort-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-label {
+  font-size: 14px;
+  white-space: normal;      
+  min-width: 110px;         
+  flex-shrink: 0;   
+}
+
+.sort-container .select-box {
+  border: 1px solid var(--ion-color-gray);
+  border-radius: 6px;
+  background: var(--ion-color-white);
+  width: 170px;
+  flex-shrink: 0;
+
+  --padding-start: 8px;
+  --padding-end: 28px; /* space for the icon, not too tight */
+  height: 30px;
+  font-size: 14px;
+  position: relative;
+}
+
+.select-box::part(icon) {
+  position: absolute;
+  right: 8px;              /* push arrow to the edge */
+  top: 50%;
+  transform: translateY(-50%);
+  margin-inline-start: 0;  /* remove Ionic’s extra gap */
+  pointer-events: none;
+}

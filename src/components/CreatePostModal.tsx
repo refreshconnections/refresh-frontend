@@ -307,7 +307,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     value={title}
                                     name="title"
                                     placeholder="Required"
-                                    onIonChange={e => setTitle(e.detail.value!)}
+                                    onIonInput={e => setTitle(e.detail.value!)}
                                     type="text"
                                     autoCapitalize='words'
                                 />
@@ -326,7 +326,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         <IonCard >
                             <IonItem color="white" lines="none">
                                 <IonCheckbox slot="start" checked={local} onIonChange={e => setLocal(e.detail.checked)} />
-                                <IonLabel className="ion-text-wrap">Local Post <p style={{ color: "var(--ion-color-medium)" }}>Check if your post is tied to a location.</p></IonLabel>
+                                <IonLabel className="ion-text-wrap">Local Post <p style={{ color: "var(--ion-color-medium)" }}>Check if your post is tied to a location. Leave unchecked to show the whole community.</p></IonLabel>
                             </IonItem>
 
                             {local && (
@@ -337,7 +337,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 </IonItem>
                                 <IonItem color="white" lines="none">
                                     <IonLabel position="stacked" className="ion-text-wrap"><p>Location label</p>{location && <p style={{color: "var(--ion-color-medium"}}>Change this if you'd like the post to show something different than the city (like a post for a whole state or region)</p>}</IonLabel>
-                                    <IonInput value={locationLabel} onIonChange={e => setLocationLabel(e.detail.value!)}
+                                    <IonInput value={locationLabel} onIonInput={e => setLocationLabel(e.detail.value!)}
                                     type="text"
                                     placeholder="What the post labels as the location"
                                     autoCapitalize='words'
@@ -378,7 +378,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             maxlength={1000}
                                             style={{ minHeight: "120px" }}
                                             placeholder="Write your post here..."
-                                            onIonChange={e => setContent(e.detail.value!)}
+                                            onIonInput={e => setContent(e.detail.value!)}
                                         />
                                     </IonItem>
                                 </IonCard>
@@ -402,7 +402,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             value={sensitiveDescription}
                                             name="sensitive description"
                                             placeholder="Add suggested content warnings here."
-                                            onIonChange={e => setSensitiveDescription(e.detail.value!)}
+                                            onIonInput={e => setSensitiveDescription(e.detail.value!)}
                                             rows={3}
                                         />
                                     </IonItem>
@@ -424,7 +424,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             value={link}
                                             name="link"
                                             placeholder="Add a related link (optional)"
-                                            onIonChange={e => setLink(e.detail.value!)}
+                                            onIonInput={e => setLink(e.detail.value!)}
                                         />
                                     </IonItem>
 
@@ -451,7 +451,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 value={coverPhotoAlt}
                                                 name="coverphotoalt"
                                                 placeholder="Add a description to your image"
-                                                onIonChange={e => setCoverPhotoAlt(e.detail.value!)}
+                                                onIonInput={e => setCoverPhotoAlt(e.detail.value!)}
                                             />
                                         </IonItem>}
                                 </IonCard>

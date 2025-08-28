@@ -443,7 +443,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
               <IonInput value={location}
                 name="location"
                 placeholder={currentUserProfile?.location}
-                onIonChange={e => setLocation(e.detail.value!)}
+                onIonInput={e => setLocation(e.detail.value!)}
                 maxlength={30}
                 disabled={currentUserProfile?.location == location}
                 type="text" />

@@ -57,9 +57,8 @@ const Poll: React.FC<PollProps> = ({ id }) => {
                 <>
                     {(!showResults && pollVotes?.user_vote !== null) && <IonRow className="ion-padding">
                         <IonNote color="primary" className="ion-text-center">Thanks for voting! This poll displays results after {pollDetails?.show_votes_after_x_votes - pollVotes?.total_votes} more votes. Remind your connections to vote, and check back soon!</IonNote></IonRow>}
-                    <IonList lines="none">
-
-                        <ul style={{ listStyle: "none" }}>
+                    <div className="poll-list" style={{ flex: "0 0 auto" }}>
+                        <ul className="poll-ul">
                             {(showResults) ?
 
 
@@ -81,7 +80,7 @@ const Poll: React.FC<PollProps> = ({ id }) => {
                                     </li>))}
 
                         </ul>
-                    </IonList>
+                    </div>
                     {showResults &&
                         <IonRow style={{ width: "100%", display: "flex" }} className="ion-justify-content-end">
                             <IonNote>

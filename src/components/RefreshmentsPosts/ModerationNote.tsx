@@ -7,7 +7,11 @@ import {
     IonCard,
     IonRow,
     IonText,
-    IonCol
+    IonCol,
+    IonAccordionGroup,
+    IonAccordion,
+    IonItem,
+    IonLabel
 } from '@ionic/react';
 import Linkify from 'react-linkify';
 
@@ -29,17 +33,34 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
 }) => {
     const ModalContent: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
         <IonContent className="ion-padding">
-            <h4>Moderation Note</h4>
-            <p>{moderationNote}</p>
-            <p className="css-fix"><Linkify>{moderationNoteLonger}</Linkify></p>
-            <div style={{textAlign: "center"}}>
-                <img alt="loading-freshy" src="../static/img/flower-mask.png" style={{ width: "50pt", alignSelf: "center" }}></img>
-            </div>
-            <div className="moderation-disclaimer" style={{ fontSize: '11px', opacity: 0.7 }}>
-                <p>
-                    We know our approach to moderation might feel a little different from the rest of the internet — that's intentional. We want to build a space that's inclusive, kind, and COVID Conscientious. Thanks for being part of that effort. We're always open to thoughtful feedback.
-                </p>
-            </div>
+            <IonRow>
+                <IonCol size="8">
+                    <h4>Moderation Note</h4>
+                </IonCol>
+                <IonCol size="2">
+                    <div style={{ textAlign: "center" }}>
+                        <img alt="loading-freshy" src="../static/img/flower-mask.png" style={{ alignSelf: "center" }}></img>
+                    </div>
+                </IonCol>
+            </IonRow>
+            <p className="moderation-note-main"><Linkify>{moderationNote}</Linkify></p>
+            <p className="moderation-note-longer css-fix"><Linkify>{moderationNoteLonger}</Linkify></p>
+            <IonAccordionGroup className="moderation-accordion" expand="inset">
+                <IonAccordion value="how" >
+                    <IonItem slot="header" lines="none" button detail className="acc-header">
+                        <IonLabel className="acc-label">How we moderate</IonLabel>
+                    </IonItem>
+                    <div slot="content" className="ion-padding moderation-disclaimer">
+                        <p>
+                            We know our approach to moderation might feel a little different from
+                            the rest of the internet — that's intentional. We want to build a space
+                            that's inclusive, kind, and COVID Conscientious. Thanks for being part
+                            of that effort. We're always open to thoughtful feedback.
+                        </p>
+                    </div>
+                </IonAccordion>
+            </IonAccordionGroup>
+
             <IonButton expand="block" onClick={onDismiss}>Close</IonButton>
         </IonContent>
     );
@@ -60,6 +81,7 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
             backdropDismiss: true,
             initialBreakpoint: 0.6,
             handleBehavior: 'none',
+            expandToScroll: false,
             cssClass: 'moderation-modal'
         });
     };

@@ -80,25 +80,21 @@ const Comments: React.FC<Props> = (props) => {
         <>
           {dynamicContentPost?.comment_count > 0 &&
 
-            <IonRow className="ion-align-items-center ion-padding ion-space-around ion-justify-content-around">
-              <IonLabel>Sort comments by</IonLabel>
-              <IonSelect
-                value={sortByRecentActivity ? 'activity' : 'timeline'}
-                placeholder="Select Order"
-                onIonChange={(e) => handleSortChange(e.detail.value)}
-                interface="popover"
-                style={{
-                  border: '1px solid #ccc',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
-                  minWidth: '160px',
-                  height: '36px',
-                  fontSize: '14px'
-                }}
-              >
-                <IonSelectOption value="activity">Recent activity first</IonSelectOption>
-                <IonSelectOption value="timeline">Chronological order</IonSelectOption>
-              </IonSelect>
+            <IonRow className="ion-align-items-center  ion-padding">
+              <div className="sort-container">
+                <label className="sort-label">Sort comments by</label>
+                <IonSelect
+                  value={sortByRecentActivity ? 'activity' : 'timeline'}
+                  placeholder="Select Order"
+                  onIonChange={(e) => handleSortChange(e.detail.value)}
+                  interface="popover"
+                  className="select-box"
+                >
+                  <IonSelectOption value="activity">Recent activity first</IonSelectOption>
+                  <IonSelectOption value="timeline">Oldest first</IonSelectOption>
+                </IonSelect>
+              </div>
+
 
             </IonRow>}
           <IonList lines="full" className="comments">

@@ -143,7 +143,7 @@ const ForgotPasswordModal: React.FC = () => {
                         <IonInput value={email}
                             placeholder="example@email.com"
                             name="email"
-                            onIonChange={e => setEmail(e.detail.value!)}
+                            onIonInput={e => setEmail(e.detail.value!)}
                             type="email" />
                     </IonItem>
                     <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!email || !email.includes('@')}>

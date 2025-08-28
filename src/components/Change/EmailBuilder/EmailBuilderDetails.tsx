@@ -250,24 +250,24 @@ const EmailBuilderDetails: React.FC = () => {
                     <IonItem color="white" lines="full" className="ion-text-wrap">
 
                     <IonLabel position="stacked">Subject:</IonLabel>
-                        <IonInput value={emailDraft?.subject ?? ''} onIonChange={(e)=>setEmailDraft({...emailDraft!, subject: e.detail.value!})}/>
+                        <IonInput value={emailDraft?.subject ?? ''} onIonInput={(e)=>setEmailDraft({...emailDraft!, subject: e.detail.value!})}/>
                     </IonItem>
 
                     {emailbuilder?.recipient ?
                     <IonItem className="ion-text-wrap" color="white" lines="none">
-                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={intro} onIonChange={(e)=>setIntro(e.detail.value!)}/>
+                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={intro} onIonInput={(e)=>setIntro(e.detail.value!)}/>
                     </IonItem>
                     : <></>}
 
 
                     {personal ?
                     <IonItem className="ion-text-wrap" color="white" lines="none">
-                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={personal} onIonChange={(e)=>setPersonal(e.detail.value!)}/>
+                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={personal} onIonInput={(e)=>setPersonal(e.detail.value!)}/>
                     </IonItem>
                     : <></>}
                     
                     <IonItem className="ion-text-wrap" color="white" lines="none">
-                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={emailDraft?.body ?? ''} onIonChange={(e)=>setEmailDraft({...emailDraft!, body: e.detail.value!})}/>
+                        <IonTextarea autoGrow autoCorrect="on" spellcheck={true} value={emailDraft?.body ?? ''} onIonInput={(e)=>setEmailDraft({...emailDraft!, body: e.detail.value!})}/>
                     </IonItem>
                     
                 </IonCard>

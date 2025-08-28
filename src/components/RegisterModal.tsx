@@ -165,7 +165,7 @@ const RegisterModal: React.FC = () => {
                         <IonLabel position="floating">Email</IonLabel>
                         <IonInput value={email}
                             name="email"
-                            onIonChange={e => setEmail(e.detail.value!)}
+                            onIonInput={e => setEmail(e.detail.value!)}
                             placeholder="Email"
                             type="email" />
                     </IonItem>
@@ -174,7 +174,7 @@ const RegisterModal: React.FC = () => {
                         <IonInput value={first_name}
                             name="first name"
                             autoCapitalize='words'
-                            onIonChange={e => setFirstName(e.detail.value!)}
+                            onIonInput={e => setFirstName(e.detail.value!)}
                             placeholder="First Name"
                             type="text" />
                     </IonItem>
@@ -183,7 +183,7 @@ const RegisterModal: React.FC = () => {
                         <IonInput value={last_name}
                             name="last name"
                             autoCapitalize='words'
-                            onIonChange={e => setLastName(e.detail.value!)}
+                            onIonInput={e => setLastName(e.detail.value!)}
                             placeholder="Last Name"
                             type="text" />
                     </IonItem>
@@ -191,7 +191,7 @@ const RegisterModal: React.FC = () => {
                         <IonLabel position="floating">Password</IonLabel>
                         <IonInput value={password}
                             name="password"
-                            onIonChange={e => setPassword(e.detail.value!)}
+                            onIonInput={e => setPassword(e.detail.value!)}
                             placeholder="Password"
                             type="password" />
                     </IonItem>
@@ -199,7 +199,7 @@ const RegisterModal: React.FC = () => {
                         <IonLabel position="floating">Confirm Password</IonLabel>
                         <IonInput value={confirmPassword}
                             name="password"
-                            onIonChange={e => setConfirmPassword(e.detail.value!)}
+                            onIonInput={e => setConfirmPassword(e.detail.value!)}
                             placeholder="Password"
                             type="password" />
                     </IonItem>

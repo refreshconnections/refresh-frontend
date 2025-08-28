@@ -114,7 +114,7 @@ const ChangePasswordModal: React.FC<Props> = (props) => {
                         <IonLabel position="floating">Old Password</IonLabel>
                         <IonInput value={oldpassword}
                             name="oldpassword"
-                            onIonChange={e => setOldPassword(e.detail.value!)}
+                            onIonInput={e => setOldPassword(e.detail.value!)}
                             type={showOldPassword ? "text" : "password"} />
                         <IonButton style={{marginTop: "20pt"}} fill="clear" slot="end" onClick={showOldPassword ? () => setShowOldPassword(false) : () => setShowOldPassword(true)}>
                             <IonIcon slot="icon-only" icon={showOldPassword ? eyeOff : eye} ></IonIcon>
@@ -124,7 +124,7 @@ const ChangePasswordModal: React.FC<Props> = (props) => {
                         <IonLabel position="floating">New Password</IonLabel>
                         <IonInput value={newpassword}
                             name="newpassword"
-                            onIonChange={e => setNewPassword(e.detail.value!)}
+                            onIonInput={e => setNewPassword(e.detail.value!)}
                             type={showPassword1 ? "text" : "password"} />
                         <IonButton style={{marginTop: "20pt"}} fill="clear" slot="end" onClick={showPassword1 ? () => setShowPassword1(false) : () => setShowPassword1(true)}>
                             <IonIcon slot="icon-only" icon={showPassword1 ? eyeOff : eye} ></IonIcon>
@@ -134,7 +134,7 @@ const ChangePasswordModal: React.FC<Props> = (props) => {
                         <IonLabel position="floating">New Password (again)</IonLabel>
                         <IonInput value={newpassword2}
                             name="newpassword2"
-                            onIonChange={e => setNewPassword2(e.detail.value!)}
+                            onIonInput={e => setNewPassword2(e.detail.value!)}
                             placeholder="Repeat your new password"
                             type={showPassword2 ? "text" : "password"} />
                         <IonButton style={{marginTop: "20pt"}} fill="clear" slot="end" onClick={showPassword2 ? () => setShowPassword2(false) : () => setShowPassword2(true)}>

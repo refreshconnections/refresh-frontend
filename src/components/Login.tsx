@@ -177,14 +177,14 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
           <IonItem className="userpass">
             <IonInput value={email}
               name="email"
-              onIonChange={e => setEmail(e.detail.value!)}
+              onIonInput={e => setEmail(e.detail.value!)}
               placeholder="Email"
               type="text" />
           </IonItem>
           <IonItem className="userpass">
             <IonInput value={password}
               name="password"
-              onIonChange={e => setPassword(e.detail.value!)}
+              onIonInput={e => setPassword(e.detail.value!)}
               placeholder="Password"
               type={showPassword? "text" : "password"} />
             <IonButton fill="clear" slot="end" onClick={showPassword ? ()=>setShowPassword(false) : ()=>setShowPassword(true)}>

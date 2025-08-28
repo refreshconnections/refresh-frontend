@@ -180,7 +180,7 @@ const Chats: React.FC = () => {
           {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
           <IonRow className="segments">
             <IonCol size="2">
-              <IonButton disabled={currSegment == "groups" || dataFlat?.length == 0} size="small" onClick={showSearch ? () => setShowSearch(false) : () => setShowSearch(true)}>
+              <IonButton disabled={currSegment == "groups" || dataFlat?.length == 0} onClick={showSearch ? () => setShowSearch(false) : () => setShowSearch(true)}>
                 {showSearch ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
               </IonButton>
             </IonCol>

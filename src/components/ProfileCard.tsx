@@ -184,7 +184,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                 </div>
 
 
-                <IonCardHeader className="leave-end-room">
+                <IonCardHeader className="leave-end-room ">
                     {settingsAlt && cardData.pic1_alt ?
                         <IonButton className="alt-desc-profile" fill="clear" size="small" onClick={altShow !== 1 ? () => setAltShow(1) : () => setAltShow(null)}>
                             <FontAwesomeIcon icon={faSubtitles} />

@@ -1126,7 +1126,7 @@ const TextModal: React.FC<Props> = (props) => {
                                 <IonItem lines="none" >
                                     <IonTextarea value={messageInput}
                                         name="message_input"
-                                        onIonChange={e => {
+                                        onIonInput={e => {
                                             const newValue = e.detail.value ?? '';
                                             if (newValue !== messageInput) {
                                                 setMessageInput(newValue);

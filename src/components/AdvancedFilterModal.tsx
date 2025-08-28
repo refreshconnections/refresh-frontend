@@ -1052,10 +1052,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
                   <IonCol>
                     <IonList>
-                      <IonItem>
                         <IonCheckbox slot="start" value="I have LC" checked={currentProfileData.filter_lc.includes("I have LC") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
                         living with Long Covid
-                      </IonItem>
                       <IonItem>
                         <IonCheckbox slot="start" value="LC caretaker" checked={currentProfileData.filter_lc.includes("LC caretaker") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
                         caring for someone with Long Covid

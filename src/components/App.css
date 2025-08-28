@@ -77,3 +77,16 @@ body.samsung-keyboard-open ion-footer {
   transition: transform 150ms ease-in-out;
   z-index: 1000; /* if needed to stay above keyboard */
 }
+
+
+ion-textarea::part(counter) {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0.25rem;
+}
+
+.textarea-bottom {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0.25rem;
+}

@@ -253,7 +253,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                                 name="birthday"
                                 placeholder=""
                                 max={eighteenYearsAtLeast()}
-                                onIonChange={e => setBirthday(e.detail.value!)}
+                                onIonInput={e => setBirthday(e.detail.value!)}
                                 type="date" />
                         </IonItem>
                         <IonItem>
@@ -275,7 +275,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                                 maxlength={5}
                                 inputmode="numeric"
                                 pattern="\d{5}"
-                                onIonChange={e => setZipcode(e.detail.value!)}
+                                onIonInput={e => setZipcode(e.detail.value!)}
                                 type="text" />
                             counter
                         </IonItem>
@@ -288,7 +288,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             <IonInput value={location}
                                 name="location"
                                 required={true}
-                                onIonChange={e => setLocation(e.detail.value!)}
+                                onIonInput={e => setLocation(e.detail.value!)}
                                 maxlength={30}
                                 counter
                                 type="text" />
@@ -298,7 +298,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             <IonInput value={job}
                                 name="job"
                                 required={true}
-                                onIonChange={e => setJob(e.detail.value!)}
+                                onIonInput={e => setJob(e.detail.value!)}
                                 placeholder=""
                                 maxlength={30}
                                 counter
@@ -308,7 +308,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             <IonLabel position="stacked">Politics</IonLabel>
                             <IonInput value={politics}
                                 name="politics"
-                                onIonChange={e => setPolitics(e.detail.value!)}
+                                onIonInput={e => setPolitics(e.detail.value!)}
                                 placeholder=""
                                 maxlength={30}
                                 counter
@@ -318,7 +318,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             <IonLabel position="stacked">School</IonLabel>
                             <IonInput value={school}
                                 name="school"
-                                onIonChange={e => setSchool(e.detail.value!)}
+                                onIonInput={e => setSchool(e.detail.value!)}
                                 placeholder=""
                                 maxlength={30}
                                 counter
@@ -336,7 +336,7 @@ const ProfileCreationModal: React.FC<Props> = (props) => {
                             <IonLabel position="stacked">Hometown</IonLabel>
                             <IonInput value={hometown}
                                 name="hometown"
-                                onIonChange={e => setHometown(e.detail.value!)}
+                                onIonInput={e => setHometown(e.detail.value!)}
                                 placeholder=""
                                 maxlength={30}
                                 counter

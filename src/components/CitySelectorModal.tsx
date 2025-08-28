@@ -56,7 +56,7 @@ const CitySelectorModal: React.FC<Props> = ({ onDismiss }) => {
           placeholder="Search for a city..."
           debounce={500}
           value={searchText}
-          onIonChange={e => {
+          onIonInput={e => {
             const value = e.detail.value!;
             setSearchText(value);
             searchCities(value);

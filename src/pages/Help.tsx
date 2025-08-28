@@ -170,13 +170,13 @@ const Help: React.FC = () => {
                 <IonItem className="input">
                     <IonLabel position="stacked">Subject</IonLabel>
                     <IonInput placeholder="Something short and sweet!"
-                        onIonChange={e => setSubject(e.detail.value!)}
+                        onIonInput={e => setSubject(e.detail.value!)}
                         value={subject}>
                     </IonInput>
                 </IonItem>
                 <IonItem className="input">
                     <IonLabel position="stacked">Message</IonLabel>
-                    <IonTextarea onIonChange={e => setMessage(e.detail.value!)} value={message} rows={3} placeholder={reason === "profile" ? `Please include what you'd like this field to be updated to so we can help you faster.` : `Give us all the details you think we will need.`}  autoGrow={true}></IonTextarea>
+                    <IonTextarea onIonInput={e => setMessage(e.detail.value!)} value={message} rows={3} placeholder={reason === "profile" ? `Please include what you'd like this field to be updated to so we can help you faster.` : `Give us all the details you think we will need.`}  autoGrow={true}></IonTextarea>
                 </IonItem>
                 </IonCard>
 

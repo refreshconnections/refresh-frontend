@@ -631,16 +631,14 @@ const Settings: React.FC = () => {
               </IonItem>
 
               <IonItem>
-                <IonLabel>Theme</IonLabel>
-                <IonSelect value={theme ?? 'auto'} onIonChange={(e) => setTheme(e.detail.value)}>
+                <IonSelect label="Theme" value={theme ?? 'auto'} onIonChange={(e) => setTheme(e.detail.value)}>
                   <IonSelectOption value="auto">Auto</IonSelectOption>
                   <IonSelectOption value="light">Light</IonSelectOption>
                   <IonSelectOption value="dark">Dark</IonSelectOption>
                 </IonSelect>
               </IonItem>
               <IonItem>
-                <IonLabel>Font Size</IonLabel>
-                <IonSelect value={fontZoom ?? 'auto'} onIonChange={(e) => setFontZoom(e.detail.value)}>
+                <IonSelect label="Font Size" value={fontZoom ?? 'auto'} onIonChange={(e) => setFontZoom(e.detail.value)}>
                   <IonSelectOption value="auto">Auto</IonSelectOption>
                   <IonSelectOption value="default">Default</IonSelectOption>
                   <IonSelectOption value="large">Large</IonSelectOption>

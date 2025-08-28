@@ -679,7 +679,7 @@ const OpenedPost: React.FC = () => {
                                         <IonTextarea value={commentInput}
                                             className="comment-creator"
                                             name="comment_input"
-                                            onIonChange={e => setCommentInput(e.detail.value!)}
+                                            onIonInput={e => setCommentInput(e.detail.value!)}
                                             disabled={staticContentPost?.comments_deactivated || staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)}
                                             maxlength={900}
                                             autoGrow={true}

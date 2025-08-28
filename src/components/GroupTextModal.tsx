@@ -268,7 +268,7 @@ const GroupTextModal: React.FC<Props> = (props) => {
                     <IonCol size="10">
                         <IonTextarea value={messageInput}
                             name="message_input"
-                            onIonChange={e => setMessageInput(e.detail.value!)}
+                            onIonInput={e => setMessageInput(e.detail.value!)}
                             placeholder="Message"
                         />
                     </IonCol>
