@@ -268,9 +268,12 @@ const TextModal: React.FC<Props> = (props) => {
     };
     }, [uiConnected]);
 
-
     const retrievedMessages = useMessagesInf(textModalData?.other_user_id)
-    const loadingMessages = useMessagesInf(textModalData?.other_user_id).isPending
+
+    const loadingMessagesQuery = useMessagesInf(textModalData?.other_user_id)
+    const loadingMessages = loadingMessagesQuery.isPending && loadingMessagesQuery.fetchStatus === "fetching";
+
+
     const othersChatSettings = useChatSettings(textModalData?.other_user_id)
     const yourChatSettings = useChatSettings()
     const limits = useGetLimits().data

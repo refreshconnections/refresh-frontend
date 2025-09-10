@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard } from '@ionic/react';
 import Cookies from 'js-cookie';
 
@@ -67,10 +67,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
 
 
-    console.log("limits", limits)
-
     const [title, setTitle] = useState("");
-    const [byline, setByline] = useState<string | null>(null);
+    const [byline, setByline] = useState<string | null>(globalCurrentProfile?.username ?? null);
     const [bar, setBar] = useState<string | null>(null);
 
     const [link, setLink] = useState<string | null>(null);
@@ -80,7 +78,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [sensitiveContent, setSensitiveContent] = useState<boolean>(false);
     const [sensitiveDescription, setSensitiveDescription] = useState<string>("");
 
-    const [includeProfile, setIncludeProfile] = useState<boolean>(false)
+    const [includeProfile, setIncludeProfile] = useState<boolean>(true)
     const [errors, setErrors] = useState<string[]>([]);
     const [afterSendWait, setAfterSendWait] = useState(false)
     const [requestSupportive, setRequestSupportive] = useState(false)
@@ -114,18 +112,47 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     const [showAlert, setShowAlert] = useState(false)
 
-    const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
-        onDismiss: async (selectedCity?: {name: string, lat: number, lng: number}) => {
-          if (selectedCity) {
-            console.log('Selected city:', selectedCity);
-            setLocation(selectedCity.name)
-            setLocationLabel(selectedCity.name)
-            setLat(selectedCity.lat)
-            setLong(selectedCity.lng)
-          }
-          dismissCitySelector();
+    useEffect(() => {
+        if (byline == "Anonymous") {
+            setIncludeProfile(false)
         }
-      });
+    }, [byline])
+
+
+
+    type City = { name: string; lat: number; lng: number };
+
+    const openingRef = useRef(false);
+
+
+
+    const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
+        onDismiss: (selectedCity?: City) => handleCityDismiss(selectedCity),
+    });
+
+    const openCitySelector = () => {
+        if (openingRef.current) return;        // guard against duplicate opens
+        openingRef.current = true;
+
+        presentCitySelector({
+            // presentingElement is optional, but helps with iOS card style if desired:
+            // presentingElement: document.querySelector('ion-router-outlet') as HTMLElement | undefined,
+            onDidDismiss: () => {
+                openingRef.current = false;        // release guard
+            },
+        });
+    };
+
+    const handleCityDismiss = (selectedCity?: City) => {
+        if (selectedCity) {
+            setLocation(selectedCity.name);
+            setLocationLabel(selectedCity.name);
+            setLat(selectedCity.lat);
+            setLong(selectedCity.lng);
+        }
+        dismissCitySelector();                  // close exactly once
+    };
+
 
     function postSubmitSuccessful() {
         onDismiss();
@@ -271,6 +298,48 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     }
 
+    const requiredMissing = {
+        title: !title?.trim(),
+        byline: !byline,
+        bar: !bar,
+        content: !content?.trim(),
+    } as const;
+
+    const labelMap: Record<keyof typeof requiredMissing, string> = {
+        title: 'Title',
+        byline: 'Byline',
+        bar: 'Category',
+        content: 'Post Content',
+    };
+
+    const missingFields = (Object.entries(requiredMissing) as [keyof typeof requiredMissing, boolean][])
+        .filter(([, v]) => v)
+        .map(([k]) => labelMap[k]);
+
+    // Housing-specific rule
+    const housingRuleActive = bar === 'housing';
+    const housingViolations = housingRuleActive
+        ? {
+            noAnonymousByline: byline === 'Anonymous',
+            mustIncludeProfile: !includeProfile,
+        }
+        : { noAnonymousByline: false, mustIncludeProfile: false };
+
+    const formInvalid =
+        missingFields.length > 0 ||
+        housingViolations.noAnonymousByline ||
+        housingViolations.mustIncludeProfile;
+
+    // Build messages to show user
+    const issues: string[] = [];
+    if (missingFields.length > 0) issues.push(`Missing: ${missingFields.join(', ')}.`);
+    if (housingRuleActive) {
+        if (housingViolations.noAnonymousByline)
+            issues.push('For Housing posts, Byline cannot be "Anonymous" and "Show Profile" must be enabled.');
+        else if (housingViolations.mustIncludeProfile)
+            issues.push('For Housing posts, "Show Profile" must be enabled.');
+    }
+
     return (
         <IonPage>
             <IonHeader>
@@ -316,7 +385,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 <IonLabel position="stacked">Byline*</IonLabel>
                                 <IonSelect value={byline} placeholder="(Who wrote the post)" onIonChange={(e) => setByline(e.detail.value)}>
                                     {username && <IonSelectOption value={username}>{username}</IonSelectOption>}
-                                    <IonSelectOption value={preferred_name}>{preferred_name}</IonSelectOption>
+                                    <IonSelectOption value={`${preferred_name} (${username})`}>{preferred_name} ({username})</IonSelectOption>
                                     <IonSelectOption value="Anonymous">Anonymous</IonSelectOption>
                                 </IonSelect>
                             </IonItem>
@@ -325,27 +394,45 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         {/* Local Post */}
                         <IonCard >
                             <IonItem color="white" lines="none">
-                                <IonCheckbox slot="start" checked={local} onIonChange={e => setLocal(e.detail.checked)} />
-                                <IonLabel className="ion-text-wrap">Local Post <p style={{ color: "var(--ion-color-medium)" }}>Check if your post is tied to a location. Leave unchecked to show the whole community.</p></IonLabel>
+                                <IonCheckbox
+                                    className="createpostcheckbox "
+                                    checked={local}
+                                    onIonChange={(e) => setLocal(e.detail.checked)}
+                                    labelPlacement="end"
+                                    justify="space-between"
+                                    helperText="Check if your post is tied to a location. Leave unchecked to show the whole community."
+                                >
+                                    Local Post
+                                </IonCheckbox>
                             </IonItem>
+
 
                             {local && (
                                 <>
-                                <IonItem button color="white" lines="none" onClick={()=>presentCitySelector()}>
-                                    <IonLabel position="stacked">Nearby City</IonLabel>
-                                    <IonInput value={location} placeholder="Click to select"/>
-                                </IonItem>
-                                <IonItem color="white" lines="none">
-                                    <IonLabel position="stacked" className="ion-text-wrap"><p>Location label</p>{location && <p style={{color: "var(--ion-color-medium"}}>Change this if you'd like the post to show something different than the city (like a post for a whole state or region)</p>}</IonLabel>
-                                    <IonInput value={locationLabel} onIonInput={e => setLocationLabel(e.detail.value!)}
-                                    type="text"
-                                    placeholder="What the post labels as the location"
-                                    autoCapitalize='words'
-                                    name='locationlabel' />
-                                </IonItem>
+                                    <IonItem color="white" lines="none" button={false} detail={false}>
+                                        <IonLabel position="stacked">Nearby City</IonLabel>
+                                        <IonInput
+                                            value={location}
+                                            placeholder="Click to select"
+                                            readonly
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                openCitySelector();
+                                            }}
+                                        />
+                                    </IonItem>
+                                    <IonItem color="white" lines="none">
+                                        <IonLabel position="stacked" className="ion-text-wrap"><p>Location label</p>{location && <p style={{ color: "var(--ion-color-medium" }}>Change this if you'd like the post to show something different than the city (like a post for a whole state or region)</p>}</IonLabel>
+                                        <IonInput value={locationLabel} onIonInput={e => setLocationLabel(e.detail.value!)}
+                                            type="text"
+                                            placeholder="What the post labels as the location"
+                                            autoCapitalize='words'
+                                            name='locationlabel' />
+                                    </IonItem>
                                 </>
                             )}
-                            
+
                         </IonCard>
 
                         {/* Category */}
@@ -359,8 +446,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonSelectOption value="families">Family</IonSelectOption>
                                     <IonSelectOption value="science">STEAM</IonSelectOption>
                                     <IonSelectOption value="pop">Pop</IonSelectOption>
+                                    <IonSelectOption value="events">Event</IonSelectOption>
                                     <IonSelectOption value="housing" disabled={!local}>Housing</IonSelectOption>
-                                    <IonSelectOption value="events" disabled={!local}>Event</IonSelectOption>
                                     <IonSelectOption value="recommendations" disabled={!local}>Local Recommendations</IonSelectOption>
                                 </IonSelect>
                             </IonItem>
@@ -386,32 +473,57 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 {/* Options */}
                                 <IonCard >
                                     <IonItem color="white" lines="full">
-                                        <IonCheckbox slot="start" checked={includeProfile} onIonChange={e => setIncludeProfile(e.detail.checked)} disabled={byline === "Anonymous"} />
-                                        <IonLabel className="ion-text-wrap">Show Profile <p style={{ color: "var(--ion-color-medium)" }}>Visible only if Connect from Refreshments is enabled.</p></IonLabel>
+                                        <IonCheckbox
+                                            className="createpostcheckbox"
+                                            checked={includeProfile}
+                                            onIonChange={(e) => setIncludeProfile(e.detail.checked)}
+                                            disabled={byline === "Anonymous"}
+                                            labelPlacement="end"
+                                            justify="space-between"
+                                            helperText="Visible only if Connect from Refreshments is enabled."
+                                        >
+                                            Show Profile
+                                        </IonCheckbox>
                                     </IonItem>
 
                                     <IonItem color="white" lines="full">
-                                        <IonCheckbox slot="start" checked={sensitiveContent} onIonChange={e => setSensitiveContent(e.detail.checked)} />
-                                        <IonLabel className="ion-text-wrap">Sensitive Content <p style={{ color: "var(--ion-color-medium)" }}>Check if your post needs a content warning.</p></IonLabel>
+                                        <IonCheckbox
+                                            className="createpostcheckbox"
+                                            checked={sensitiveContent}
+                                            onIonChange={(e) => setSensitiveContent(e.detail.checked)}
+                                            labelPlacement="end"
+                                            justify="space-between"
+                                            helperText="Check if your post needs a content warning."
+                                        >
+                                            Sensitive Content
+                                        </IonCheckbox>
                                     </IonItem>
+
 
                                     {sensitiveContent &&
                                         <IonItem color="white" lines="none">
-                                        <IonLabel position="stacked">Sensitivity description (optional)</IonLabel>
-                                        <IonTextarea
-                                            value={sensitiveDescription}
-                                            name="sensitive description"
-                                            placeholder="Add suggested content warnings here."
-                                            onIonInput={e => setSensitiveDescription(e.detail.value!)}
-                                            rows={3}
-                                        />
-                                    </IonItem>
+                                            <IonLabel position="stacked">Sensitivity description (optional)</IonLabel>
+                                            <IonTextarea
+                                                value={sensitiveDescription}
+                                                name="sensitive description"
+                                                placeholder="Add suggested content warnings here."
+                                                onIonInput={e => setSensitiveDescription(e.detail.value!)}
+                                                rows={3}
+                                            />
+                                        </IonItem>
                                     }
 
                                     {(bar === "mingle" || bar === "families") && (
                                         <IonItem color="white">
-                                            <IonCheckbox slot="start" checked={requestSupportive} onIonChange={e => setRequestSupportive(e.detail.checked)} />
-                                            <IonLabel className="ion-text-wrap">Request Supportive Comments Only</IonLabel>
+                                            <IonCheckbox
+                                                className="createpostcheckbox"
+                                                checked={requestSupportive}
+                                                onIonChange={(e) => setRequestSupportive(e.detail.checked)}
+                                                labelPlacement="end"
+                                                justify="space-between"
+                                            >
+                                                Request Supportive Comments Only
+                                            </IonCheckbox>
                                         </IonItem>
                                     )}
                                 </IonCard>
@@ -467,13 +579,25 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
                                 {/* Submit Button */}
 
-                                {(!title || !content || !byline || !bar) &&
-                                    <IonRow className="ion-padding ion-text-center">
-                                        <IonNote className="ion-text-center">Please make sure all required sections have been filled out.</IonNote>
-                                    </IonRow>
-                                }
+                                <IonRow class="ion-padding moderator-submit">
+                                    <IonText color="navy">
+                                        To keep posts clear and accessible, moderators will make small edits like fixing typos and using standard spelling and capitalization. If further edits are needed to meet our guidelines, we'll email you!
+                                    </IonText>
+                                </IonRow>
 
-                                <IonButton expand="block" style={{marginBottom: "30pt"}} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || !title || !content || !byline || !bar}>
+                                {issues.length > 0 && (
+                                    <IonRow className="ion-padding ion-text-center">
+                                        <IonText color="danger">
+                                            {issues.map((msg, i) => (
+                                                <p key={i} style={{ margin: 0 }}>{msg}</p>
+                                            ))}
+                                        </IonText>
+                                    </IonRow>
+                                )}
+
+
+
+                                <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid}>
                                     Submit Post
                                 </IonButton>
                             </>
@@ -491,7 +615,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             <IonButton href="/store">Upgrade</IonButton>
                         </IonCard>
                         :
-                        limits?.posts_submitted >= 2  ?
+                        limits?.posts_submitted >= 2 ?
                             <IonCard color="white" className="ion-padding ion-text-center">
                                 <IonText className="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
                                 <IonButton href="/store">Upgrade</IonButton>

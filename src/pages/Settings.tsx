@@ -76,18 +76,18 @@ const Settings: React.FC = () => {
 
 
   async function handleLogout() {
-    try {
-      const response = await logoutCurrent()
-    }
-    catch {
-      console.log("Something went wrong.")
-    }
     await Preferences.remove({ key: 'EXPIRY' })
     await Preferences.clear();
     localStorage.removeItem('token')
     localStorage.clear();
     Cookies.remove('sessionid')
     Cookies.remove('csrftoken')
+    try {
+      const response = await logoutCurrent()
+    }
+    catch {
+      console.log("Something went wrong.")
+    }
     window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")

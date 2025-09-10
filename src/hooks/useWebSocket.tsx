@@ -6,211 +6,339 @@ import { getWebsocketUrl } from "../hooks/utilities";
 type MessageHandler = (msg: any) => void;
 
 export function useWebSocket(onError?: (msg: string) => void) {
-    const socketRef = useRef<WebSocket | null>(null);
-    const listenersRef = useRef<Set<MessageHandler>>(new Set());
-    const [connected, setConnected] = useState(false);
-    const reconnectAttempts = useRef(0);
-    const reconnectingRef = useRef(false);
+  const socketRef = useRef<WebSocket | null>(null);
+  const listenersRef = useRef<Set<MessageHandler>>(new Set());
+  const [connected, setConnected] = useState(false);
+  const reconnectAttempts = useRef(0);
+  const reconnectingRef = useRef(false);
 
+  const MAX_RECONNECT_DELAY = 30000;
 
-    const MAX_RECONNECT_DELAY = 30000;
+  // ---------- Sensitivity controls ----------
+  const ERROR_GRACE_MS = 3000;                 // silence after mount/resume/visible/focus
+  const TOAST_COOLDOWN_MS = 12000;             // general cooldown for toasts
+  const RETRY_TOAST_DELAY_MS = 1500;           // delay before showing the retry toast
+  const SUPPRESS_AFTER_CONNECT_MS = 5000;      // suppress retry toast shortly after a successful open
+  const FAILS_BEFORE_TOAST = 2;                // require 2 consecutive abnormal closes
+  const REMINDER_TOAST_EVERY_MS = 30000;       // show the retry toast again while still disconnected
 
-    const initialErrorDelayPassed = useRef(false);
-    const hasShownOfflineToast = useRef(false);
+  // ---------- Grace window ----------
+  const initialErrorDelayPassed = useRef(false);
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetErrorGrace = useCallback(() => {
+    initialErrorDelayPassed.current = false;
+    if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+    graceTimerRef.current = setTimeout(() => {
+      initialErrorDelayPassed.current = true;
+    }, ERROR_GRACE_MS);
+  }, []);
 
-    // Start a timer to allow errors after ~2 seconds
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            initialErrorDelayPassed.current = true;
-        }, 3000);
+  // Keep latest onError without re-binding functions
+  const onErrorRef = useRef<typeof onError>();
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
-        return () => clearTimeout(timer);
-    }, []);
+  // ---------- Centralized notifier (grace + cooldown) ----------
+  const lastToastAtRef = useRef(0);
+  const notifyError = (msg: string) => {
+    if (!initialErrorDelayPassed.current) return;
+    const now = Date.now();
+    if (now - lastToastAtRef.current < TOAST_COOLDOWN_MS) return;
+    lastToastAtRef.current = now;
+    onErrorRef.current?.(msg);
+  };
 
-    useEffect(() => {
-        const handleOnline = () => {
-            console.log("[WebSocket] Browser back online — attempting to reconnect");
-            hasShownOfflineToast.current = false;
-            if (!connected && localStorage.getItem("token")) {
-                reconnectWithBackoff();
-            }
-        };
+  // ---------- Flags ----------
+  const hasShownOfflineToast = useRef(false);
+  const isOfflineRef = useRef(!navigator.onLine);
+  const manualCloseRef = useRef(false);
+  const isConnectedRef = useRef(false);
 
-        const handleOffline = () => {
-            console.warn("[WebSocket] Browser is offline");
-            setConnected(false); // ✅ Reflect offline status in state
-            if (!hasShownOfflineToast.current) {
-                onError?.("You're offline. Messages can't send until you're reconnected.");
-                hasShownOfflineToast.current = true;
-            }
-            socketRef.current?.close(); // Optional: force close dead connection
-        };
+  // ---------- Retry toast state (for "We’re having trouble connecting. Retrying...") ----------
+  const lastOpenAtRef = useRef(0);
+  const abnormalCloseCountRef = useRef(0);
+  const retryToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-        window.addEventListener("online", handleOnline);
-        window.addEventListener("offline", handleOffline);
+  // ---------- Periodic reminder while disconnected ----------
+  const reminderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startReminderTimer = () => {
+    if (reminderTimerRef.current) return;
+    const tick = () => {
+      // If we reconnected or we're intentionally closed/offline, stop.
+      if (isConnectedRef.current || manualCloseRef.current || isOfflineRef.current) {
+        stopReminderTimer();
+        return;
+      }
+      notifyError("We’re having trouble connecting. Retrying...");
+      reminderTimerRef.current = setTimeout(tick, REMINDER_TOAST_EVERY_MS);
+    };
+    reminderTimerRef.current = setTimeout(tick, REMINDER_TOAST_EVERY_MS);
+  };
+  const stopReminderTimer = () => {
+    if (reminderTimerRef.current) {
+      clearTimeout(reminderTimerRef.current);
+      reminderTimerRef.current = null;
+    }
+  };
 
-        // If app starts while offline
-        if (!navigator.onLine) {
-            handleOffline();
-        }
+  // ---------- Online/Offline listeners (mount once) ----------
+  useEffect(() => {
+    const handleOnline = () => {
+      isOfflineRef.current = false;
+      hasShownOfflineToast.current = false;
 
-        return () => {
-            window.removeEventListener("online", handleOnline);
-            window.removeEventListener("offline", handleOffline);
-        };
-    }, [connected]);
+      // Use socket readyState to avoid stale 'connected' capture
+      const state = socketRef.current?.readyState;
+      const notConnected = state !== WebSocket.OPEN && state !== WebSocket.CONNECTING;
 
-    const connect = useCallback(() => {
-
-        if (!localStorage.getItem("token")) {
-            console.warn("[WebSocket] Skipping connect — user not authenticated");
-            return;
-        }
-
-        const state = socketRef.current?.readyState;
-        if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
-            return;
-        }
-
-        try {
-            const ws = new WebSocket(getWebsocketUrl());
-            socketRef.current = ws;
-
-            ws.onopen = () => {
-                reconnectAttempts.current = 0;
-                setConnected(true);
-                console.log("[WebSocket] Connected");
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                listenersRef.current.forEach((callback) => callback(data));
-            };
-
-            ws.onclose = (event) => {
-                setConnected(false);
-                console.warn("[WebSocket] Disconnected", event);
-                reconnectWithBackoff();
-            };
-
-            ws.onerror = (event) => {
-                console.error("[WebSocket] Error occurred", event);
-                if (initialErrorDelayPassed.current) {
-                    onError?.("We’re having trouble connecting. Retrying...");
-                }
-                ws.close(); // this triggers onclose
-            };
-        } catch (err) {
-            console.error("[WebSocket] Failed to create connection", err);
-            if (initialErrorDelayPassed.current) {
-                onError?.("Unable to connect. Please check your connection.");
-            }
-        }
-    }, []);
-
-
-    const reconnectWithBackoff = () => {
-        if (!localStorage.getItem("token") || !navigator.onLine || reconnectingRef.current) return;
-
-        reconnectingRef.current = true;
-
-        const delay = Math.min(1000 * 2 ** reconnectAttempts.current, MAX_RECONNECT_DELAY);
-
-        setTimeout(() => {
-            reconnectAttempts.current += 1;
-            reconnectingRef.current = false;
-            connect();
-        }, delay + Math.random() * 3000);
+      if (notConnected && localStorage.getItem("token")) {
+        reconnectWithBackoff();
+      }
     };
 
-    const send = (data: object | string) => {
-        const msg = typeof data === "string" ? data : JSON.stringify(data);
+    const handleOffline = () => {
+      isOfflineRef.current = true;
+      setConnected(false);
+      isConnectedRef.current = false;
+      stopReminderTimer();
+      if (!hasShownOfflineToast.current) {
+        notifyError("You're offline. Messages can't send until you're reconnected.");
+        hasShownOfflineToast.current = true;
+      }
+      // Intentionally close while offline to prevent thrash
+      manualCloseRef.current = true;
+      socketRef.current?.close();
+    };
 
-        try {
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(msg);
-            } else {
-                console.warn("[WebSocket] Cannot send, socket not ready");
-                if (initialErrorDelayPassed.current) {
-                    onError?.("Your message couldn't be sent. Will try to reconnect...");
-                }
-            }
-        } catch (err) {
-            console.error("[WebSocket] Send failed:", err);
-            if (initialErrorDelayPassed.current) {
-                onError?.("Your message couldn’t be sent. Please check your connection.");
-            }
-            reconnectWithBackoff?.(); // Optional: trigger reconnection immediately
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    if (!navigator.onLine) handleOffline();
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount once
+
+  // ---------- Visibility/focus gates (mount once) ----------
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        resetErrorGrace(); // 3s suppression after tab becomes visible
+      }
+    };
+    const onFocus = () => resetErrorGrace(); // 3s after window focus
+    const onPageShow = (e: PageTransitionEvent) => {
+      // pageshow fires on bfcache restore (iOS Safari)
+      resetErrorGrace();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pageshow", onPageShow as any);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pageshow", onPageShow as any);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount once
+
+  // ---------- Connect (stable; only refs) ----------
+  const connect = useCallback(() => {
+    if (!localStorage.getItem("token")) {
+      console.warn("[WebSocket] Skipping connect — user not authenticated");
+      return;
+    }
+
+    const state = socketRef.current?.readyState;
+    if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+      return;
+    }
+
+    try {
+      manualCloseRef.current = false;
+      const ws = new WebSocket(getWebsocketUrl());
+      socketRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectAttempts.current = 0;
+        setConnected(true);
+        isConnectedRef.current = true;
+        lastToastAtRef.current = 0; // reset global toast cooldown on good connect
+        lastOpenAtRef.current = Date.now();
+        abnormalCloseCountRef.current = 0;
+        if (retryToastTimerRef.current) {
+          clearTimeout(retryToastTimerRef.current);
+          retryToastTimerRef.current = null;
         }
-    };
+        stopReminderTimer();
+        console.log("[WebSocket] Connected");
+      };
 
-    const addListener = useCallback((cb: MessageHandler) => {
-        listenersRef.current.add(cb);
-        return () => {
-            listenersRef.current.delete(cb); // ✅ this executes the delete but returns nothing (void)
-        };
-    }, []);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        listenersRef.current.forEach((cb) => cb(data));
+      };
 
+      ws.onclose = (event) => {
+        setConnected(false);
+        isConnectedRef.current = false;
+        console.warn("[WebSocket] Disconnected", { code: event.code, reason: event.reason });
 
+        // suppress when intentional or offline
+        if (manualCloseRef.current || isOfflineRef.current) return;
 
-    useEffect(() => {
-        console.log("connect use effect")
-
-        const token = localStorage.getItem("token");
-        if (token) {
-            connect();
+        // auth-ish close—stop retrying until user reauths
+        if (event.code === 4001 || event.code === 4401 || /auth|unauthor/i.test(event.reason || "")) {
+          notifyError("Session problem. Please sign in again.");
+          stopReminderTimer();
+          return;
         }
 
-        const resume = () => {
-            console.log("[WebSocket] App resumed");
+        // Only consider abnormal closes for the retry toast
+        const isAbnormal = !(event.code === 1000 || event.code === 1001);
+        if (isAbnormal) abnormalCloseCountRef.current += 1;
+        else abnormalCloseCountRef.current = 0;
 
-            // Reset error delay just like on mount
-            initialErrorDelayPassed.current = false;
-            setTimeout(() => {
-                initialErrorDelayPassed.current = true;
-            }, 3000);
+        // Suppress noisy closes that happen shortly after a good connect
+        const justConnected = Date.now() - lastOpenAtRef.current < SUPPRESS_AFTER_CONNECT_MS;
 
-            connect();
-        };
+        const shouldToast =
+          isAbnormal &&
+          !justConnected &&
+          abnormalCloseCountRef.current >= FAILS_BEFORE_TOAST;
 
-        const pause = () => {
-            console.log("[WebSocket] App paused");
-            socketRef.current?.close();
-        };
-
-        App.addListener("resume", resume);
-        App.addListener("pause", pause);
-
-        return () => {
-            socketRef.current?.close();
-            App.removeAllListeners();
-        };
-    }, [connect]);
-
-    useEffect(() => {
-        const checkTokenAndReconnect = () => {
-            const token = localStorage.getItem("token");
-            if (token && socketRef.current?.readyState !== WebSocket.OPEN) {
-                console.log("[WebSocket] Token detected — attempting to connect");
-                connect();
+        // Delay the specific retry toast; cancel if we reconnect before it fires
+        if (shouldToast) {
+          if (retryToastTimerRef.current) clearTimeout(retryToastTimerRef.current);
+          retryToastTimerRef.current = setTimeout(() => {
+            // Double-check we're still disconnected & not offline/manual
+            if (!isConnectedRef.current && !manualCloseRef.current && !isOfflineRef.current) {
+              notifyError("We’re having trouble connecting. Retrying...");
+              startReminderTimer(); // <-- keep reminding every 30s until we reconnect
             }
-        };
+            retryToastTimerRef.current = null;
+          }, RETRY_TOAST_DELAY_MS);
+        }
 
-        window.addEventListener("storage", checkTokenAndReconnect);
-        return () => window.removeEventListener("storage", checkTokenAndReconnect);
-    }, [connect]);
+        reconnectWithBackoff();
+      };
 
-    const disconnect = () => {
-        socketRef.current?.close();
-        socketRef.current = null;
-        if (connected) setConnected(false);
+      // onerror can be noisy; rely on onclose for UX + retry
+      ws.onerror = (event) => {
+        console.error("[WebSocket] Error occurred", event);
+      };
+    } catch (err) {
+      console.error("[WebSocket] Failed to create connection", err);
+      notifyError("Unable to connect. Please check your connection.");
+    }
+  }, []);
+
+  // ---------- Reconnect with backoff (stable) ----------
+  const reconnectWithBackoff = useCallback(() => {
+    if (!localStorage.getItem("token") || !navigator.onLine || reconnectingRef.current) return;
+
+    reconnectingRef.current = true;
+    const delay = Math.min(1000 * 2 ** reconnectAttempts.current, MAX_RECONNECT_DELAY);
+    setTimeout(() => {
+      reconnectAttempts.current += 1;
+      reconnectingRef.current = false;
+      connect();
+    }, delay + Math.random() * 3000);
+  }, [connect]);
+
+  // ---------- send ----------
+  const send = (data: object | string) => {
+    const msg = typeof data === "string" ? data : JSON.stringify(data);
+    try {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(msg);
+      } else {
+        console.warn("[WebSocket] Cannot send, socket not ready");
+        notifyError("Your message couldn't be sent. Will try to reconnect...");
+      }
+    } catch (err) {
+      console.error("[WebSocket] Send failed:", err);
+      notifyError("Your message couldn’t be sent. Please check your connection.");
+      reconnectWithBackoff?.();
+    }
+  };
+
+  const addListener = useCallback((cb: MessageHandler) => {
+    listenersRef.current.add(cb);
+    return () => {
+      listenersRef.current.delete(cb);
+    };
+  }, []);
+
+  // ---------- Mount: start grace, initial connect, app listeners (mount once) ----------
+  useEffect(() => {
+    resetErrorGrace();
+
+    if (localStorage.getItem("token")) {
+      connect();
+    }
+
+    const resume = () => {
+      console.log("[WebSocket] App resumed");
+      resetErrorGrace(); // 3s suppression after resume
+      connect();
     };
 
-    return {
-        send,
-        addListener,
-        isConnected: connected,
-        connect,
-        disconnect,
+    const pause = () => {
+      console.log("[WebSocket] App paused");
+      manualCloseRef.current = true;
+      stopReminderTimer();
+      socketRef.current?.close();
     };
+
+    App.addListener("resume", resume);
+    App.addListener("pause", pause);
+
+    return () => {
+      manualCloseRef.current = true;
+      socketRef.current?.close();
+      App.removeAllListeners();
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+      if (retryToastTimerRef.current) clearTimeout(retryToastTimerRef.current);
+      stopReminderTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount once
+
+  // ---------- React to token appearing (e.g., after login) ----------
+  useEffect(() => {
+    const checkTokenAndReconnect = () => {
+      const token = localStorage.getItem("token");
+      if (token && socketRef.current?.readyState !== WebSocket.OPEN) {
+        console.log("[WebSocket] Token detected — attempting to connect");
+        connect();
+      }
+    };
+
+    window.addEventListener("storage", checkTokenAndReconnect);
+    return () => window.removeEventListener("storage", checkTokenAndReconnect);
+  }, [connect]);
+
+  const disconnect = () => {
+    manualCloseRef.current = true;
+    stopReminderTimer();
+    socketRef.current?.close();
+    socketRef.current = null;
+    if (connected) setConnected(false);
+    isConnectedRef.current = false;
+  };
+
+  return {
+    send,
+    addListener,
+    isConnected: connected,
+    connect,
+    disconnect,
+  };
 }

@@ -45,7 +45,7 @@ const OnboardingCardBio: React.FC = () => {
         <IonItem>
           <IonTextarea value={bio}
             name="bio"
-            onIonChange={e => setBio(e.detail.value!)}
+            onIonInput={e => setBio(e.detail.value!)}
             placeholder=""
             maxlength={400}
             counter
