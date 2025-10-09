@@ -36,6 +36,7 @@ import EditChatSettingsModal from '../components/EditChatSettingsModal';
 import EditPushNotifications from '../components/EditPushNotifications';
 import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
 import { faBroomWide } from '@fortawesome/pro-solid-svg-icons';
+import EmailSettingsModal from '../components/EmailSettingsModal';
 
 
 
@@ -365,6 +366,9 @@ const Settings: React.FC = () => {
     onDismiss: () => editChatSettingsDismiss(),
   });
 
+    const [emailSettingsPresent, editEmailSettingsDismiss] = useIonModal(EmailSettingsModal, {
+    onDismiss: () => editEmailSettingsDismiss(),
+  });
 
 
   useEffect(() => {
@@ -644,6 +648,10 @@ const Settings: React.FC = () => {
                   <IonSelectOption value="large">Large</IonSelectOption>
                   <IonSelectOption value="xl">X-Large</IonSelectOption>
                 </IonSelect>
+              </IonItem>
+              <IonItem>
+              <IonLabel className="ion-text-wrap">Change/Add Email</IonLabel>
+              <IonButton slot="end" onClick={() => emailSettingsPresent()}> Edit </IonButton>
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">Change password</IonLabel>

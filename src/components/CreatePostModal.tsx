@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard } from '@ionic/react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, useIonRouter, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 
 import './CreatePostModal.css'
-import { announcementUploadPhoto, createAnnouncement, isCommunityPlus } from "../hooks/utilities";
+import { announcementUploadPhoto, containsPii, createAnnouncement, isCommunityPlus } from "../hooks/utilities";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import CroppedPostImageModal from "./CroppedPostImageModal";
@@ -17,6 +17,9 @@ import { faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
 import CitySelectorModal from "./CitySelectorModal";
 import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
+import { informationCircle } from "ionicons/icons";
+
+
 
 
 type Props = {
@@ -60,6 +63,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     const modal = useRef<HTMLIonModalElement>(null);
 
+
+
     const limits = useGetLimits().data
     const siteSettings = useGetSiteSettings().data
     const currentStreak = useGetCurrentStreak().data;
@@ -72,7 +77,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [bar, setBar] = useState<string | null>(null);
 
     const [link, setLink] = useState<string | null>(null);
-    const [content, setContent] = useState<string | null>(null);
+    const [content, setContent] = useState<string>("");
     const [coverPhotoAlt, setCoverPhotoAlt] = useState<string | null>(null);
 
     const [sensitiveContent, setSensitiveContent] = useState<boolean>(false);
@@ -93,6 +98,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [locationLabel, setLocationLabel] = useState<string>("");
     const [lat, setLat] = useState<number | null>(null);
     const [long, setLong] = useState<number | null>(null);
+
+    const [ackEmail, setAckEmail] = useState(false);
+
+
 
     // const [poll, setPoll] = useState<boolean>(false);
 
@@ -117,6 +126,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setIncludeProfile(false)
         }
     }, [byline])
+
+    useEffect(() => {
+        console.log("hi content", content, containsPii(content ?? ''))
+    }, [content])
 
 
 
@@ -160,9 +173,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     function formData() {
         const form_data: Post = {}
-        console.log("Sensitive", sensitiveContent)
-        console.log("include prof", includeProfile)
-        console.log("formdata", form_data)
 
 
         form_data.title = title;
@@ -298,6 +308,17 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     }
 
+    const needsProfileSettingsNote =
+        includeProfile && siteSettings?.settings_community_profile === false;
+
+    const confirmationMessage = needsProfileSettingsNote
+        ? 'Note: You chose “Show Profile,” but your post won\'t show until you turn on Connect from Refreshments in your Me tab > Settings.'
+        : undefined;
+
+    const hasPii: boolean = useMemo(() => containsPii(content), [content]);
+
+
+
     const requiredMissing = {
         title: !title?.trim(),
         byline: !byline,
@@ -356,13 +377,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     onDidDismiss={postSubmitSuccessful}
                     header="Your post has been submitted and is now pending approval!"
                     subHeader="Make sure to check your email for possible questions."
+                    message={confirmationMessage}
                     buttons={['OK']}
                 />
                 {siteSettings?.allow_free_users_to_submit_posts &&
                     <IonCard className="ion-padding limited ion-text-center">
-                        <IonText color="navy"><span style={{ fontWeight: "bold", fontSize: "15pt" }}>We're trying something out!</span></IonText>
-                        <p style={{ fontWeight: "bold", fontSize: "20pt" }}><FontAwesomeIcon icon={faTimer} /></p>
-                        <p>For a limited time, all users can submit up to 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
+                        <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
                         <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
                     </IonCard>}
                 {isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2 && isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)) ?
@@ -465,7 +485,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             maxlength={1000}
                                             style={{ minHeight: "120px" }}
                                             placeholder="Write your post here..."
-                                            onIonInput={e => setContent(e.detail.value!)}
+                                            onIonInput={(e) => setContent(e.detail.value ?? "")}
                                         />
                                     </IonItem>
                                 </IonCard>
@@ -479,7 +499,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             onIonChange={(e) => setIncludeProfile(e.detail.checked)}
                                             disabled={byline === "Anonymous"}
                                             labelPlacement="end"
-                                            justify="space-between"
                                             helperText="Visible only if Connect from Refreshments is enabled."
                                         >
                                             Show Profile
@@ -492,7 +511,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             checked={sensitiveContent}
                                             onIonChange={(e) => setSensitiveContent(e.detail.checked)}
                                             labelPlacement="end"
-                                            justify="space-between"
                                             helperText="Check if your post needs a content warning."
                                         >
                                             Sensitive Content
@@ -520,7 +538,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 checked={requestSupportive}
                                                 onIonChange={(e) => setRequestSupportive(e.detail.checked)}
                                                 labelPlacement="end"
-                                                justify="space-between"
                                             >
                                                 Request Supportive Comments Only
                                             </IonCheckbox>
@@ -568,6 +585,76 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         </IonItem>}
                                 </IonCard>
 
+
+
+                                {/* Submit Button */}
+
+                                <IonItem color="white">
+                                    <IonLabel class="ion-text-wrap">
+                                        Moderators may make small edits (spelling, capitalization) for clarity and accessibility. If further edits are necessary to meet guidelines or if there are questions, moderators will reach out at the email associated with your account.
+                                    </IonLabel>
+                                </IonItem>
+                                <IonItem color="white">
+                                    <IonCheckbox
+                                        checked={ackEmail}
+                                        onIonChange={(e) => setAckEmail(e.detail.checked)}
+                                        labelPlacement="end"
+                                        className="createpostcheckbox"
+                                    > <IonLabel>I understand.</IonLabel>
+                                    </IonCheckbox>
+                                </IonItem>
+
+                                {(issues.length > 0 || hasPii) && (
+                                    <IonRow className="ion-padding ion-text-center">
+                                        <IonText color="danger">
+                                            {issues.map((msg, i) => (
+                                                <p key={i} style={{ margin: 0 }}>{msg}</p>
+                                            ))}
+                                        </IonText>
+                                        {hasPii &&
+                                            <>
+                                                <IonText color="danger">
+                                                    <p style={{ margin: 0 }}>
+                                                        Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
+                                                        Use the Connect from Refreshments feature instead.
+                                                        &nbsp;
+                                                        <IonButton
+                                                            id="contact-help-trigger"
+                                                            fill="clear"
+                                                            size="small"
+                                                            color="navy"
+                                                            aria-label="How to share contact details safely"
+                                                        >
+                                                            <IonIcon icon={informationCircle} slot="start" />
+                                                            How to share contact details safely
+                                                        </IonButton>
+                                                    </p>
+                                                </IonText>
+
+                                                <IonPopover trigger="contact-help-trigger" showBackdrop dismissOnSelect side="left" alignment="center">
+                                                    <IonList lines="none" className="ion-padding">
+                                                        <IonItem className="ion-text-wrap">
+                                                            <div>
+                                                                <h3 style={{ marginTop: 0, marginBottom: 8 }}>How to share contact details</h3>
+                                                                <p style={{ margin: 0 }}>
+                                                                    For everyone's safety and privacy, you can't share personal contact info including emails, phone numbers,
+                                                                    and addresses in the public forum. Please use the <b>Connect from Refreshments</b> feature to be able to send Likes
+                                                                    and connect with others privately, where you can choose to share off-app contact information in direct messages once
+                                                                    both members are ready.
+                                                                </p>
+                                                                <br></br>
+                                                                <p style={{ margin: 0 }}>To turn on Connect from Refreshments, head to your Settings (in the Me tab).</p>
+                                                            </div>
+                                                        </IonItem>
+                                                    </IonList>
+                                                </IonPopover>
+                                            </>
+                                        }
+                                    </IonRow>
+                                )}
+
+
+
                                 {/* Errors */}
                                 {errors && errors.length > 0 && (
                                     <IonCard color="danger" className="ion-padding">
@@ -577,27 +664,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     </IonCard>
                                 )}
 
-                                {/* Submit Button */}
 
-                                <IonRow class="ion-padding moderator-submit">
-                                    <IonText color="navy">
-                                        To keep posts clear and accessible, moderators will make small edits like fixing typos and using standard spelling and capitalization. If further edits are needed to meet our guidelines, we'll email you!
-                                    </IonText>
-                                </IonRow>
-
-                                {issues.length > 0 && (
-                                    <IonRow className="ion-padding ion-text-center">
-                                        <IonText color="danger">
-                                            {issues.map((msg, i) => (
-                                                <p key={i} style={{ margin: 0 }}>{msg}</p>
-                                            ))}
-                                        </IonText>
-                                    </IonRow>
-                                )}
-
-
-
-                                <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid}>
+                                <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid || hasPii || !ackEmail}>
                                     Submit Post
                                 </IonButton>
                             </>

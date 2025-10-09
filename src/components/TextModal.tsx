@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, useIonPopover } from '@ionic/react';
-import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage } from "../hooks/utilities";
+import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
 import "./TextModal.css";
@@ -22,7 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAcceptingMessages } from "../hooks/api/chats/accepting-messages";
 import { App } from "@capacitor/app";
 import { useMessagesInf } from "../hooks/api/chats/messages-inf";
-import { Camera, CameraResultType } from "@capacitor/camera";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import { useMessageFile } from "../hooks/api/chats/message-file";
@@ -182,6 +182,18 @@ const isAudioFile = (file: string) => {
 
 }
 
+const isJpegUrl = (url?: string) => {
+  if (!url) return false;
+  try {
+    const path = new URL(url, window.location.origin).pathname; // strips query
+    return /\.(jpe?g)$/i.test(path); // matches .jpg or .jpeg
+  } catch {
+    // if it's a relative URL or plain string
+    const path = url.split('?')[0];
+    return /\.(jpe?g)$/i.test(path);
+  }
+};
+
 const MessageAttachment: React.FC<AttachmentProps> = (props) => {
 
     const { id } = props;
@@ -195,7 +207,7 @@ const MessageAttachment: React.FC<AttachmentProps> = (props) => {
             {file?.isLoading ?
                 <IonSpinner name="bubbles"></IonSpinner>
                 :
-                file.data && file.data?.file?.endsWith("jpeg") || file.data?.file?.includes("jpeg?Expires") ?
+                file?.data && isJpegUrl(file.data.file) ?
                     <PhotoView src={getAttachmentIfNotExpired(file?.data, currentUser.subscription_level)}>
                         <img src={getAttachmentIfNotExpired(file?.data, currentUser.subscription_level)} alt="uploaded image" style={{ maxHeight: "80pt", width: "auto" }} onError={(e) => onAttachmentImgError(e)} />
                     </PhotoView>
@@ -242,7 +254,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const [uiConnected, setUiConnected] = useState(isConnected);
 
-        useEffect(() => {
+    useEffect(() => {
         const timeout = setTimeout(() => {
             setUiConnected(isConnected);
         }, 300); // Debounce delay to prevent flashing
@@ -251,21 +263,21 @@ const TextModal: React.FC<Props> = (props) => {
     }, [isConnected]);
 
     useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
 
-    if (!uiConnected) {
-        timeout = setTimeout(() => {
-        setShowReconnect(true);
-        }, 10000); // 10 seconds before showing the reconnect button
-    } else {
-        setShowReconnect(false); // hide it again when reconnected
-    }
-
-    return () => {
-        if (timeout) {
-        clearTimeout(timeout);
+        if (!uiConnected) {
+            timeout = setTimeout(() => {
+                setShowReconnect(true);
+            }, 10000); // 10 seconds before showing the reconnect button
+        } else {
+            setShowReconnect(false); // hide it again when reconnected
         }
-    };
+
+        return () => {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+        };
     }, [uiConnected]);
 
     const retrievedMessages = useMessagesInf(textModalData?.other_user_id)
@@ -302,7 +314,7 @@ const TextModal: React.FC<Props> = (props) => {
         onDidDismiss: () => dismissPopover(),
     });
 
-    
+
 
     const textContentRef = useRef<HTMLIonContentElement>(null);
 
@@ -573,10 +585,58 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
+    // Convert dataURL -> Blob
+    const dataURLToBlob = (dataUrl: string) => {
+        console.log("dataURLToBlob")
+        const [meta, b64] = dataUrl.split(',');
+        const mime = meta.match(/data:(.*?);base64/)![1];
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: mime });
+    };
+
+    // Resize any image Blob to JPEG base64 via <canvas>
+    const resizeToJpegBase64 = async (
+        input: Blob,
+        maxW = 800,
+        maxH = 800,
+        quality = 0.7
+    ) => {
+        console.log("resizeToJpegBase64")
+        const url = URL.createObjectURL(input);
+        try {
+            const img = new Image();
+            const loaded = new Promise<void>((res, rej) => {
+                img.onload = () => res();
+                img.onerror = rej;
+            });
+            img.src = url;
+            await loaded;
+
+            let { width, height } = img;
+            const ratio = Math.min(maxW / width, maxH / height, 1);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Force JPEG output to sidestep HEIC issues
+            return canvas.toDataURL('image/jpeg', quality);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    };
 
 
 
-    const sendOutgoingTextMessageWithFile = async (user_pk: string, file: any) => {
+
+
+    const sendOutgoingTextMessageWithFileAudio = async (user_pk: string, file: any) => {
         setWaitBeforeSendingMore(true);
 
         try {
@@ -632,6 +692,46 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
+    const sendOutgoingTextMessageWithFileImage = async (user_pk: string, blob: Blob, filename: string) => {
+        setWaitBeforeSendingMore(true);
+        try {
+            const uploadFile = await uploadFileForMessageNew({ blob, filename, user_pk });
+            if (uploadFile.status !== 200) {
+                setAttachmentErrorToast(true);
+                setWaitBeforeSendingMore(false);
+                return;
+            }
+
+            const file_id = uploadFile.data["id"];
+            const randomId = Math.floor(Math.random() * -8000);
+            const nowTime = Date.now() / 1000;
+
+            const messageData = { msg_type: 4, file_id, user_pk, random_id: randomId };
+            const displayMessage = {
+                edited: 1696112928,
+                file: file_id,
+                id: 999,
+                out: true,
+                read: false,
+                sender: 0,
+                sender_username: "you",
+                recipient: user_pk,
+                sent: nowTime,
+                text: "Sending...",
+            };
+
+            setImage(null);
+            setRecording({ recording: false, playing: false, audio: null });
+            setAudioRef(null);
+            addMessageToFrontOfTheArray(displayMessage);
+            send(messageData);
+        } catch (error) {
+            console.error("Unexpected error sending file message:", error);
+            setAttachmentErrorToast(true);
+        }
+        setWaitBeforeSendingMore(false);
+    };
+
 
     const getTime = (utc: number) => {
 
@@ -666,11 +766,15 @@ const TextModal: React.FC<Props> = (props) => {
 
     const sendHandler = async () => {
 
-        if (image) {
-            await sendOutgoingTextMessageWithFile(textModalData?.other_user_id, image)
+        if (blob) {  // <— use blob state, not image
+            await sendOutgoingTextMessageWithFileImage(
+                textModalData?.other_user_id,
+                blob,
+                imageName || `upload_${Date.now()}.jpeg`
+            );
         }
         if (audioRef?.src) {
-            await sendOutgoingTextMessageWithFile(textModalData?.other_user_id, audioRef?.src)
+            await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src)
         }
         if (messageInput) {
             await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
@@ -740,38 +844,33 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const uploadPhoto = async () => {
+        try {
+            const photo = await Camera.getPhoto({
+                source: CameraSource.Photos,
+                resultType: CameraResultType.Uri,   // <-- key change (no base64 from Camera)
+                quality: 90,
+                allowEditing: false,
+                webUseInput: true,                  // helps on iOS/Safari/PWA
+            });
 
-        const photo = await Camera.getPhoto({
-            quality: 90,
-            allowEditing: false,
-            resultType: CameraResultType.Base64
-        })
+            // Read original file (HEIC/JPEG/etc.) as Blob
+            const res = await fetch(photo.webPath!);
+            const originalBlob = await res.blob();
 
-        const photoblob = new Blob([new Uint8Array(decode(photo.base64String!))], {
-            type: `image/${photo.format}`,
-        });
+            // Normalize & resize to JPEG (base64 for your existing preview UI)
+            const dataUrl = await resizeToJpegBase64(originalBlob, 800, 800, 0.7);
+            const jpegBlob = dataURLToBlob(dataUrl);
 
-        Resizer.imageFileResizer(
-            photoblob,
-            800,
-            800,
-            "JPEG",
-            70,
-            0,
-            (uri) => {
-                setImage(uri)
-            },
-            "base64",
-            500,
-            500
-        );
-
-        setBlob(photoblob)
-
-        setImageName("textimage.png")
-        setShowAttachments(false)
-
-    }
+            // Keep your existing state usage
+            setImage(dataUrl);                                // dataURL preview works as before
+            setBlob(jpegBlob);                                // upload this via multipart
+            setImageName(`upload_${Date.now()}.jpeg`);
+            setShowAttachments(false);
+        } catch (e) {
+            console.error('uploadPhoto failed', e);
+            // optionally show a toast
+        }
+    };
 
     const requestVoiceRecord = async () => {
 
@@ -1042,15 +1141,15 @@ const TextModal: React.FC<Props> = (props) => {
             <IonFooter id="footer" className="send-message">
                 <IonGrid>
                     {!uiConnected && (
-                    <IonRow className="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
-                        {showReconnect ? (
-                        <IonButton onClick={handleManualReconnect}>
-                            Reconnect
-                        </IonButton>
-                        ) : (
-                        <IonText style={{ opacity: 0.6 }}>Trying to reconnect…</IonText>
-                        )}
-                    </IonRow>
+                        <IonRow className="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
+                            {showReconnect ? (
+                                <IonButton onClick={handleManualReconnect}>
+                                    Reconnect
+                                </IonButton>
+                            ) : (
+                                <IonText style={{ opacity: 0.6 }}>Trying to reconnect…</IonText>
+                            )}
+                        </IonRow>
                     )}
                     {showAttachments ?
                         <IonRow className="attachment-buttons" >
@@ -1155,7 +1254,7 @@ const TextModal: React.FC<Props> = (props) => {
                             </IonButton>
                         </IonCol>
                     </IonRow>
-                    
+
                 </IonGrid>
 
             </IonFooter>
