@@ -105,6 +105,7 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 
 
 
+
 setupIonicReact();
 
 // For PWA Camera 
@@ -151,7 +152,8 @@ if (isMobile()) {
 const App: React.FC = () => {
 
   // Version 3: July 6 2025
-  const currentVersion: number = 3
+  // Version 4: Oct 15 2025
+  const currentVersion: number = 4
 
   const [loading, setLoading] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
@@ -188,43 +190,20 @@ const App: React.FC = () => {
   const currentUserProfile = useGetCurrentProfile().data;
   const current_settings = useChatSettings().data;
 
-  function isSamsung() {
-    const ua = navigator.userAgent || '';
-    return /SM-[A-Z0-9]+|samsung|oneui/i.test(ua);
-  }
 
+  // inside `const App: React.FC = () => {` — put this as your FIRST useEffect
   useEffect(() => {
-  if (Capacitor.getPlatform() !== 'android' || !isSamsung()) return;
+    if (Capacitor.getPlatform() !== 'android') return;
 
-  let showSub: PluginListenerHandle | undefined;
-  let hideSub: PluginListenerHandle | undefined;
-  let cancelled = false;
-
-  (async () => {
-    showSub = await Keyboard.addListener('keyboardWillShow', info => {
-      const offset = `${info.keyboardHeight}px`;
-      document.body.classList.add('samsung-keyboard-opened');
-      document.documentElement.style.setProperty('--keyboard-offset', offset);
-    });
-
-    hideSub = await Keyboard.addListener('keyboardWillHide', () => {
-      document.body.classList.remove('samsung-keyboard-opened');
-      document.documentElement.style.removeProperty('--keyboard-offset');
-    });
-
-    if (cancelled) {
-      showSub?.remove();
-      hideSub?.remove();
-    }
-  })();
-
-  return () => {
-    cancelled = true;
-    showSub?.remove();
-    hideSub?.remove();
-  };
-}, []);
-
+    (async () => {
+      const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
+      try {
+        await EdgeToEdge.enable();
+      } catch (e) {
+        console.warn('EdgeToEdge.enable() failed', e);
+      }
+    })();
+  }, []);
 
 
 

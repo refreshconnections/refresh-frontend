@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal } from "@ionic/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
@@ -131,6 +131,9 @@ const OpenedPost: React.FC = () => {
     });
 
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
+
+    const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
+
 
 
     const [presentWhyHiddenAlert] = useIonAlert();
@@ -683,6 +686,7 @@ const OpenedPost: React.FC = () => {
 
                         <IonFooter className={hideFooter ? "create-comment-hidden" : "create-comment"}>
                             {globalCurrentProfile?.username ?
+                            <>
                                 <IonRow>
                                     <IonCol size="10">
                                         <IonItem className="inputted" lines="none">
@@ -723,11 +727,19 @@ const OpenedPost: React.FC = () => {
                                         </IonItem>
                                     </IonCol>
                                     <IonCol size="2">
-                                        <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput} onClick={() => createComment(commentInput!, replyTo)}>
+                                        <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput || hasPii} onClick={() => createComment(commentInput!, replyTo)}>
                                             <FontAwesomeIcon icon={faCommentPlus} />
                                         </IonButton>
                                     </IonCol>
                                 </IonRow>
+                                {hasPii &&
+                                <IonRow class="ion-padding">
+                                    <IonText color="danger">
+                                        Comments cannot contain private contact information like emails or phone numbers.
+                                    </IonText>
+                                </IonRow>
+                                }
+                                </>
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">
                                     <IonButton onClick={() => usernamePresent()} color="tertiary">

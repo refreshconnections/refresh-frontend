@@ -16,6 +16,7 @@ import {
     IonSegmentButton,
     IonAlert,
     IonIcon,
+    IonToast,
 } from "@ionic/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,6 +27,8 @@ import {
     useClearSecondaryEmail,
 } from "../hooks/api/account/emails";
 import { checkmarkCircle, closeCircle } from "ionicons/icons";
+import './StatusToast.css'
+
 
 type Props = { onDismiss: () => void };
 
@@ -42,11 +45,14 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
     const [addMethod, setAddMethod] = useState<"email" | "sms">("email");
     const [secondaryDraft, setSecondaryDraft] = useState("");
     const [smsCode, setSmsCode] = useState("");
+    const [smsOpen, setSmsOpen] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
 
     // password-first dialog state
     const [pwdOpen, setPwdOpen] = useState(false);
+    const [pwdInput, setPwdInput] = useState("");
     const [pwdAction, setPwdAction] = useState<"add" | "swap" | null>(null);
+
 
     // data
     const statusQuery = useEmailStatus();
@@ -57,9 +63,17 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
         onSuccess: (msg) => {
             setToast(msg || "Approval sent.");
             qc.invalidateQueries({ queryKey: ["account", "email-status"] });
+            if (addMethod === "sms") {
+                setSmsOpen(true);
+            }
         },
         onError: (err) => setToast(err || "Could not add secondary."),
     });
+
+    const lastTwoDigits = useMemo(() => {
+        const digits = (status?.phone_number ?? "").replace(/\D/g, "");
+        return digits.slice(-2);
+    }, [status?.phone_number]);
 
     const approveSms = useApproveSecondarySms({
         onSuccess: (msg) => {
@@ -69,6 +83,8 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
         },
         onError: (err) => setToast(err || "Invalid or expired code."),
     });
+
+
 
     const swapPrimary = useSwapPrimaryEmail({
         onSuccess: (msg) => {
@@ -93,8 +109,8 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
         return false;
     }, [secondaryDraft]);
 
-    const swapDisabled = useMemo(() => !status?.secondary_email_validated, [
-        status?.secondary_email_validated,
+    const swapDisabled = useMemo(() => !status?.secondary_email_fully_verified, [
+        status?.secondary_email_fully_verified,
     ]);
 
     const verifiedBadge = (ok?: boolean) => (
@@ -105,10 +121,9 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
 
     // password dialog handler
     const handlePasswordConfirm = (data: any) => {
-        console.log("HEWO")
+
         const pw = (data?.password ?? "").toString();
         if (!pw) return false; // keep alert open
-        console.log("HEWO2")
 
         if (pwdAction === "add") {
             // re-check basic client-side constraints; server remains source of truth
@@ -132,6 +147,16 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
         setPwdOpen(false);
         setPwdAction(null);
         return true;
+    };
+
+    const handleSmsConfirm = (data: any) => {
+        const code = ((data?.code ?? "") as string).replace(/\D/g, "").slice(0, 6);
+        if (!code || code.length !== 6) {
+            setToast("Enter the 6-digit code.");
+            return false; // keep the alert open
+        }
+        approveSms.mutate({ code });
+        return true; // allows the alert to close; it will also close on onSuccess
     };
 
     return (
@@ -169,7 +194,7 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
                             ) : status?.secondary_email ? (
                                 <>
                                     <span>{status?.secondary_email}</span>&nbsp;
-                                    {verifiedBadge(status?.secondary_email_verified
+                                    {verifiedBadge(status?.secondary_email_fully_verified
                                     )}
                                 </>
                             ) : (
@@ -190,7 +215,7 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
                 </IonItem>
 
                 {status?.secondary_email && !(
-                    status?.secondary_email_verified ??
+                    status?.secondary_email_validated ??
                     (status?.secondary_email_approved && status?.secondary_email_validated)
                 ) && (
                         <Pad>
@@ -207,22 +232,31 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
                                     icon={status?.secondary_email_approved ? checkmarkCircle : closeCircle}
                                     color={status?.secondary_email_approved ? "success" : "medium"}
                                 />
-                                <div>Approved by primary</div>
+                                <div>Approved by primary email or phone number</div>
 
                                 <IonIcon
                                     icon={status?.secondary_email_validated ? checkmarkCircle : closeCircle}
                                     color={status?.secondary_email_validated ? "success" : "medium"}
                                 />
-                                <div>Validated that can receive messages</div>
+                                <div>Validated that backup email can receive messages</div>
                             </div>
+                            <IonButton
+                                size="small"
+                                fill="clear"
+                                onClick={() => statusQuery.refetch()}
+                                disabled={statusQuery.isFetching}
+                                slot="end"
+                            >
+                                {statusQuery.isFetching ? <IonSpinner name="dots" /> : "Recheck status"}
+                            </IonButton>
                         </Pad>
                     )}
+
 
 
                 {/* Add secondary (password-first) */}
                 {!status?.secondary_email &&
                     <>
-                        <SectionTitle title="Add a secondary email" />
                         <IonItem>
                             <IonLabel position="stacked">Backup email</IonLabel>
                             <input
@@ -279,54 +313,10 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
                             </IonButton>
                         </Pad>
 
-                        {/* SMS approval input (inline) */}
-                        {status?.secondary_email && !status?.secondary_email_validated && (
-                            <>
-                                <Pad>
-                                    <IonItem>
-                                        <IonLabel position="stacked">Enter SMS code</IonLabel>
-                                        <input
-                                            inputMode="numeric"
-                                            type="text"
-                                            maxLength={6}
-                                            placeholder="123456"
-                                            value={smsCode}
-                                            onChange={(e) =>
-                                                setSmsCode(
-                                                    ((e.target as HTMLInputElement).value || "")
-                                                        .replace(/\D/g, "")
-                                                        .slice(0, 6)
-                                                )
-                                            }
-                                            style={{
-                                                border: "1px solid var(--ion-color-medium, #ccc)",
-                                                borderRadius: 8,
-                                                padding: "10px 12px",
-                                                width: "100%",
-                                            }}
-                                        />
-                                    </IonItem>
-                                </Pad>
-                                <Pad>
-                                    <IonButton
-                                        expand="block"
-                                        disabled={!smsCode || approveSms.isPending}
-                                        onClick={() => approveSms.mutate({ code: smsCode })}
-                                    >
-                                        {approveSms.isPending ? (
-                                            <IonSpinner name="dots" />
-                                        ) : (
-                                            "Approve via SMS"
-                                        )}
-                                    </IonButton>
-                                </Pad>
-                            </>
-                        )}
                     </>
                 }
 
                 {/* Swap to primary (password-first) */}
-                <SectionTitle title="Swap to primary" />
                 <Pad>
                     <IonNote>
                         You can make your verified backup the new primary. You'll sign in
@@ -336,7 +326,7 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
                 <Pad>
                     <IonButton
                         expand="block"
-                        disabled={swapDisabled || swapPrimary.isPending || !status?.secondary_email || !status?.secondary_email_validated}
+                        disabled={swapDisabled || swapPrimary.isPending || !status?.secondary_email || !status?.secondary_email_fully_verified}
                         onClick={() => {
                             setPwdAction("swap");
                             setPwdOpen(true);
@@ -357,28 +347,78 @@ const ManageEmailsModal: React.FC<Props> = ({ onDismiss }) => {
             <IonAlert
                 isOpen={pwdOpen}
                 header="Confirm password"
-                inputs={[{ name: "password", type: "password", placeholder: "Your current password" }]}
+                inputs={[
+                    {
+                        name: "password",
+                        type: "password",
+                        placeholder: "Your current password",
+                        value: pwdInput,
+                    },
+                ]}
                 buttons={[
                     { text: "Cancel", role: "cancel" },
-                    { text: "Confirm", handler: handlePasswordConfirm },
+                    {
+                        text: "Confirm",
+                        handler: (data) => {
+                            const ok = handlePasswordConfirm(data);
+                            if (ok) setPwdInput("");  // clear after a successful submit
+                            return ok;
+                        },
+                    },
                 ]}
                 onDidDismiss={() => {
                     setPwdOpen(false);
                     setPwdAction(null);
+                    setPwdInput("");
                 }}
             />
+
+            <IonAlert
+                isOpen={smsOpen}
+                header="Enter SMS code"
+                message={`We texted a 6-digit code to your phone number ending in ••${lastTwoDigits || "??"}`}
+                inputs={[
+                    {
+                        name: "code",
+                        type: "text",
+                        placeholder: "######",
+                        value: smsCode,                         
+                        attributes: { inputmode: "numeric", maxlength: 6 },
+                    },
+                ]}
+                buttons={[
+                    { text: "Cancel", role: "cancel", handler: () => setSmsOpen(false) },
+                    {
+                        text: approveSms.isPending ? "Verifying…" : "Verify",
+                        handler: (data) => {
+                            const ok = handleSmsConfirm(data);
+                            if (ok) setSmsCode("");              
+                            return ok;
+                        },
+                    },
+                ]}
+                onDidDismiss={() => {
+                    if (!approveSms.isPending) {
+                        setSmsOpen(false);
+                        setSmsCode("");                        
+                    }
+                }}
+            />
+
+            <IonToast
+                isOpen={!!toast}
+                message={toast ?? ""}
+                duration={2500}
+                onDidDismiss={() => setToast(null)}
+                cssClass={'status-toast'}
+            />
+
         </IonPage>
     );
 };
 
 export default ManageEmailsModal;
 
-// presentational helpers
-const SectionTitle: React.FC<{ title: string }> = ({ title }) => (
-    <div style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, opacity: 0.75 }}>
-        {title}
-    </div>
-);
 
 const Pad: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div style={{ padding: "8px 16px" }}>{children}</div>

@@ -6,11 +6,12 @@ export const accountEmailKeys = {
 };
 
 type StatusResp = {
-  secondary_email_verified: boolean;
-  secondary_email_approved: boolean;
+  secondary_email_approved: any;
   primary_email: string;
   secondary_email: string | null;
   secondary_email_validated: boolean;
+  secondary_email_fully_verified: boolean;
+  phone_number: string | null;
 };
 
 type SetSecondaryVars = {

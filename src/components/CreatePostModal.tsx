@@ -616,7 +616,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 <IonText color="danger">
                                                     <p style={{ margin: 0 }}>
                                                         Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
-                                                        Use the Connect from Refreshments feature instead.
                                                         &nbsp;
                                                         <IonButton
                                                             id="contact-help-trigger"

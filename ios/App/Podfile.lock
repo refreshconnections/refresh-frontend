@@ -1,30 +1,34 @@
 PODS:
-  - Capacitor (5.1.1):
+  - Capacitor (7.4.2):
     - CapacitorCordova
-  - CapacitorApp (5.0.8):
+  - CapacitorApp (7.0.2):
     - Capacitor
-  - CapacitorCamera (5.0.9):
+  - CapacitorCamera (7.0.2):
     - Capacitor
-  - CapacitorCordova (5.1.1)
-  - CapacitorDevice (7.0.0):
+  - CapacitorCordova (7.4.2)
+  - CapacitorDevice (7.0.2):
     - Capacitor
-  - CapacitorGeolocation (5.0.7):
+  - CapacitorGeolocation (7.1.5):
     - Capacitor
-  - CapacitorKeyboard (5.0.8):
+    - IONGeolocationLib (= 1.0.1)
+  - CapacitorKeyboard (7.0.2):
     - Capacitor
-  - CapacitorPreferences (5.0.7):
+  - CapacitorPreferences (7.0.2):
     - Capacitor
-  - CapacitorSplashScreen (6.0.3):
+  - CapacitorSplashScreen (7.0.2):
     - Capacitor
-  - CapacitorTextZoom (6.0.2):
+  - CapacitorStatusBar (7.0.2):
     - Capacitor
-  - CapacitorVoiceRecorder (5.0.0):
+  - CapacitorTextZoom (7.0.2):
     - Capacitor
-  - CapgoNativegeocoder (1.0.20):
+  - CapacitorVoiceRecorder (7.0.6):
     - Capacitor
-  - CordovaPluginsStatic (5.1.1):
+  - CapgoNativegeocoder (7.1.8):
+    - Capacitor
+  - CordovaPluginsStatic (7.4.2):
     - CapacitorCordova
     - OneSignalXCFramework (= 5.2.0)
+  - IONGeolocationLib (1.0.1)
   - OneSignalXCFramework (5.2.0):
     - OneSignalXCFramework/OneSignalComplete (= 5.2.0)
   - OneSignalXCFramework/OneSignal (5.2.0):
@@ -88,6 +92,7 @@ DEPENDENCIES:
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorPreferences (from `../../node_modules/@capacitor/preferences`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapacitorTextZoom (from `../../node_modules/@capacitor/text-zoom`)"
   - CapacitorVoiceRecorder (from `../../node_modules/capacitor-voice-recorder`)
   - "CapgoNativegeocoder (from `../../node_modules/@capgo/nativegeocoder`)"
@@ -96,6 +101,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - IONGeolocationLib
     - OneSignalXCFramework
     - PurchasesHybridCommon
     - RevenueCat
@@ -119,6 +125,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/preferences"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
   CapacitorTextZoom:
     :path: "../../node_modules/@capacitor/text-zoom"
   CapacitorVoiceRecorder:
@@ -131,24 +139,26 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
-  Capacitor: 55956e1199b63efcd7f2dedffa5c6b9129c45aae
-  CapacitorApp: 102e553c3b1fdc255969c39aa19b529675690ef4
-  CapacitorCamera: 4892c5c392f60039d853dde78bc50ba19fbd113e
-  CapacitorCordova: b31a46ad379c93a5c04e0598a6164e8cb90c2bb2
-  CapacitorDevice: 62066b65e148a133df7b8c5bf972ba835b329748
-  CapacitorGeolocation: 918a292459542bcce98433f9e7c7909f8c72838a
-  CapacitorKeyboard: aec619a578235c6ce279075009a2689c2cf5c42c
-  CapacitorPreferences: 77ac427e98db83bace772455f8ba447430382c4c
-  CapacitorSplashScreen: 68893659d77b5f82d753b3a70475082845e3039c
-  CapacitorTextZoom: 013a8dd0887f6bd103171768c91845f2354414b6
-  CapacitorVoiceRecorder: 872ea857b497ce2c71afe3e4eb5de0a74290c0db
-  CapgoNativegeocoder: 25db7bd5770306e80968da512c30f8caf54c25c9
-  CordovaPluginsStatic: 725d2d1544eeffbb22278e240f80d072734ce3fe
+  Capacitor: 156d98aba46ec01dde72c4bbb92fa626837cad29
+  CapacitorApp: efc1e9748a8ea5d3e789cd82a4f451341cc7ac93
+  CapacitorCamera: 6e18d54c8ab30d7dc7b8cd93d96f9b4f57e9202a
+  CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
+  CapacitorDevice: a50a45f0d075e55e2392c7a4be5404d4f69515de
+  CapacitorGeolocation: b96474c3259dd4a294227ea8ec19140b1837cceb
+  CapacitorKeyboard: 056bbe3711830ccb782f1705a8ad183b27b6c51e
+  CapacitorPreferences: b583b5deb74e564c35968189d25d32c0fd41200d
+  CapacitorSplashScreen: 8d6c8cb0542a8e81585c593815db8785ed8ce454
+  CapacitorStatusBar: 5526833b87fa9c96a2a90c1322bb1f663c04505f
+  CapacitorTextZoom: b333ea3d12bc982efc521086ac0e4ae5dca8eb03
+  CapacitorVoiceRecorder: b136a5989c9a306d57f0c9fc530be79a06ccf7b2
+  CapgoNativegeocoder: 5b0c7a5a96615fdb95d0a60f0f1e9c2b4478dea2
+  CordovaPluginsStatic: aa9d64a1a5be501b3feccf6a8fc5058fa9d67fa5
+  IONGeolocationLib: 20f9d0248a0b5264511fb57a37e25dd2badf797a
   OneSignalXCFramework: bdf74fdc06888f9466dc21e826fe1549ed143095
   PurchasesHybridCommon: 662aa1f4769ff4ef594e35adf1a5d0ad7b3d08b7
   RevenueCat: 2d3639d30b8a71cbfe3d99cef8243c602793e0ec
   RevenuecatPurchasesCapacitor: 826542c3a39b77b6c94e6858fafad731754d6dd6
 
-PODFILE CHECKSUM: 6c632470c663ef57531cf822ed69bd1d1443ddad
+PODFILE CHECKSUM: adb0c442917e7e191bc341f7fbdfe349e21fbc9d
 
 COCOAPODS: 1.15.2

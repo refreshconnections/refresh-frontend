@@ -44,6 +44,7 @@ import ConversationStarterCard from "./ConversationStarterCard";
 import ConversationContextCard from "./ConversationContextCard";
 import MessageLikePopover from "./MessageLikePopover";
 import { useWebSocketContext } from "./WebsocketContext";
+import { Capacitor } from "@capacitor/core";
 
 
 
@@ -183,15 +184,15 @@ const isAudioFile = (file: string) => {
 }
 
 const isJpegUrl = (url?: string) => {
-  if (!url) return false;
-  try {
-    const path = new URL(url, window.location.origin).pathname; // strips query
-    return /\.(jpe?g)$/i.test(path); // matches .jpg or .jpeg
-  } catch {
-    // if it's a relative URL or plain string
-    const path = url.split('?')[0];
-    return /\.(jpe?g)$/i.test(path);
-  }
+    if (!url) return false;
+    try {
+        const path = new URL(url, window.location.origin).pathname; // strips query
+        return /\.(jpe?g)$/i.test(path); // matches .jpg or .jpeg
+    } catch {
+        // if it's a relative URL or plain string
+        const path = url.split('?')[0];
+        return /\.(jpe?g)$/i.test(path);
+    }
 };
 
 const MessageAttachment: React.FC<AttachmentProps> = (props) => {
@@ -596,15 +597,13 @@ const TextModal: React.FC<Props> = (props) => {
         return new Blob([arr], { type: mime });
     };
 
-    // Resize any image Blob to JPEG base64 via <canvas>
     const resizeToJpegBase64 = async (
-        input: Blob,
+        inputBlob: Blob,
         maxW = 800,
         maxH = 800,
         quality = 0.7
-    ) => {
-        console.log("resizeToJpegBase64")
-        const url = URL.createObjectURL(input);
+    ): Promise<Blob> => {
+        const url = URL.createObjectURL(inputBlob);
         try {
             const img = new Image();
             const loaded = new Promise<void>((res, rej) => {
@@ -625,8 +624,11 @@ const TextModal: React.FC<Props> = (props) => {
             const ctx = canvas.getContext('2d')!;
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Force JPEG output to sidestep HEIC issues
-            return canvas.toDataURL('image/jpeg', quality);
+            // ✅ Use toBlob (binary) instead of toDataURL (base64)
+            const blob: Blob = await new Promise((resolve, reject) =>
+                canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', quality)
+            );
+            return blob;
         } finally {
             URL.revokeObjectURL(url);
         }
@@ -692,15 +694,21 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
-    const sendOutgoingTextMessageWithFileImage = async (user_pk: string, blob: Blob, filename: string) => {
+    const sendOutgoingTextMessageWithFileImage = async (user_pk: string, imageFile: File) => {
+        console.log('send size/type:', imageFile.size, imageFile.type, imageFile.name);
+
+        const blobform = new FormData();
+        blobform.append('file', imageFile, imageFile.name); // key must be 'file'
+
         setWaitBeforeSendingMore(true);
         try {
-            const uploadFile = await uploadFileForMessageNew({ blob, filename, user_pk });
+            const uploadFile = await uploadFileForMessageNew(blobform); // ensure this does NOT set Content-Type
             if (uploadFile.status !== 200) {
                 setAttachmentErrorToast(true);
                 setWaitBeforeSendingMore(false);
                 return;
             }
+
 
             const file_id = uploadFile.data["id"];
             const randomId = Math.floor(Math.random() * -8000);
@@ -766,12 +774,13 @@ const TextModal: React.FC<Props> = (props) => {
 
     const sendHandler = async () => {
 
-        if (blob) {  // <— use blob state, not image
-            await sendOutgoingTextMessageWithFileImage(
-                textModalData?.other_user_id,
-                blob,
-                imageName || `upload_${Date.now()}.jpeg`
-            );
+        if (blob) { 
+            if (blob ) {
+                await sendOutgoingTextMessageWithFileImage(
+                    textModalData?.other_user_id,
+                    blob as File
+                );
+            }
         }
         if (audioRef?.src) {
             await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src)
@@ -847,28 +856,36 @@ const TextModal: React.FC<Props> = (props) => {
         try {
             const photo = await Camera.getPhoto({
                 source: CameraSource.Photos,
-                resultType: CameraResultType.Uri,   // <-- key change (no base64 from Camera)
+                resultType: CameraResultType.Uri,  // no base64
                 quality: 90,
                 allowEditing: false,
-                webUseInput: true,                  // helps on iOS/Safari/PWA
+                webUseInput: true,
             });
 
-            // Read original file (HEIC/JPEG/etc.) as Blob
-            const res = await fetch(photo.webPath!);
-            const originalBlob = await res.blob();
+            // iOS: prefer .path and convert it for fetch / <img> usage
+            const src = photo.path
+                ? Capacitor.convertFileSrc(photo.path)   // works in WKWebView
+                : photo.webPath!;                        // fallback for web/PWA
 
-            // Normalize & resize to JPEG (base64 for your existing preview UI)
-            const dataUrl = await resizeToJpegBase64(originalBlob, 800, 800, 0.7);
-            const jpegBlob = dataURLToBlob(dataUrl);
+            // Get the original picked file as Blob
+            const res = await fetch(src);
+            const originalBlob = await res.blob();     // may be HEIC/JPEG/etc.
 
-            // Keep your existing state usage
-            setImage(dataUrl);                                // dataURL preview works as before
-            setBlob(jpegBlob);                                // upload this via multipart
-            setImageName(`upload_${Date.now()}.jpeg`);
+            // Normalize & resize to **JPEG Blob**
+            const jpegBlob = await resizeToJpegBase64(originalBlob, 800, 800, 0.7);
+
+            // Build a File for iOS FormData robustness
+            const filename = `upload_${Date.now()}.jpeg`;
+            const file = new File([jpegBlob], filename, { type: 'image/jpeg' });
+
+            // For your preview, make a data URL from the JPEG Blob (optional)
+            const previewUrl = URL.createObjectURL(jpegBlob);
+            setImage(previewUrl);                      // you can also keep dataURL if you prefer
+            setBlob(file);                             // store the File in state for sending
+            setImageName(filename);
             setShowAttachments(false);
         } catch (e) {
             console.error('uploadPhoto failed', e);
-            // optionally show a toast
         }
     };
 

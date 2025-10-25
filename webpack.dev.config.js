@@ -2,6 +2,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.tsx',               // ✅ make sure we build your app
@@ -40,6 +41,14 @@ module.exports = {
       'process.env.BASE_URL': JSON.stringify(process.env.BASE_URL || 'backup'),
       'process.env.PRE_LAUNCH': JSON.stringify(process.env.PRE_LAUNCH || 'hm'),
       'process.env.UNDER_CONSTRUCTION': JSON.stringify(process.env.UNDER_CONSTRUCTION || 'false'),
+    }),
+    new CopyWebpackPlugin({
+    patterns: [
+      {
+        from: path.resolve(__dirname, 'public/static/img'),
+        to: path.resolve(__dirname, 'static/frontend/img'),
+      },
+    ],
     }),
   ],
   resolve: { extensions: ['.tsx', '.ts', '.js'] },

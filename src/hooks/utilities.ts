@@ -2,7 +2,8 @@ import Cookies from 'js-cookie';
 import axios from "axios";
 import { Preferences } from '@capacitor/preferences';
 import { TextZoom } from "@capacitor/text-zoom"
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+
 
 
 
@@ -1608,9 +1609,9 @@ export function getWebsocketUrl() {
 
     let protocol = ""
 
-    if ((window as any).location.href.includes("https") || (window as any).location.href.includes("capacitor://")) {
+    if (!(window as any).location.href.includes("localhost") || (window as any).location.href.includes("https") || (window as any).location.href.includes("capacitor://")) {
         protocol = "wss://"
-    }
+    } 
     else {
         protocol = "ws://"
     }
@@ -2171,27 +2172,57 @@ export async function uploadFileForMessage(data) {
 
 }
 
-export async function uploadFileForMessageNew({ blob, filename, ...extra }) {
-  const url = `${BASE_URL}/api/profiles/chats/upload/`;
-  const token = localStorage.getItem("token");
 
-  const form = new FormData();
-  form.append("file", blob, filename);            // <— important
-  Object.entries(extra || {}).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) form.append(k, String(v));
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
+const blobToBase64Raw = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve((r.result as string).split(',')[1]); // strip data: prefix
+    r.onerror = reject;
+    r.readAsDataURL(blob);
   });
 
-  const response = await axios.post(url, form, {
+export async function uploadFileForMessageNew(data: FormData | Record<string, any>) {
+  const url = `${BASE_URL}/api/profiles/chats/upload/`;
+  const token = localStorage.getItem('token') || '';
+
+  // JSON path (legacy/base64, no files)
+  if (!(typeof FormData !== 'undefined' && data instanceof FormData)) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify(data),
+      credentials: 'omit',
+    });
+    const json = await res.json().catch(() => ({}));
+    return { status: res.status, data: json, headers: {} as any };
+  }
+
+  // Multipart path (Blob/File under key "file")
+  const res = await fetch(url, {
+    method: 'POST',
     headers: {
       Authorization: `Token ${token}`,
-      "X-CSRFToken": Cookies.get("csrftoken"),
-      Accept: "application/json",
-      // DO NOT set Content-Type; Axios will set multipart/form-data with boundary
+      Accept: 'application/json',
+      // DO NOT set Content-Type here; the browser sets the multipart boundary
     },
+    body: data as FormData,
+    credentials: 'omit',
   });
 
-  return response;
+  const json = await res.json().catch(() => ({}));
+  return { status: res.status, data: json, headers: {} as any };
 }
+
+
+
+
+
 
 export async function updateCurrentUserChatSettings(data) {
 
@@ -2411,11 +2442,11 @@ const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 
 export function containsPii(input) {
-  const text = typeof input === "string" ? input : String(input ?? "");
-  if (!text) return false;
+    const text = typeof input === "string" ? input : String(input ?? "");
+    if (!text) return false;
 
-  if (EMAIL_TEST.test(text)) return true;     // non-global => stable
+    if (EMAIL_TEST.test(text)) return true;     // non-global => stable
 
-  const candidates = text.match(PHONE_CANDIDATE_RE) ?? [];
-  return candidates.some((c) => plausiblePhone(digits(c)));
+    const candidates = text.match(PHONE_CANDIDATE_RE) ?? [];
+    return candidates.some((c) => plausiblePhone(digits(c)));
 }
