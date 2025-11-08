@@ -26,3 +26,18 @@ ion-content.create-post ion-button.onboarding-pic-upload {
 ion-card.limited {
     box-shadow: none;
 }
+
+ion-row.moderator-submit {
+    padding: 20pt
+}
+
+.createpostcheckbox::part(label) {
+    font-size: 0.875rem;     
+    font-weight: 500;
+}
+
+.createpostcheckbox::part(helper-text) {
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+  white-space: normal; 
+}

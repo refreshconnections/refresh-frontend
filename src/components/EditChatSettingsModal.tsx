@@ -56,7 +56,7 @@ const EditChatSettingsModal: React.FC<Props> = (props) => {
         <IonPage>
 
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Chat Preferences</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={handleDismiss}>Done</IonButton>
@@ -64,23 +64,23 @@ const EditChatSettingsModal: React.FC<Props> = (props) => {
 
                 </IonToolbar>
             </IonHeader>
-            <IonContent class="edit-modal">
+            <IonContent className="edit-modal">
                 <IonItem>
-                    <IonLabel class="ion-text-wrap">Receive images</IonLabel>
+                    <IonLabel className="ion-text-wrap">Receive images</IonLabel>
                     <IonToggle slot="end"
                         onIonChange={async e => await updateCurrentUserChatSettings({ allow_images_global: e.detail.checked })}
                         checked={current_settings?.allow_images_global ?? false}>
                     </IonToggle>
                 </IonItem>
                 <IonItem>
-                    <IonLabel class="ion-text-wrap">Receive audio messages</IonLabel>
+                    <IonLabel className="ion-text-wrap">Receive audio messages</IonLabel>
                     <IonToggle slot="end"
                         onIonChange={async e => await updateCurrentUserChatSettings({ allow_audio_global: e.detail.checked })}
                         checked={current_settings?.allow_audio_global ?? false}>
                     </IonToggle>
                 </IonItem>
                 <IonItem lines="none">
-                    <IonLabel class="ion-text-wrap">
+                    <IonLabel className="ion-text-wrap">
                         <span style={{ fontSize: "17px" }}>Show conversation starter</span>
                         <p>If you've matched but no message has been sent yet, show a pre-defined conversation starter so it's easier to get the chat going!</p>
                     </IonLabel>
@@ -92,7 +92,7 @@ const EditChatSettingsModal: React.FC<Props> = (props) => {
                 </IonItem>
 
                 {conversationStarter &&
-                    <IonItem class="with-select">
+                    <IonItem className="with-select">
 
                         <IonSelect
                             value={current_settings?.conversation_starter_text ?? null}

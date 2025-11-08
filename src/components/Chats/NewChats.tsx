@@ -45,9 +45,9 @@ const NewChats: React.FC<Props> = (props) => {
 
   return (
     <>
-      {isPending && <IonRow class="ion-justify-content-center" style={{paddingTop: "20pt"}}><IonSpinner name="bubbles"></IonSpinner></IonRow>}
+      {isPending && <IonRow className="ion-justify-content-center" style={{paddingTop: "20pt"}}><IonSpinner name="bubbles"></IonSpinner></IonRow>}
       {noDialogsMutualConnections?.length > 0 ?
-        <IonRow class="page-title">
+        <IonRow className="page-title">
           <IonText>
             <h2>Your new connections</h2>
           </IonText>
@@ -62,7 +62,7 @@ const NewChats: React.FC<Props> = (props) => {
         ))}
       </IonList>
       {noDialogsMutualConnections?.length > length ?
-      <IonRow class="ion-justify-content-center">
+      <IonRow className="ion-justify-content-center">
       <IonButton size="small" fill="outline" onClick={() => setLength(length + 5)}>See more</IonButton>
       </IonRow>
       : <></>

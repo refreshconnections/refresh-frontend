@@ -312,7 +312,7 @@ const Community: React.FC = () => {
     <IonPage>
       <IonContent>
         
-        <IonRow class="page-title">
+        <IonRow className="page-title">
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show"/>
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show"/>
           <div ref={refreshmentsTopRef}></div>
@@ -321,7 +321,7 @@ const Community: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
-        <IonRow class="filter-buttons">
+        <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">
             <FontAwesomeIcon icon={faBarsFilter} />
           </IonButton> */}
@@ -434,7 +434,7 @@ const Community: React.FC = () => {
                 </div>
                 : <></>}
                 <IonCardSubtitle>
-                  <IonRow class="ion-align-items-center">
+                  <IonRow className="ion-align-items-center">
                     <IonCol size="5" onClick={me?.settings_community_profile && item.settings_community_profile && !item.removed && !(me?.user == item.user) ? ()=>openModal(item.user) : ()=>setProfileData(null)}>
                       <div className="display-flex">
                       {(me?.settings_community_profile && item.settings_community_profile && !item.removed && item.include_profile) ? <IonAvatar className="byline-avatar"><img src={item.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
@@ -455,7 +455,7 @@ const Community: React.FC = () => {
                       {item.uploadDate}
                       </IonRow>
                       {me?.settings_alt_text && item.coverPhoto !== null && item.coverPhoto_alt !== '' && item.coverPhoto_alt !== null ?
-                      <IonRow class="ion-justify-content-end">
+                      <IonRow className="ion-justify-content-end">
                     <IonButton className="alt-coverPhoto-button" fill="clear" size="small"  onClick={altShow !== item.id ? () => setAltShow(item.id) : () => setAltShow(null)}>
                         <FontAwesomeIcon icon={faSubtitles} />
                         </IonButton>
@@ -511,7 +511,7 @@ const Community: React.FC = () => {
                   <>
                     <PostDetails comments={item.comments} announcement_id={item.id} />
                     <div ref={commentInputRef}>
-                      <IonRow class="hide">
+                      <IonRow className="hide">
                         <IonButton size="small" fill="clear" onClick={handleCloseComments}>Hide comments </IonButton>
                       </IonRow>
                     </div>

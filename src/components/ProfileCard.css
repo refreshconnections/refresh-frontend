@@ -79,6 +79,27 @@ ion-card.margins ion-card-header.leave-end-room ion-card-subtitle{
   max-width: 85%
 }
 
+ion-card-header.leave-end-room {
+  display: grid !important;
+  grid-auto-flow: row;
+  row-gap: 2px;              /* space between lines */
+  position: relative;        /* for the corner button */
+}
+
+/* tidy the default margins */
+ion-card-header.leave-end-room ion-card-title,
+ion-card-header.leave-end-room ion-card-subtitle {
+  margin: 0;
+}
+ion-card-header.leave-end-room .alt-desc-profile {
+  position: absolute; top: 6px; right: 6px;
+}
+
+ion-card-header.leave-end-room > ion-card-title,
+ion-card-header.leave-end-room > ion-card-subtitle {
+  order: initial !important;
+}
+
 .swiper-slide ion-card ion-card-subtitle .alt-desc{
   position: absolute;
   right: 10pt

@@ -87,14 +87,14 @@ const EditRomanceGenderModal: React.FC<Props> = (props) => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Update your preference</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onDismiss}>Cancel</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent class="create-post">
+      <IonContent className="create-post">
         <IonCard className="onboarding-slide">
           <IonCardContent>
             <IonCardTitle>Who should we show to you when you filter by romance?</IonCardTitle>

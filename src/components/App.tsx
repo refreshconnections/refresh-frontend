@@ -58,7 +58,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 
 /* Theme variables */
 import '../theme/variables.css';
-import { isMobile, updateCurrentUserProfile, handleLogoutCommon, setColorTheme, getBadgeCount, setTextZoom, checkForBrokenStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -79,7 +79,7 @@ import {
   Purchases,
   PurchasesOfferings, // Types for TypeScript
 } from '@revenuecat/purchases-capacitor';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapApp } from "@capacitor/app";
 import { Device } from '@capacitor/device';
 import Activity from '../pages/Activity';
@@ -99,6 +99,7 @@ import MultipleAccountsDetected from '../pages/MultipleAccountsDetected';
 import { IconPop } from './IconPop';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+
 
 
 
@@ -151,7 +152,8 @@ if (isMobile()) {
 const App: React.FC = () => {
 
   // Version 3: July 6 2025
-  const currentVersion: number = 3
+  // Version 4: Oct 15 2025
+  const currentVersion: number = 4
 
   const [loading, setLoading] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
@@ -188,32 +190,34 @@ const App: React.FC = () => {
   const currentUserProfile = useGetCurrentProfile().data;
   const current_settings = useChatSettings().data;
 
-  function isSamsung() {
-    const ua = navigator.userAgent || '';
-    return /SM-[A-Z0-9]+|samsung|oneui/i.test(ua);
+
+  if (Capacitor.getPlatform() === 'android') {
+    (async () => {
+      const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
+
+      const applyBars = async () => {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const color = isDark ? '#2f2f2f' : '#f2f2fd';
+
+        // Paint status + nav bars
+        await EdgeToEdge.setBackgroundColor({ color });
+
+        // Make icons readable on that color
+        await StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+      };
+
+      await EdgeToEdge.enable();
+      await applyBars();
+
+      // React to theme changes at runtime
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => void applyBars();
+      mql.addEventListener('change', handler);
+      // optional: cleanup on hot reload/unmount
+      // return () => mql.removeEventListener('change', handler);
+    })();
   }
-
-  useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android' || !isSamsung()) return;
-
-    const showListener = Keyboard.addListener('keyboardWillShow', info => {
-      const offset = `${info.keyboardHeight}px`;
-      document.body.classList.add('samsung-keyboard-opend');
-      document.documentElement.style.setProperty('--keyboard-offset', offset);
-    });
-
-    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
-      document.body.classList.remove('samsung-keyboard-opend');
-      document.documentElement.style.setProperty('--keyboard-offset', '0px');
-    });
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
-
 
 
   // const paths = ['/community', '/change', '/chats', '/picks', '/me', '/profile']
@@ -273,7 +277,7 @@ const App: React.FC = () => {
 
     const listen = async () => {
       CapApp.addListener('resume', async () => {
-        await setColorTheme()
+        await applyThemeFromPref()
         await setTextZoom()
         if (settingsCurrentProfile?.settings_streak_tracker) {
           await checkForBrokenStreak()
@@ -368,7 +372,7 @@ const App: React.FC = () => {
 
     const checkLoggedIn = async () => {
 
-      await setColorTheme()
+      await applyThemeFromPref()
       await setTextZoom()
       if (localStorage.getItem('token') == null) {
         setLoggedin(false)

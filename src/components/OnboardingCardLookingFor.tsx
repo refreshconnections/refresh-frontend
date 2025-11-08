@@ -67,7 +67,7 @@ const OnboardingCardLookingFor: React.FC = () => {
       <IonCardContent className="w-checkboxes">
         <IonCardTitle>What kind of connections are you looking to make?</IonCardTitle>
         <IonText>These will be shown on your profile. You can change these at any time. </IonText>
-        <IonItem class="scrollable-list">
+        <IonItem className="scrollable-list">
           <IonList lines="none">
             <IonItem>
               <IonCheckbox slot="start" value="friendship" onIonChange={e => addLookingForCheckbox(e)} />

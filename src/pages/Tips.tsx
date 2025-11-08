@@ -13,7 +13,7 @@ const Tips: React.FC = () => {
     return (
         <IonPage>
             <IonContent>
-            <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+            <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                 <IonFabButton routerLink="/me" routerDirection="back" color="light">
                     <IonIcon icon={chevronBackOutline}></IonIcon>
                 </IonFabButton>

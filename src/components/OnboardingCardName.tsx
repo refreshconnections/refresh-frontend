@@ -75,7 +75,7 @@ const OnboardingCardZipcode: React.FC = () => {
                             name="nickname"
                             placeholder={data.name}
                             required={true}
-                            onIonChange={e => setNickname(e.detail.value!)}
+                            onIonInput={e => setNickname(e.detail.value!)}
                             maxlength={30}
                             autoCapitalize='words'
                             onKeyUp={event => {

@@ -102,7 +102,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Create Group</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Cancel</IonButton>
@@ -122,7 +122,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
                         <IonInput value={groupName}
                             name="group_name"
                             placeholder="Group Name"
-                            onIonChange={e => setGroupName(e.detail.value!)}
+                            onIonInput={e => setGroupName(e.detail.value!)}
                             type="text" 
                             autoCapitalize='words'/>
                     </IonItem>
@@ -131,7 +131,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
                         <IonInput value={description}
                             name="description"
                             placeholder="What's this group all about?"
-                            onIonChange={e => setDescription(e.detail.value!)}
+                            onIonInput={e => setDescription(e.detail.value!)}
                             type="text" 
                             autoCapitalize='sentences'/>
                             

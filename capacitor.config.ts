@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.refresh-connections.app',
   appName: 'Refresh Connections',
-  webDir: 'templates/frontend',
+  webDir: 'static/frontend',
   server: {
     androidScheme: 'https',
     // Android bc of cookies
@@ -22,6 +22,9 @@ const config: CapacitorConfig = {
     handleApplicationNotifications: false,
   },
   plugins: {
+    Keyboard: {
+      resizeOnFullScreen: false
+    },
     CapacitorCookies: {
       enabled: true,
     },

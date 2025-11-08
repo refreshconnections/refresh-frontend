@@ -270,3 +270,9 @@ ion-item-options .sliding-options-div {
     justify-content: center;
     align-items: flex-start;
 }
+
+ion-textarea::part(counter) {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0.25rem;
+}

@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonToolbar, IonTitle, IonSearchbar, IonList, IonButton, IonItem, IonLabel } from '@ionic/react';
+import { IonContent, IonHeader, IonToolbar, IonTitle, IonSearchbar, IonList, IonButton, IonItem, IonLabel, IonButtons } from '@ionic/react';
 import { useState } from 'react';
 
 type Props = {
@@ -45,9 +45,11 @@ const CitySelectorModal: React.FC<Props> = ({ onDismiss }) => {
       <IonHeader>
         <IonToolbar>
           <IonTitle>Select a City</IonTitle>
-          <IonButton fill="clear" slot="end" onClick={() => onDismiss()}>
-            Cancel
-          </IonButton>
+          <IonButtons slot="end">
+            <IonButton fill="clear" onClick={() => onDismiss()}>
+              Cancel
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -56,7 +58,7 @@ const CitySelectorModal: React.FC<Props> = ({ onDismiss }) => {
           placeholder="Search for a city..."
           debounce={500}
           value={searchText}
-          onIonChange={e => {
+          onIonInput={e => {
             const value = e.detail.value!;
             setSearchText(value);
             searchCities(value);

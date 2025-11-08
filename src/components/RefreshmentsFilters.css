@@ -19,11 +19,6 @@ ion-row.filter-row ion-searchbar {
     -webkit-text-size-adjust: none;
     text-size-adjust: none
 }
-
-ion-item.dont-grey-disabled ion-label {
-    --opacity: 1;
-    opacity: 1 !important;
-  }
   
 /* Optional: force the checkmark color to match active theme */
 ion-item.dont-grey-disabled ion-checkbox {
@@ -32,6 +27,31 @@ ion-item.dont-grey-disabled ion-checkbox {
     opacity: 1 !important;
 }
 
+.filter-grid ion-list.categories-filters, .filter-grid ion-list.sort-filters {
+    padding-left: 20px;
+    padding-top: 0px;
+}
+
+/* Make text in this row black */
+ion-item.dont-grey-disabled {
+  --color: var(--ion-color-black);              /* Ionic text color inside the item */
+  color:var(--ion-color-black);                /* fallback */
+}
+
+/* Ensure the checkbox's built-in label is black */
+ion-item.dont-grey-disabled ion-checkbox::part(label) {
+  color: var(--ion-color-black);
+}
+
+/* Optional: don’t dim disabled rows’ text */
+ion-item.dont-grey-disabled ion-checkbox[disabled] {
+  opacity: 1; /* still disabled, just not greyed out */
+}
+
 ion-card.distance-radius {
     box-shadow: none
+}
+
+ion-card.categories-filters {
+    width: 60%
 }

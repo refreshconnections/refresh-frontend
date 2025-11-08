@@ -41,14 +41,14 @@ const OnboardingCardConversation: React.FC = () => {
 
   return (
     <IonCard className="onboarding-slide ">
-      <IonCardContent class="talkabouts">
+      <IonCardContent className="talkabouts">
         <IonCardTitle>One last thing.</IonCardTitle>
         <IonText>Give people an easy conversation starter! Fill out one now - or all of them if you want! You can add more in the Let's Talk About section of your profile later.</IonText>
         <IonItem>
           <IonLabel position="stacked">Favorite topic</IonLabel>
           <IonInput value={topic}
             name="topic"
-            onIonChange={e => setTopic(e.detail.value!)}
+            onIonInput={e => setTopic(e.detail.value!)}
             placeholder=""
             maxlength={90}
             autoCapitalize='sentences'
@@ -63,7 +63,7 @@ const OnboardingCardConversation: React.FC = () => {
           <IonLabel position="stacked">Hobby</IonLabel>
           <IonInput value={hobby}
             name="hobby"
-            onIonChange={e => setHobby(e.detail.value!)}
+            onIonInput={e => setHobby(e.detail.value!)}
             placeholder=""
             maxlength={90}
             autoCapitalize='sentences'
@@ -78,7 +78,7 @@ const OnboardingCardConversation: React.FC = () => {
           <IonLabel position="stacked">Favorite book</IonLabel>
           <IonInput value={book}
             name="book"
-            onIonChange={e => setBook(e.detail.value!)}
+            onIonInput={e => setBook(e.detail.value!)}
             placeholder=""
             maxlength={90}
             autoCapitalize='sentences'

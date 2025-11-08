@@ -33,33 +33,33 @@ const Activity: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent class="activity">
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+            <IonContent className="activity">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink="/me" routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
                 </IonFab>
 
-                <IonRow class="page-title bigger">
+                <IonRow className="page-title bigger">
                     <img className="color-invertible" src="../static/img/activity-navy.png" alt="activity" />
                 </IonRow>
 
                 {currentUserProfile?.settings_streak_tracker ?
                     <>
-                        <IonNote class="header"><FontAwesomeIcon icon={faStarShooting} /> &nbsp;{streak?.streak_count == 0 ? "You don't have a streak yet!" : `Streak count: ${streak?.streak_count}`}</IonNote>
-                        <IonRow class="ion-padding ion-justify-content-center">
+                        <IonNote className="header"><FontAwesomeIcon icon={faStarShooting} /> &nbsp;{streak?.streak_count == 0 ? "You don't have a streak yet!" : `Streak count: ${streak?.streak_count}`}</IonNote>
+                        <IonRow className="ion-padding ion-justify-content-center">
                             {currentUserProfile?.subscription_level == "pro" ?
-                                <IonText color="navy" class="ion-padding ion-text-center">As a pro member, your streak is just for fun!</IonText> :
+                                <IonText color="navy" className="ion-padding ion-text-center">As a pro member, your streak is just for fun!</IonText> :
                                 <>
                                     {currentUserProfile?.subscription_level == "communityplus" ?
                                         <>
-                                            <IonText color="navy" class="ion-padding ion-text-center">As a Community+ member, your streak can unlock you some of the benefits of Personal+ too!</IonText>
+                                            <IonText color="navy" className="ion-padding ion-text-center">As a Community+ member, your streak can unlock you some of the benefits of Personal+ too!</IonText>
                                             <>{streak?.streak_count < 3 ?
-                                                <IonText color="navy" class="ion-padding ion-text-center">
+                                                <IonText color="navy" className="ion-padding ion-text-center">
                                                     Increase your streak to unlock more <FontAwesomeIcon icon={faStar} /> features.
                                                 </IonText>
                                                 :
-                                                <IonText color="navy" class="ion-padding ">
+                                                <IonText color="navy" className="ion-padding ">
                                                     <>
                                                         Your streak has unlocked the following <FontAwesomeIcon icon={faStar} />  {streak?.streak_count < 7 ? "feature" : "features"}:
                                                         <ul>
@@ -82,13 +82,13 @@ const Activity: React.FC = () => {
                                         :
                                         currentUserProfile?.subscription_level == "personalplus" ?
                                             <>
-                                            <IonText color="navy" class="ion-padding ion-text-center">As a Personal+ member, your streak can unlock you some of the benefits of Community+ too!</IonText>
+                                            <IonText color="navy" className="ion-padding ion-text-center">As a Personal+ member, your streak can unlock you some of the benefits of Community+ too!</IonText>
                                             <>{streak?.streak_count < 5 ?
-                                                <IonText color="navy" class="ion-padding ion-text-center">
+                                                <IonText color="navy" className="ion-padding ion-text-center">
                                                     Increase your streak to unlock more <FontAwesomeIcon icon={faStar} /> features.
                                                 </IonText>
                                                 :
-                                                <IonText color="navy" class="ion-padding ">
+                                                <IonText color="navy" className="ion-padding ">
                                                     <>
                                                         Your streak has unlocked the following <FontAwesomeIcon icon={faStar} />  {streak?.streak_count < 7 ? "feature" : "features"}:
                                                         <ul>
@@ -104,11 +104,11 @@ const Activity: React.FC = () => {
                                             }</>
                                             </>
                                             : <>{streak?.streak_count < 3 ?
-                                                <IonText color="navy" class="ion-padding ion-text-center">
+                                                <IonText color="navy" className="ion-padding ion-text-center">
                                                     Increase your streak to unlock <FontAwesomeIcon icon={faStar} /> features.
                                                 </IonText>
                                                 :
-                                                <IonText color="navy" class="ion-padding ">
+                                                <IonText color="navy" className="ion-padding ">
                                                     <>
                                                         Your streak has unlocked the following <FontAwesomeIcon icon={faStar} />  {streak?.streak_count < 5 ? "feature" : "features"}:
                                                         <ul>
@@ -137,15 +137,15 @@ const Activity: React.FC = () => {
 
 
                             }
-                            {/* <IonItem class="streak" color="white" lines="none">
+                            {/* <IonItem className="streak" color="white" lines="none">
                 <IonLabel color="navy">
                 <FontAwesomeIcon icon={faStarShooting} /> Streak count: {streak?.streak_count}</IonLabel>
                 </IonItem> */}
-                            <IonNote class="ion-padding ion-text-center">
+                            <IonNote className="ion-padding ion-text-center">
                                 Streaks can be increased daily by exchanging messages, sending Likes, making connections, or liking posts and comments in the Refreshments Bar community forum.
                             </IonNote>
                             {streak?.streak_count > 0 ?
-                                <IonNote color="navy" class="ion-padding ion-text-center">Your streak was last updated {moment(streak?.last_updated).fromNow()}.</IonNote>
+                                <IonNote color="navy" className="ion-padding ion-text-center">Your streak was last updated {moment(streak?.last_updated).fromNow()}.</IonNote>
                                 : <></>}
                         </IonRow>
                     </>
@@ -153,21 +153,21 @@ const Activity: React.FC = () => {
 
                 {recentNotifications?.length > 0 ?
 
-                    <IonNote class="header">Recent happenings</IonNote>
+                    <IonNote className="header">Recent happenings</IonNote>
 
                     : <></>
 
                 }
 
 
-                <IonList class="change-projects" lines="none">
+                <IonList className="change-projects" lines="none">
 
 
                     {recentNotifications?.map((item: any, index: number) => (
 
                         <IonItem color="white" key={item.id} >
 
-                            <IonLabel color="navy" class="ion-text-wrap">
+                            <IonLabel color="navy" className="ion-text-wrap">
                                 <h3>
                                     {item.notification_type == "comment" ?
                                         <FontAwesomeIcon icon={faComments} /> :
@@ -193,10 +193,10 @@ const Activity: React.FC = () => {
 
                 <IonNote style={{ padding: "20pt" }}>
 
-                    <IonRow class="ion-justify-content-center">
+                    <IonRow className="ion-justify-content-center">
                         Comments removed this month: {limits?.comments_removed}/5
                     </IonRow>
-                    <IonRow class="ion-justify-content-center">
+                    <IonRow className="ion-justify-content-center">
                         Chat messages unsent this month: {limits?.chats_removed}/5
                     </IonRow>
                 </IonNote>

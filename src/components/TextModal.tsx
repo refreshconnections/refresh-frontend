@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, useIonPopover } from '@ionic/react';
-import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage } from "../hooks/utilities";
+import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
 import "./TextModal.css";
@@ -22,13 +22,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAcceptingMessages } from "../hooks/api/chats/accepting-messages";
 import { App } from "@capacitor/app";
 import { useMessagesInf } from "../hooks/api/chats/messages-inf";
-import { Camera, CameraResultType } from "@capacitor/camera";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import { useMessageFile } from "../hooks/api/chats/message-file";
 import { GenericResponse, RecordingData } from "capacitor-voice-recorder/dist/esm/definitions";
 import { faStop } from "@fortawesome/pro-solid-svg-icons/faStop";
-import { Plugins } from "@capacitor/core";
+// import { Plugins } from "@capacitor/core";
 import { faCommentHeart, faInfo, faMessageXmark, faTrash } from "@fortawesome/pro-solid-svg-icons";
 
 import AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
@@ -44,6 +44,7 @@ import ConversationStarterCard from "./ConversationStarterCard";
 import ConversationContextCard from "./ConversationContextCard";
 import MessageLikePopover from "./MessageLikePopover";
 import { useWebSocketContext } from "./WebsocketContext";
+import { Capacitor } from "@capacitor/core";
 
 
 
@@ -182,6 +183,18 @@ const isAudioFile = (file: string) => {
 
 }
 
+const isJpegUrl = (url?: string) => {
+    if (!url) return false;
+    try {
+        const path = new URL(url, window.location.origin).pathname; // strips query
+        return /\.(jpe?g)$/i.test(path); // matches .jpg or .jpeg
+    } catch {
+        // if it's a relative URL or plain string
+        const path = url.split('?')[0];
+        return /\.(jpe?g)$/i.test(path);
+    }
+};
+
 const MessageAttachment: React.FC<AttachmentProps> = (props) => {
 
     const { id } = props;
@@ -195,7 +208,7 @@ const MessageAttachment: React.FC<AttachmentProps> = (props) => {
             {file?.isLoading ?
                 <IonSpinner name="bubbles"></IonSpinner>
                 :
-                file.data && file.data?.file?.endsWith("jpeg") || file.data?.file?.includes("jpeg?Expires") ?
+                file?.data && isJpegUrl(file.data.file) ?
                     <PhotoView src={getAttachmentIfNotExpired(file?.data, currentUser.subscription_level)}>
                         <img src={getAttachmentIfNotExpired(file?.data, currentUser.subscription_level)} alt="uploaded image" style={{ maxHeight: "80pt", width: "auto" }} onError={(e) => onAttachmentImgError(e)} />
                     </PhotoView>
@@ -242,7 +255,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const [uiConnected, setUiConnected] = useState(isConnected);
 
-        useEffect(() => {
+    useEffect(() => {
         const timeout = setTimeout(() => {
             setUiConnected(isConnected);
         }, 300); // Debounce delay to prevent flashing
@@ -251,26 +264,29 @@ const TextModal: React.FC<Props> = (props) => {
     }, [isConnected]);
 
     useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
 
-    if (!uiConnected) {
-        timeout = setTimeout(() => {
-        setShowReconnect(true);
-        }, 10000); // 10 seconds before showing the reconnect button
-    } else {
-        setShowReconnect(false); // hide it again when reconnected
-    }
-
-    return () => {
-        if (timeout) {
-        clearTimeout(timeout);
+        if (!uiConnected) {
+            timeout = setTimeout(() => {
+                setShowReconnect(true);
+            }, 10000); // 10 seconds before showing the reconnect button
+        } else {
+            setShowReconnect(false); // hide it again when reconnected
         }
-    };
+
+        return () => {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+        };
     }, [uiConnected]);
 
-
     const retrievedMessages = useMessagesInf(textModalData?.other_user_id)
-    const loadingMessages = useMessagesInf(textModalData?.other_user_id).isPending
+
+    const loadingMessagesQuery = useMessagesInf(textModalData?.other_user_id)
+    const loadingMessages = loadingMessagesQuery.isPending && loadingMessagesQuery.fetchStatus === "fetching";
+
+
     const othersChatSettings = useChatSettings(textModalData?.other_user_id)
     const yourChatSettings = useChatSettings()
     const limits = useGetLimits().data
@@ -299,7 +315,7 @@ const TextModal: React.FC<Props> = (props) => {
         onDidDismiss: () => dismissPopover(),
     });
 
-    
+
 
     const textContentRef = useRef<HTMLIonContentElement>(null);
 
@@ -570,10 +586,59 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
+    // Convert dataURL -> Blob
+    const dataURLToBlob = (dataUrl: string) => {
+        console.log("dataURLToBlob")
+        const [meta, b64] = dataUrl.split(',');
+        const mime = meta.match(/data:(.*?);base64/)![1];
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: mime });
+    };
+
+    const resizeToJpegBase64 = async (
+        inputBlob: Blob,
+        maxW = 800,
+        maxH = 800,
+        quality = 0.7
+    ): Promise<Blob> => {
+        const url = URL.createObjectURL(inputBlob);
+        try {
+            const img = new Image();
+            const loaded = new Promise<void>((res, rej) => {
+                img.onload = () => res();
+                img.onerror = rej;
+            });
+            img.src = url;
+            await loaded;
+
+            let { width, height } = img;
+            const ratio = Math.min(maxW / width, maxH / height, 1);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // ✅ Use toBlob (binary) instead of toDataURL (base64)
+            const blob: Blob = await new Promise((resolve, reject) =>
+                canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', quality)
+            );
+            return blob;
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    };
 
 
 
-    const sendOutgoingTextMessageWithFile = async (user_pk: string, file: any) => {
+
+
+    const sendOutgoingTextMessageWithFileAudio = async (user_pk: string, file: any) => {
         setWaitBeforeSendingMore(true);
 
         try {
@@ -629,6 +694,52 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
+    const sendOutgoingTextMessageWithFileImage = async (user_pk: string, imageFile: File) => {
+        console.log('send size/type:', imageFile.size, imageFile.type, imageFile.name);
+
+        const blobform = new FormData();
+        blobform.append('file', imageFile, imageFile.name); // key must be 'file'
+
+        setWaitBeforeSendingMore(true);
+        try {
+            const uploadFile = await uploadFileForMessageNew(blobform); // ensure this does NOT set Content-Type
+            if (uploadFile.status !== 200) {
+                setAttachmentErrorToast(true);
+                setWaitBeforeSendingMore(false);
+                return;
+            }
+
+
+            const file_id = uploadFile.data["id"];
+            const randomId = Math.floor(Math.random() * -8000);
+            const nowTime = Date.now() / 1000;
+
+            const messageData = { msg_type: 4, file_id, user_pk, random_id: randomId };
+            const displayMessage = {
+                edited: 1696112928,
+                file: file_id,
+                id: 999,
+                out: true,
+                read: false,
+                sender: 0,
+                sender_username: "you",
+                recipient: user_pk,
+                sent: nowTime,
+                text: "Sending...",
+            };
+
+            setImage(null);
+            setRecording({ recording: false, playing: false, audio: null });
+            setAudioRef(null);
+            addMessageToFrontOfTheArray(displayMessage);
+            send(messageData);
+        } catch (error) {
+            console.error("Unexpected error sending file message:", error);
+            setAttachmentErrorToast(true);
+        }
+        setWaitBeforeSendingMore(false);
+    };
+
 
     const getTime = (utc: number) => {
 
@@ -663,11 +774,16 @@ const TextModal: React.FC<Props> = (props) => {
 
     const sendHandler = async () => {
 
-        if (image) {
-            await sendOutgoingTextMessageWithFile(textModalData?.other_user_id, image)
+        if (blob) { 
+            if (blob ) {
+                await sendOutgoingTextMessageWithFileImage(
+                    textModalData?.other_user_id,
+                    blob as File
+                );
+            }
         }
         if (audioRef?.src) {
-            await sendOutgoingTextMessageWithFile(textModalData?.other_user_id, audioRef?.src)
+            await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src)
         }
         if (messageInput) {
             await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
@@ -737,38 +853,41 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const uploadPhoto = async () => {
+        try {
+            const photo = await Camera.getPhoto({
+                source: CameraSource.Photos,
+                resultType: CameraResultType.Uri,  // no base64
+                quality: 90,
+                allowEditing: false,
+                webUseInput: true,
+            });
 
-        const photo = await Camera.getPhoto({
-            quality: 90,
-            allowEditing: false,
-            resultType: CameraResultType.Base64
-        })
+            // iOS: prefer .path and convert it for fetch / <img> usage
+            const src = photo.path
+                ? Capacitor.convertFileSrc(photo.path)   // works in WKWebView
+                : photo.webPath!;                        // fallback for web/PWA
 
-        const photoblob = new Blob([new Uint8Array(decode(photo.base64String!))], {
-            type: `image/${photo.format}`,
-        });
+            // Get the original picked file as Blob
+            const res = await fetch(src);
+            const originalBlob = await res.blob();     // may be HEIC/JPEG/etc.
 
-        Resizer.imageFileResizer(
-            photoblob,
-            800,
-            800,
-            "JPEG",
-            70,
-            0,
-            (uri) => {
-                setImage(uri)
-            },
-            "base64",
-            500,
-            500
-        );
+            // Normalize & resize to **JPEG Blob**
+            const jpegBlob = await resizeToJpegBase64(originalBlob, 800, 800, 0.7);
 
-        setBlob(photoblob)
+            // Build a File for iOS FormData robustness
+            const filename = `upload_${Date.now()}.jpeg`;
+            const file = new File([jpegBlob], filename, { type: 'image/jpeg' });
 
-        setImageName("textimage.png")
-        setShowAttachments(false)
-
-    }
+            // For your preview, make a data URL from the JPEG Blob (optional)
+            const previewUrl = URL.createObjectURL(jpegBlob);
+            setImage(previewUrl);                      // you can also keep dataURL if you prefer
+            setBlob(file);                             // store the File in state for sending
+            setImageName(filename);
+            setShowAttachments(false);
+        } catch (e) {
+            console.error('uploadPhoto failed', e);
+        }
+    };
 
     const requestVoiceRecord = async () => {
 
@@ -874,7 +993,7 @@ const TextModal: React.FC<Props> = (props) => {
                         <IonIcon className="message-back" slot="icon-only" color="primary" icon={chevronBackOutline}></IonIcon>
                     </IonButtons>
 
-                    <IonTitle class="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
+                    <IonTitle className="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
                         <div className="text-header ">
                             <IonAvatar>
                                 <img alt={profileDetails?.pic1_alt || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
@@ -904,7 +1023,7 @@ const TextModal: React.FC<Props> = (props) => {
 
 
 
-                <IonList class="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
+                <IonList className="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
 
 
 
@@ -926,9 +1045,9 @@ const TextModal: React.FC<Props> = (props) => {
                                             :
                                             <IonItemSliding key={item.id}>
                                                 <div ref={(page === 0 && index === 0) ? messagesEndRef : null} ></div>
-                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} class={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
+                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
                                                     {item?.text ?
-                                                        <IonLabel class="ion-text-wrap the-actual-message">
+                                                        <IonLabel className="ion-text-wrap the-actual-message">
 
                                                             <IonText>
                                                                 {item?.id === -1 && (
@@ -960,12 +1079,12 @@ const TextModal: React.FC<Props> = (props) => {
                                                 </IonItem>
                                                 <IonItemOptions side={item?.out === true ? "end" : "start"}>
                                                     <div className="sliding-options-div">
-                                                        <IonItemOption disabled={true} class="message-timestamp">{getTime(item?.sent)}</IonItemOption>
+                                                        <IonItemOption disabled={true} className="message-timestamp">{getTime(item?.sent)}</IonItemOption>
                                                         {/* {(item?.file && getExpirationTime(currentUser, item.file) > 0) &&
-                                                <IonItemOption disabled={true} class="message-timestamp">Expires in {getExpirationTime(currentUser, item.file)} days</IonItemOption>
+                                                <IonItemOption disabled={true} className="message-timestamp">Expires in {getExpirationTime(currentUser, item.file)} days</IonItemOption>
                                             } */}
                                                         {(item?.out && limits?.chats_removed < 5 && recentlySent(item?.sent)) &&
-                                                            <IonItemOption class="message-timestamp"><IonButton style={{ fontSize: "10px" }} size="small" color={limits?.chats_removed == 4 ? "danger" : "black"} fill="outline" onClick={() => removeMessageAlert(item.id)}>Unsend</IonButton></IonItemOption>
+                                                            <IonItemOption className="message-timestamp"><IonButton style={{ fontSize: "10px" }} size="small" color={limits?.chats_removed == 4 ? "danger" : "black"} fill="outline" onClick={() => removeMessageAlert(item.id)}>Unsend</IonButton></IonItemOption>
                                                         }
                                                     </div>
                                                 </IonItemOptions>
@@ -1001,7 +1120,7 @@ const TextModal: React.FC<Props> = (props) => {
                         ((!!othersChatSettings?.data?.conversation_starter_text || !!yourChatSettings?.data?.conversation_starter_text) && messages?.pages.length == 1 && messages?.pages[0].count > 0 && !(messages?.pages[0].data[messages?.pages[0].data.length - 1]?.id == -1) && messages?.pages[0].count < 10)
                             ?
                             <>
-                                <IonRow class="ion-justify-content-center">
+                                <IonRow className="ion-justify-content-center">
                                     <IonButton size="small" fill="outline" onClick={() => showNeedContext(needContext ? false : true)}>
                                         {needContext ? "Hide Context" : "Need Context?"}
                                     </IonButton>
@@ -1014,7 +1133,7 @@ const TextModal: React.FC<Props> = (props) => {
                             <></>
                     }
 
-                    <IonRow class="ion-justify-content-center">
+                    <IonRow className="ion-justify-content-center">
                         {retrievedMessages.hasNextPage &&
                             <IonButton size="small" fill="outline" onClick={() => retrievedMessages.fetchNextPage()}>See more</IonButton>
                         }
@@ -1036,31 +1155,31 @@ const TextModal: React.FC<Props> = (props) => {
                     },
                 ]}
             ></IonToast>
-            <IonFooter id="footer" class="send-message">
+            <IonFooter id="footer" className="send-message">
                 <IonGrid>
                     {!uiConnected && (
-                    <IonRow class="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
-                        {showReconnect ? (
-                        <IonButton onClick={handleManualReconnect}>
-                            Reconnect
-                        </IonButton>
-                        ) : (
-                        <IonText style={{ opacity: 0.6 }}>Trying to reconnect…</IonText>
-                        )}
-                    </IonRow>
+                        <IonRow className="ion-justify-content-center" style={{ minHeight: "20px", paddingBottom: "5pt" }}>
+                            {showReconnect ? (
+                                <IonButton onClick={handleManualReconnect}>
+                                    Reconnect
+                                </IonButton>
+                            ) : (
+                                <IonText style={{ opacity: 0.6 }}>Trying to reconnect…</IonText>
+                            )}
+                        </IonRow>
                     )}
                     {showAttachments ?
                         <IonRow className="attachment-buttons" >
                             <IonCol size="1">
                             </IonCol>
                             <IonCol size="9.5" style={{ gap: "10pt", display: "flex" }}>
-                                <IonButton shape="round" class="message-send" onClick={uploadPhoto} disabled={recording?.recording || recording?.audio || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_images_global}>
+                                <IonButton shape="round" className="message-send" onClick={uploadPhoto} disabled={recording?.recording || recording?.audio || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_images_global}>
                                     <FontAwesomeIcon icon={faImage} />
                                 </IonButton>
-                                <IonButton shape="round" class="message-send" color={recording?.recording || recording?.audio ? "danger" : "primary"} disabled={!!image || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_audio_global} onClick={recording?.recording ? async () => await stopVoiceRecording() : recording?.audio ? async () => await deleteVoiceRecordingConfirm() : async () => await uploadVoiceRecording()}>
+                                <IonButton shape="round" className="message-send" color={recording?.recording || recording?.audio ? "danger" : "primary"} disabled={!!image || othersChatSettings?.data == null || !othersChatSettings?.data?.allow_audio_global} onClick={recording?.recording ? async () => await stopVoiceRecording() : recording?.audio ? async () => await deleteVoiceRecordingConfirm() : async () => await uploadVoiceRecording()}>
                                     <FontAwesomeIcon icon={recording?.recording ? faStop : recording?.audio ? faTrash : faMicrophoneLines} />
                                 </IonButton>
-                                <IonButton shape="round" class="message-send" fill="outline" onClick={() => attachmentsInfoShow()}>
+                                <IonButton shape="round" className="message-send" fill="outline" onClick={() => attachmentsInfoShow()}>
                                     <FontAwesomeIcon icon={faInfo} />
                                 </IonButton>
                             </IonCol>
@@ -1098,7 +1217,7 @@ const TextModal: React.FC<Props> = (props) => {
 
                     <IonRow>
                         <IonCol size="1">
-                            <IonButton fill="clear" shape="round" class="message-attachments" disabled={canText ? false : true} color="navy" onClick={() => setShowAttachments(showAttachments ? false : true)}>
+                            <IonButton fill="clear" shape="round" className="message-attachments" disabled={canText ? false : true} color="navy" onClick={() => setShowAttachments(showAttachments ? false : true)}>
                                 <FontAwesomeIcon icon={faPaperclip} />
                             </IonButton>
                         </IonCol>
@@ -1123,10 +1242,10 @@ const TextModal: React.FC<Props> = (props) => {
                                 </IonCol>
                             }
                             <IonCol size={image ? "9" : "12"}>
-                                <IonItem counter={true} lines="none" >
+                                <IonItem lines="none" >
                                     <IonTextarea value={messageInput}
                                         name="message_input"
-                                        onIonChange={e => {
+                                        onIonInput={e => {
                                             const newValue = e.detail.value ?? '';
                                             if (newValue !== messageInput) {
                                                 setMessageInput(newValue);
@@ -1139,6 +1258,7 @@ const TextModal: React.FC<Props> = (props) => {
                                         spellcheck
                                         maxlength={500}
                                         autoGrow
+                                        counter
                                         rows={image ? 4 : 1}
                                     />
 
@@ -1146,12 +1266,12 @@ const TextModal: React.FC<Props> = (props) => {
                             </IonCol>
                         </IonCol>
                         <IonCol size="1.5">
-                            <IonButton class="message-send" disabled={!(messageInput || image || audioRef?.src) ? true : (attachmentErrorToastOpen || waitBeforeSendingMore) ? true : canText ? false : false} color="tertiary" onClick={sendHandler}>
+                            <IonButton className="message-send" disabled={!(messageInput || image || audioRef?.src) ? true : (attachmentErrorToastOpen || waitBeforeSendingMore) ? true : canText ? false : false} color="tertiary" onClick={sendHandler}>
                                 <FontAwesomeIcon icon={faMessageArrowUp as IconProp} />
                             </IonButton>
                         </IonCol>
                     </IonRow>
-                    
+
                 </IonGrid>
 
             </IonFooter>

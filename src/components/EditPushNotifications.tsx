@@ -94,7 +94,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
         <IonPage>
 
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Push Notifications</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={handleDismiss}>Done</IonButton>
@@ -102,9 +102,9 @@ const EditPushNotifications: React.FC<Props> = (props) => {
 
                 </IonToolbar>
             </IonHeader>
-            <IonContent class="edit-modal specific-settings">
+            <IonContent className="edit-modal specific-settings">
                 <IonItem>
-                    <IonLabel class="ion-text-wrap">Enable push notifications</IonLabel>
+                    <IonLabel className="ion-text-wrap">Enable push notifications</IonLabel>
                     <IonToggle slot="end"
                         onIonChange={async () => await changePushNotifications()}
                         checked={pushEnabled && devicePushEnabled}
@@ -115,7 +115,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                 {(pushEnabled || !(isMobile())) &&
                     <>
                         <IonItem>
-                            <IonLabel class="ion-text-wrap">
+                            <IonLabel className="ion-text-wrap">
                                 <span style={{ fontSize: "17px" }}>Get all push notifications</span>
                                 <p>Receive notifications for all private messages and interactions in the Refreshments Bar</p>
                             </IonLabel>
@@ -130,7 +130,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 Custom notification options
                             </IonNote>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when I get a message in Chats</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when I get a message in Chats</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ direct_messages: e.detail.checked })}
                                     checked={current_push_settings?.direct_messages}
@@ -138,7 +138,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when I get a new Like</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when I get a new Like</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ new_likes: e.detail.checked })}
                                     checked={current_push_settings?.new_likes}
@@ -146,7 +146,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when someone connects with me</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when someone connects with me</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ new_connections: e.detail.checked })}
                                     checked={current_push_settings?.new_connections}
@@ -154,7 +154,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when someone comments on a post I made</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when someone comments on a post I made</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ comments_on_posts: e.detail.checked })}
                                     checked={current_push_settings?.comments_on_posts}
@@ -162,7 +162,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when someone replies to a comment I wrote</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when someone replies to a comment I wrote</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ replies_to_comments: e.detail.checked })}
                                     checked={current_push_settings?.replies_to_comments}
@@ -170,7 +170,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
-                                <IonLabel class="ion-text-wrap">Notify me when someone replies to a comment I also replied to</IonLabel>
+                                <IonLabel className="ion-text-wrap">Notify me when someone replies to a comment I also replied to</IonLabel>
                                 <IonToggle slot="end"
                                     onIonChange={async e => await updateCurrentUserPushNotificationSettings({ comments_in_thread: e.detail.checked })}
                                     checked={current_push_settings?.comments_in_thread}

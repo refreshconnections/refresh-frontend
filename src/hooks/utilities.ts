@@ -2,6 +2,8 @@ import Cookies from 'js-cookie';
 import axios from "axios";
 import { Preferences } from '@capacitor/preferences';
 import { TextZoom } from "@capacitor/text-zoom"
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+
 
 
 
@@ -37,7 +39,7 @@ axios.interceptors.response.use(function (response) {
         console.log("Time to sign back in.")
     }
     else if (error.response.status == 503) {
-        window.location.href = '/construction'
+        (window as any).location.href = '/construction'
         console.log("The site is under maintenance.")
     }
     console.log("Axios interceptor: There was an error.")
@@ -46,7 +48,7 @@ axios.interceptors.response.use(function (response) {
 
 export function isStagingEnvironment() {
 
-    if (BASE_URL.includes('test-refreshconnections-staging')) {
+    if (BASE_URL!.includes('test-refreshconnections-staging')) {
         console.log("staging")
         return true
     }
@@ -1271,7 +1273,7 @@ export function pushOneSignalExtId(userid) {
 }
 
 export function isMobile() {
-    if (window.location.href.includes("capacitor://") || window.location.href.includes("com.refreshconnections.app")) {
+    if ((window as any).location.href.includes("capacitor://") || (window as any).location.href.includes("com.refreshconnections.app")) {
         return true
     }
     else {
@@ -1544,7 +1546,7 @@ export async function sendPhoneVerification(phone) {
     }
     catch (error) {
         console.log("ERror", error)
-        return error.response
+        return (error as any).response
     }
 
 
@@ -1574,7 +1576,7 @@ export async function updateUsername(data) {
         return response
     }
     catch (error) {
-        return error.response
+        return (error as any).response
     }
 
 }
@@ -1589,15 +1591,15 @@ export async function handleLogoutCommon() {
     // Invalidate every query in the cache
     await Preferences.remove({ key: 'EXPIRY' })
     localStorage.removeItem('token')
-    Cookies.remove('sessionid')
-    Cookies.remove('csrftoken')
-    window.location.href = "/";
+    Cookies.remove('sessionid');
+    Cookies.remove('csrftoken');
+    (window as any).location.href = "/";
     if (!isMobile()) {
         console.log("Skipping OneSignal logout ")
     }
     else {
         console.log("Doing OneSignal logout");
-        (window).plugins.OneSignal.logout();
+        (window as any).plugins.OneSignal.logout();
     }
 };
 
@@ -1607,15 +1609,15 @@ export function getWebsocketUrl() {
 
     let protocol = ""
 
-    if (window.location.href.includes("https") || window.location.href.includes("capacitor://")) {
+    if (!(window as any).location.href.includes("localhost") || (window as any).location.href.includes("https") || (window as any).location.href.includes("capacitor://")) {
         protocol = "wss://"
-    }
+    } 
     else {
         protocol = "ws://"
     }
 
     console.log("bb", BASE_URL)
-    const url = new URL(BASE_URL);
+    const url = new URL(BASE_URL!);
     const cleaned_ws_url = protocol + url.host + "/chat_ws?" + token
 
     return cleaned_ws_url
@@ -1856,7 +1858,7 @@ export async function linkInstall(device_install) {
     }
     catch (error) {
         console.log("Error saving device id", error)
-        return error.response
+        return (error as any).response
     }
 
 }
@@ -1948,37 +1950,103 @@ export function somethingInLetsTalkAbout(cardData) {
 
 }
 
-export async function setThemePref(theme) {
-    await Preferences.set({
-        key: 'theme',
-        value: theme ?? 'auto',
-    })
-    return
+// Theme colors you wanted
+const LIGHT_BG = '#f2f2fd';
+const DARK_BG  = '#2f2f2f';
+
+type ThemePref = 'light' | 'dark' | 'auto';
+
+export async function setThemePref(theme?: ThemePref) {
+  await Preferences.set({ key: 'theme', value: theme ?? 'auto' });
+  // Immediately apply after saving
+  await applyThemeFromPref();
 }
 
-export async function setColorTheme() {
+/** Read pref, compute isDark, set Ionic palette class, CSS vars, and system bars */
+export async function applyThemeFromPref() {
+  const { value } = await Preferences.get({ key: 'theme' });
+  const pref = (value as ThemePref) ?? 'auto';
+  const isDark = await computeIsDark(pref);
 
-    const { value } = await Preferences.get({ key: 'theme' });
+  // 1) Ionic palette class
+  document.documentElement.classList.toggle('ion-palette-dark', isDark);
 
-    if (value == 'dark') {
-        document.documentElement.classList.toggle('ion-palette-dark', true);
-    }
-    else if (value == 'light') {
-        document.documentElement.classList.toggle('ion-palette-dark', false);
-    }
-    else {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-        console.log("prefers.matches", prefersDark)
-        if (prefersDark.matches) {
-            document.documentElement.classList.toggle('ion-palette-dark', true);
-        }
-        else {
-            document.documentElement.classList.toggle('ion-palette-dark', false);
-        }
-    }
+  // 2) Global CSS variables for backgrounds
+  const bg = isDark ? DARK_BG : LIGHT_BG;
+  setBackgroundVars(bg);
 
+  // 3) System bars (Android; iOS just adjust icon style)
+  await paintSystemBars(isDark, bg);
 
+  // 4) If pref is auto, listen to OS changes (idempotent)
+  installAutoListener(pref);
 }
+
+async function computeIsDark(pref: ThemePref) {
+  if (pref === 'dark') return true;
+  if (pref === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
+
+function setBackgroundVars(bg: string) {
+  // Keep these in sync with Ionic
+  const r = document.documentElement;
+  r.style.setProperty('--app-bg', bg);
+  r.style.setProperty('--ion-background-color', 'var(--app-bg)');
+  r.style.setProperty('--ion-toolbar-background', 'var(--app-bg)');
+  // Ensure body / root gets painted
+  (document.body || r).style.background = 'var(--app-bg)';
+}
+
+let _autoMql: MediaQueryList | null = null;
+let _autoHandler: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null = null;
+
+function installAutoListener(pref: ThemePref) {
+  // Clean up previous listener
+  if (_autoMql && _autoHandler) {
+    _autoMql.removeEventListener?.('change', _autoHandler);
+    _autoMql = null; _autoHandler = null;
+  }
+  if (pref !== 'auto') return;
+
+  const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!mql) return;
+
+  const handler = async () => {
+    const isDark = mql.matches;
+    document.documentElement.classList.toggle('ion-palette-dark', isDark);
+    const bg = isDark ? DARK_BG : LIGHT_BG;
+    setBackgroundVars(bg);
+    await paintSystemBars(isDark, bg);
+  };
+
+  mql.addEventListener?.('change', handler);
+  _autoMql = mql;
+  _autoHandler = handler;
+}
+
+async function paintSystemBars(isDark: boolean, bg: string) {
+  // Status bar icon contrast
+  const styleModule = await import('@capacitor/status-bar').catch(() => null);
+  // Edge-to-edge background for status+nav (Android only)
+  if (Capacitor.getPlatform() === 'android') {
+    const e2eMod = await import('@capawesome/capacitor-android-edge-to-edge-support').catch(() => null);
+    if (e2eMod?.EdgeToEdge) {
+      try {
+        // Ensure enabled once (safe to call multiple times)
+        await e2eMod.EdgeToEdge.enable();
+        await e2eMod.EdgeToEdge.setBackgroundColor({ color: bg });
+      } catch {}
+    }
+  }
+  if (styleModule?.StatusBar && styleModule?.Style) {
+    try {
+      // Dark icons on light bg; Light icons on dark bg
+      await styleModule.StatusBar.setStyle({ style: isDark ? styleModule.Style.Light : styleModule.Style.Dark });
+    } catch {}
+  }
+}
+
 
 export async function setFontSizePref(fontsize) {
     await Preferences.set({
@@ -2170,6 +2238,58 @@ export async function uploadFileForMessage(data) {
 
 }
 
+
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
+const blobToBase64Raw = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve((r.result as string).split(',')[1]); // strip data: prefix
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+
+export async function uploadFileForMessageNew(data: FormData | Record<string, any>) {
+  const url = `${BASE_URL}/api/profiles/chats/upload/`;
+  const token = localStorage.getItem('token') || '';
+
+  // JSON path (legacy/base64, no files)
+  if (!(typeof FormData !== 'undefined' && data instanceof FormData)) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify(data),
+      credentials: 'omit',
+    });
+    const json = await res.json().catch(() => ({}));
+    return { status: res.status, data: json, headers: {} as any };
+  }
+
+  // Multipart path (Blob/File under key "file")
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Token ${token}`,
+      Accept: 'application/json',
+      // DO NOT set Content-Type here; the browser sets the multipart boundary
+    },
+    body: data as FormData,
+    credentials: 'omit',
+  });
+
+  const json = await res.json().catch(() => ({}));
+  return { status: res.status, data: json, headers: {} as any };
+}
+
+
+
+
+
+
 export async function updateCurrentUserChatSettings(data) {
 
     const url = `${BASE_URL}/api/profiles/chat_settings/`;
@@ -2222,25 +2342,25 @@ export async function updateCurrentUserPushNotificationSettings(data) {
 
 export async function addTag(key, value) {
     if (isMobile()) {
-        await window.plugins.OneSignal.User.addTag(key, value);
+        await (window as any).plugins.OneSignal.User.addTag(key, value);
     }
 }
 
 export async function deleteTag(key) {
     if (isMobile()) {
-        await window.plugins.OneSignal.User.removeTag(key);
+        await (window as any).plugins.OneSignal.User.removeTag(key);
     }
 }
 
 export async function deleteTags(key_array) {
     if (isMobile()) {
-        console.log(await window.plugins.OneSignal.User.removeTags(key_array))
+        console.log(await (window as any).plugins.OneSignal.User.removeTags(key_array))
     }
 }
 
 export async function getTags() {
     if (isMobile()) {
-        const tags = await window.plugins.OneSignal.User.getTags();
+        const tags = await (window as any).plugins.OneSignal.User.getTags();
         console.log('**Tags:', tags);
         return tags
     }
@@ -2377,4 +2497,22 @@ export async function deleteSavedLocation(location_id) {
 
     return response.data
 
+}
+
+// pii.ts
+const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+
+// Use .match() with GLOBAL and then post-filter
+const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
+const digits = (s) => s.replace(/\D+/g, "");
+const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
+
+export function containsPii(input) {
+    const text = typeof input === "string" ? input : String(input ?? "");
+    if (!text) return false;
+
+    if (EMAIL_TEST.test(text)) return true;     // non-global => stable
+
+    const candidates = text.match(PHONE_CANDIDATE_RE) ?? [];
+    return candidates.some((c) => plausiblePhone(digits(c)));
 }

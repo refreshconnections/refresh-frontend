@@ -208,7 +208,7 @@ const EditPhotoGridRow: React.FC<ContainerProps> = ({userid, dataPic, dataPicCap
                 </div>
                 
             </IonCol>
-            <IonCol size="7" class="col-right-padding">
+            <IonCol size="7" className="col-right-padding">
             {dataPicCaption !== "profile picture" &&  dataPic !== null?
             <CaptionsSelect picture={"pic"+ picNumber+"_caption"} current_caption={dataPicCaption} />
             : <></>}

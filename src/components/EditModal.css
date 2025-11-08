@@ -25,3 +25,12 @@ ion-item.with-select ion-select::part(placeholder) {
     white-space: pre-line;
     overflow: visible;
 }
+
+ion-input.whitebox{
+    --background: var(--ion-color-white);
+    --border-radius: 10px;
+    --inner-border-width: 0;
+    margin-bottom: 10px;
+    --padding-start: 10pt;
+    --padding-end: 10pt
+}

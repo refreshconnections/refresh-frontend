@@ -712,17 +712,17 @@ const Store: React.FC = () => {
         <IonPage>
             <IonContent>
 
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink="/me" routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
                 </IonFab>
-                <IonRow class="page-title">
+                <IonRow className="page-title">
                     <img className="color-invertible" src="../static/img/store.png" alt="store" />
                 </IonRow>
                 <SubscriptionMessage subscriptionLevel={data?.subscription_level}/>
 
-                {/* <IonGrid class="store-grid">
+                {/* <IonGrid className="store-grid">
 
                     <IonRow className="section-title">
                         Become a Refresh Pro
@@ -783,7 +783,7 @@ const Store: React.FC = () => {
                     {(subscriptionsOfferings?.skus?.length == 0 || subscriptionsOfferings == null) ?
                         <IonRow style={{ justifyContent: "center", paddingTop: "30px" }}><IonText>Nothing here yet!</IonText></IonRow> :
                         <></>}
-                    <IonRow class="ion-padding ion-text-center">
+                    <IonRow className="ion-padding ion-text-center">
                         <IonNote>Review the <a href="https://refreshconnections.com/terms">Terms and Conditions</a> and <a href="https://refreshconnections.com/privacy">Privacy Policy</a>.</IonNote>
                     </IonRow>
 
@@ -823,7 +823,7 @@ const Store: React.FC = () => {
                     </>
                 )}
 
-                <IonRow class="content-bottom">
+                <IonRow className="content-bottom">
                     {(subscriptionsOfferings?.skus?.length == 0 || subscriptionsOfferings == null) ?
                         <></> :
                         <IonButton onClick={restorePurchases}>Restore Purchases</IonButton>}

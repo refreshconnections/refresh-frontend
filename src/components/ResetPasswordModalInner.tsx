@@ -77,7 +77,7 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Reset</IonTitle>
                     <IonButtons slot="end">
                         <IonButton href="/">Cancel</IonButton>
@@ -102,14 +102,14 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
                         <IonLabel position="floating">New Password</IonLabel>
                         <IonInput value={newpassword}
                             name="newpassword"
-                            onIonChange={e => setNewPassword(e.detail.value!)}
+                            onIonInput={e => setNewPassword(e.detail.value!)}
                             type="password" />
                     </IonItem>
                     <IonItem>
                         <IonLabel position="floating">New Password (again)</IonLabel>
                         <IonInput value={newpassword2}
                             name="newpassword2"
-                            onIonChange={e => setNewPassword2(e.detail.value!)}
+                            onIonInput={e => setNewPassword2(e.detail.value!)}
                             placeholder="Repeat your new password"
                             type="password" />
                     </IonItem>

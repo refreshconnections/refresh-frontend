@@ -2,6 +2,8 @@ const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const { WebpackDeduplicationPlugin } = require('webpack-deduplication-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 
 
 module.exports = {
@@ -51,6 +53,14 @@ module.exports = {
         'process.env.UNDER_CONSTRUCTION': JSON.stringify(process.env.UNDER_CONSTRUCTION || 'false'),
       }),
       new WebpackDeduplicationPlugin({}),
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: path.resolve(__dirname, 'public/static/img'),
+            to: path.resolve(__dirname, 'static/frontend/img'),
+          },
+        ],
+        }),
     ],
     resolve: {
       extensions: ['.tsx', '.ts', '.js'],

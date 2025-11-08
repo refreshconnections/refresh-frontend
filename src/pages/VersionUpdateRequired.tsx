@@ -14,19 +14,19 @@ const VersionUpdateRequired: React.FC = () => {
         <IonPage>
             <IonContent>
             
-            <IonRow class="page-title" style={{paddingTop: "150pt"}}>
-            <IonText class="bold" style={{padding: "25pt", textAlign: "center"}}>
+            <IonRow className="page-title" style={{paddingTop: "150pt"}}>
+            <IonText className="bold" style={{padding: "25pt", textAlign: "center"}}>
               <h1>New great things are here! Please update your app.</h1>
             </IonText>
   
           </IonRow>
-          <IonCard class="created-no-shadow">
-              <IonCardContent class="ion-justify-content-center" style={{ display: "flex", flexDirection: "column" }}>
+          <IonCard className="created-no-shadow">
+              <IonCardContent className="ion-justify-content-center" style={{ display: "flex", flexDirection: "column" }}>
                 <img alt="loading-freshy" src="../static/img/flower-mask.png" style={{ width: "40%", alignSelf: "center" }}></img>
               </IonCardContent>
             </IonCard>
 
-            <IonRow class="ion-justify-content-center">
+            <IonRow className="ion-justify-content-center">
             {Capacitor.getPlatform() === 'ios' ?
               <IonButton href="https://apps.apple.com/us/app/refresh-connections/id6502037766">Go to the App Store</IonButton>
               : 

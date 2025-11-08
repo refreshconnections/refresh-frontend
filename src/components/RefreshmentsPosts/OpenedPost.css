@@ -144,6 +144,11 @@ ion-row.sensitivity-note {
   padding: 10pt;
   border-radius: 10pt;
   margin-bottom: 10pt;
+  row-gap: .25rem;
+}
+
+ion-row.sensitivity-note ion-text{
+  color: var(--ion-color-black)
 }
 
 ion-row.comment-instructions-note {
@@ -161,4 +166,14 @@ ion-row.comment-instructions-note ion-note{
 ion-textarea.comment-creator {
   max-height: 300pt;
   overflow: scroll;
+}
+
+.mid-hr {
+  border: 0;
+  height: 1px;
+  width: 100%;
+  background: var(--ion-color-medium);
+  opacity: .6;
+  margin: .25rem 0;
+  border-radius: 2px;
 }

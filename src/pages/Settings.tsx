@@ -7,7 +7,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 import "./Page.css"
 import "./Settings.css"
 
-import { updateCurrentUserProfile, logoutAll, logoutCurrent, setThemePref, setColorTheme, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
+import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -35,7 +35,9 @@ import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderatio
 import EditChatSettingsModal from '../components/EditChatSettingsModal';
 import EditPushNotifications from '../components/EditPushNotifications';
 import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
-import { faBroomWide } from '@fortawesome/pro-solid-svg-icons';
+import { faBroomWide, faEnvelope, faEnvelopeCircleCheck } from '@fortawesome/pro-solid-svg-icons';
+import EmailSettingsModal from '../components/EmailSettingsModal';
+import { faEnvelopes } from '@fortawesome/pro-regular-svg-icons';
 
 
 
@@ -76,18 +78,18 @@ const Settings: React.FC = () => {
 
 
   async function handleLogout() {
-    try {
-      const response = await logoutCurrent()
-    }
-    catch {
-      console.log("Something went wrong.")
-    }
     await Preferences.remove({ key: 'EXPIRY' })
     await Preferences.clear();
     localStorage.removeItem('token')
     localStorage.clear();
     Cookies.remove('sessionid')
     Cookies.remove('csrftoken')
+    try {
+      const response = await logoutCurrent()
+    }
+    catch {
+      console.log("Something went wrong.")
+    }
     window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")
@@ -365,6 +367,9 @@ const Settings: React.FC = () => {
     onDismiss: () => editChatSettingsDismiss(),
   });
 
+    const [emailSettingsPresent, editEmailSettingsDismiss] = useIonModal(EmailSettingsModal, {
+    onDismiss: () => editEmailSettingsDismiss(),
+  });
 
 
   useEffect(() => {
@@ -412,7 +417,7 @@ const Settings: React.FC = () => {
         setThemePref(theme);
       }
       const changeTheme = async () => {
-        setColorTheme()
+        applyThemeFromPref()
       }
       setTheme();
       changeTheme()
@@ -476,7 +481,7 @@ const Settings: React.FC = () => {
       <IonPage>
         <IonContent>
 
-          <IonRow class="page-title ">
+          <IonRow className="page-title ">
             <img className="color-invertible" src="../static/img/settings-navy.png" alt="settings" />
           </IonRow>
 
@@ -489,13 +494,13 @@ const Settings: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="settings ">
-        <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+        <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
           <IonFabButton routerLink="/me" routerDirection="back" color="light" onClick={() => queryClient.invalidateQueries({ queryKey: ['current'] })}>
             <IonIcon icon={chevronBackOutline}></IonIcon>
           </IonFabButton>
         </IonFab>
 
-        <IonRow class="page-title bigger">
+        <IonRow className="page-title bigger">
           <img className="color-invertible" src="../static/img/settings-navy.png" alt="settings" />
         </IonRow>
         {data ?
@@ -503,7 +508,7 @@ const Settings: React.FC = () => {
             <IonNote>Pro Settings</IonNote>
             <IonList>
               <IonItem>
-                <IonLabel class="ion-text-wrap">New message count</IonLabel>
+                <IonLabel className="ion-text-wrap">New message count</IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_new_message_count": e.detail.checked })}
                   disabled={data?.subscription_level !== "pro"}
@@ -511,7 +516,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               {/* <IonItem>
-                <IonLabel class="ion-text-wrap">Create group chats</IonLabel>
+                <IonLabel className="ion-text-wrap">Create group chats</IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_create_groups": e.detail.checked })}
                   disabled={data?.subscription_level !== "pro"}
@@ -519,7 +524,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem> */}
               <IonItem>
-                <IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Initiate mode</span>
+                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Initiate mode</span>
                   {data?.subscription_level == "pro" ?
                     <p>Only connect with people you Like first</p>
                     : <></>}
@@ -531,7 +536,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Pro banner</span>
+                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Pro banner</span>
                   {data?.subscription_level == "pro" ?
                     <p>Choose your banner in the Me tab under Profile - The Basics.</p>
                     : <></>}
@@ -543,7 +548,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Chats Keep-it-going</span></IonLabel>
+                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Chats Keep-it-going</span></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_chats_next_reminder": e.detail.checked })}
                   disabled={data?.subscription_level !== "pro"}
@@ -552,40 +557,40 @@ const Settings: React.FC = () => {
               </IonItem>
             </IonList>
 
-            <IonNote class="ion-text-wrap">Objectionable Content Settings</IonNote>
+            <IonNote className="ion-text-wrap">Objectionable Content Settings</IonNote>
             <IonItem>
-              <IonLabel class="ion-text-wrap">Hide sensitive Community posts</IonLabel>
+              <IonLabel className="ion-text-wrap">Hide sensitive Community posts</IonLabel>
               <IonToggle slot="end"
                 onIonChange={async e => await updateCurrentUserProfile({ "settings_show_sensitive_content": !e.detail.checked })}
                 checked={!(data?.settings_show_sensitive_content)}>
               </IonToggle>
             </IonItem>
             <IonItem>
-              <IonLabel class="ion-text-wrap">Hidden Content</IonLabel>
+              <IonLabel className="ion-text-wrap">Hidden Content</IonLabel>
               <IonButton slot="end" onClick={() => editHiddenContentPresent()}> Edit </IonButton>
             </IonItem>
 
-            <IonNote class="ion-text-wrap">Communication Settings</IonNote>
+            <IonNote className="ion-text-wrap">Communication Settings</IonNote>
             <IonItem>
-              <IonLabel class="ion-text-wrap">Push notifications preferences</IonLabel>
+              <IonLabel className="ion-text-wrap">Push notifications preferences</IonLabel>
               <IonButton slot="end" onClick={() => editPushNotificationsPresent()}> Edit </IonButton>
             </IonItem>
             <IonItem>
-              <IonLabel class="ion-text-wrap">Chat preferences</IonLabel>
+              <IonLabel className="ion-text-wrap">Chat preferences</IonLabel>
               <IonButton slot="end" onClick={() => editChatSettingsPresent()}> Edit </IonButton>
             </IonItem>
             <IonItem>
-              <IonLabel class="ion-text-wrap">Receive marketing emails</IonLabel>
+              <IonLabel className="ion-text-wrap">Receive marketing emails</IonLabel>
               <IonToggle slot="end"
                 onIonChange={async e => await updateCurrentUserProfile({ "email_marketing": e.detail.checked })}
                 checked={data?.email_marketing}
               >
               </IonToggle>
             </IonItem>
-            <IonNote class="ion-text-wrap">Profile Actions</IonNote>
+            <IonNote className="ion-text-wrap">Profile Actions</IonNote>
             <IonList>
               <IonItem>
-                <IonLabel class="ion-text-wrap">
+                <IonLabel className="ion-text-wrap">
                   <span style={{ fontSize: "17px" }}>Connect from Refreshments</span>
                   <p>View Profiles and send / receive Likes from posts and comments in the Refreshments Bar.</p>
                 </IonLabel>
@@ -597,14 +602,14 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Create community posts</IonLabel>
+                <IonLabel className="ion-text-wrap">Create community posts</IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_create_posts": e.detail.checked })}
                   checked={data?.settings_create_posts}>
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Track your streak</span>
+                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Track your streak</span>
                   <p>Earned streaks can unlock Pro features.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => setStreakTracker(e.detail.checked)}
@@ -613,7 +618,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show streak increases</span>
+                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show streak increases</span>
                   <p>A little pop-up will tell you every time your streak increases.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_show_streak_increase": e.detail.checked })}
@@ -622,7 +627,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Show Image Descriptions</IonLabel>
+                <IonLabel className="ion-text-wrap">Show Image Descriptions</IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_alt_text": e.detail.checked })}
                   checked={data?.settings_alt_text}
@@ -631,16 +636,14 @@ const Settings: React.FC = () => {
               </IonItem>
 
               <IonItem>
-                <IonLabel>Theme</IonLabel>
-                <IonSelect value={theme ?? 'auto'} onIonChange={(e) => setTheme(e.detail.value)}>
+                <IonSelect label="Theme" value={theme ?? 'auto'} onIonChange={(e) => setTheme(e.detail.value)}>
                   <IonSelectOption value="auto">Auto</IonSelectOption>
                   <IonSelectOption value="light">Light</IonSelectOption>
                   <IonSelectOption value="dark">Dark</IonSelectOption>
                 </IonSelect>
               </IonItem>
               <IonItem>
-                <IonLabel>Font Size</IonLabel>
-                <IonSelect value={fontZoom ?? 'auto'} onIonChange={(e) => setFontZoom(e.detail.value)}>
+                <IonSelect label="Font Size" value={fontZoom ?? 'auto'} onIonChange={(e) => setFontZoom(e.detail.value)}>
                   <IonSelectOption value="auto">Auto</IonSelectOption>
                   <IonSelectOption value="default">Default</IonSelectOption>
                   <IonSelectOption value="large">Large</IonSelectOption>
@@ -648,49 +651,53 @@ const Settings: React.FC = () => {
                 </IonSelect>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Change password</IonLabel>
+              <IonLabel className="ion-text-wrap">Change/Add Email</IonLabel>
+              <IonButton slot="end" size="default" onClick={() => emailSettingsPresent()}><FontAwesomeIcon icon={faEnvelopes} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Change password</IonLabel>
                 <IonButton slot="end" size="default" onClick={() => passwordChangePresent()}><FontAwesomeIcon icon={faUnlock} /></IonButton>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Logout just this device</IonLabel>
+                <IonLabel className="ion-text-wrap">Logout just this device</IonLabel>
                 <IonButton slot="end" size="default" onClick={handleLogout}><FontAwesomeIcon icon={faRightFromBracket} /></IonButton>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Logout on all devices</IonLabel>
+                <IonLabel className="ion-text-wrap">Logout on all devices</IonLabel>
                 <IonButton slot="end" size="default" onClick={() => handleLogoutAll()}><FontAwesomeIcon icon={faRightFromLine} /></IonButton>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Clear cache</IonLabel>
+                <IonLabel className="ion-text-wrap">Clear cache</IonLabel>
                 <IonButton size="default" slot="end" onClick={() => clearCacheClicked()}><FontAwesomeIcon icon={faBroomWide} /></IonButton>
               </IonItem>
               <IonItem>
-                <IonLabel class="ion-text-wrap">Reload app</IonLabel>
+                <IonLabel className="ion-text-wrap">Reload app</IonLabel>
                 <IonButton size="default" slot="end" onClick={() => window.location.reload()}><FontAwesomeIcon icon={faRefresh} /></IonButton>
               </IonItem>
               {data?.paused_profile ?
                 <IonItem>
-                  <IonLabel class="ion-text-wrap">Unpause profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Unpause profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => unPauseProfileHandler()}><FontAwesomeIcon icon={faCirclePlay} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
-                  <IonLabel class="ion-text-wrap">Pause profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Pause profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => pauseProfileClicked()}><FontAwesomeIcon icon={faCirclePause} /></IonButton>
                 </IonItem>
               }
               {data?.deactivated_profile ?
                 <IonItem>
-                  <IonLabel class="ion-text-wrap">Reactivate profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Reactivate profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => reactivateProfileClicked()}><FontAwesomeIcon icon={faSquarePlus} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
-                  <IonLabel class="ion-text-wrap">Deactivate profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Deactivate profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => deactivateProfileClicked()}><FontAwesomeIcon icon={faSquareMinus} /></IonButton>
                 </IonItem>
               }
               <IonItem>
-                <IonLabel class="ion-text-wrap">Delete your account</IonLabel>
+                <IonLabel className="ion-text-wrap">Delete your account</IonLabel>
                 <IonButton color="danger" size="default" slot="end" onClick={() => deleteAccountClicked()}><FontAwesomeIcon icon={faTrashCan} /></IonButton>
               </IonItem>
             </IonList>

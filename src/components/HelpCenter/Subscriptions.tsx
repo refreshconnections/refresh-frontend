@@ -19,14 +19,14 @@ const Subscriptions: React.FC = () => {
 
     return (
         <div className="help-section">
-        <IonRow class="ion-padding ion-justify-content-center">
+        <IonRow className="ion-padding ion-justify-content-center">
         <IonText>Here are some quick answers:</IonText>
         </IonRow>
-    <IonAccordionGroup class="help-faqs">
+    <IonAccordionGroup className="help-faqs">
        
       <IonAccordion value="first">
         <IonItem slot="header" lines="none">
-          <IonLabel class="ion-text-wrap">I have an active subscription but the app thinks I do not</IonLabel>
+          <IonLabel className="ion-text-wrap">I have an active subscription but the app thinks I do not</IonLabel>
         </IonItem>
         <div className="ion-padding" slot="content">
           Sometimes the respective app store and the app get out of sync. Try the <span style={{fontWeight: "bold"}}>Restore purchases</span> button in the Me tab &gt; <a href="/Store">Store</a> section.
@@ -37,7 +37,7 @@ const Subscriptions: React.FC = () => {
       </IonAccordion>
       <IonAccordion value="second">
         <IonItem slot="header" lines="none">
-          <IonLabel class="ion-text-wrap">How do I cancel my subscription?</IonLabel>
+          <IonLabel className="ion-text-wrap">How do I cancel my subscription?</IonLabel>
         </IonItem>
         <div className="ion-padding" slot="content">
         <span style={{fontWeight: "bold"}}><a href="https://support.apple.com/en-us/118428">Cancel a subscription from Apple</a></span><br/>
@@ -48,8 +48,8 @@ const Subscriptions: React.FC = () => {
         </div>
       </IonAccordion>
     </IonAccordionGroup>
-    <IonRow class="ion-padding ion-justify-content-center top-border">
-        <IonText class="ion-text-center">Still haven't found what you're looking for? Send us a message.</IonText>
+    <IonRow className="ion-padding ion-justify-content-center top-border">
+        <IonText className="ion-text-center">Still haven't found what you're looking for? Send us a message.</IonText>
     </IonRow>
     </div>
     )

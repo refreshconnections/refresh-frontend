@@ -398,7 +398,7 @@ const CommentItem: React.FC<Props> = (props) => {
                   </div>
                 </IonItem>
                 <IonItemOptions side="start">
-                  <IonItemOption disabled={true} class="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
+                  <IonItemOption disabled={true} className="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
                 </IonItemOptions>
                 {globalCurrentProfile?.user !== comment?.user ?
                   <IonItemOptions side="end">

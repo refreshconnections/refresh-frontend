@@ -10,7 +10,7 @@ import Cookies from 'js-cookie';
 
 var BASE_URL = process.env.BASE_URL
 if (!process.env.BASE_URL) {
-  var BASE_URL = process.env.REACT_APP_BASE_URL
+    var BASE_URL = process.env.REACT_APP_BASE_URL
 }
 
 import "./RegisterModal.css"
@@ -46,9 +46,9 @@ const RegisterModal: React.FC = () => {
         else {
             setNameErrors(null)
         }
-    
-      }, [first_name, last_name])
-    
+
+    }, [first_name, last_name])
+
     function dismiss() {
         modal.current?.dismiss();
     }
@@ -91,10 +91,12 @@ const RegisterModal: React.FC = () => {
 
         axios({
             baseURL: LOGIN_URL,
-            headers: { 'X-CSRFToken': csrftoken, 
-            'Content-Type': 'application/json; charset=UTF-8',
-            'Access-Control-Allow-Origin': '*',
-            'enctype': 'multipart/form-data' },
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Access-Control-Allow-Origin': '*',
+                'enctype': 'multipart/form-data'
+            },
             method: "POST",
             data: formData(),
         })
@@ -145,7 +147,7 @@ const RegisterModal: React.FC = () => {
     return (
         <IonModal ref={modal} trigger="reg-modal">
             <IonHeader>
-                <IonToolbar class="modal-title">
+                <IonToolbar className="modal-title">
                     <IonTitle>Sign up</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={dismiss}>Close</IonButton>
@@ -162,69 +164,74 @@ const RegisterModal: React.FC = () => {
                 />
                 <form className="ion-padding" onSubmit={handleRegister}>
                     <IonItem>
-                        <IonLabel position="floating">Email</IonLabel>
-                        <IonInput value={email}
+                        <IonInput label="Email"
+                            labelPlacement="floating"
+                            value={email}
                             name="email"
-                            onIonChange={e => setEmail(e.detail.value!)}
-                            placeholder="Email"
+                            onIonInput={e => setEmail(e.detail.value!)}
+                            placeholder="email@example.com"
                             type="email" />
                     </IonItem>
                     <IonItem>
-                        <IonLabel position="floating">First name</IonLabel>
-                        <IonInput value={first_name}
+                        <IonInput label="First name"
+                            labelPlacement="floating"
+                            value={first_name}
                             name="first name"
                             autoCapitalize='words'
-                            onIonChange={e => setFirstName(e.detail.value!)}
-                            placeholder="First Name"
+                            onIonInput={e => setFirstName(e.detail.value!)}
+                            placeholder="First name"
                             type="text" />
                     </IonItem>
                     <IonItem>
-                        <IonLabel position="floating">Last name</IonLabel>
-                        <IonInput value={last_name}
+                        <IonInput label="Last name"
+                            labelPlacement="floating"
+                            value={last_name}
                             name="last name"
                             autoCapitalize='words'
-                            onIonChange={e => setLastName(e.detail.value!)}
-                            placeholder="Last Name"
+                            onIonInput={e => setLastName(e.detail.value!)}
+                            placeholder="Last name"
                             type="text" />
                     </IonItem>
                     <IonItem>
-                        <IonLabel position="floating">Password</IonLabel>
-                        <IonInput value={password}
+                        <IonInput label="Password"
+                            labelPlacement="floating"
+                            value={password}
                             name="password"
-                            onIonChange={e => setPassword(e.detail.value!)}
+                            onIonInput={e => setPassword(e.detail.value!)}
                             placeholder="Password"
                             type="password" />
                     </IonItem>
                     <IonItem>
-                        <IonLabel position="floating">Confirm Password</IonLabel>
-                        <IonInput value={confirmPassword}
+                        <IonInput label="Confirm Password"
+                            labelPlacement="floating"
+                            value={confirmPassword}
                             name="password"
-                            onIonChange={e => setConfirmPassword(e.detail.value!)}
+                            onIonInput={e => setConfirmPassword(e.detail.value!)}
                             placeholder="Password"
                             type="password" />
                     </IonItem>
                     <IonItem className="terms">
                         <IonCheckbox slot="start" onIonChange={e => setAgreedToTerms(e.detail.checked)}></IonCheckbox>
-                        <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions.</a></IonText>
+                        <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions</a> and <a href="https://refreshconnections.com/privacy">Privacy Policy</a>.</IonText>
                     </IonItem>
                     <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!agreedToTerms || nameErrors !== null || disableButton}>
                         Sign up
                     </IonButton>
-                    {(nameErrors !== null)?
-                     <IonNote >{nameErrors}</IonNote>
-                     : <></>
+                    {(nameErrors !== null) ?
+                        <IonNote >{nameErrors}</IonNote>
+                        : <></>
                     }
-                    {errors && errors.length > 0? <IonNote color="danger">Errors: </IonNote> : null}
+                    {errors && errors.length > 0 ? <IonNote color="danger">Errors: </IonNote> : null}
                     {errors?.some(msg => msg.includes("Email already in use")) ? (
-                    <IonNote color="danger">
-                        This email cannot be used to create a new account. If you already have an account, try logging in or contact <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a> for assistance.
-                    </IonNote>
+                        <IonNote color="danger">
+                            This email cannot be used to create a new account. If you already have an account, try logging in or contact <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a> for assistance.
+                        </IonNote>
                     ) : (
-                    errors?.map((message: string, index: number) => (
-                        <div key={index}>
-                        <IonNote color="danger">{message}</IonNote>
-                        </div>
-                    ))
+                        errors?.map((message: string, index: number) => (
+                            <div key={index}>
+                                <IonNote color="danger">{message}</IonNote>
+                            </div>
+                        ))
                     )}
                 </form>
             </IonContent>

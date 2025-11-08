@@ -41,7 +41,7 @@ const OtherDetails: React.FC = () => {
     return (
         <IonPage>
             <IonContent>
-                <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+                <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                     <IonFabButton routerLink={`/change/#${id}`} routerDirection="back" color="light">
                         <IonIcon icon={chevronBackOutline}></IonIcon>
                     </IonFabButton>
@@ -49,9 +49,9 @@ const OtherDetails: React.FC = () => {
 
 
 
-                <IonCard class="other">
+                <IonCard className="other">
 
-                    <IonRow class="ion-align-items-center">
+                    <IonRow className="ion-align-items-center">
                             <IonCol size="11">
                             <IonCardTitle>
                             {other?.title ?  other?.title : ""}
@@ -76,7 +76,7 @@ const OtherDetails: React.FC = () => {
 
                     </IonCardContent>
                     {other?.link?
-                          <IonRow class="ion-justify-content-center" style={{paddingBottom: "0px"}}>
+                          <IonRow className="ion-justify-content-center" style={{paddingBottom: "0px"}}>
                         <IonButton fill="outline" href={other?.link}>Learn more</IonButton>
                         </IonRow>
                         : <></>}

@@ -129,7 +129,7 @@ const OnboardingCardProfilePic: React.FC = () => {
           <IonCardTitle>Upload a profile picture!</IonCardTitle>
 
           <IonText>Make a good first impression. This is the first thing that will show on your profile. We recommend it be of just you. Remember, your profile needs to include at least one photo that shows your face.</IonText>
-          <IonItem class="no-bottom-line prof" style={{ overflow: "auto" }}>
+          <IonItem className="no-bottom-line prof" style={{ overflow: "auto" }}>
             {data ?
               <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
                 {loading ?
@@ -155,7 +155,7 @@ const OnboardingCardProfilePic: React.FC = () => {
           <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic1_main == null ? true : false}>Next</IonButton>
         </IonRow>
       </IonCard>
-      <IonRow class="notyet">
+      <IonRow className="notyet">
         <IonButton fill="clear" onClick={() => stayPausedOpen()}>Don't feel like adding pictures yet?</IonButton>
       </IonRow>
     </>

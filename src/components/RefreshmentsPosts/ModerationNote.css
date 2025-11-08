@@ -17,10 +17,79 @@
     align-items: center;
     border-radius: 10pt;
     background: var(--ion-background-color);
-    padding: 2pt;
+    padding: 3pt;
+    margin: 2pt;
 }
 
 .moderation-wrapper .moderation-description ion-text{
     font-size: 9pt;
     color: var(--ion-color-navy);
+}
+
+/* makes the header look like a clickable subheading and keeps spacing tight */
+.moderation-accordion {
+  margin: 8px 0 12px;
+  background: transparent;
+}
+.moderation-accordion ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --background: transparent;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+}
+.moderation-accordion [slot="content"] {
+  background: var(--ion-background-color);
+  border-radius: 12px;
+  font-size: 11px;
+  opacity: 0.85;
+  padding: 0
+}
+
+/* tighter row + arrow right next to words */
+.moderation-accordion .acc-header-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --background: transparent;
+}
+
+ion-modal.moderation-modal .moderation-accordion {
+  margin: 6px 0 4px;
+}
+
+ion-modal.moderation-modal .acc-header {
+  --background: transparent;
+  --color: var(--ion-text-color, #000);
+  --min-height: 30px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+  --detail-icon-color: var(--ion-text-color, #000);
+  --detail-icon-opacity: 1;
+}
+
+ion-modal.moderation-modal ion-item {
+  width: 50%;
+}
+
+ion-modal.moderation-modal .acc-label {
+  font-size: 10pt;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+  width: 50%;
+  color: var(--ion-color-black)
+}
+
+ion-modal.moderation-modal .ion-accordion-toggle-icon {
+  color: var(--ion-color-black)
+}
+
+.moderation-modal .moderation-note-main {
+  font-size: 12pt;
+}
+
+.moderation-modal .moderation-note-longer {
+  font-size: 10pt;
 }

@@ -8,7 +8,7 @@ import React, { useState } from 'react'
 import { Geolocation } from '@capacitor/geolocation';
 import { NativeGeocoder } from '@capgo/nativegeocoder';
 
-import { isMobile, updateCurrentUserProfile  } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile } from '../hooks/utilities';
 
 
 import './CantAccessCard.css';
@@ -21,6 +21,7 @@ import 'swiper/css/navigation';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import CitySelectorModal from './CitySelectorModal';
+import { getCurrentPositionSmart } from '../hooks/geolocationUtilities';
 
 type Props = {
   onDismiss: () => void;
@@ -50,10 +51,10 @@ const EditLocationModal: React.FC<Props> = (props) => {
 
 
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
-    onDismiss: async (selectedCity?: {name: string, lat: string, lng: string}) => {
+    onDismiss: async (selectedCity?: { name: string, lat: string, lng: string }) => {
       if (selectedCity) {
         console.log('Selected city:', selectedCity);
-        await updateCurrentUserProfile({ 
+        await updateCurrentUserProfile({
           coordinates_near: selectedCity.name,
           location_point_lat: selectedCity.lat,
           location_point_long: selectedCity.lng,
@@ -124,7 +125,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
 
     if (!canChange) {
       const lastSaved = localStorage.getItem('lastSavedLocation');
-    
+
       const buttons: any = [];
 
       if (lastSaved) {
@@ -146,8 +147,8 @@ const EditLocationModal: React.FC<Props> = (props) => {
               onDismiss();
             }
             else {
-            setLoading(false);
-            onDismiss();
+              setLoading(false);
+              onDismiss();
             }
           }
         });
@@ -212,42 +213,70 @@ const EditLocationModal: React.FC<Props> = (props) => {
   }
 
   const shareLocation = async () => {
-    const permissionsStatus = await Geolocation.checkPermissions()
-
-    console.log("PERM STATUS ", permissionsStatus)
-
-    if (permissionsStatus.location !== 'denied') {
-      console.log("perms not denied")
-
-      const coordinates = await Geolocation.getCurrentPosition();
-
-      if (coordinates !== null) {
-
-        // setLat(coordinates.coords.latitude)
-        // setLong(coordinates.coords.longitude)
-
-        const reverseOptions = {
-          latitude: coordinates.coords.latitude,
-          longitude: coordinates.coords.longitude,
-        };
-
-        const address = await NativeGeocoder.reverseGeocode(reverseOptions)
-        const local = address.addresses[0].locality
-        const response = await updateCurrentUserProfile({ coordinates_near: local, location_point_long: coordinates.coords.longitude, location_point_lat: coordinates.coords.latitude })
-        queryClient.invalidateQueries({ queryKey: ['current'] })
-
-        onDismiss()
-
-      }
-      else {
-        presentCoordOptions()
+    try {
+      const permissionsStatus = await Geolocation.checkPermissions();
+      if (permissionsStatus.location === 'denied' && permissionsStatus.coarseLocation !== 'granted') {
+        await deniedAlert();
+        return;
       }
 
+      setLoading(true);
+
+      // 🚀 Android-friendly flow (fast coarse, then precise)
+      const coordinates = await getCurrentPositionSmart({
+        fastTimeoutMs: 7000,
+        preciseTimeoutMs: 25000,
+        maximumAgeMs: 60000,
+      });
+
+      if (!coordinates) {
+        setLoading(false);
+        await presentCoordOptions();
+        return;
+      }
+
+      const reverseOptions = {
+        latitude: coordinates.coords.latitude,
+        longitude: coordinates.coords.longitude,
+      };
+
+      const address = await NativeGeocoder.reverseGeocode(reverseOptions);
+      const local = address.addresses?.[0]?.locality ?? '';
+
+      await updateCurrentUserProfile({
+        coordinates_near: local || `${coordinates.coords.latitude.toFixed(3)}, ${coordinates.coords.longitude.toFixed(3)}`,
+        location_point_long: coordinates.coords.longitude,
+        location_point_lat: coordinates.coords.latitude,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['current'] });
+      setLoading(false);
+      onDismiss();
+    } catch (err: any) {
+      console.error('shareLocation error:', err?.message || err);
+      setLoading(false);
+
+      const msg = String(err?.message || '');
+      if (msg.includes('timed out')) {
+        await presentAlert({
+          header: "We couldn't get your GPS coordinates at this time.",
+          message:
+            "Please try again later. You can also choose your city or enter coordinates manually.",
+          buttons: ['OK'],
+        });
+      } else if (msg.toLowerCase().includes('permission')) {
+        await deniedAlert();
+      } else {
+        await presentAlert({
+          header: `The app doesn't have permission to get your location.`,
+          message:
+            "You can change your permissions and try again, choose your city, or enter coordinates manually.",
+          buttons: ['OK'],
+        });
+      }
     }
-    else {
-      presentCoordOptions()
-    }
-  }
+  };
+
 
   const confirmLocationAlert = async (lati: number, longi: number) => {
 
@@ -294,14 +323,14 @@ const EditLocationModal: React.FC<Props> = (props) => {
 
     let alertMessage = "";
 
-      if (isPro) {
-        alertMessage = "";
-      } else if (isPlus) {
-        alertMessage = " Choose 'Save and Clear' for the option to restore it later if you change your mind. You can only change your location once a day.";
-      } else {
-        alertMessage = "Choose 'Save and Clear' for the option to restore it later if you change your mind. You can only change your location every 30 days.";
-      }
-  
+    if (isPro) {
+      alertMessage = "";
+    } else if (isPlus) {
+      alertMessage = " Choose 'Save and Clear' for the option to restore it later if you change your mind. You can only change your location once a day.";
+    } else {
+      alertMessage = "Choose 'Save and Clear' for the option to restore it later if you change your mind. You can only change your location every 30 days.";
+    }
+
 
     presentAlert({
       header: "Are you sure you want to clear your location?",
@@ -311,51 +340,51 @@ const EditLocationModal: React.FC<Props> = (props) => {
           text: 'Just Clear',
           role: 'destructive',
           handler: async () => {
-              setTimeout(() => {
-                presentAlert({
-                  header: "When you clear your location, you will not be able to filter by distance or view local posts.",
-                  message: "Type OK to confirm clearing your location.",
-                  inputs: [
-                    {
-                      name: 'confirmation',
-                      type: 'text',
-                      placeholder: 'Type OK here'
-                    }
-                  ],
-                  buttons: [
-                    {
-                      text: 'Cancel',
-                      role: 'cancel'
-                    },
-                    {
-                      text: 'Confirm',
-                      handler: async (data) => {
-                        if (data.confirmation?.trim().toUpperCase() === "OK") {
-                          setLoading(true);
-                          localStorage.removeItem('lastSavedLocation');
-                          await updateCurrentUserProfile({ location_point_long: null, location_point_lat: null, coordinates_near: null });
-                          queryClient.invalidateQueries({ queryKey: ['current'] });
-                          setLoading(false);
-                        } else {
-                          setTimeout(() => {
-                            presentAlert({
-                              header: "Incorrect Confirmation",
-                              message: "You must type OK exactly to proceed. Try clearing your location again.",
-                              buttons: ["OK"]
-                            });
-                          }, 300); // Delay so the first confirm alert closes before this shows
-                        }
+            setTimeout(() => {
+              presentAlert({
+                header: "When you clear your location, you will not be able to filter by distance or view local posts.",
+                message: "Type OK to confirm clearing your location.",
+                inputs: [
+                  {
+                    name: 'confirmation',
+                    type: 'text',
+                    placeholder: 'Type OK here'
+                  }
+                ],
+                buttons: [
+                  {
+                    text: 'Cancel',
+                    role: 'cancel'
+                  },
+                  {
+                    text: 'Confirm',
+                    handler: async (data) => {
+                      if (data.confirmation?.trim().toUpperCase() === "OK") {
+                        setLoading(true);
+                        localStorage.removeItem('lastSavedLocation');
+                        await updateCurrentUserProfile({ location_point_long: null, location_point_lat: null, coordinates_near: null });
+                        queryClient.invalidateQueries({ queryKey: ['current'] });
+                        setLoading(false);
+                      } else {
+                        setTimeout(() => {
+                          presentAlert({
+                            header: "Incorrect Confirmation",
+                            message: "You must type OK exactly to proceed. Try clearing your location again.",
+                            buttons: ["OK"]
+                          });
+                        }, 300); // Delay so the first confirm alert closes before this shows
                       }
                     }
-                  ]
-                });
-              }, 300); 
-            
+                  }
+                ]
+              });
+            }, 300);
 
-            
-              
-          
-            }
+
+
+
+
+          }
         },
         {
           text: 'Save and Clear',
@@ -411,27 +440,27 @@ const EditLocationModal: React.FC<Props> = (props) => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Edit Your Location</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onDismiss}>Done</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent class="create-post">
-        {loading?
-        <div>
-          <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif"
-            style={{
-              width: "30%",
-              position: "absolute",
-              top: "50%",
-              zIndex: 9999,
-              right: "40%"
-            }}>
-          </img>
-        </div>
-        : <></>}
+      <IonContent className="create-post">
+        {loading ?
+          <div>
+            <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif"
+              style={{
+                width: "30%",
+                position: "absolute",
+                top: "50%",
+                zIndex: 9999,
+                right: "40%"
+              }}>
+            </img>
+          </div>
+          : <></>}
         <IonCard className="onboarding-slide">
           <IonCardContent>
             <IonCardTitle>Want to change your location?</IonCardTitle>
@@ -443,21 +472,18 @@ const EditLocationModal: React.FC<Props> = (props) => {
               <IonInput value={location}
                 name="location"
                 placeholder={currentUserProfile?.location}
-                onIonChange={e => setLocation(e.detail.value!)}
+                onIonInput={e => setLocation(e.detail.value!)}
                 maxlength={30}
-                disabled={currentUserProfile?.location == location}
                 type="text" />
             </IonItem>
-            <IonButton onClick={updateGivenInfo} disabled={location == null || location == currentUserProfile?.location}> {(location !== null || location !== currentUserProfile?.location) ? "Update" : "Nothing to update"}</IonButton>
-            
-            
-            
+            <IonButton onClick={updateGivenInfo} disabled={location == null || currentUserProfile?.location == location}> {(location !== null || location !== currentUserProfile?.location) ? "Update" : "Nothing to update"}</IonButton>
+
             {(currentUserProfile?.location_point_long !== null && currentUserProfile?.location_point_lat !== null) ?
 
-              <IonRow className="with-button" style={{paddingTop: "50pt"}}>
+              <IonRow className="with-button" style={{ paddingTop: "50pt" }}>
                 <IonText><p>The coordinates we use to filter your Picks by distance show that you are near:</p></IonText>
 
-                <IonItem  style={{width: "100%"}}>
+                <IonItem style={{ width: "100%" }}>
                   <IonInput
                     placeholder={currentUserProfile?.coordinates_near}
                     disabled={true}
@@ -469,7 +495,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
                 <IonButton color="danger" onClick={clearLocation}> Clear location </IonButton>
                 <IonButton onClick={presentCoordOptions}>Change</IonButton>
               </IonRow>
-              : <IonRow style={{paddingTop: "50pt"}}><IonItem>You haven't shared your location coordinates with us.</IonItem><IonButton style={{width: "100%"}} expand="block" onClick={presentCoordOptions}>Choose how to share</IonButton></IonRow>}
+              : <IonRow style={{ paddingTop: "50pt" }}><IonItem>You haven't shared your location coordinates with us.</IonItem><IonButton style={{ width: "100%" }} expand="block" onClick={presentCoordOptions}>Choose how to share</IonButton></IonRow>}
           </IonCardContent>
         </IonCard>
       </IonContent>

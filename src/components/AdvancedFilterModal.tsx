@@ -1,5 +1,5 @@
 import React, { createRef, useEffect, useRef, useState } from "react";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge, IonSpinner } from '@ionic/react';
 import { clearDismissedConnections, isPersonalPlus, updateCurrentUserProfile } from "../hooks/utilities";
 
 
@@ -169,7 +169,7 @@ const tooRestrictive = (theArray: string[], extra = false) => {
     if (theArray.includes('straight') && theArray.includes('pan')) {
       return true
     }
-  
+
     if (theArray.includes('straight') && theArray.includes('bi')) {
       return true
     }
@@ -203,6 +203,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const [lcCount, setLcCount] = useState<number>((currentProfileData?.filter_lc).length)
   const [gsCount, setGsCount] = useState<number>((currentProfileData?.filter_gender_sexuality).length)
   const [limitCount, setLimitCount] = useState<number>(0)
+  const [doneBusy, setDoneBusy] = useState(false);
 
 
 
@@ -216,8 +217,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const lcFilterChecked: string[] = currentProfileData?.filter_lc
   const genderSexualityFilterChecked: string[] = currentProfileData?.filter_gender_sexuality
 
-  const [dontshowSexualityFilterChecked, setDontshowSexualityFilterChecked] =  useState<string[]>(currentProfileData?.dontshow_gendersexuality ?? [])
-  const [onlyshowSexualityFilterChecked, setOnlyshowSexualityFilterChecked] =  useState<string[]>(currentProfileData?.onlyshow_gendersexuality ?? [])
+  const [dontshowSexualityFilterChecked, setDontshowSexualityFilterChecked] = useState<string[]>(currentProfileData?.dontshow_gendersexuality ?? [])
+  const [onlyshowSexualityFilterChecked, setOnlyshowSexualityFilterChecked] = useState<string[]>(currentProfileData?.onlyshow_gendersexuality ?? [])
 
   const [dontShowAnyOrAll, setDontShowAnyOrAll] = useState<string>(currentProfileData.dontshow_gendersexuality_any_all);
   const [onlyShowAnyOrAll, setOnlyShowAnyOrAll] = useState<string>(currentProfileData.onlyshow_gendersexuality_any_all);
@@ -485,15 +486,21 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           text: 'Select',
           handler: async (data: any) => {
 
-            let min = data.minimum
-            if (data.minimum == '' || data.minimum == null) {
-              min = 18
-            }
+            // Normalize inputs (alert inputs are strings)
+            const minInput = (data?.minimum ?? '').toString().trim();
+            const maxInput = (data?.maximum ?? '').toString().trim();
 
-            let max = data.maximum
-            if (data.maximum == '' || data.maximum == null) {
-              max = 200
-            }
+            let min = Number(minInput);
+            let max = Number(maxInput);
+
+            // Defaults if empty/NaN
+            if (!Number.isFinite(min)) min = 18;
+            if (!Number.isFinite(max)) max = 200;
+
+            // Integer-ize (optional)
+            min = Math.floor(min);
+            max = Math.floor(max);
+
 
             if (min < 18 || max < 18) {
               setIsValid(false)
@@ -566,7 +573,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             await updateCurrentUserProfile({ filter_distance: null })
             setDistanceFilter(null)
           },
-          cssClass: distanceFilter == null ? "hide-button": ""
+          cssClass: distanceFilter == null ? "hide-button" : ""
         },
         {
           text: 'Select',
@@ -641,6 +648,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           handler: async () => {
             queryClient.invalidateQueries({ queryKey: ['current'] })
             await removeFromCapacitorLocalStorage('last_shown_pick_v2');
+            await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
+            queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
             await clearFilters()
           }
         }
@@ -663,6 +672,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             onDismiss(true)
             queryClient.invalidateQueries({ queryKey: ['current'] })
             queryClient.invalidateQueries({ queryKey: ['incoming-paginated'] })
+            queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
           }
         }
       ],
@@ -684,7 +694,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   async function clearFilters() {
     onDismiss(true)
 
-    setSomethingChanged(true)
     setGreaterThanFilter(null)
     setLessThanFilter(null)
     setDistanceFilter(null)
@@ -707,8 +716,10 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
     }
     queryClient.invalidateQueries({ queryKey: ['current'] })
+    queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
 
     const response = await updateCurrentUserProfile(form_data)
+
 
     return
 
@@ -738,7 +749,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   //Adds the checkedbox to the array and check if you unchecked it
   const addGenderSexualityFilterCheckbox = (event: any) => {
 
-    console.log("e", event.detail)
     setSomethingChanged(true)
     if (event.detail.checked) {
       genderSexualityFilterChecked.push(event.detail.value);
@@ -766,23 +776,23 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     } else {
       setDontshowSexualityFilterChecked(
         dontshowSexualityFilterChecked.filter(a =>
-        a !== event.detail.value
-      ))
+          a !== event.detail.value
+        ))
     }
   }
 
-    //Adds the checkedbox to the array and check if you unchecked it
-    const addOnlyShowGenderFilterCheckbox = (event: any) => {
-      setSomethingChanged(true)
-      if (event.detail.checked) {
-        setOnlyshowSexualityFilterChecked([...onlyshowSexualityFilterChecked, event.detail.value])
-      } else {
-        setOnlyshowSexualityFilterChecked(
-          onlyshowSexualityFilterChecked.filter(a =>
+  //Adds the checkedbox to the array and check if you unchecked it
+  const addOnlyShowGenderFilterCheckbox = (event: any) => {
+    setSomethingChanged(true)
+    if (event.detail.checked) {
+      setOnlyshowSexualityFilterChecked([...onlyshowSexualityFilterChecked, event.detail.value])
+    } else {
+      setOnlyshowSexualityFilterChecked(
+        onlyshowSexualityFilterChecked.filter(a =>
           a !== event.detail.value
         ))
-      }
     }
+  }
 
 
 
@@ -818,12 +828,13 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const handleDone = async () => {
     if (somethingChanged) {
+      setDoneBusy(true);
       console.log("something changed")
       let saveDontShow = dontshowSexualityFilterChecked
       let saveDontShowAnyAll = dontShowAnyOrAll
       let saveOnlyShow = onlyshowSexualityFilterChecked
       let saveOnlyShowAnyAll = onlyShowAnyOrAll
-      
+
       if (dontShowAnyOrAll == "any" && tooRestrictive(dontshowSexualityFilterChecked)) {
         saveDontShow = []
         saveDontShowAnyAll = 'none'
@@ -842,22 +853,27 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       if (saveOnlyShow.length == 0) {
         saveOnlyShowAnyAll = "none"
       }
-      await updateCurrentUserProfile({ 
+      await updateCurrentUserProfile({
         filter_gender_sexuality: genderSexualityFilterChecked,
-        filter_lc: lcFilterChecked, 
+        filter_lc: lcFilterChecked,
         filter_any_all: anyOrAll,
         dontshow_gendersexuality: saveDontShow,
         dontshow_gendersexuality_any_all: saveDontShowAnyAll,
         onlyshow_gendersexuality: saveOnlyShow,
         onlyshow_gendersexuality_any_all: saveOnlyShowAnyAll
-       })
-       if (hasOrDoesNotHavePrecaution !== "none"  && precautionsSS == null) {
-        await updateCurrentUserProfile({ 
+      })
+      if (hasOrDoesNotHavePrecaution !== "none" && precautionsSS == null) {
+        await updateCurrentUserProfile({
           filter_precautions_include_or_not: "none",
-         })
-       }
-       console.log("gilter", genderSexualityFilterChecked)
+        })
+      }
+      await removeFromCapacitorLocalStorage('last_shown_pick_v2');
+      await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
+
       queryClient.invalidateQueries({ queryKey: ['current'] })
+      queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
+
+
       onDismiss(true)
     }
     else {
@@ -875,13 +891,13 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       if (tooRestrictive(dontshowSexualityFilterChecked)) {
         setDontShowTooRestrictive(true)
       }
-      else {setDontShowTooRestrictive(false)}
+      else { setDontShowTooRestrictive(false) }
     }
     else {
       setDontShowTooRestrictive(false)
     }
 
-    
+
 
 
   }, [dontshowSexualityFilterChecked, dontShowAnyOrAll])
@@ -896,7 +912,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       if (tooRestrictive(onlyshowSexualityFilterChecked, true)) {
         setOnlyShowTooRestrictive(true)
       }
-      else {setOnlyShowTooRestrictive(false)}
+      else { setOnlyShowTooRestrictive(false) }
     }
     else {
       setOnlyShowTooRestrictive(false)
@@ -905,21 +921,21 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   }, [onlyshowSexualityFilterChecked, onlyShowAnyOrAll])
 
-    // Only show use effect
-    useEffect(() => {
+  // Only show use effect
+  useEffect(() => {
 
-      let count = 0
+    let count = 0
 
-      if (currentUserProfile?.dontshow_outside_ages) {
-        count++
-      }
-      count = count + onlyshowSexualityFilterChecked.length + dontshowSexualityFilterChecked.length
+    if (currentUserProfile?.dontshow_outside_ages) {
+      count++
+    }
+    count = count + onlyshowSexualityFilterChecked.length + dontshowSexualityFilterChecked.length
 
-      setLimitCount(count)
-      
-  
-  
-    }, [currentUserProfile, onlyshowSexualityFilterChecked, dontshowSexualityFilterChecked])
+    setLimitCount(count)
+
+
+
+  }, [currentUserProfile, onlyshowSexualityFilterChecked, dontshowSexualityFilterChecked])
 
 
 
@@ -927,7 +943,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   return (
     <IonPage >
       <IonHeader>
-        <IonToolbar class="modal-title">
+        <IonToolbar className="modal-title">
           <IonTitle>Filters</IonTitle>
           <IonButtons slot="start" color="secondary">
             <IonButton onClick={handleDone}>Done</IonButton>
@@ -950,16 +966,16 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
         ]}
       ></IonToast>
       <IonContent className="adv-filters">
-        <IonRow class="pad-bottom">
+        <IonRow className="pad-bottom">
           <IonButton size="small" fill="outline" href="/tips">How to use filters</IonButton>
           <IonButton size="small" fill="outline" color="danger" onClick={clearFilterAlert}>Clear filters</IonButton>
         </IonRow>
         <IonRow className="ion-justify-content-center">
           <IonButton size="small" fill="outline" onClick={showIgnoredAgain}>Show previously ignored</IonButton>
         </IonRow>
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
 
-          <IonText class="ion-padding ion-text-wrap">I am looking for someone who is</IonText>
+          <IonText className="ion-padding ion-text-wrap">I am looking for someone who is</IonText>
         </IonRow>
         <IonItem button detail={true} onClick={whatAge} lines="none">
           <IonLabel>
@@ -994,23 +1010,23 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           </IonLabel>
         </IonItem>
         <IonItem lines="none" button detail={true} onClick={whatKeyword} disabled={!isPersonalPlus(currentProfileData?.subscription_level)}>
-            <IonLabel className="side">
-              <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
-              {keywordFilter == null || keywordFilter == "" ?
-                <p>Talking about any topic</p>
-                : <p>Talking about "{keywordFilter}"</p>}
-            </IonLabel>
-          </IonItem>
+          <IonLabel className="side">
+            <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
+            {keywordFilter == null || keywordFilter == "" ?
+              <p>Talking about any topic</p>
+              : <p>Talking about "{keywordFilter}"</p>}
+          </IonLabel>
+        </IonItem>
         <IonAccordionGroup >
           <IonAccordion >
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">Covid Behaviors</IonLabel> {hasOrDoesNotHavePrecaution !== "none" ?
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">Covid Behaviors</IonLabel> {hasOrDoesNotHavePrecaution !== "none" ?
               <IonBadge color="primary">1 filter</IonBadge>
               : <></>
             }</IonItem>
 
             <IonGrid className="filter-grid" slot="content">
               <IonItem button detail={true} onClick={whatBasedOnPrecautions}>
-                <IonLabel class="ion-text-wrap">
+                <IonLabel className="ion-text-wrap">
                   <h3>Filter by Covid Behavior?</h3>
                   {hasOrDoesNotHavePrecaution == "none" ?
                     <p>No</p>
@@ -1019,7 +1035,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonItem>
               {hasOrDoesNotHavePrecaution !== "none" ?
                 <IonItem button detail={true} onClick={whatPrecautions}>
-                  <IonLabel class="ion-text-wrap ">
+                  <IonLabel className="ion-text-wrap ">
                     <h3>Which behavior?</h3>
                     {precautionsSS == null ?
                       <p>(You have not chosen a behavior)</p>
@@ -1030,12 +1046,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             </IonGrid>
           </IonAccordion>
         </IonAccordionGroup >
-          
+
 
         {lookingForSS == "Long Covid support" ?
           <IonAccordionGroup value="first">
             <IonAccordion value="first">
-              <IonItem slot="header"><IonLabel class="ion-text-wrap">Long Covid Support</IonLabel><IonBadge color="primary">{lcCount} filters</IonBadge></IonItem>
+              <IonItem slot="header"><IonLabel className="ion-text-wrap">Long Covid Support</IonLabel><IonBadge color="primary">{lcCount} filters</IonBadge></IonItem>
               <IonItem >
 
 
@@ -1052,10 +1068,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
                   <IonCol>
                     <IonList>
-                      <IonItem>
-                        <IonCheckbox slot="start" value="I have LC" checked={currentProfileData.filter_lc.includes("I have LC") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        living with Long Covid
-                      </IonItem>
+                      <IonCheckbox slot="start" value="I have LC" checked={currentProfileData.filter_lc.includes("I have LC") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
+                      living with Long Covid
                       <IonItem>
                         <IonCheckbox slot="start" value="LC caretaker" checked={currentProfileData.filter_lc.includes("LC caretaker") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
                         caring for someone with Long Covid
@@ -1090,8 +1104,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
         <IonAccordionGroup >
           <IonAccordion>
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">Gender and Sexuality</IonLabel>
-            {gsCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsCount} filters</IonBadge> : <></>}
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">Gender and Sexuality</IonLabel>
+              {gsCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsCount} filters</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
 
@@ -1108,11 +1122,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonRow className="lr-pad">
 
                 {anyOrAll == "all" ?
-                  <IonText color="danger" class="ion-text-wrap">
+                  <IonText color="danger" className="ion-text-wrap">
                     <p>Remember: searching by "all" results in far fewer Picks!</p>
 
                   </IonText> : <></>}
-                <IonText class="ion-padding ion-text-wrap">
+                <IonText className="ion-padding ion-text-wrap">
                   I am looking for someone who is <i>{anyOrAll}</i> of the following:
                 </IonText>
               </IonRow>
@@ -1206,43 +1220,43 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup class="blue-bg">
+        <IonAccordionGroup className="blue-bg">
           <IonAccordion>
-            <IonItem slot="header"><IonLabel class="ion-text-wrap">My Profile Visibility Preferences</IonLabel>
-            {limitCount > 0?<IonBadge color={(dontShowAnyOrAll == "any" || onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{limitCount} preferences</IonBadge> : <></>}
+            <IonItem slot="header"><IonLabel className="ion-text-wrap">My Profile Visibility Preferences</IonLabel>
+              {limitCount > 0 ? <IonBadge color={(dontShowAnyOrAll == "any" || onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{limitCount} preferences</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
               <IonRow className="lr-pad ion-justify-content-center">
-                <IonButton size="small" color="danger" fill="outline" onClick={async ()=>await clearLimits()}>Clear preferences</IonButton>
+                <IonButton size="small" color="danger" fill="outline" onClick={async () => await clearLimits()}>Clear preferences</IonButton>
               </IonRow>
               <IonRow >
-                <IonText class="ion-padding ion-text-wrap" style={{fontSize: "14px"}}>
-                ● Only show my profile to people who:
+                <IonText className="ion-padding ion-text-wrap" style={{ fontSize: "14px" }}>
+                  ● Only show my profile to people who:
                 </IonText>
               </IonRow>
               <IonItem>
-                <IonCheckbox slot="start" disabled={greaterThanFilter == null && lessThanFilter == null} checked={(currentProfileData?.dontshow_outside_ages && (greaterThanFilter != null || lessThanFilter !== null)) ? true : false} onIonChange={async e => await updateCurrentUserProfile({ dontshow_outside_ages: e.detail.checked})} />
-                
-                <IonLabel class="ion-text-wrap"> Are in my specified age range {
+                <IonCheckbox slot="start" disabled={greaterThanFilter == null && lessThanFilter == null} checked={(currentProfileData?.dontshow_outside_ages && (greaterThanFilter != null || lessThanFilter !== null)) ? true : false} onIonChange={async e => await updateCurrentUserProfile({ dontshow_outside_ages: e.detail.checked })} />
+
+                <IonLabel className="ion-text-wrap"> Are in my specified age range {
                   greaterThanFilter == null && lessThanFilter !== null ?
                     <p> Younger than {lessThanFilter}</p>
                     :
                     lessThanFilter == null && greaterThanFilter !== null ?
                       <p> Older than {greaterThanFilter}</p>
-                      : !(greaterThanFilter == null && lessThanFilter == null)? 
-                      <p> Between {greaterThanFilter} and {lessThanFilter}</p> : <></>}</IonLabel> 
+                      : !(greaterThanFilter == null && lessThanFilter == null) ?
+                        <p> Between {greaterThanFilter} and {lessThanFilter}</p> : <></>}</IonLabel>
               </IonItem>
               <IonItem>
                 <IonCheckbox slot="start" disabled={true} value="man" checked={false} />
-                <IonLabel class="ion-text-wrap"> Live within __ kilometers / miles </IonLabel>
+                <IonLabel className="ion-text-wrap"> Live within __ kilometers / miles </IonLabel>
                 <IonBadge color="gray">Under construction!</IonBadge>
               </IonItem>
 
-              <IonAccordionGroup class="blue-bg">
+              <IonAccordionGroup className="blue-bg">
                 <IonAccordion value="first">
                   <IonItem slot="header">
-                    <IonLabel style={{paddingLeft: 0}} class="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
-                    {onlyshowSexualityFilterChecked.length > 0? <IonBadge color={(onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{onlyshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
+                    <IonLabel style={{ paddingLeft: 0 }} className="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
+                    {onlyshowSexualityFilterChecked.length > 0 ? <IonBadge color={(onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{onlyshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
                     <IonRow className="any-all-row">
@@ -1254,128 +1268,128 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                           <IonLabel>Any</IonLabel>
                         </IonSegmentButton>
                         <IonSegmentButton value="all" onClick={() => { setOnlyShowAnyOrAll("all"); setSomethingChanged(true) }}>
-                          <IonLabel  color="danger">All</IonLabel>
+                          <IonLabel color="danger">All</IonLabel>
                         </IonSegmentButton>
                       </IonSegment>
                     </IonRow>
-                    {onlyShowAnyOrAll !== "none" ? 
-                    <>
-                    {onlyShowAnyOrAll == "all"?
-                    <>
-                    {onlyShowTooRestrictive ?
-                      <IonRow className="lr-pad">
-                      <IonText color="danger" class="ion-padding ion-text-wrap">
-                        This combination is too restrictive and will not save. Loosen your selected preferences or set to "any".
-                      </IonText>
-                    </IonRow> :
-                     <IonRow className="lr-pad">
-                     <IonText class="ion-padding ion-text-wrap">
-                     <FontAwesomeIcon style={{color: "var(--ion-color-danger)"}} icon={faTriangleExclamation} /> Warning: The Only Show All preference can be very restrictive. 
-                     </IonText>
-                    </IonRow> 
-                    }
-                    </> :<></>}
-                    <IonRow className="lr-pad">
-                      <IonText class="ion-padding ion-text-wrap">
-                        Only show my profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
-                      </IonText>
-                      </IonRow>
-                      <IonRow>
+                    {onlyShowAnyOrAll !== "none" ?
+                      <>
+                        {onlyShowAnyOrAll == "all" ?
+                          <>
+                            {onlyShowTooRestrictive ?
+                              <IonRow className="lr-pad">
+                                <IonText color="danger" className="ion-padding ion-text-wrap">
+                                  This combination is too restrictive and will not save. Loosen your selected preferences or set to "any".
+                                </IonText>
+                              </IonRow> :
+                              <IonRow className="lr-pad">
+                                <IonText className="ion-padding ion-text-wrap">
+                                  <FontAwesomeIcon style={{ color: "var(--ion-color-danger)" }} icon={faTriangleExclamation} /> Warning: The Only Show All preference can be very restrictive.
+                                </IonText>
+                              </IonRow>
+                            }
+                          </> : <></>}
+                        <IonRow className="lr-pad">
+                          <IonText className="ion-padding ion-text-wrap">
+                            Only show my profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
+                          </IonText>
+                        </IonRow>
+                        <IonRow>
 
-                      <IonCol>
-                        <IonList>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="straight" checked={onlyshowSexualityFilterChecked.includes("straight") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Straight / heterosexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="gay" checked={onlyshowSexualityFilterChecked.includes("gay") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Gay / homosexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="lesbian" checked={onlyshowSexualityFilterChecked.includes("lesbian") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Lesbian
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="bi" checked={onlyshowSexualityFilterChecked.includes("bi") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Bi
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="pan" checked={onlyshowSexualityFilterChecked.includes("pan") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Pan
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="gray ace" checked={onlyshowSexualityFilterChecked.includes("gray ace") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Gray ace
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="ace" checked={onlyshowSexualityFilterChecked.includes("ace") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Ace
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="demi" checked={onlyshowSexualityFilterChecked.includes("demi") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Demisexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="queer" checked={onlyshowSexualityFilterChecked.includes("queer") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                            Queer
-                          </IonItem>
+                          <IonCol>
+                            <IonList>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="straight" checked={onlyshowSexualityFilterChecked.includes("straight") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Straight / heterosexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="gay" checked={onlyshowSexualityFilterChecked.includes("gay") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Gay / homosexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="lesbian" checked={onlyshowSexualityFilterChecked.includes("lesbian") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Lesbian
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="bi" checked={onlyshowSexualityFilterChecked.includes("bi") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Bi
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="pan" checked={onlyshowSexualityFilterChecked.includes("pan") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Pan
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="gray ace" checked={onlyshowSexualityFilterChecked.includes("gray ace") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Gray ace
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="ace" checked={onlyshowSexualityFilterChecked.includes("ace") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Ace
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="demi" checked={onlyshowSexualityFilterChecked.includes("demi") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Demisexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="queer" checked={onlyshowSexualityFilterChecked.includes("queer") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                                Queer
+                              </IonItem>
 
-                        </IonList>
+                            </IonList>
 
-                      </IonCol>
-                      <IonCol>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="man" checked={onlyshowSexualityFilterChecked.includes("man") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Man
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="woman" checked={onlyshowSexualityFilterChecked.includes("woman") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Woman
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="nb" checked={onlyshowSexualityFilterChecked.includes("nb") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Nonbinary / gender noncomforming
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="genderfluid" checked={onlyshowSexualityFilterChecked.includes("genderfluid") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Gender Fluid
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="cis" checked={onlyshowSexualityFilterChecked.includes("cis") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Cis
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="trans" checked={onlyshowSexualityFilterChecked.includes("trans") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Trans
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="intersex" checked={onlyshowSexualityFilterChecked.includes("intersex") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Intersex
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="mono" disabled={onlyshowSexualityFilterChecked.includes("poly")} checked={onlyshowSexualityFilterChecked.includes("mono") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Monogamous
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="poly" disabled={onlyshowSexualityFilterChecked.includes("mono")} checked={onlyshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                          Polyamorous
-                        </IonItem>
+                          </IonCol>
+                          <IonCol>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="man" checked={onlyshowSexualityFilterChecked.includes("man") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Man
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="woman" checked={onlyshowSexualityFilterChecked.includes("woman") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Woman
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="nb" checked={onlyshowSexualityFilterChecked.includes("nb") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Nonbinary / gender noncomforming
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="genderfluid" checked={onlyshowSexualityFilterChecked.includes("genderfluid") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Gender Fluid
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="cis" checked={onlyshowSexualityFilterChecked.includes("cis") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Cis
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="trans" checked={onlyshowSexualityFilterChecked.includes("trans") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Trans
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="intersex" checked={onlyshowSexualityFilterChecked.includes("intersex") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Intersex
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="mono" disabled={onlyshowSexualityFilterChecked.includes("poly")} checked={onlyshowSexualityFilterChecked.includes("mono") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Monogamous
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="poly" disabled={onlyshowSexualityFilterChecked.includes("mono")} checked={onlyshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
+                              Polyamorous
+                            </IonItem>
 
-                      </IonCol>
+                          </IonCol>
 
 
-                    </IonRow>
-                    </> : <></>}
+                        </IonRow>
+                      </> : <></>}
                   </div>
                 </IonAccordion>
                 <IonAccordion value="second">
                   <IonItem slot="header">
-                    <IonLabel class="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
-                    {dontshowSexualityFilterChecked.length > 0 ? <IonBadge color={(dontShowAnyOrAll == "any") ? "danger" : "primary"}>{dontshowSexualityFilterChecked.length} preferences</IonBadge> :<></>}
+                    <IonLabel className="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
+                    {dontshowSexualityFilterChecked.length > 0 ? <IonBadge color={(dontShowAnyOrAll == "any") ? "danger" : "primary"}>{dontshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
-                  <IonRow className="any-all-row">
+                    <IonRow className="any-all-row">
                       <IonSegment value={dontShowAnyOrAll} style={{ width: "100%" }}>
                         <IonSegmentButton value="none" onClick={() => { setDontShowAnyOrAll("none"); setSomethingChanged(true) }}>
                           <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
@@ -1388,135 +1402,135 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                         </IonSegmentButton>
                       </IonSegment>
                     </IonRow>
-                    {dontShowAnyOrAll !== "none" ? 
-                    <>
-                    {dontShowAnyOrAll == "any"?
-                    <>
-                    {dontShowTooRestrictive ?
-                      <IonRow className="lr-pad">
-                      <IonText color="danger" class="ion-padding ion-text-wrap">
-                        This combination is too restrictive and will not save. Loosen your selected preferences or set to "all".
-                      </IonText>
-                    </IonRow> :
-                     <IonRow className="lr-pad">
-                     <IonText class="ion-padding ion-text-wrap">
-                     <FontAwesomeIcon style={{color: "var(--ion-color-danger)"}} icon={faTriangleExclamation} /> Warning: The Don't Show Any preference can be very restrictive. 
-                     </IonText>
-                    </IonRow> 
-                    }
-                    </> :<></>}
-                    <IonRow className="lr-pad">
-                      <IonText class="ion-padding ion-text-wrap">
-                        Only show my profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
-                      </IonText>
-                    </IonRow>
-                    <IonRow>
+                    {dontShowAnyOrAll !== "none" ?
+                      <>
+                        {dontShowAnyOrAll == "any" ?
+                          <>
+                            {dontShowTooRestrictive ?
+                              <IonRow className="lr-pad">
+                                <IonText color="danger" className="ion-padding ion-text-wrap">
+                                  This combination is too restrictive and will not save. Loosen your selected preferences or set to "all".
+                                </IonText>
+                              </IonRow> :
+                              <IonRow className="lr-pad">
+                                <IonText className="ion-padding ion-text-wrap">
+                                  <FontAwesomeIcon style={{ color: "var(--ion-color-danger)" }} icon={faTriangleExclamation} /> Warning: The Don't Show Any preference can be very restrictive.
+                                </IonText>
+                              </IonRow>
+                            }
+                          </> : <></>}
+                        <IonRow className="lr-pad">
+                          <IonText className="ion-padding ion-text-wrap">
+                            Only show my profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
+                          </IonText>
+                        </IonRow>
+                        <IonRow>
 
-                      <IonCol>
-                        <IonList>
-                          <IonItem>
-                            <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("gay") || dontshowSexualityFilterChecked.includes("lesbian")}  value="straight" checked={dontshowSexualityFilterChecked.includes("straight") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Straight / heterosexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("straight") } value="gay" checked={dontshowSexualityFilterChecked.includes("gay") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Gay / homosexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("straight") } value="lesbian" checked={dontshowSexualityFilterChecked.includes("lesbian") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Lesbian
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="bi" checked={dontshowSexualityFilterChecked.includes("bi") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Bi
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="pan" checked={dontshowSexualityFilterChecked.includes("pan") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Pan
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="gray ace" checked={dontshowSexualityFilterChecked.includes("gray ace") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Gray ace
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="ace" checked={dontshowSexualityFilterChecked.includes("ace") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Ace
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="demi" checked={dontshowSexualityFilterChecked.includes("demi") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Demisexual
-                          </IonItem>
-                          <IonItem>
-                            <IonCheckbox slot="start" value="queer" checked={dontshowSexualityFilterChecked.includes("queer") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                            Queer
-                          </IonItem>
+                          <IonCol>
+                            <IonList>
+                              <IonItem>
+                                <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("gay") || dontshowSexualityFilterChecked.includes("lesbian")} value="straight" checked={dontshowSexualityFilterChecked.includes("straight") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Straight / heterosexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("straight")} value="gay" checked={dontshowSexualityFilterChecked.includes("gay") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Gay / homosexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" disabled={dontshowSexualityFilterChecked.includes("straight")} value="lesbian" checked={dontshowSexualityFilterChecked.includes("lesbian") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Lesbian
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="bi" checked={dontshowSexualityFilterChecked.includes("bi") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Bi
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="pan" checked={dontshowSexualityFilterChecked.includes("pan") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Pan
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="gray ace" checked={dontshowSexualityFilterChecked.includes("gray ace") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Gray ace
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="ace" checked={dontshowSexualityFilterChecked.includes("ace") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Ace
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="demi" checked={dontshowSexualityFilterChecked.includes("demi") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Demisexual
+                              </IonItem>
+                              <IonItem>
+                                <IonCheckbox slot="start" value="queer" checked={dontshowSexualityFilterChecked.includes("queer") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                                Queer
+                              </IonItem>
 
-                        </IonList>
+                            </IonList>
 
-                      </IonCol>
-                      <IonCol>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="man" disabled={dontshowSexualityFilterChecked.includes("woman")} checked={dontshowSexualityFilterChecked.includes("man") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Man
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="woman" disabled={dontshowSexualityFilterChecked.includes("man")} checked={dontshowSexualityFilterChecked.includes("woman") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Woman
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="nb" checked={dontshowSexualityFilterChecked.includes("nb") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Nonbinary / gender noncomforming
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="genderfluid"  checked={dontshowSexualityFilterChecked.includes("genderfluid") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Gender Fluid
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="cis" disabled={dontshowSexualityFilterChecked.includes("trans")} checked={dontshowSexualityFilterChecked.includes("cis") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Cis
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="trans" disabled={dontshowSexualityFilterChecked.includes("cis")} checked={dontshowSexualityFilterChecked.includes("trans") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Trans
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="intersex" checked={dontshowSexualityFilterChecked.includes("intersex") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Intersex
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="mono" disabled={dontshowSexualityFilterChecked.includes("poly")} checked={dontshowSexualityFilterChecked.includes("mono") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Monogamous
-                        </IonItem>
-                        <IonItem>
-                          <IonCheckbox slot="start" value="poly"  disabled={dontshowSexualityFilterChecked.includes("mono")} checked={dontshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                          Polyamorous
-                        </IonItem>
+                          </IonCol>
+                          <IonCol>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="man" disabled={dontshowSexualityFilterChecked.includes("woman")} checked={dontshowSexualityFilterChecked.includes("man") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Man
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="woman" disabled={dontshowSexualityFilterChecked.includes("man")} checked={dontshowSexualityFilterChecked.includes("woman") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Woman
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="nb" checked={dontshowSexualityFilterChecked.includes("nb") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Nonbinary / gender noncomforming
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="genderfluid" checked={dontshowSexualityFilterChecked.includes("genderfluid") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Gender Fluid
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="cis" disabled={dontshowSexualityFilterChecked.includes("trans")} checked={dontshowSexualityFilterChecked.includes("cis") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Cis
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="trans" disabled={dontshowSexualityFilterChecked.includes("cis")} checked={dontshowSexualityFilterChecked.includes("trans") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Trans
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="intersex" checked={dontshowSexualityFilterChecked.includes("intersex") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Intersex
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="mono" disabled={dontshowSexualityFilterChecked.includes("poly")} checked={dontshowSexualityFilterChecked.includes("mono") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Monogamous
+                            </IonItem>
+                            <IonItem>
+                              <IonCheckbox slot="start" value="poly" disabled={dontshowSexualityFilterChecked.includes("mono")} checked={dontshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
+                              Polyamorous
+                            </IonItem>
 
-                      </IonCol>
+                          </IonCol>
 
 
-                    </IonRow>
-                    </>
-                    :<></>}
+                        </IonRow>
+                      </>
+                      : <></>}
                   </div>
                 </IonAccordion>
 
               </IonAccordionGroup>
               <IonRow className="lr-pad">
-                <IonText style={{fontSize: "10pt"}} class="ion-padding ion-text-wrap">
-                  *Using visibility preferences does not guarantee that your profile will only be shown to people with your choices. 
-                  Members self-select any number of attributes and can change them at any time. 
-                  Using preferences should not lower the caution you take in what you reveal on your profile. 
-                  Please check out our How Tos for specific examples and our 
-                  <a href="https://refreshconnections.com/communitysafety"> Community Safety guidelines</a> for more information about best safety practices. 
+                <IonText style={{ fontSize: "10pt" }} className="ion-padding ion-text-wrap">
+                  *Using visibility preferences does not guarantee that your profile will only be shown to people with your choices.
+                  Members self-select any number of attributes and can change them at any time.
+                  Using preferences should not lower the caution you take in what you reveal on your profile.
+                  Please check out our How Tos for specific examples and our
+                  <a href="https://refreshconnections.com/communitysafety"> Community Safety guidelines</a> for more information about best safety practices.
                 </IonText>
               </IonRow>
             </IonGrid>
           </IonAccordion>
         </IonAccordionGroup>
         <IonRow className="ion-justify-content-center" style={{ paddingBottom: "30pt" }}>
-          <IonButton onClick={handleDone}>
-            Done
+          <IonButton onClick={handleDone} disabled={doneBusy}>
+            {doneBusy ? <IonSpinner name="dots" /> : 'Done'}
           </IonButton>
         </IonRow>
 

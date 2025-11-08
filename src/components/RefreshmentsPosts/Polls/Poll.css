@@ -1,6 +1,8 @@
 ion-row.poll {
     background: var(--ion-color-white);
-    padding: 40px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 10px;
     width: 100%;
     margin: 0;
     border-radius: 0pt;
@@ -8,20 +10,31 @@ ion-row.poll {
 }
 
 ion-card.opened-post ion-row.poll {
-    padding: 10px 10px 40px 10px !important
+    padding: 10px 0px 10px 0px !important
     
 }
 
-ion-row.poll ion-list{
-    background: var(--ion-color-white);
-    
+
+ion-row.poll .poll-list {
+  contain: initial !important;     /* undo Ionic 8 containment */
+  /* height behavior */
+  flex: 0 0 auto !important;       /* don't grow vertically */
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+
+  /* width behavior */
+  display: block !important;       /* not inline-block */
+  align-self: stretch !important;  /* take full row width */
+  width: 100% !important;
+
+  margin: 0;
+  padding: 0;
+  overflow: visible;
 }
 
-ion-row.poll ion-list ul{
-    padding-inline-start: 0
-    
-}
-
+ion-row.poll .poll-ul { list-style: none; margin: 0; padding: 0; }
+ion-row.poll .poll-ul > li { width: 100%; }  
 
 
 

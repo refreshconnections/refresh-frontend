@@ -14,10 +14,10 @@ const Me: React.FC = () => {
     return (
       <IonPage>
         <IonContent fullscreen >
-          <IonRow class="me-title">
+          <IonRow className="me-title">
             <img src="../static/img/refresh-connections-white-v2.png" alt="refresh-logo"/>
           </IonRow>
-          <IonGrid class="me-dashboard ">
+          <IonGrid className="me-dashboard ">
             <IonRow >
               
                 <IonCol size="6" >

@@ -19,6 +19,7 @@ import 'swiper/css';
 import 'swiper/css/effect-cards';
 import 'swiper/css/navigation';
 import { useSwiper } from 'swiper/react';
+import { getCurrentPositionSmart } from '../hooks/geolocationUtilities';
 
 
 
@@ -166,76 +167,103 @@ const OnboardingCardCoords: React.FC = () => {
     if (permissionsStatus.location !== 'denied') {
       console.log("perms not denied")
 
-      const coordinates = await Geolocation.getCurrentPosition();
+      try {
+        // Android-friendly: coarse → precise → watch fallback
+        const coordinates = await getCurrentPositionSmart({
+          fastTimeoutMs: 7000,
+          preciseTimeoutMs: 25000,
+          maximumAgeMs: 60000,
+        });
 
-      if (coordinates !== null) {
-        const response = await updateCurrentUserProfile({ location_point_long: coordinates.coords.longitude, location_point_lat: coordinates.coords.latitude })
-        const reverseOptions = {
-          latitude: coordinates.coords.latitude,
-          longitude: coordinates.coords.longitude,
-        };
-    
-        const address = await NativeGeocoder.reverseGeocode(reverseOptions)
-        const local = address.addresses[0].locality
-        const response2 = await updateCurrentUserProfile({ coordinates_near: local })
+        if (coordinates !== null) {
+          const response = await updateCurrentUserProfile({
+            location_point_long: coordinates.coords.longitude,
+            location_point_lat: coordinates.coords.latitude
+          });
 
-        swiper.slideNext()
+          const reverseOptions = {
+            latitude: coordinates.coords.latitude,
+            longitude: coordinates.coords.longitude,
+          };
+
+          const address = await NativeGeocoder.reverseGeocode(reverseOptions)
+          const local = address?.addresses?.[0]?.locality ?? `${coordinates.coords.latitude.toFixed(3)}, ${coordinates.coords.longitude.toFixed(3)}`
+          const response2 = await updateCurrentUserProfile({ coordinates_near: local })
+
+          swiper.slideNext()
+        } else {
+          deniedAlert()
+        }
+      } catch (err: any) {
+        console.error('shareLocation error:', err?.message || err);
+
+        const msg = String(err?.message || '');
+        const isTimeout =
+          msg.toLowerCase().includes('timed out') ||
+          msg.includes('OS-PLUG-GLOC-0010') ||
+          msg.includes('Could not obtain location in time');
+
+        if (isTimeout) {
+          await presentAlert({
+            header: "We couldn't get your GPS coordinates at this time.",
+            message: "Please try again later. You can also choose your city or enter coordinates manually.",
+            buttons: ['OK'],
+          });
+        } else if (
+          msg.toLowerCase().includes('permission') ||
+          msg.toLowerCase().includes('denied') ||
+          msg.toLowerCase().includes('location disabled')
+        ) {
+          await presentAlert({
+            header: "The app doesn't have permission to get your location.",
+            message: "You can change your permissions and try again, choose your city, or enter coordinates manually.",
+            buttons: ['OK'],
+          });
+        } else {
+          await presentAlert({
+            header: "We couldn't get your GPS coordinates at this time.",
+            message: "Please try again later. You can also choose your city or enter coordinates manually.",
+            buttons: ['OK'],
+          });
+        }
       }
-      else {
-        deniedAlert()
-      }
-
     }
     else {
       deniedAlert()
     }
-
-
-
-    // printCurrentPosition()
-
-
-    // swiper.slideNext()
-
-
-
-
-
   }
 
-  // const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
-  //   onDismiss: () => stayPausedDismiss(),
-  // });
+
 
   return (
     <>
-    <IonCard className="onboarding-slide">
-      <IonCardContent>
-        <IonCardTitle>Where do you live?</IonCardTitle>
+      <IonCard className="onboarding-slide">
+        <IonCardContent>
+          <IonCardTitle>Where do you live?</IonCardTitle>
 
-        <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your profile to potential connections nearby.
-        </IonText>
+          <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your profile to potential connections nearby.
+          </IonText>
 
 
-      </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton style={{ visibility: "hidden" }}></IonButton>
-        <IonButton fill="outline" onClick={() => swiper.slideNext()}>Don't Share</IonButton>
-      </IonRow>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton style={{ visibility: "hidden" }}></IonButton>
-        <IonButton fill="outline" onClick={updateProfile}>Enter Manually</IonButton>
-      </IonRow>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
+        </IonCardContent>
+        <IonRow className="onboarding-slide-buttons">
+          <IonButton style={{ visibility: "hidden" }}></IonButton>
+          <IonButton fill="outline" onClick={() => swiper.slideNext()}>Don't Share</IonButton>
+        </IonRow>
+        <IonRow className="onboarding-slide-buttons">
+          <IonButton style={{ visibility: "hidden" }}></IonButton>
+          <IonButton fill="outline" onClick={updateProfile}>Enter Manually</IonButton>
+        </IonRow>
+        <IonRow className="onboarding-slide-buttons">
+          <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
 
-        <IonButton onClick={shareLocation}>Share Location</IonButton>
-      </IonRow>
-    </IonCard>
-    {/* <IonRow class="notyet">
+          <IonButton onClick={shareLocation}>Share Location</IonButton>
+        </IonRow>
+      </IonCard>
+      {/* <IonRow class="notyet">
     <IonButton fill="clear" onClick={() => stayPausedOpen()}>I don't want to create a profile yet.</IonButton>
   </IonRow> */}
-  </>
+    </>
   )
 };
 export default OnboardingCardCoords;

@@ -53,7 +53,7 @@ const OnboardingCardLocation: React.FC = () => {
             <IonInput value={location}
                             name="location"
                             required={true}
-                            onIonChange={e => setLocation(e.detail.value!)}
+                            onIonInput={e => setLocation(e.detail.value!)}
                             maxlength={30}
                             type="text" 
                             autoCapitalize='words'

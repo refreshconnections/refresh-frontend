@@ -30,12 +30,15 @@ import RefreshmentsFiltersModal from '../components/RefreshmentsFiltersModal';
 import { Preferences } from '@capacitor/preferences';
 import { isCommunityPlus } from '../hooks/utilities';
 import { useGetSiteSettings } from '../hooks/api/sitesettings';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { faLocationDot  } from '@fortawesome/pro-solid-svg-icons/faLocationDot';
+import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocationDotSlash';
 
 
 const Refreshments: React.FC = () => {
 
   const queryClient = useQueryClient()
-  
+
 
   const [bar, setBar] = useState<string>("")
   const [bars, setBars] = useState<string>("")
@@ -44,6 +47,7 @@ const Refreshments: React.FC = () => {
   const [local, setLocal] = useState<boolean>(true)
   const [littleLoading, setLittleLoading] = useState<boolean>(false);
 
+  const currentUserProfile = useGetCurrentProfile().data;
 
 
   const [search, setSearch] = useState<string>("")
@@ -51,7 +55,7 @@ const Refreshments: React.FC = () => {
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
 
 
-  const {data: posts, isLoading: postsLoading} = useGetPosts(bars, search, local, radius, sort)
+  const { data: posts, isLoading: postsLoading } = useGetPosts(bars, search, local, radius, sort)
 
   const [length, setLength] = useState(5)
 
@@ -73,7 +77,8 @@ const Refreshments: React.FC = () => {
 
   const refreshmentsStatus = useMemo(
     () => statuses?.find(status => {
-      return status.page.includes('refreshments')}),
+      return status.page.includes('refreshments')
+    }),
     [statuses]
   );
 
@@ -87,8 +92,8 @@ const Refreshments: React.FC = () => {
   const scrollToRefreshmentsTop = () => {
 
     refreshmentsTop.current?.scrollIntoView({
-        behavior: "auto",
-        block: "center"
+      behavior: "auto",
+      block: "center"
     })
   }
 
@@ -131,8 +136,8 @@ const Refreshments: React.FC = () => {
     setLittleLoading(true)
     setTimeout(async () => {
       queryClient.invalidateQueries({
-      queryKey: ['filteredposts'], exact: false,
-    } );
+        queryKey: ['filteredposts'], exact: false,
+      });
       event.detail.complete();
       setLittleLoading(false)
     }, 2000);
@@ -165,36 +170,46 @@ const Refreshments: React.FC = () => {
   }, []);
 
 
+  const localPostsOn = useMemo(() => (
+    local &&
+    currentUserProfile?.location_point_lat &&
+    currentUserProfile?.location_point_long
+  ), [local, currentUserProfile]);
 
 
 
   return (
     <IonPage>
       <IonContent>
-        <IonRow class="page-title" id="refreshments-top" style={{ marginBottom: "10pt" }}>
+        <IonRow className="page-title" id="refreshments-top" style={{ marginBottom: "10pt" }}>
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show" />
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show" />
         </IonRow>
         <div ref={refreshmentsTop}></div>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-            <IonRefresherContent></IonRefresherContent>
-          </IonRefresher>
+          <IonRefresherContent></IonRefresherContent>
+        </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
-        <IonRow class="filter-buttons">
+        <IonRow className="filter-buttons">
           <IonButton onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
-          {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} /> }
+            {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
+            <IonRow class="ion-flex-column">
+              {!bars || (bars == "all") ?
+                <IonText color="gray">Showing all posts</IonText> :
+                <IonText color="gray">Showing filtered posts</IonText>
+              }
+                <IonText style={{fontSize: "8pt"}} color="gray">Local posts {localPostsOn ? "on " : "off "}<FontAwesomeIcon icon={localPostsOn ? faLocationDot : faLocationDotSlash}/></IonText>
 
-            {!bars || (bars == "all") ?
-              <IonText color="gray">Showing all posts</IonText> :
-              <IonText color="gray">Showing filtered posts</IonText>
-            }
-           
-              <IonButton fill="clear" size="small" color='gray'>
-                <FontAwesomeIcon icon={faBarsFilter} />
-              </IonButton>
+            </IonRow>
+
+
+            <IonButton fill="clear" size="small" color='gray'>
+              <FontAwesomeIcon icon={faBarsFilter} />
+            </IonButton>
           </IonCol>
+
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
             <IonButton color="tertiary" onClick={() => createPostPresent()}>
               <FontAwesomeIcon icon={faMegaphone} />
@@ -218,7 +233,7 @@ const Refreshments: React.FC = () => {
                   {
                     text: 'What is my streak?',
                     handler: async () => {
-                        window.location.pathname = "/activity"
+                      window.location.pathname = "/activity"
                     }
                   },
                   {
@@ -232,20 +247,20 @@ const Refreshments: React.FC = () => {
         </IonRow>
         {showFilterRow ?
           <RefreshmentsFilters search={search} setSearch={setSearch} /> : <></>}
-        {(somePosts && !postsLoading && !globalIsLoading)?
-        <IonList id="wl" lines="full" className="refreshments-list">
-          {somePosts?.map((e: any) => (
-            <li key={e}>
-              <RefreshmentsPost post_id={e} />
-            </li>
-          ))}
-        </IonList>  
-        :
-        <IonRow className="ion-justify-content-center">
-            <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif" style={{paddingTop: "40pt", width: "30%"}}></img>
-                </IonRow>}     
+        {(somePosts && !postsLoading && !globalIsLoading) ?
+          <IonList id="wl" lines="full" className="refreshments-list">
+            {somePosts?.map((e: any) => (
+              <li key={e}>
+                <RefreshmentsPost post_id={e} />
+              </li>
+            ))}
+          </IonList>
+          :
+          <IonRow className="ion-justify-content-center">
+            <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif" style={{ paddingTop: "40pt", width: "30%" }}></img>
+          </IonRow>}
         {/* {posts?.length > length ?
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
           <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
         </IonRow>
         : <></>
@@ -261,20 +276,20 @@ const Refreshments: React.FC = () => {
         >
           <IonInfiniteScrollContent loadingSpinner="bubbles" style={{ minHeight: "14px" }}></IonInfiniteScrollContent>
         </IonInfiniteScroll>
-        <IonRow class="ion-justify-content-center">
+        <IonRow className="ion-justify-content-center">
           {posts?.length > length ?
             <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
 
             : posts?.length > 3 ?
               <IonButton size="small" fill="clear" onClick={scrollToRefreshmentsTop}>Back to top</IonButton>
               : posts?.length == 0 ?
-                <IonNote>Nothing here yet &nbsp;<FontAwesomeIcon icon={faFrown}/></IonNote>
+                <IonNote>Nothing here yet &nbsp;<FontAwesomeIcon icon={faFrown} /></IonNote>
                 : <></>
           }
         </IonRow>
         {refreshmentsStatus?.active && (refreshmentsStatus?.header || refreshmentsStatus?.message) && isBeforeExpiration ?
-          <StatusToast isToastOpen={true} setIsToastOpen={setIsToastOpen} header={refreshmentsStatus?.header} message={refreshmentsStatus?.message}/> 
-        : <></>}
+          <StatusToast isToastOpen={true} setIsToastOpen={setIsToastOpen} header={refreshmentsStatus?.header} message={refreshmentsStatus?.message} />
+          : <></>}
       </IonContent>
     </IonPage>
   );

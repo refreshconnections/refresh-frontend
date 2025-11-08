@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal } from "@ionic/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
@@ -15,7 +15,7 @@ import { faCircleEllipsis } from '@fortawesome/pro-solid-svg-icons/faCircleEllip
 import { faSubtitles } from '@fortawesome/pro-regular-svg-icons/faSubtitles';
 
 
-import { faLocationDot, faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
+import { faCircleExclamation, faLocationDot, faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
 import { faComments } from '@fortawesome/pro-regular-svg-icons/faComments';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import Comments from "./Comments";
@@ -40,6 +40,7 @@ import { useGetMutualConnections } from "../../hooks/api/profiles/mutual-connect
 import debounce from "lodash.debounce";
 import { useGetCurrentModeration } from "../../hooks/api/profiles/current-moderation";
 import Poll from "./Polls/Poll";
+import ContactDetailsPopover from "../ContactDetailsPopover";
 
 type Comment = {
     id: number;
@@ -128,9 +129,12 @@ const OpenedPost: React.FC = () => {
     const [sortByRecentActivity, setSortByRecentActivity] = useState(() => {
         const stored = localStorage.getItem('sortByRecentActivity');
         return stored !== null ? stored === 'true' : false;
-      });
+    });
 
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
+
+    const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
+
 
 
     const [presentWhyHiddenAlert] = useIonAlert();
@@ -166,37 +170,37 @@ const OpenedPost: React.FC = () => {
                 reply_to: replyTo?.id,
                 like_count: 0,
                 reply_count: 0
-              };
+            };
 
             queryClient.setQueryData(['comments', replyTo.id, 'replies'], (oldData: any) => {
                 if (!oldData || !Array.isArray(oldData.pages)) {
-                  return {
-                    pageParams: [undefined],
-                    pages: [{
-                      next: null,
-                      previous: null,
-                      count: 1,
-                      results: [optimisticReply]
-                    }]
-                  };
+                    return {
+                        pageParams: [undefined],
+                        pages: [{
+                            next: null,
+                            previous: null,
+                            count: 1,
+                            results: [optimisticReply]
+                        }]
+                    };
                 }
-              
+
                 // Insert into last page
                 const updatedPages = oldData.pages.map((page, index) => {
-                  if (index === oldData.pages.length - 1) {
-                    return {
-                      ...page,
-                      results: [...page.results, optimisticReply]
-                    };
-                  }
-                  return page;
+                    if (index === oldData.pages.length - 1) {
+                        return {
+                            ...page,
+                            results: [...page.results, optimisticReply]
+                        };
+                    }
+                    return page;
                 });
-              
+
                 return {
-                  ...oldData,
-                  pages: updatedPages
+                    ...oldData,
+                    pages: updatedPages
                 };
-              });
+            });
 
             setTimeout(() => scrollToComment(`comment-${tempId}`), 100);
 
@@ -205,7 +209,7 @@ const OpenedPost: React.FC = () => {
                 comment_id = add_reply_response?.data?.reply_id
             }
 
-            queryClient.invalidateQueries({queryKey: ['comments', replyTo.id, 'replies']});
+            queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
             setForceShowRepliesFor(prev => new Set(prev).add(replyTo.id));
 
 
@@ -419,7 +423,7 @@ const OpenedPost: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['refreshments-current'] })
 
         comments?.data?.map((number) => (
-            queryClient.invalidateQueries({queryKey: ['refreshments', 'comment', 'replies', number]})
+            queryClient.invalidateQueries({ queryKey: ['refreshments', 'comment', 'replies', number] })
 
         ))
         setTimeout(async () => {
@@ -473,6 +477,11 @@ const OpenedPost: React.FC = () => {
         batchInvalidateComments();
     };
 
+    const hasSensitive  = !!staticContentPost?.sensitive;
+    const hasDisclaimer = !!staticContentPost?.disclaimer;
+    const sensitiveText = staticContentPost?.sensitive_description ?? 'This post contains sensitive content.';
+
+
 
 
     return (
@@ -483,13 +492,13 @@ const OpenedPost: React.FC = () => {
                         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
                             <IonRefresherContent></IonRefresherContent>
                         </IonRefresher>
-                        <IonFab class="very-top" slot="fixed" vertical="top" horizontal="start">
+                        <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                             <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light" onClick={() => backToAllPosts()}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
 
-                        <IonCard class="opened-post">
+                        <IonCard className="opened-post">
                             <IonRow>
                                 <IonCol size="11">
 
@@ -502,13 +511,13 @@ const OpenedPost: React.FC = () => {
                             <IonCardTitle>
                                 {staticContentPost?.title}
                             </IonCardTitle>
-                            <IonRow class="ion-justify-content-center">
+                            <IonRow className="ion-justify-content-center">
                                 <IonBadge color="navy">
                                     {staticContentPost?.location}
                                     {staticContentPost?.local_only ? <>&nbsp; &nbsp;<FontAwesomeIcon className="pinned" title="local" icon={faLocationDot} />  </> : <></>}
                                 </IonBadge>
                             </IonRow>
-                            
+
 
                             {staticContentPost?.coverPhoto ?
                                 <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
@@ -520,19 +529,19 @@ const OpenedPost: React.FC = () => {
                                         : <></>}
                                 </div>
                                 : <></>}
-                            
+
                             <IonCardSubtitle>
-                                <IonRow class="ion-align-items-center">
+                                <IonRow className="ion-align-items-center">
                                     {/* <IonCol size="7"> */}
 
-                                    <IonCol class="byline-col" size="7" onClick={settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile && !(globalCurrentProfile?.user == staticContentPost?.user) ? () => profilePresent() : () => { }}>
+                                    <IonCol className="byline-col" size="7" onClick={settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile && !(globalCurrentProfile?.user == staticContentPost?.user) ? () => profilePresent() : () => { }}>
                                         {(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile) ? <IonAvatar className="byline-avatar"><img src={staticContentPost?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
                                         <IonText>by {staticContentPost?.byline || "Anonymous"}</IonText>
                                     </IonCol>
 
                                     <IonCol size="5" >
                                         {settingsCurrentProfile?.settings_alt_text && staticContentPost?.coverPhoto !== null && staticContentPost?.coverPhoto_alt !== '' && staticContentPost?.coverPhoto_alt !== null ?
-                                            <IonRow class="ion-justify-content-end">
+                                            <IonRow className="ion-justify-content-end">
                                                 <IonButton className="alt-coverPhoto-button" fill="clear" size="small" onClick={altShow ? () => setAltShow(false) : () => setAltShow(true)}>
                                                     <FontAwesomeIcon icon={faSubtitles} />
                                                 </IonButton>
@@ -545,13 +554,39 @@ const OpenedPost: React.FC = () => {
 
                                     </IonCol>
                                 </IonRow>
-                                
+
                             </IonCardSubtitle>
-                            {staticContentPost?.sensitive && (
-                            <IonRow class="sensitivity-note">
-                                <IonText class="ion-text-center"><span style={{fontWeight: "bold"}}>Sensitive content: </span>{staticContentPost?.sensitive_description ?? 'This post contains sensitive content.'}</IonText>
-                            </IonRow>) }
-                            <IonCardContent class={staticContentPost?.markdown ? "post-markdown css-fix" : "css-fix"}>
+
+                            {(hasSensitive || hasDisclaimer) ? (
+                            <IonRow className="sensitivity-note">
+                                {hasSensitive && (
+                                <IonCol size="12">
+                                    <IonText className="ion-text-center" role="note" aria-label="Sensitive content">
+                                    <strong>Sensitive content: </strong>{sensitiveText}
+                                    </IonText>
+                                </IonCol>
+                                )}
+
+                                {hasSensitive && hasDisclaimer && (
+                                <IonCol size="12">
+                                    <hr className="mid-hr" aria-hidden="true" role="separator" />
+                                </IonCol>
+                                )}
+
+                                {hasDisclaimer && (
+                                <IonCol size="12">
+                                    <Linkify>
+                                    <IonText color="medium" className="ion-text-center">
+                                        <FontAwesomeIcon icon={faCircleExclamation} /> &nbsp;
+                                        {staticContentPost!.disclaimer}
+                                    </IonText>
+                                    </Linkify>
+                                </IonCol>
+                                )}
+                            </IonRow>) 
+                            : null}
+
+                            <IonCardContent className={staticContentPost?.markdown ? "post-markdown css-fix" : "css-fix"}>
                                 {staticContentPost?.poll && 
                                 <Poll id={staticContentPost?.poll}/>}
                                 {staticContentPost?.markdown ?
@@ -580,28 +615,28 @@ const OpenedPost: React.FC = () => {
                                 </IonCol>
                             </IonRow>
                             {staticContentPost?.comment_instructions ?
-                                <IonRow class="comment-instructions-note">
+                                <IonRow className="comment-instructions-note">
                                     <Linkify><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
                                 </IonRow>
                                 : <></>}
-                            {!staticContentPost?.comments_deactivated && 
-                            <>
-                            <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity}/>
-                            {!comments?.isPending && commentsNotShownCount > 0 ?
+                            {!staticContentPost?.comments_deactivated &&
                                 <>
-                                    {showSidenotes ?
-                                        <IonRow class="ion-justify-content-center" style={{ paddingTop: "10pt" }} color="primary" onClick={() => setShowSidenotes(false)}>
-                                            <IonNote>
-                                                Hide sidenotes
-                                            </IonNote>
-                                        </IonRow> :
-                                        <IonRow class="ion-justify-content-center" style={{ paddingTop: "10pt" }} color="primary" onClick={() => hiddenCommentsInfo()}>
-                                            <IonNote>
-                                                Some comments are hidden. &nbsp;
-                                                <IonIcon icon={informationCircleOutline}></IonIcon>
-                                            </IonNote>
-                                        </IonRow>}
-                                </> : <></>}
+                                    <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity} />
+                                    {!comments?.isPending && commentsNotShownCount > 0 ?
+                                        <>
+                                            {showSidenotes ?
+                                                <IonRow className="ion-justify-content-center" style={{ paddingTop: "10pt" }} color="primary" onClick={() => setShowSidenotes(false)}>
+                                                    <IonNote>
+                                                        Hide sidenotes
+                                                    </IonNote>
+                                                </IonRow> :
+                                                <IonRow className="ion-justify-content-center" style={{ paddingTop: "10pt" }} color="primary" onClick={() => hiddenCommentsInfo()}>
+                                                    <IonNote>
+                                                        Some comments are hidden. &nbsp;
+                                                        <IonIcon icon={informationCircleOutline}></IonIcon>
+                                                    </IonNote>
+                                                </IonRow>}
+                                        </> : <></>}
                                 </>
                             }
                         </IonCard>
@@ -650,66 +685,76 @@ const OpenedPost: React.FC = () => {
 
                     {!staticContentPost.comments_deactivated &&
 
-                    <IonFooter class={hideFooter ? "create-comment-hidden" : "create-comment"}>
-                        {globalCurrentProfile?.username ?
-                            <IonRow>
-                                <IonCol size="10">
-                                    <IonItem className="inputted" lines="none">
+                        <IonFooter className={hideFooter ? "create-comment-hidden" : "create-comment"}>
+                            {globalCurrentProfile?.username ?
+                            <>
+                                <IonRow>
+                                    <IonCol size="10">
+                                        <IonItem className="inputted" lines="none">
 
-                                        {replyTo ?
-                                            <div style={{ display: "flex", padding: "5pt" }}>
-                                                <IonButton class="x" size="small" onClick={() => setReplyTo(null)}>
-                                                    <IonIcon slot="icon-only" icon={close} ></IonIcon>
-                                                </IonButton>
+                                            {replyTo ?
+                                                <div style={{ display: "flex", padding: "5pt" }}>
+                                                    <IonButton className="x" size="small" onClick={() => setReplyTo(null)}>
+                                                        <IonIcon slot="icon-only" icon={close} ></IonIcon>
+                                                    </IonButton>
 
-                                                <IonLabel class="reply ion-text-wrap" position="stacked">
+                                                    <IonLabel className="reply ion-text-wrap" position="stacked">
 
-                                                    <IonText>
+                                                        <IonText>
 
-                                                        <p>{"reply to " + (replyTo?.username ?? "Anonymous") + ": " + replyTo?.text}
-                                                        </p>
+                                                            <p>{"reply to " + (replyTo?.username ?? "Anonymous") + ": " + replyTo?.text}
+                                                            </p>
 
-                                                    </IonText>
+                                                        </IonText>
 
 
-                                                </IonLabel>
+                                                    </IonLabel>
 
-                                            </div>
-                                            : <></>}
-                                        <IonTextarea value={commentInput}
-                                            className="comment-creator"
-                                            name="comment_input"
-                                            onIonChange={e => setCommentInput(e.detail.value!)}
-                                            disabled={staticContentPost?.comments_deactivated || staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)}
-                                            maxlength={900}
-                                            autoGrow={true}
-                                            autoCorrect="on"
-                                            spellcheck
-                                            rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile) ? 2 : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? 3 : 1}
-                                            placeholder={staticContentPost?.comments_deactivated ? 'Comments are closed.' : staticContentPost?.closed ? "Discussion closed. Want to start a new one?" : globalCurrentProfile?.deactivated_profile ? "You need an active account to comment." :  (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? "Your account needs to be reviewed before you can comment." : "Leave a comment"}
-                                            autoCapitalize='sentences'
-                                        />
-                                    </IonItem>
-                                </IonCol>
-                                <IonCol size="2">
-                                    <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput} onClick={() => createComment(commentInput!, replyTo)}>
-                                        <FontAwesomeIcon icon={faCommentPlus} />
+                                                </div>
+                                                : <></>}
+                                            <IonTextarea value={commentInput}
+                                                className="comment-creator"
+                                                name="comment_input"
+                                                onIonInput={e => setCommentInput(e.detail.value!)}
+                                                disabled={staticContentPost?.comments_deactivated || staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)}
+                                                maxlength={900}
+                                                autoGrow={true}
+                                                autoCorrect="on"
+                                                spellcheck
+                                                rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile) ? 2 : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? 3 : 1}
+                                                placeholder={staticContentPost?.comments_deactivated ? 'Comments are closed.' : staticContentPost?.closed ? "Discussion closed. Want to start a new one?" : globalCurrentProfile?.deactivated_profile ? "You need an active account to comment." : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? "Your account needs to be reviewed before you can comment." : "Leave a comment"}
+                                                autoCapitalize='sentences'
+                                            />
+                                        </IonItem>
+                                    </IonCol>
+                                    <IonCol size="2">
+                                        <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput || hasPii} onClick={() => createComment(commentInput!, replyTo)}>
+                                            <FontAwesomeIcon icon={faCommentPlus} />
+                                        </IonButton>
+                                    </IonCol>
+                                </IonRow>
+                                {hasPii &&
+                                <IonRow class="ion-padding">
+                                    <IonText color="danger">
+                                        Comments cannot contain contact information like emails or phone numbers.
+                                    </IonText>
+                                     <ContactDetailsPopover />
+                                </IonRow>
+                                }
+                                </>
+                                :
+                                <IonRow className="ion-justify-content-center comment-username">
+                                    <IonButton onClick={() => usernamePresent()} color="tertiary">
+                                        Set a public username to post a comment!
                                     </IonButton>
-                                </IonCol>
-                            </IonRow>
-                            :
-                            <IonRow className="ion-justify-content-center comment-username">
-                                <IonButton onClick={() => usernamePresent()} color="tertiary">
-                                    Set a public username to post a comment!
-                                </IonButton>
-                            </IonRow>}
-                    </IonFooter>
-                }
+                                </IonRow>}
+                        </IonFooter>
+                    }
                 </>
                 :
                 (staticContentPostLoading) ?
                     <IonContent>
-                        <IonFab class="very-top " slot="fixed" vertical="top" horizontal="start">
+                        <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
                             <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light">
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
@@ -717,19 +762,19 @@ const OpenedPost: React.FC = () => {
                     </IonContent>
                     :
                     <IonContent>
-                        <IonFab class="very-top " slot="fixed" vertical="top" horizontal="start">
+                        <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
                             <IonFabButton routerLink={`/community`} routerDirection="back" color="light">
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
-                        <IonCard class="opened-post" button routerLink={`/community#${id}`} routerDirection="back">
+                        <IonCard className="opened-post" button routerLink={`/community#${id}`} routerDirection="back">
                             <div style={{ position: "relative" }}>
                                 <img alt={"Go back"} src={"../static/img/goback.png"} onError={(e) => onImgError(e)}></img>
                             </div>
-                            <IonCardTitle class="ion-text-center">
+                            <IonCardTitle className="ion-text-center">
                                 Uh oh!
                             </IonCardTitle>
-                            <IonCardContent class="ion-text-center"> <IonText>This post doesn't seem to exist.</IonText>
+                            <IonCardContent className="ion-text-center"> <IonText>This post doesn't seem to exist.</IonText>
                             </IonCardContent>
                         </IonCard>
                     </IonContent>
