@@ -1950,37 +1950,103 @@ export function somethingInLetsTalkAbout(cardData) {
 
 }
 
-export async function setThemePref(theme) {
-    await Preferences.set({
-        key: 'theme',
-        value: theme ?? 'auto',
-    })
-    return
+// Theme colors you wanted
+const LIGHT_BG = '#f2f2fd';
+const DARK_BG  = '#2f2f2f';
+
+type ThemePref = 'light' | 'dark' | 'auto';
+
+export async function setThemePref(theme?: ThemePref) {
+  await Preferences.set({ key: 'theme', value: theme ?? 'auto' });
+  // Immediately apply after saving
+  await applyThemeFromPref();
 }
 
-export async function setColorTheme() {
+/** Read pref, compute isDark, set Ionic palette class, CSS vars, and system bars */
+export async function applyThemeFromPref() {
+  const { value } = await Preferences.get({ key: 'theme' });
+  const pref = (value as ThemePref) ?? 'auto';
+  const isDark = await computeIsDark(pref);
 
-    const { value } = await Preferences.get({ key: 'theme' });
+  // 1) Ionic palette class
+  document.documentElement.classList.toggle('ion-palette-dark', isDark);
 
-    if (value == 'dark') {
-        document.documentElement.classList.toggle('ion-palette-dark', true);
-    }
-    else if (value == 'light') {
-        document.documentElement.classList.toggle('ion-palette-dark', false);
-    }
-    else {
-        const prefersDark = (window as any).matchMedia('(prefers-color-scheme: dark)');
-        console.log("prefers.matches", prefersDark)
-        if (prefersDark.matches) {
-            document.documentElement.classList.toggle('ion-palette-dark', true);
-        }
-        else {
-            document.documentElement.classList.toggle('ion-palette-dark', false);
-        }
-    }
+  // 2) Global CSS variables for backgrounds
+  const bg = isDark ? DARK_BG : LIGHT_BG;
+  setBackgroundVars(bg);
 
+  // 3) System bars (Android; iOS just adjust icon style)
+  await paintSystemBars(isDark, bg);
 
+  // 4) If pref is auto, listen to OS changes (idempotent)
+  installAutoListener(pref);
 }
+
+async function computeIsDark(pref: ThemePref) {
+  if (pref === 'dark') return true;
+  if (pref === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
+
+function setBackgroundVars(bg: string) {
+  // Keep these in sync with Ionic
+  const r = document.documentElement;
+  r.style.setProperty('--app-bg', bg);
+  r.style.setProperty('--ion-background-color', 'var(--app-bg)');
+  r.style.setProperty('--ion-toolbar-background', 'var(--app-bg)');
+  // Ensure body / root gets painted
+  (document.body || r).style.background = 'var(--app-bg)';
+}
+
+let _autoMql: MediaQueryList | null = null;
+let _autoHandler: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null = null;
+
+function installAutoListener(pref: ThemePref) {
+  // Clean up previous listener
+  if (_autoMql && _autoHandler) {
+    _autoMql.removeEventListener?.('change', _autoHandler);
+    _autoMql = null; _autoHandler = null;
+  }
+  if (pref !== 'auto') return;
+
+  const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!mql) return;
+
+  const handler = async () => {
+    const isDark = mql.matches;
+    document.documentElement.classList.toggle('ion-palette-dark', isDark);
+    const bg = isDark ? DARK_BG : LIGHT_BG;
+    setBackgroundVars(bg);
+    await paintSystemBars(isDark, bg);
+  };
+
+  mql.addEventListener?.('change', handler);
+  _autoMql = mql;
+  _autoHandler = handler;
+}
+
+async function paintSystemBars(isDark: boolean, bg: string) {
+  // Status bar icon contrast
+  const styleModule = await import('@capacitor/status-bar').catch(() => null);
+  // Edge-to-edge background for status+nav (Android only)
+  if (Capacitor.getPlatform() === 'android') {
+    const e2eMod = await import('@capawesome/capacitor-android-edge-to-edge-support').catch(() => null);
+    if (e2eMod?.EdgeToEdge) {
+      try {
+        // Ensure enabled once (safe to call multiple times)
+        await e2eMod.EdgeToEdge.enable();
+        await e2eMod.EdgeToEdge.setBackgroundColor({ color: bg });
+      } catch {}
+    }
+  }
+  if (styleModule?.StatusBar && styleModule?.Style) {
+    try {
+      // Dark icons on light bg; Light icons on dark bg
+      await styleModule.StatusBar.setStyle({ style: isDark ? styleModule.Style.Light : styleModule.Style.Dark });
+    } catch {}
+  }
+}
+
 
 export async function setFontSizePref(fontsize) {
     await Preferences.set({

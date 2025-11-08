@@ -40,6 +40,7 @@ import { useGetMutualConnections } from "../../hooks/api/profiles/mutual-connect
 import debounce from "lodash.debounce";
 import { useGetCurrentModeration } from "../../hooks/api/profiles/current-moderation";
 import Poll from "./Polls/Poll";
+import ContactDetailsPopover from "../ContactDetailsPopover";
 
 type Comment = {
     id: number;
@@ -735,8 +736,9 @@ const OpenedPost: React.FC = () => {
                                 {hasPii &&
                                 <IonRow class="ion-padding">
                                     <IonText color="danger">
-                                        Comments cannot contain private contact information like emails or phone numbers.
+                                        Comments cannot contain contact information like emails or phone numbers.
                                     </IonText>
+                                     <ContactDetailsPopover />
                                 </IonRow>
                                 }
                                 </>

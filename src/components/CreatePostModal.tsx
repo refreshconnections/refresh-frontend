@@ -18,6 +18,7 @@ import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-
 import CitySelectorModal from "./CitySelectorModal";
 import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
 import { informationCircle } from "ionicons/icons";
+import ContactDetailsPopover from "./ContactDetailsPopover";
 
 
 
@@ -136,6 +137,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
     type City = { name: string; lat: number; lng: number };
 
     const openingRef = useRef(false);
+
+    const userHandle = (username ?? "").trim();
+    const pref = (preferred_name ?? "").trim();
+
+    // Build the combined label/value once
+    const combinedLabel = pref && userHandle ? `${pref} (${userHandle})` : pref || "";
+    const combinedValue = combinedLabel; // keep value same as label for simplicity
 
 
 
@@ -404,8 +412,15 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             <IonItem color="white" lines="none">
                                 <IonLabel position="stacked">Byline*</IonLabel>
                                 <IonSelect value={byline} placeholder="(Who wrote the post)" onIonChange={(e) => setByline(e.detail.value)}>
-                                    {username && <IonSelectOption value={username}>{username}</IonSelectOption>}
-                                    <IonSelectOption value={`${preferred_name} (${username})`}>{preferred_name} ({username})</IonSelectOption>
+                                    {/* Only show the plain username option if username exists */}
+                                    {userHandle && (
+                                        <IonSelectOption value={userHandle}>{userHandle}</IonSelectOption>
+                                    )}
+
+                                    {/* Show "Preferred (username)" if username exists, otherwise just Preferred */}
+                                    {combinedLabel && (
+                                        <IonSelectOption value={combinedValue}>{combinedLabel}</IonSelectOption>
+                                    )}
                                     <IonSelectOption value="Anonymous">Anonymous</IonSelectOption>
                                 </IonSelect>
                             </IonItem>
@@ -613,40 +628,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         </IonText>
                                         {hasPii &&
                                             <>
-                                                <IonText color="danger">
-                                                    <p style={{ margin: 0 }}>
-                                                        Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
-                                                        &nbsp;
-                                                        <IonButton
-                                                            id="contact-help-trigger"
-                                                            fill="clear"
-                                                            size="small"
-                                                            color="navy"
-                                                            aria-label="How to share contact details safely"
-                                                        >
-                                                            <IonIcon icon={informationCircle} slot="start" />
-                                                            How to share contact details safely
-                                                        </IonButton>
-                                                    </p>
-                                                </IonText>
+                                                <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
 
-                                                <IonPopover trigger="contact-help-trigger" showBackdrop dismissOnSelect side="left" alignment="center">
-                                                    <IonList lines="none" className="ion-padding">
-                                                        <IonItem className="ion-text-wrap">
-                                                            <div>
-                                                                <h3 style={{ marginTop: 0, marginBottom: 8 }}>How to share contact details</h3>
-                                                                <p style={{ margin: 0 }}>
-                                                                    For everyone's safety and privacy, you can't share personal contact info including emails, phone numbers,
-                                                                    and addresses in the public forum. Please use the <b>Connect from Refreshments</b> feature to be able to send Likes
-                                                                    and connect with others privately, where you can choose to share off-app contact information in direct messages once
-                                                                    both members are ready.
-                                                                </p>
-                                                                <br></br>
-                                                                <p style={{ margin: 0 }}>To turn on Connect from Refreshments, head to your Settings (in the Me tab).</p>
-                                                            </div>
-                                                        </IonItem>
-                                                    </IonList>
-                                                </IonPopover>
+                                                    <ContactDetailsPopover />
+                                                </p>
                                             </>
                                         }
                                     </IonRow>

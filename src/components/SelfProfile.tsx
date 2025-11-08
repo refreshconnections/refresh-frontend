@@ -388,7 +388,7 @@ const SelfProfile: React.FC = () => {
             if (prev['height']) next['height'] = false;
             return next;
         });
-        await queryClient.invalidateQueries({ queryKey: ['current'] });
+        queryClient.invalidateQueries({ queryKey: ['current'] });
     };
 
     const saveAll = async () => {
@@ -418,6 +418,10 @@ const SelfProfile: React.FC = () => {
         saveAll();
         setProfileCardData(item);
         profilePresent();
+    };
+
+    const refreshCurrentProfile = () => {
+        queryClient.invalidateQueries({ queryKey: ['current'] });
     };
 
     const [cropPresent, cropDismiss] = useIonModal(CroppedImageModal, {
@@ -612,24 +616,28 @@ const SelfProfile: React.FC = () => {
                                         )}
                                     </IonItem>
                                     {editing['height'] && (
-                                        <IonItem className="height-select" color="lightyellow">
-                                            <IonItem color="lightyellow">
-                                                <IonLabel position="floating">Feet</IonLabel>
-                                                <IonSelect onIonChange={onSelect('heightFeet')}>
-                                                    {['3', '4', '5', '6', '7'].map(n => (
-                                                        <IonSelectOption key={n} value={n}>{n}</IonSelectOption>
-                                                    ))}
-                                                </IonSelect>
-                                            </IonItem>
-                                            <IonItem color="lightyellow">
-                                                <IonLabel position="floating">Inches</IonLabel>
-                                                <IonSelect onIonChange={onSelect('heightInches')}>
-                                                    {Array.from({ length: 12 }, (_, i) => String(i)).map(n => (
-                                                        <IonSelectOption key={n} value={n}>{n}</IonSelectOption>
-                                                    ))}
-                                                </IonSelect>
-                                            </IonItem>
-                                        </IonItem>
+                                        // inside your component render
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            <div style={{ flex: '1 1 0' }}>
+                                                <IonItem color="lightyellow" lines="full">
+                                                    <IonSelect label="Feet" labelPlacement="floating" onIonChange={onSelect('heightFeet')}>
+                                                        {['3', '4', '5', '6', '7'].map(n => (
+                                                            <IonSelectOption key={n} value={n}>{n}</IonSelectOption>
+                                                        ))}
+                                                    </IonSelect>
+                                                </IonItem>
+                                            </div>
+
+                                            <div style={{ flex: '1 1 0' }}>
+                                                <IonItem color="lightyellow" lines="full">
+                                                    <IonSelect label="Inches" labelPlacement="floating" onIonChange={onSelect('heightInches')}>
+                                                        {Array.from({ length: 12 }, (_, i) => String(i)).map(n => (
+                                                            <IonSelectOption key={n} value={n}>{n}</IonSelectOption>
+                                                        ))}
+                                                    </IonSelect>
+                                                </IonItem>
+                                            </div>
+                                        </div>
                                     )}
 
                                     {/* Job */}
@@ -1310,15 +1318,15 @@ const SelfProfile: React.FC = () => {
 
             {/* Photos */}
             <IonGrid className="picture-grid">
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic1_main} dataPicCaption={"profile picture"} picNumber={1} updateProfileFunc={saveAll} delete_allowed={false} altText={currentUserProfile?.pic1_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic2} dataPicCaption={currentUserProfile.pic2_caption} picNumber={2} updateProfileFunc={saveAll} delete_allowed={false} altText={currentUserProfile?.pic2_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic3} dataPicCaption={currentUserProfile.pic3_caption} picNumber={3} updateProfileFunc={saveAll} delete_allowed={false} altText={currentUserProfile?.pic3_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic4} dataPicCaption={currentUserProfile.pic4_caption} picNumber={4} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic4_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic5} dataPicCaption={currentUserProfile.pic5_caption} picNumber={5} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic5_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic6} dataPicCaption={currentUserProfile.pic6_caption} picNumber={6} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic6_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic7} dataPicCaption={currentUserProfile.pic7_caption} picNumber={7} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic7_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic8} dataPicCaption={currentUserProfile.pic8_caption} picNumber={8} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic8_alt} />
-                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic9} dataPicCaption={currentUserProfile.pic9_caption} picNumber={9} updateProfileFunc={saveAll} delete_allowed={true} altText={currentUserProfile?.pic9_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic1_main} dataPicCaption={"profile picture"} picNumber={1} updateProfileFunc={refreshCurrentProfile} delete_allowed={false} altText={currentUserProfile?.pic1_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic2} dataPicCaption={currentUserProfile.pic2_caption} picNumber={2} updateProfileFunc={refreshCurrentProfile} delete_allowed={false} altText={currentUserProfile?.pic2_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic3} dataPicCaption={currentUserProfile.pic3_caption} picNumber={3} updateProfileFunc={refreshCurrentProfile} delete_allowed={false} altText={currentUserProfile?.pic3_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic4} dataPicCaption={currentUserProfile.pic4_caption} picNumber={4} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic4_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic5} dataPicCaption={currentUserProfile.pic5_caption} picNumber={5} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic5_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic6} dataPicCaption={currentUserProfile.pic6_caption} picNumber={6} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic6_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic7} dataPicCaption={currentUserProfile.pic7_caption} picNumber={7} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic7_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic8} dataPicCaption={currentUserProfile.pic8_caption} picNumber={8} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic8_alt} />
+                <EditPhotoGridRow userid={currentUserProfile.user} dataPic={currentUserProfile.pic9} dataPicCaption={currentUserProfile.pic9_caption} picNumber={9} updateProfileFunc={refreshCurrentProfile} delete_allowed={true} altText={currentUserProfile?.pic9_alt} />
             </IonGrid>
         </div>
     );

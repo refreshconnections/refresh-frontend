@@ -212,7 +212,7 @@ const RegisterModal: React.FC = () => {
                     </IonItem>
                     <IonItem className="terms">
                         <IonCheckbox slot="start" onIonChange={e => setAgreedToTerms(e.detail.checked)}></IonCheckbox>
-                        <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions.</a></IonText>
+                        <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions</a> and <a href="https://refreshconnections.com/privacy">Privacy Policy</a>.</IonText>
                     </IonItem>
                     <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!agreedToTerms || nameErrors !== null || disableButton}>
                         Sign up

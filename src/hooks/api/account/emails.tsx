@@ -11,7 +11,7 @@ type StatusResp = {
   secondary_email: string | null;
   secondary_email_validated: boolean;
   secondary_email_fully_verified: boolean;
-  phone_number: string | null;
+  phone: string | null;
 };
 
 type SetSecondaryVars = {

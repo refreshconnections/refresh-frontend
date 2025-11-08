@@ -7,7 +7,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 import "./Page.css"
 import "./Settings.css"
 
-import { updateCurrentUserProfile, logoutAll, logoutCurrent, setThemePref, setColorTheme, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
+import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -35,8 +35,9 @@ import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderatio
 import EditChatSettingsModal from '../components/EditChatSettingsModal';
 import EditPushNotifications from '../components/EditPushNotifications';
 import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
-import { faBroomWide } from '@fortawesome/pro-solid-svg-icons';
+import { faBroomWide, faEnvelope, faEnvelopeCircleCheck } from '@fortawesome/pro-solid-svg-icons';
 import EmailSettingsModal from '../components/EmailSettingsModal';
+import { faEnvelopes } from '@fortawesome/pro-regular-svg-icons';
 
 
 
@@ -416,7 +417,7 @@ const Settings: React.FC = () => {
         setThemePref(theme);
       }
       const changeTheme = async () => {
-        setColorTheme()
+        applyThemeFromPref()
       }
       setTheme();
       changeTheme()
@@ -651,7 +652,7 @@ const Settings: React.FC = () => {
               </IonItem>
               <IonItem>
               <IonLabel className="ion-text-wrap">Change/Add Email</IonLabel>
-              <IonButton slot="end" onClick={() => emailSettingsPresent()}> Edit </IonButton>
+              <IonButton slot="end" size="default" onClick={() => emailSettingsPresent()}><FontAwesomeIcon icon={faEnvelopes} /></IonButton>
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">Change password</IonLabel>

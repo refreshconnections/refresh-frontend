@@ -58,7 +58,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 
 /* Theme variables */
 import '../theme/variables.css';
-import { isMobile, updateCurrentUserProfile, handleLogoutCommon, setColorTheme, getBadgeCount, setTextZoom, checkForBrokenStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -191,20 +191,33 @@ const App: React.FC = () => {
   const current_settings = useChatSettings().data;
 
 
-  // inside `const App: React.FC = () => {` — put this as your FIRST useEffect
-  useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return;
-
+  if (Capacitor.getPlatform() === 'android') {
     (async () => {
       const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-      try {
-        await EdgeToEdge.enable();
-      } catch (e) {
-        console.warn('EdgeToEdge.enable() failed', e);
-      }
-    })();
-  }, []);
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
 
+      const applyBars = async () => {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const color = isDark ? '#2f2f2f' : '#f2f2fd';
+
+        // Paint status + nav bars
+        await EdgeToEdge.setBackgroundColor({ color });
+
+        // Make icons readable on that color
+        await StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+      };
+
+      await EdgeToEdge.enable();
+      await applyBars();
+
+      // React to theme changes at runtime
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => void applyBars();
+      mql.addEventListener('change', handler);
+      // optional: cleanup on hot reload/unmount
+      // return () => mql.removeEventListener('change', handler);
+    })();
+  }
 
 
   // const paths = ['/community', '/change', '/chats', '/picks', '/me', '/profile']
@@ -264,7 +277,7 @@ const App: React.FC = () => {
 
     const listen = async () => {
       CapApp.addListener('resume', async () => {
-        await setColorTheme()
+        await applyThemeFromPref()
         await setTextZoom()
         if (settingsCurrentProfile?.settings_streak_tracker) {
           await checkForBrokenStreak()
@@ -359,7 +372,7 @@ const App: React.FC = () => {
 
     const checkLoggedIn = async () => {
 
-      await setColorTheme()
+      await applyThemeFromPref()
       await setTextZoom()
       if (localStorage.getItem('token') == null) {
         setLoggedin(false)
