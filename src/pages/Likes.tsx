@@ -88,6 +88,11 @@ const Likes: React.FC = () => {
     return incomingPages?.pages?.map((page) => page.results) ?? [];
   }, [incomingPages]);
 
+  const hasVisibleLikes = useMemo(
+    () => paginatedVisibleConnections.some((page) => page?.length > 0),
+    [paginatedVisibleConnections]
+  );
+
   const firstVisibleConnection = paginatedVisibleConnections.flat().find(conn => conn);
 
   const incomingCount = incomingPages?.pages?.[0]?.count;
@@ -205,8 +210,7 @@ const Likes: React.FC = () => {
           <IonGrid>
             {isProOrStreak ? (
               <>
-                {paginatedVisibleConnections.length > 0 &&
-                  paginatedVisibleConnections.some(page => page.length > 0) ? (
+                {hasVisibleLikes ? (
                   <>
                     <IonRow className="like-card-grid">
                       {paginatedVisibleConnections.flat().map((conn) => (
@@ -221,19 +225,6 @@ const Likes: React.FC = () => {
                         </IonCol>
                       ))}
                     </IonRow>
-                    <IonInfiniteScroll
-                      onIonInfinite={async (ev) => {
-                        if (hasNextPage) await fetchNextPage();
-                        ev.target.complete();
-                      }}
-                      threshold="100px"
-                      disabled={!hasNextPage || isFetchingNextPage}
-                    >
-                      <IonInfiniteScrollContent
-                        loadingSpinner="bubbles"
-                        loadingText="Loading more likes..."
-                      />
-                    </IonInfiniteScroll>
                   </>
                 ) : (
                   <IonRow className="empty-likes">
@@ -338,6 +329,22 @@ const Likes: React.FC = () => {
               </>
             )}
           </IonGrid>
+
+          {isProOrStreak && hasVisibleLikes && (
+            <IonInfiniteScroll
+              onIonInfinite={async (ev) => {
+                if (hasNextPage) await fetchNextPage();
+                ev.target.complete();
+              }}
+              threshold="100px"
+              disabled={!hasNextPage || isFetchingNextPage}
+            >
+              <IonInfiniteScrollContent
+                loadingSpinner="bubbles"
+                loadingText="Loading more likes..."
+              />
+            </IonInfiniteScroll>
+          )}
 
           {likesStatus?.active && (likesStatus?.header || likesStatus?.message) && isBeforeExpiration && (
             <StatusToast

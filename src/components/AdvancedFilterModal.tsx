@@ -669,10 +669,10 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           text: 'Yes',
           handler: async () => {
             await clearDismissedConnections()
-            onDismiss(true)
             queryClient.invalidateQueries({ queryKey: ['current'] })
             queryClient.invalidateQueries({ queryKey: ['incoming-paginated'] })
             queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
+            onDismiss(true)
           }
         }
       ],
@@ -692,8 +692,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
 
   async function clearFilters() {
-    onDismiss(true)
-
     setGreaterThanFilter(null)
     setLessThanFilter(null)
     setDistanceFilter(null)
@@ -718,16 +716,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     queryClient.invalidateQueries({ queryKey: ['current'] })
     queryClient.invalidateQueries({ queryKey: ['picks-and-profiles'] })
 
-    const response = await updateCurrentUserProfile(form_data)
-
-
-    return
+    await updateCurrentUserProfile(form_data)
+    onDismiss(true)
 
   }
 
   async function clearLimits() {
-    onDismiss(true)
-
     setIsValid(null)
     setSomethingChanged(true)
 
@@ -740,9 +734,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     }
     queryClient.invalidateQueries({ queryKey: ['current'] })
 
-    const response = await updateCurrentUserProfile(limits_form_data)
-
-    return
+    await updateCurrentUserProfile(limits_form_data)
+    onDismiss(true)
 
   }
 

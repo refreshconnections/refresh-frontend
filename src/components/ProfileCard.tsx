@@ -207,8 +207,8 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 </IonBadge>
                             </IonRow>
                             : <></>}
-                        <IonAccordionGroup className="profile-card" value={["first"]}>
-                            <IonAccordion value="first">
+                        <IonAccordionGroup className="profile-card" value="basics">
+                            <IonAccordion value="basics">
                                 <IonItem slot="header" lines="none">
                                     <IonLabel>The Basics</IonLabel>
                                 </IonItem>
@@ -325,7 +325,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     {cardData.gender_sexuality_choices.includes("cis") ? <> Cis &bull;</> : <></>}
                                                     {cardData.gender_sexuality_choices.includes("trans") ? <> Trans &bull;</> : <></>}
                                                     {cardData.gender_sexuality_choices.includes("mono") ? <> Monogamous &bull; </> : <></>}
-                                                    {cardData.gender_sexuality_choices.includes("poly") ? <> Poly &bull;</> : <></>}
+                                                    {cardData.gender_sexuality_choices.includes("poly") ? <> Polyam &bull;</> : <></>}
                                                 </p>
                                                 </IonLabel>
                                             </IonItem>
@@ -336,8 +336,8 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 </IonCardContent>
                             </IonAccordion>
                         </IonAccordionGroup>
-                        <IonAccordionGroup className="profile-card" value={["second"]}>
-                            <IonAccordion value="second">
+                        <IonAccordionGroup className="profile-card" value="covid">
+                            <IonAccordion value="covid">
                                 <IonItem slot="header" lines="none">
                                     <IonLabel>Covid Behaviors</IonLabel>
                                 </IonItem>
@@ -375,27 +375,61 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 </IonCardContent>
                             </IonAccordion>
                         </IonAccordionGroup>
-                        {cardData.settings_show_long_covid ?
-                            <IonAccordionGroup className="profile-card">
-                                <IonAccordion value="second">
+                        {cardData.settings_show_long_covid ? (
+                            <IonAccordionGroup className="profile-card" value="longcovid">
+                                <IonAccordion value="longcovid">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Long Covid Support</IonLabel>
                                     </IonItem>
                                     <IonCardContent slot="content">
-                                        <IonRow>
-                                            {cardData.long_covid_choices.includes("I have LC") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I am living with Long Covid</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("LC caretaker") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I care for someone with Long Covid</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I could help local") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could provide local support </h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I could help remote") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could provide remote support</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I need help local") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could use local support</h2></IonLabel></IonItem> : null}
-                                            {cardData.long_covid_choices.includes("I need help remote") ? <IonItem lines="none"><IonLabel className="ion-text-wrap"><h2> &bull; I could use remote support</h2></IonLabel></IonItem> : null}
-
-                                        </IonRow>
-
+                                        <IonList lines="none">
+                                            {cardData.long_covid_choices.includes("I have LC") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I am living with Long Covid</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                            {cardData.long_covid_choices.includes("LC caretaker") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I care for someone with Long Covid</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                            {cardData.long_covid_choices.includes("I could help local") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I could provide local support</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                            {cardData.long_covid_choices.includes("I could help remote") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I could provide remote support</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                            {cardData.long_covid_choices.includes("I need help local") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I could use local support</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                            {cardData.long_covid_choices.includes("I need help remote") ? (
+                                                <IonItem lines="none">
+                                                    <IonLabel className="ion-text-wrap">
+                                                        <h2>&bull; I could use remote support</h2>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            ) : null}
+                                        </IonList>
                                     </IonCardContent>
                                 </IonAccordion>
                             </IonAccordionGroup>
-                            : <></>}
+                        ) : null}
                         <Swiper
                             modules={[Navigation, Pagination]}
                             pagination={{ clickable: true }}
@@ -543,8 +577,8 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 : null}
                         </Swiper>
                         {somethingInLetsTalkAbout(cardData) ?
-                            <IonAccordionGroup className="profile-card" value={["third"]}>
-                                <IonAccordion value="third">
+                            <IonAccordionGroup className="profile-card" value="preferences">
+                                <IonAccordion value="preferences">
                                     <IonItem slot="header" lines="none">
                                         <IonLabel>Let's Talk About</IonLabel>
                                     </IonItem>
