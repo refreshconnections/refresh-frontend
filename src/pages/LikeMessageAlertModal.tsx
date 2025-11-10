@@ -99,7 +99,7 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
                 placeholder={`Write a message to ${connectionName}`}
                 maxlength={maxChars}
                 autoGrow
-                onIonChange={(e) => setMessage(e.detail.value ?? '')}
+                onIonInput={(e) => setMessage(e.detail.value ?? '')}
                 rows={3}
               />
             </IonItem>

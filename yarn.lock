@@ -1714,10 +1714,15 @@
   resolved "https://registry.npmjs.org/@rollup/rollup-linux-arm64-gnu/-/rollup-linux-arm64-gnu-4.53.1.tgz"
   integrity sha512-ysAc0MFRV+WtQ8li8hi3EoFi7us6d1UzaS/+Dp7FYZfg3NdDljGMoVyiIp6Ucz7uhlYDBZ/zt6XI0YEZbUO11Q==
 
-"@rollup/rollup-linux-arm64-musl@4.34.9", "@rollup/rollup-linux-arm64-musl@4.53.1":
+"@rollup/rollup-linux-arm64-musl@4.34.9":
   version "4.34.9"
   resolved "https://registry.npmjs.org/@rollup/rollup-linux-arm64-musl/-/rollup-linux-arm64-musl-4.34.9.tgz"
   integrity sha512-LD2fytxZJZ6xzOKnMbIpgzFOuIKlxVOpiMAXawsAZ2mHBPEYOnLRK5TTEsID6z4eM23DuO88X0Tq1mErHMVq0A==
+
+"@rollup/rollup-linux-arm64-musl@4.53.1":
+  version "4.53.1"
+  resolved "https://registry.npmjs.org/@rollup/rollup-linux-arm64-musl/-/rollup-linux-arm64-musl-4.53.1.tgz"
+  integrity sha512-UV6l9MJpDbDZZ/fJvqNcvO1PcivGEf1AvKuTcHoLjVZVFeAMygnamCTDikCVMRnA+qJe+B3pSbgX2+lBMqgBhA==
 
 "@sigstore/bundle@^2.3.0", "@sigstore/bundle@^2.3.1":
   version "2.3.1"

@@ -48,6 +48,7 @@ const Picksv2: React.FC = () => {
   const [sortedPicks, setSortedPicks] = useState<typeof picksData>(null);
   const [isHydratedFromCache, setIsHydratedFromCache] = useState(false);
   const [shouldScrollToTop, setShouldScrollToTop] = useState(false);
+  const skipCachedLastShownRef = useRef(false);
 
   const picksTopRef = useRef<null | HTMLDivElement>(null);
 
@@ -120,7 +121,7 @@ const Picksv2: React.FC = () => {
   const currentCardUser = sortedPicks?.[index]?.user ?? null;
 
   useEffect(() => {
-    if (!picksData) return;
+    if (!picksData || filtersLoading) return;
     let cancelled = false;
 
     const mergeLastShownPick = async () => {
@@ -129,12 +130,16 @@ const Picksv2: React.FC = () => {
       if (cancelled) return;
 
       let merged: typeof picksData = picksData;
+      const shouldSkipCached = skipCachedLastShownRef.current;
+      if (shouldSkipCached) {
+        skipCachedLastShownRef.current = false;
+      }
       const lastShownUserId =
         lastShownPick && typeof lastShownPick.user === 'number'
           ? lastShownPick.user
           : null;
 
-      if (lastShownUserId != null) {
+      if (!shouldSkipCached && lastShownUserId != null) {
         const alreadyIncluded = picksData.some(p => p.user === lastShownUserId);
         if (!alreadyIncluded) {
           merged = [lastShownPick, ...picksData];
@@ -286,13 +291,18 @@ const Picksv2: React.FC = () => {
       if (changes) {
         // Only if the user actually changed something:
         setFiltersLoading(true);
+        skipCachedLastShownRef.current = true;
         setSortedPicks(null);
         setIndex(0);
         setIsHydratedFromCache(false);
         setFiltersVisible(false);
+        skipCachedLastShownRef.current = true;
         await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
         await removeFromCapacitorLocalStorage('last_shown_pick_v2');
-        await picksRefetch();
+        const result = await picksRefetch();
+        const freshData = result?.data ?? [];
+        setSortedPicks(freshData);
+        setIndex(freshData.length ? 0 : 0);
         setFiltersLoading(false);
 
         // After close animation finishes, jump to top and keep position there

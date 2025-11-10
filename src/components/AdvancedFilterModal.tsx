@@ -238,6 +238,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const [showLCFilters, setShowLCFilters] = useState<boolean>(false)
 
+  useEffect(() => {
+    setGreaterThanFilter(currentProfileData?.filter_age_gt ?? null);
+    setLessThanFilter(currentProfileData?.filter_age_lt ?? null);
+  }, [currentProfileData?.filter_age_gt, currentProfileData?.filter_age_lt]);
+
   const [presentAgeAlert] = useIonAlert();
   const [presentDistanceAlert] = useIonAlert();
   const [presentLookingForAlert] = useIonAlert();

@@ -333,11 +333,18 @@ const Likes: React.FC = () => {
           {isProOrStreak && hasVisibleLikes && (
             <IonInfiniteScroll
               onIonInfinite={async (ev) => {
-                if (hasNextPage) await fetchNextPage();
-                ev.target.complete();
+                if (hasNextPage) {
+                  try {
+                    await fetchNextPage();
+                  } finally {
+                    ev.target.complete();
+                  }
+                } else {
+                  ev.target.complete();
+                }
               }}
               threshold="100px"
-              disabled={!hasNextPage || isFetchingNextPage}
+              disabled={hasNextPage === false}
             >
               <IonInfiniteScrollContent
                 loadingSpinner="bubbles"
