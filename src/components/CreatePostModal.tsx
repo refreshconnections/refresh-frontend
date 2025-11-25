@@ -497,10 +497,11 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         <IonTextarea
                                             value={content}
                                             autoGrow
-                                            maxlength={1000}
+                                            maxlength={2000}
                                             style={{ minHeight: "120px" }}
                                             placeholder="Write your post here..."
                                             onIonInput={(e) => setContent(e.detail.value ?? "")}
+                                            counter={true}
                                         />
                                     </IonItem>
                                 </IonCard>

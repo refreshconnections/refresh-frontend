@@ -340,6 +340,8 @@ const TextModal: React.FC<Props> = (props) => {
 
     const [audioRef, setAudioRef] = useState<any>(null)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>();
+    const recordingTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
 
     const [imageName, setImageName] = useState<any>(null)
 
@@ -549,6 +551,35 @@ const TextModal: React.FC<Props> = (props) => {
 
     }, [recording])
 
+    useEffect(() => {
+        if (recording.recording) {
+            setRecordingSeconds(0);
+            if (recordingTickerRef.current) {
+                clearInterval(recordingTickerRef.current);
+            }
+            recordingTickerRef.current = setInterval(() => {
+                setRecordingSeconds((prev) => prev + 1);
+            }, 1000);
+        } else {
+            if (recordingTickerRef.current) {
+                clearInterval(recordingTickerRef.current);
+                recordingTickerRef.current = null;
+            }
+            if (!recording.audio) {
+                setRecordingSeconds(0);
+            } else if (recordingSeconds === 0) {
+                setRecordingSeconds(1);
+            }
+        }
+
+        return () => {
+            if (recordingTickerRef.current) {
+                clearInterval(recordingTickerRef.current);
+                recordingTickerRef.current = null;
+            }
+        };
+    }, [recording.recording, recording.audio])
+
 
 
     const sendOutgoingTextMessage = async (text: string, user_pk: string) => {
@@ -694,6 +725,39 @@ const TextModal: React.FC<Props> = (props) => {
         setWaitBeforeSendingMore(false);
     };
 
+    const fileToDataUrl = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+    const finalizeUploadedImage = (file_id: number, user_pk: string) => {
+        const randomId = Math.floor(Math.random() * -8000);
+        const nowTime = Date.now() / 1000;
+
+        const messageData = { msg_type: 4, file_id, user_pk, random_id: randomId };
+        const displayMessage = {
+            edited: 1696112928,
+            file: file_id,
+            id: 999,
+            out: true,
+            read: false,
+            sender: 0,
+            sender_username: "you",
+            recipient: user_pk,
+            sent: nowTime,
+            text: "Sending...",
+        };
+
+        setImage(null);
+        setRecording({ recording: false, playing: false, audio: null });
+        setAudioRef(null);
+        addMessageToFrontOfTheArray(displayMessage);
+        send(messageData);
+    };
+
     const sendOutgoingTextMessageWithFileImage = async (user_pk: string, imageFile: File) => {
         console.log('send size/type:', imageFile.size, imageFile.type, imageFile.name);
 
@@ -701,43 +765,44 @@ const TextModal: React.FC<Props> = (props) => {
         blobform.append('file', imageFile, imageFile.name); // key must be 'file'
 
         setWaitBeforeSendingMore(true);
+        let uploadSucceeded = false;
         try {
             const uploadFile = await uploadFileForMessageNew(blobform); // ensure this does NOT set Content-Type
             if (uploadFile.status !== 200) {
-                setAttachmentErrorToast(true);
-                setWaitBeforeSendingMore(false);
-                return;
+                throw new Error(`uploadFileForMessageNew status ${uploadFile.status}`);
             }
-
-
             const file_id = uploadFile.data["id"];
-            const randomId = Math.floor(Math.random() * -8000);
-            const nowTime = Date.now() / 1000;
-
-            const messageData = { msg_type: 4, file_id, user_pk, random_id: randomId };
-            const displayMessage = {
-                edited: 1696112928,
-                file: file_id,
-                id: 999,
-                out: true,
-                read: false,
-                sender: 0,
-                sender_username: "you",
-                recipient: user_pk,
-                sent: nowTime,
-                text: "Sending...",
-            };
-
-            setImage(null);
-            setRecording({ recording: false, playing: false, audio: null });
-            setAudioRef(null);
-            addMessageToFrontOfTheArray(displayMessage);
-            send(messageData);
+            finalizeUploadedImage(file_id, user_pk);
+            uploadSucceeded = true;
         } catch (error) {
-            console.error("Unexpected error sending file message:", error);
-            setAttachmentErrorToast(true);
+            console.error("uploadFileForMessageNew failed, attempting legacy path", error);
+            try {
+                const dataUrl = await fileToDataUrl(imageFile);
+                const legacyForm = new FormData();
+                legacyForm.append('file', dataUrl);
+                const fallbackUpload = await uploadFileForMessage(legacyForm);
+                if (fallbackUpload.status !== 200) {
+                    throw new Error(`legacy upload status ${fallbackUpload.status}`);
+                }
+                const file_id = fallbackUpload.data["id"];
+                finalizeUploadedImage(file_id, user_pk);
+                uploadSucceeded = true;
+            } catch (legacyError) {
+                console.error("Legacy upload path failed", legacyError);
+                setAttachmentErrorToast(true);
+            }
         }
         setWaitBeforeSendingMore(false);
+        if (!uploadSucceeded) {
+            return;
+        }
+    };
+
+
+    const formatRecordingDuration = (durationSeconds: number) => {
+        const minutes = Math.floor(durationSeconds / 60);
+        const seconds = durationSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
 
@@ -775,7 +840,7 @@ const TextModal: React.FC<Props> = (props) => {
     const sendHandler = async () => {
 
         if (blob) { 
-            if (blob ) {
+            if (blob) {
                 await sendOutgoingTextMessageWithFileImage(
                     textModalData?.other_user_id,
                     blob as File
@@ -1195,7 +1260,7 @@ const TextModal: React.FC<Props> = (props) => {
                                 {recording.recording ?
                                     <IonButton fill="clear" size="large" color="danger" >
                                         <FontAwesomeIcon icon={faMicrophoneLines} beatFade />
-                                        &nbsp; Recording...
+                                        &nbsp; Recording... {formatRecordingDuration(recordingSeconds)}
                                     </IonButton>
                                     : recording?.audio ?
                                         <AudioPlayer

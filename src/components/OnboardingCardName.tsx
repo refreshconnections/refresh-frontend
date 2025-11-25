@@ -67,7 +67,7 @@ const OnboardingCardZipcode: React.FC = () => {
       <IonCardContent>
         <IonCardTitle>What's your name?</IonCardTitle>
             <IonText>This is the name (a first name or a nickname) that will be shown on your profile.</IonText>
-            <IonText>To keep our community authentic, we require you to contact support if you need to change your name later.</IonText>
+            <IonText>We require you to contact support if you need to change your name later.</IonText>
             {data ?
             <IonItem>
             

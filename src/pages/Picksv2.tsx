@@ -48,6 +48,7 @@ const Picksv2: React.FC = () => {
   const [sortedPicks, setSortedPicks] = useState<typeof picksData>(null);
   const [isHydratedFromCache, setIsHydratedFromCache] = useState(false);
   const [shouldScrollToTop, setShouldScrollToTop] = useState(false);
+  const skipCachedLastShownRef = useRef(false);
 
   const picksTopRef = useRef<null | HTMLDivElement>(null);
 
@@ -117,8 +118,10 @@ const Picksv2: React.FC = () => {
   }, []);
 
   /** ---------------- Merge server data when it arrives ----------------- */
+  const currentCardUser = sortedPicks?.[index]?.user ?? null;
+
   useEffect(() => {
-    if (!picksData) return;
+    if (!picksData || filtersLoading) return;
     let cancelled = false;
 
     const mergeLastShownPick = async () => {
@@ -126,23 +129,42 @@ const Picksv2: React.FC = () => {
 
       if (cancelled) return;
 
-      if (!lastShownPick || typeof lastShownPick.user !== 'number') {
-        setSortedPicks(picksData);
-        return;
+      let merged: typeof picksData = picksData;
+      const shouldSkipCached = skipCachedLastShownRef.current;
+      if (shouldSkipCached) {
+        skipCachedLastShownRef.current = false;
+      }
+      const lastShownUserId =
+        lastShownPick && typeof lastShownPick.user === 'number'
+          ? lastShownPick.user
+          : null;
+
+      if (!shouldSkipCached && lastShownUserId != null) {
+        const alreadyIncluded = picksData.some(p => p.user === lastShownUserId);
+        if (!alreadyIncluded) {
+          merged = [lastShownPick, ...picksData];
+        }
       }
 
-      const alreadyIncluded = picksData.some(p => p.user === lastShownPick.user);
-      const merged = alreadyIncluded
-        ? [lastShownPick, ...picksData.filter(p => p.user !== lastShownPick.user)]
-        : [lastShownPick, ...picksData];
+      const targetUser =
+        currentCardUser ??
+        (merged.length === 0 ? null : merged[0]?.user ?? null);
+
+      let nextIndex = 0;
+      if (targetUser != null) {
+        const foundIndex = merged.findIndex(p => p.user === targetUser);
+        nextIndex = foundIndex >= 0 ? foundIndex : 0;
+      }
 
       setSortedPicks(merged);
-      setIndex(0);
+      setIndex(nextIndex);
     };
 
     mergeLastShownPick();
-    return () => { cancelled = true; };
-  }, [picksData]);
+    return () => {
+      cancelled = true;
+    };
+  }, [picksData, currentCardUser]);
 
   /** ---------------- Persist current card for warm-start ----------------- */
   useEffect(() => {
@@ -196,6 +218,11 @@ const Picksv2: React.FC = () => {
       await doTheThing();
     } else {
       setNextLoading(true);
+      setSortedPicks([]);
+      setIndex(0);
+      setShouldScrollToTop(true);
+      jumpToTopViaAnchor();
+
       await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
       await removeFromCapacitorLocalStorage('last_shown_pick_v2');
 
@@ -264,9 +291,18 @@ const Picksv2: React.FC = () => {
       if (changes) {
         // Only if the user actually changed something:
         setFiltersLoading(true);
+        skipCachedLastShownRef.current = true;
+        setSortedPicks(null);
+        setIndex(0);
+        setIsHydratedFromCache(false);
         setFiltersVisible(false);
+        skipCachedLastShownRef.current = true;
         await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
-        await picksRefetch();
+        await removeFromCapacitorLocalStorage('last_shown_pick_v2');
+        const result = await picksRefetch();
+        const freshData = result?.data ?? [];
+        setSortedPicks(freshData);
+        setIndex(freshData.length ? 0 : 0);
         setFiltersLoading(false);
 
         // After close animation finishes, jump to top and keep position there
@@ -418,7 +454,7 @@ const Picksv2: React.FC = () => {
         <div ref={picksTopRef}></div>
 
         {/* === STATE MACHINE: avoid infinite spinners === */}
-        {!ready && initialLoading ? (
+        {(!ready && initialLoading) || filtersLoading || nextLoading ? (
           <div style={{ marginTop: "100pt" }}>
             <LoadingCard />
           </div>

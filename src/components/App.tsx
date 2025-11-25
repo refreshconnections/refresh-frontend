@@ -503,6 +503,7 @@ const App: React.FC = () => {
           await updateCurrentUserProfile({ "subscription_level": globalCurrentProfile?.subscription_override })
           await updateCurrentUserProfile({ "subscription_source": "override" })
           queryClient.invalidateQueries({ queryKey: ['global-current'] })
+          queryClient.invalidateQueries({ queryKey: ['current'] })
         }
 
       }

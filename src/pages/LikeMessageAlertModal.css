@@ -104,6 +104,7 @@ ion-modal.like-message-alert-modal .toolbar-title {
 /* Modal inner spacing */
 .modal-body {
   padding: 16px;
+  padding-top: 4px;
   overflow: scroll;
   flex-grow: 1;
 }
@@ -126,6 +127,7 @@ ion-modal.like-message-alert-modal .toolbar-title {
   padding-right: 4px;
   margin-top: 4px;
   color: var(--ion-color-medium);
+
 }
 
 /* Footer button spacing */

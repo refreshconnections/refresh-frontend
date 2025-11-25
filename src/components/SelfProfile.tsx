@@ -332,7 +332,7 @@ const SelfProfile: React.FC = () => {
 
     const showContactSupport = async (field: string, field2: string) => {
         presentShowContactSupportAlert({
-            header: `To keep our community authentic, we require you to contact support if you need to update your ${field}.`,
+            header: `We require you to contact support if you need to update your ${field}.`,
             subHeader: `Please use our Help feature and include what you would like your ${field2} updated to.`,
             buttons: [
                 { text: 'Nevermind', role: 'cancel' },
