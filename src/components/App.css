@@ -90,3 +90,21 @@ ion-textarea::part(counter) {
   padding-top: 0 !important;
   margin-top: 0.25rem;
 }
+
+.age-verification-gate {
+  --background: var(--ion-color-light, #f7f7ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.age-verification-gate__card {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 64px);
+  text-align: center;
+}
+
+.age-verification-gate__card ion-button {
+  margin-top: 12px;
+}

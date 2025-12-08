@@ -1,0 +1,47 @@
+.age-verification-flow {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  text-align: left;
+}
+
+.age-verification-flow p {
+  color: var(--ion-color-medium);
+}
+
+.age-flow__link-button {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.age-flow__link-button:hover {
+  text-decoration: underline;
+}
+
+.age-flow__sheet {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.age-flow__sheet ul {
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ion-color-medium);
+}
+
+.age-flow__sheet-footer {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.age-flow__sheet-footer a {
+  color: var(--ion-color-primary);
+}

@@ -1,0 +1,256 @@
+.onboarding-v2__content {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --background: var(--ion-background-color, #ffffff);
+  background: var(--ion-background-color, #ffffff);
+}
+
+.onboarding-v2__swiper {
+  min-height: 100vh;
+}
+
+.onboarding-v2__slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+  padding: clamp(40px, 25vh, 160px) clamp(24px, 6vw, 72px) clamp(40px, 10vh, 120px);
+  box-sizing: border-box;
+}
+
+.onboarding-v2__welcome-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+  align-items: center;
+}
+
+.onboarding-v2__welcome-content--compact {
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.onboarding-v2__welcome-hero {
+  text-align: center;
+}
+
+.onboarding-v2__welcome-wrapper {
+  --padding-top: 24px;
+  --padding-bottom: 140px;
+  --padding-start: clamp(24px, 6vw, 72px);
+  --padding-end: clamp(24px, 6vw, 72px);
+}
+
+.onboarding-v2__welcome-scroll {
+  padding-bottom: 120px;
+}
+
+.onboarding-v2__card {
+  width: min(720px, 100%);
+  margin: auto;
+  border-radius: 24px;
+  background: var(--ion-background-color, #ffffff);
+  color: var(--ion-text-color, #000000);
+}
+
+.onboarding-v2__card--shallow {
+  background: var(--ion-background-color, #ffffff);
+  box-shadow: none;
+}
+
+.onboarding-v2__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 24px;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+.onboarding-v2__card-body--tight {
+  gap: 12px;
+}
+
+.onboarding-v2__welcome {
+  background: radial-gradient(circle at top, #eef3ff, #ffffff 70%);
+  text-align: center;
+}
+
+.onboarding-v2__birthday {
+  gap: 12px;
+  align-items: stretch;
+}
+
+.onboarding-v2__birthday p {
+  margin: 0;
+}
+
+.onboarding-v2__welcome-hero img {
+  width: clamp(120px, 20vw, 200px);
+  margin-bottom: 16px;
+}
+
+.onboarding-v2__welcome-hero h1 {
+  font-size: clamp(24px, 5vw, 40px);
+  margin-bottom: 8px;
+}
+
+.onboarding-v2__card ion-card-title,
+.onboarding-v2__card h1,
+.onboarding-v2__card h2 {
+  text-align: center;
+  width: 100%;
+}
+
+.onboarding-v2__cta {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding-v2__alt {
+  margin-top: 32px;
+}
+
+.onboarding-v2__subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ion-color-medium);
+}
+
+.onboarding-v2__input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.onboarding-v2__error {
+  font-size: 14px;
+}
+
+.onboarding-v2__why {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.onboarding-v2__why-toggle {
+  align-self: flex-start;
+  margin-top: 8px;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.onboarding-v2__welcome-details {
+  width: min(720px, 100%);
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.fade-in {
+  animation: fadeInUp 0.8s ease forwards;
+  opacity: 0;
+}
+
+.fade-in:nth-child(1) { animation-delay: 0.2s; }
+.fade-in:nth-child(2) { animation-delay: 0.4s; }
+.fade-in:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.onboarding-v2__nav {
+  width: 100%;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 16px;
+  margin: 0;
+}
+
+.onboarding-v2__card-footer .onboarding-v2__nav {
+  padding-top: 0;
+}
+
+.onboarding-v2__ready-options {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.onboarding-v2__option h3 {
+  margin-bottom: 4px;
+}
+
+.onboarding-v2__option p {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: var(--ion-color-medium);
+}
+
+.onboarding-v2__primary-action {
+  position: relative;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.onboarding-v2__button-label {
+  transition: opacity 0.2s ease;
+}
+
+.onboarding-v2__button-label.loading {
+  opacity: 0;
+}
+
+.onboarding-v2__button-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.onboarding-v2__card-footer {
+  width: 100%;
+  background: var(--ion-background-white);
+  border-radius: 0 0 24px 24px;
+  padding: 16px clamp(24px, 5vw, 48px) clamp(24px, 6vw, 64px);
+  box-sizing: border-box;
+}
+
+.onboarding-v2__nav--pill {
+  background: var(--ion-color-light, rgba(255, 255, 255, 0.6));
+  border-radius: 999px;
+  padding: 16px;
+  margin-top: 24px;
+}
+
+.onboarding-v2__input {
+  margin-top: 16px;
+  border: 1px solid var(--ion-color-medium, #ccc);
+  --background: var(--ion-color-white);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.onboarding-v2__input .PhoneInput,
+.onboarding-v2__input .PhoneInputInput {
+  border: none;
+  background: #ffffff;
+}
+
+.onboarding-v2__input .PhoneInput {
+  width: 100%;
+}
+
+.onboarding-v2__ready IonButton + IonButton {
+  margin-top: 12px;
+}

@@ -14,6 +14,7 @@ import {
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { handleLogoutCommon } from './hooks/utilities';
 import { WebSocketProvider } from './components/WebsocketContext';
+import AppV2 from './components/AppV2';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -42,7 +43,8 @@ root.render(
     <QueryClientProvider client={queryClient}>
       <WebSocketProvider>
     <ChatBadgeContextProvider>
-      <App />
+      {/* <App /> */}
+      <AppV2 />
     </ChatBadgeContextProvider>
     </WebSocketProvider>
     <ReactQueryDevtools initialIsOpen={false} />

@@ -2504,6 +2504,7 @@ const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 // Use .match() with GLOBAL and then post-filter
 const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
+const URL_RE = /https?:\/\/[^\s]+/gi;
 const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 
@@ -2513,6 +2514,7 @@ export function containsPii(input) {
 
     if (EMAIL_TEST.test(text)) return true;     // non-global => stable
 
-    const candidates = text.match(PHONE_CANDIDATE_RE) ?? [];
+    const withoutUrls = text.replace(URL_RE, " ");
+    const candidates = withoutUrls.match(PHONE_CANDIDATE_RE) ?? [];
     return candidates.some((c) => plausiblePhone(digits(c)));
 }

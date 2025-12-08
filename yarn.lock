@@ -990,6 +990,11 @@
   resolved "https://registry.npmjs.org/@capacitor/app/-/app-7.0.2.tgz"
   integrity sha512-kRWBF6Wc6OQxhL+N6rsegyfJY37Lj9/VJhtrmgmH+y+rdxQLQwUOpMyxXStym7cF+QzGeVpItyVxyUT9fE5ByQ==
 
+"@capacitor/browser@^7.0.2":
+  version "7.0.2"
+  resolved "https://registry.npmjs.org/@capacitor/browser/-/browser-7.0.2.tgz"
+  integrity sha512-5kySTunCtH+2sezmTjgDfwvspW7GW/hslQECZeLIRM2qefnxjGTc3fmCTeILYK5EuvcxMs+8sF5BhmzzKqOzuQ==
+
 "@capacitor/camera@^7":
   version "7.0.2"
   resolved "https://registry.npmjs.org/@capacitor/camera/-/camera-7.0.2.tgz"
@@ -2041,10 +2046,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node@*", "@types/node@^18.0.0 || >=20.0.0", "@types/node@^22.17.1":
-  version "22.17.1"
-  resolved "https://registry.npmjs.org/@types/node/-/node-22.17.1.tgz"
-  integrity sha512-y3tBaz+rjspDTylNjAX37jEC3TETEFGNJL6uQDxwF9/8GLLIjW1rvVHlynyuUKMnMr1Roq8jOv3vkopBjC4/VA==
+"@types/node@*", "@types/node@^18.0.0 || >=20.0.0", "@types/node@^22.19.1":
+  version "22.19.1"
+  resolved "https://registry.npmjs.org/@types/node/-/node-22.19.1.tgz"
+  integrity sha512-LCCV0HdSZZZb34qifBsyWlUmok6W7ouER+oQIGBScS8EsZsQbrtFTUrDX4hOl+CS6p7cnNC4td+qrSVGSCTUfQ==
   dependencies:
     undici-types "~6.21.0"
 

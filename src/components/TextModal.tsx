@@ -1317,7 +1317,7 @@ const TextModal: React.FC<Props> = (props) => {
                                             }
                                         }}
                                         placeholder={(!canText && !canTextisWaiting) ? "Not receiving." : "Message"}
-                                        autoCapitalize='sentences'
+                                        autocapitalize="sentences"
                                         disabled={((!canText && !canTextisWaiting) || (!isConnected)) ? true : false}
                                         autoCorrect="off"
                                         spellcheck
