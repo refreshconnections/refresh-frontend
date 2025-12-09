@@ -70,9 +70,6 @@ const StayPausedModal: React.FC<Props> = (props) => {
                     <IonButton fill="outline" onClick={onDismiss}>
                         Go Back
                     </IonButton>
-                    <IonButton onClick={updateProfile} >
-                        Proceed with Paused Profile
-                    </IonButton>
                 </IonRow>
             </IonContent>
         </IonPage>
