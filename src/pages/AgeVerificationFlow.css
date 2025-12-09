@@ -1,0 +1,88 @@
+.age-verification-gate {
+  --padding-start: clamp(24px, 6vw, 72px);
+  --padding-end: clamp(24px, 6vw, 72px);
+  --padding-top: clamp(40px, 25vh, 160px);
+  --padding-bottom: clamp(40px, 10vh, 120px);
+  --background: var(--ion-background-color, #ffffff);
+  background: var(--ion-background-color, #ffffff);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: clamp(40px, 25vh, 160px) clamp(24px, 6vw, 72px) clamp(40px, 10vh, 120px);
+}
+
+@media (max-width: 480px) {
+  .age-verification-gate {
+    padding-top: clamp(16px, 10vh, 40px);
+    padding-bottom: clamp(24px, 8vh, 48px);
+  }
+}
+
+.age-verification-gate__card {
+  width: min(720px, 100%);
+  margin: auto;
+  border-radius: 24px;
+  background: var(--ion-color-white, #ffffff);
+  color: var(--ion-text-color, #000000);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.1);
+}
+
+.age-verification-flow__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 24px;
+  padding: clamp(16px, 4vw, 32px);
+  background: var(--ion-color-white, #ffffff);
+}
+
+.age-verification-flow p {
+  color: var(--ion-color-medium);
+  margin-top: 0;
+}
+
+.age-verification-flow ion-card-title {
+  text-align: center;
+  width: 100%;
+}
+
+.age-flow__link-button {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.age-flow__link-button:hover {
+  text-decoration: underline;
+}
+
+.age-flow__sheet {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.age-flow__sheet ul {
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ion-color-medium);
+}
+
+.age-flow__sheet-footer {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.age-flow__sheet-footer a {
+  color: var(--ion-color-primary);
+}

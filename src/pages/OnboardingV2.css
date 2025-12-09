@@ -21,6 +21,13 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 480px) {
+  .onboarding-v2__slide {
+    padding-top: clamp(16px, 10vh, 40px);
+    padding-bottom: clamp(24px, 8vh, 48px);
+  }
+}
+
 .onboarding-v2__welcome-content {
   display: flex;
   flex-direction: column;

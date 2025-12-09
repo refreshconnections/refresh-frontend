@@ -136,18 +136,25 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
       :
       <IonText>You cannot change your username at this time.</IonText>}
       <br/><br/>
-      <IonCardTitle style={{fontSize: "16px"}}>Want to allow other users to be able to see your Profile and connect with you from posts / comments?</IonCardTitle>
-      <br/><p> You can change this in Settings at any time.</p>
-      <IonItem>
+      {currentUserProfile?.created_profile && (
+        <>
+          <IonCardTitle style={{ fontSize: '16px' }}>
+            Want to allow other users to be able to see your Profile and connect with you from posts / comments?
+          </IonCardTitle>
+          <br />
+          <p>You can change this in Settings at any time.</p>
+          <IonItem>
             <IonLabel>Connect from Refreshments</IonLabel>
-            <IonToggle slot="end"
-              onIonChange={async e =>await updateConnectSettings(e.detail.checked)}
+            <IonToggle
+              slot="end"
+              onIonChange={async e => await updateConnectSettings(e.detail.checked)}
               checked={currentUserProfile?.settings_community_profile}
-              disabled={(currentUserProfile?.paused_profile || currentUserProfile?.deactivated_profile)}
-            >
-            </IonToggle>
+              disabled={currentUserProfile?.paused_profile || currentUserProfile?.deactivated_profile}
+            ></IonToggle>
           </IonItem>
-          <IonButton onClick={onDismiss}>Done</IonButton>
+        </>
+      )}
+      <IonButton onClick={onDismiss}>Done</IonButton>
       </IonCardContent>
     </IonCard>
     </IonContent>

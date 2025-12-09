@@ -1,4 +1,4 @@
-import type { AgeCheckState } from '../components/AgeVerificationFlow';
+import type { AgeCheckState } from '../pages/AgeVerificationFlow';
 
 export function consumeAgeCheckQuery(): AgeCheckState | null {
   if (typeof window === 'undefined') {

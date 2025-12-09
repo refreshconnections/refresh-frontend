@@ -16,7 +16,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import Likes from '../pages/Likes';
 import Me from '../pages/Me';
@@ -102,10 +102,11 @@ import { IconPop } from './IconPop';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
-import AgeVerificationFlow, { AgeCheckState } from './AgeVerificationFlow';
+import AgeVerificationFlow, { AgeCheckState } from '../pages/AgeVerificationFlow';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
-import { startYotiSession } from '../hooks/api/account/yoti';
+import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
 import { consumeAgeCheckQuery } from '../utils/age-verification';
+import { apiClient } from '../hooks/api';
 
 
 
@@ -177,7 +178,9 @@ const AppV2: React.FC = () => {
   const [linkInstallComplete, setLinkInstallComplete] = useState(false);
   const initialAgeResult = useMemo(() => consumeAgeCheckQuery(), []);
   const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
+  const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
   const [launchingYoti, setLaunchingYoti] = useState(false);
+  const fakeModeEnabled = process.env.NODE_ENV !== 'production';
 
 
 
@@ -187,13 +190,15 @@ const AppV2: React.FC = () => {
   const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
 
-  const { data: eligibilityStatus } = useEligibilityStatus(loggedin);
-const completeAgeVerification = useCompleteAgeVerification({
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
-  }
-});
-const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
+  const { data: eligibilityStatus, isLoading: eligibilityStatusLoading } = useEligibilityStatus(
+    loggedin
+  );
+  const completeAgeVerification = useCompleteAgeVerification({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+    },
+  });
+  const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
 
 
   const hasMultipleAccounts = useMultipleAccountsCheck(linkInstallComplete).data;
@@ -531,29 +536,104 @@ const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
 
   }, [inAppPurchasesReady, globalCurrentProfile?.uuid])
 
+  useEffect(() => {
+    if (eligibilityStatus?.failed_result) {
+      setAgeCheckState('failed');
+    }
+  }, [eligibilityStatus?.failed_result]);
+
   const stillCheckingInfo =
-    loading ||
-    !authReady ||
-    globalIsLoading ||
-    settingsIsLoading;
+    loading || !authReady || globalIsLoading || settingsIsLoading || eligibilityStatusLoading;
   const needsAgeVerificationGate =
     loggedin &&
     !showOnboard &&
-    (eligibilityStatus?.needs_age_verification || Boolean(ageCheckState));
+    (eligibilityStatus?.needs_age_verification ||
+      eligibilityStatus?.failed_result ||
+      Boolean(ageCheckState));
 
   const startAgeVerification = async () => {
     setLaunchingYoti(true);
     try {
       const session = await startYotiSession();
+      console.log('Launching Yoti at', session.redirect_url);
+      setLastYotiSessionId(session.session_id ?? null);
       setAgeCheckState('required');
-      await Browser.open({ url: session.url });
-    } catch (error) {
+      await Browser.open({ url: session.redirect_url });
+    } catch (error: any) {
       console.error('Failed to launch age verification', error);
-      setAgeCheckState('error');
+      setLastYotiSessionId(null);
+      if (error?.response?.status === 403) {
+        setAgeCheckState('failed');
+      } else {
+        setAgeCheckState('error');
+      }
     } finally {
       setLaunchingYoti(false);
     }
   };
+
+  const applyAgeCheckState = useCallback(
+    (state: AgeCheckState) => {
+      setAgeCheckState(state);
+      if (state === 'success' || state === 'failed') {
+        queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+      }
+    },
+    [queryClient]
+  );
+
+  const refreshYotiResult = async () => {
+    if (!lastYotiSessionId) {
+      console.warn('No Yoti session to refresh');
+      return;
+    }
+    try {
+      const res = await apiClient.get('/account/yoti/callback/', {
+        params: { session_id: lastYotiSessionId },
+      });
+      console.log('Yoti result', res.data);
+      const status = res.data?.status;
+      if (status === 'passed') {
+        applyAgeCheckState('success');
+      } else if (status === 'failed') {
+        applyAgeCheckState('failed');
+      } else {
+        applyAgeCheckState('canceled');
+      }
+    } catch (error) {
+      console.error('Unable to refresh Yoti result', error);
+    }
+  };
+
+  const simulateYotiResult = useCallback(
+    async (state: AgeCheckState) => {
+      const fakeStatusMap: Partial<Record<AgeCheckState, 'passed' | 'failed' | 'inconclusive'>> = {
+        success: 'passed',
+        failed: 'failed',
+        canceled: 'inconclusive',
+      };
+      const fakeStatus = fakeStatusMap[state];
+      if (fakeModeEnabled && fakeStatus) {
+        try {
+          const res = await simulateFakeYotiResultForUser(fakeStatus);
+          if (res.status === 'passed') {
+            applyAgeCheckState('success');
+            return;
+          }
+          if (res.status === 'failed' || res.failed_result) {
+            applyAgeCheckState('failed');
+            return;
+          }
+          applyAgeCheckState('canceled');
+          return;
+        } catch (error) {
+          console.error('Failed to simulate fake Yoti result', error);
+        }
+      }
+      applyAgeCheckState(state);
+    },
+    [applyAgeCheckState, fakeModeEnabled]
+  );
 
   const contactSupport = () => {
     window.open(
@@ -611,8 +691,7 @@ const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
   if (needsAgeVerificationGate) {
     return (
       <IonApp>
-        <IonContent className="age-verification-gate">
-          <div className="age-verification-gate__card">
+        
             <AgeVerificationFlow
               state={ageCheckState || 'required'}
               regionName={eligibilityStatus?.region_name}
@@ -626,9 +705,14 @@ const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
               }}
               onContactSupport={contactSupport}
               onLogout={handleLogoutCommon}
+              lastSessionId={lastYotiSessionId}
+              onRefreshResult={refreshYotiResult}
+              fakeModeEnabled={fakeModeEnabled}
+              onSimulatePass={() => simulateYotiResult('success')}
+              onSimulateFail={() => simulateYotiResult('failed')}
+              onSimulateInconclusive={() => simulateYotiResult('canceled')}
             />
-          </div>
-        </IonContent>
+          
       </IonApp>
     );
   }
@@ -713,10 +797,10 @@ const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
               <IonIcon icon={cafe} />
               <IonLabel>Refreshments</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="change" href="/change">
-              <IonIcon icon={flash} />
-              <IonLabel>Change</IonLabel>
-            </IonTabButton>
+          <IonTabButton tab="change" href="/change">
+            <IonIcon icon={flash} />
+            <IonLabel>Change</IonLabel>
+          </IonTabButton>
             <IonTabButton tab="person" href="/me">
               <IonIcon icon={personIcon} />
               <IonLabel>Me</IonLabel>

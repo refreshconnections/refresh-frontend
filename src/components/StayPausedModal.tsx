@@ -54,9 +54,10 @@ const StayPausedModal: React.FC<Props> = (props) => {
                     </IonCardTitle>
                     <IonCardContent>
                         <IonText>
-                        Refresh Connections requires everybody to provide some basic profile information to see other people's profiles and make one-on-one or small group connections. This basic information includes uploading 3 photos, including 1 of your face. It's one way we keep our members safe while creating a culture of showing the real you.
+                        To help keep Refresh Connections safe and genuine, we ask everyone to share some basic profile information to see other people's profiles and make one-on-one or small group connections. This basic information includes uploading 3 photos, including 1 of your face. It's one way we keep our members safe while creating a culture of showing the real you.
                         <br/><br/>
-                        If you aren't ready to upload your photos, you may choose a Paused Profile setting and enjoy the Refreshments Bar community forum until you are. This way you can read posts and comments and see what Refresh Connections is all about. 
+                        If you aren’t ready to upload photos yet, that’s completely okay.
+                        You can still explore the Refreshments Bar community space — read posts, join conversations, and get a feel for what Refresh Connections is all about. You can come back here whenever you are ready to get started making 1:1 connections!
                         <br/><br/>
                         
                         </IonText>

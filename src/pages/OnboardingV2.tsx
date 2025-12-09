@@ -16,7 +16,7 @@ import {
 import { IonDatetime, IonDatetimeButton, IonModal } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 import moment from 'moment';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { Pagination } from 'swiper';
@@ -28,9 +28,10 @@ import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 import { useEmailStatus } from '../hooks/api/account/emails';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
-import AgeVerificationFlow, { AgeCheckState } from '../components/AgeVerificationFlow';
+import AgeVerificationFlow, { AgeCheckState } from './AgeVerificationFlow';
 import { consumeAgeCheckQuery } from '../utils/age-verification';
-import { startYotiSession } from '../hooks/api/account/yoti';
+import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
+import { apiClient } from '../hooks/api';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import {
@@ -244,10 +245,10 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
     <div className="onboarding-v2__slide">
       <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
         <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-          <IonCardTitle>Verify your mobile number</IonCardTitle>
-          <IonText color="medium" className="onboarding-v2__subtitle">
+          <IonCardTitle>Verify your mobile number </IonCardTitle>
+          <p>
             To set up your account, we use a mobile number to send a verification code.
-          </IonText>
+          </p>
           <div className="onboarding-v2__input-wrapper">
             <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
               {loading ? (
@@ -485,6 +486,12 @@ const AgeVerificationSlide: React.FC<{
   onContactSupport: () => void;
   onLogout: () => void;
   verifying: boolean;
+  fakeModeEnabled?: boolean;
+  lastSessionId?: string | null;
+  onRefreshResult?: () => void;
+  onSimulatePass?: () => void;
+  onSimulateFail?: () => void;
+  onSimulateInconclusive?: () => void;
 }> = ({
   state,
   regionName,
@@ -494,20 +501,35 @@ const AgeVerificationSlide: React.FC<{
   onContinue,
   onContactSupport,
   onLogout,
-  verifying
+  verifying,
+  fakeModeEnabled,
+  lastSessionId,
+  onRefreshResult,
+  onSimulatePass,
+  onSimulateFail,
+  onSimulateInconclusive,
 }) => (
   <div className="onboarding-v2__slide onboarding-v2__ready">
-    <AgeVerificationFlow
-      state={state}
-      regionName={regionName}
-      providerName={providerName}
-      verifying={verifying}
-      onStart={onStart}
-      onRetry={onRetry}
-      onContinue={onContinue}
-      onContactSupport={onContactSupport}
-      onLogout={onLogout}
-    />
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
+      <AgeVerificationFlow
+        state={state}
+        regionName={regionName}
+        providerName={providerName}
+        verifying={verifying}
+        onStart={onStart}
+        onRetry={onRetry}
+        onContinue={onContinue}
+        onContactSupport={onContactSupport}
+        onLogout={onLogout}
+        fakeModeEnabled={fakeModeEnabled}
+        lastSessionId={lastSessionId}
+        onRefreshResult={onRefreshResult}
+        onSimulatePass={onSimulatePass}
+        onSimulateFail={onSimulateFail}
+        onSimulateInconclusive={onSimulateInconclusive}
+        embedded
+      />
+    </IonCard>
   </div>
 );
 
@@ -583,8 +605,18 @@ const OnboardingV2: React.FC = () => {
   const [swiperReady, setSwiperReady] = useState(false);
   const [launchingYoti, setLaunchingYoti] = useState(false);
   const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
+  const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
+  const fakeModeEnabled = process.env.NODE_ENV !== 'production';
 
-  const needsAgeVerification = Boolean(eligibilityStatus?.needs_age_verification);
+  useEffect(() => {
+    if (eligibilityStatus?.failed_result) {
+      setAgeCheckState('failed');
+    }
+  }, [eligibilityStatus?.failed_result]);
+
+  const needsAgeVerification = Boolean(
+    eligibilityStatus?.needs_age_verification || eligibilityStatus?.failed_result
+  );
   const hasSpecialAgeState =
     ageCheckState === 'success' ||
     ageCheckState === 'canceled' ||
@@ -689,14 +721,81 @@ const OnboardingV2: React.FC = () => {
     setLaunchingYoti(true);
     try {
       const session = await startYotiSession();
-      await Browser.open({ url: session.url });
-    } catch (error) {
+      setLastYotiSessionId(session.session_id ?? null);
+      await Browser.open({ url: session.redirect_url });
+    } catch (error: any) {
       console.error('Failed to launch age verification', error);
-      setAgeCheckState('error');
+      setLastYotiSessionId(null);
+      if (error?.response?.status === 403) {
+        setAgeCheckState('failed');
+      } else {
+        setAgeCheckState('error');
+      }
     } finally {
       setLaunchingYoti(false);
     }
   };
+
+  const applyAgeCheckState = useCallback(
+    (state: AgeCheckState) => {
+      setAgeCheckState(state);
+      if (state === 'success' || state === 'failed') {
+        queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+      }
+    },
+    [queryClient]
+  );
+
+  const refreshYotiResult = async () => {
+    if (!lastYotiSessionId) {
+      return;
+    }
+    try {
+      const res = await apiClient.get('/account/yoti/callback/', {
+        params: { session_id: lastYotiSessionId },
+      });
+      const status = res.data?.status;
+      if (status === 'passed') {
+        applyAgeCheckState('success');
+      } else if (status === 'failed') {
+        applyAgeCheckState('failed');
+      } else {
+        applyAgeCheckState('canceled');
+      }
+    } catch (error) {
+      console.error('Unable to refresh Yoti result', error);
+    }
+  };
+
+  const simulateYotiResult = useCallback(
+    async (state: AgeCheckState) => {
+      const fakeStatusMap: Partial<Record<AgeCheckState, 'passed' | 'failed' | 'inconclusive'>> = {
+        success: 'passed',
+        failed: 'failed',
+        canceled: 'inconclusive',
+      };
+      const fakeStatus = fakeStatusMap[state];
+      if (fakeModeEnabled && fakeStatus) {
+        try {
+          const res = await simulateFakeYotiResultForUser(fakeStatus);
+          if (res.status === 'passed') {
+            applyAgeCheckState('success');
+            return;
+          }
+          if (res.status === 'failed' || res.failed_result) {
+            applyAgeCheckState('failed');
+            return;
+          }
+          applyAgeCheckState('canceled');
+          return;
+        } catch (error) {
+          console.error('Failed to simulate fake Yoti result', error);
+        }
+      }
+      applyAgeCheckState(state);
+    },
+    [applyAgeCheckState, fakeModeEnabled]
+  );
 
   const openSupport = () => {
     window.open(
@@ -758,6 +857,12 @@ const OnboardingV2: React.FC = () => {
                 onContactSupport={openSupport}
                 onLogout={handleLogoutCommon}
                 verifying={verifyingAgeGate}
+                fakeModeEnabled={fakeModeEnabled}
+                lastSessionId={lastYotiSessionId}
+                onRefreshResult={refreshYotiResult}
+                onSimulatePass={() => simulateYotiResult('success')}
+                onSimulateFail={() => simulateYotiResult('failed')}
+                onSimulateInconclusive={() => simulateYotiResult('canceled')}
               />
             </SwiperSlide>
           )}

@@ -1,9 +1,21 @@
 import {
   IonButton,
-  IonCard, IonCardContent, IonCardTitle, IonInput, IonItem, IonLabel, IonList, IonNote, IonRow, IonSelect, IonSelectOption, IonText,
+  IonCard,
+  IonCardContent,
+  IonCardTitle,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonNote,
+  IonRow,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonToggle,
   useIonAlert,
 } from '@ionic/react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 
@@ -20,6 +32,7 @@ import { useSwiper } from 'swiper/react';
 import { Preferences } from '@capacitor/preferences';
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
 
 
@@ -30,6 +43,8 @@ const OnboardingCardDone: React.FC = () => {
   const swiper = useSwiper();
   const [appLoading, setAppLoading] = useState(false);
   const queryClient = useQueryClient()
+  const currentProfile = useGetCurrentProfile().data;
+  const [connectFromRefreshments, setConnectFromRefreshments] = useState<boolean>(!!currentProfile?.settings_community_profile);
 
 
 
@@ -68,6 +83,16 @@ const OnboardingCardDone: React.FC = () => {
   }
 
 
+  useEffect(() => {
+    setConnectFromRefreshments(!!currentProfile?.settings_community_profile);
+  }, [currentProfile?.settings_community_profile]);
+
+  const handleConnectToggle = async (checked: boolean) => {
+    setConnectFromRefreshments(checked);
+    await updateCurrentUserProfile({ settings_community_profile: checked });
+    queryClient.invalidateQueries({ queryKey: ['current'] });
+  };
+
   const updateProfile = async () => {
 
       setAppLoading(true)
@@ -94,6 +119,19 @@ const OnboardingCardDone: React.FC = () => {
       <IonCardContent>
         <IonCardTitle>That's it!</IonCardTitle>
         <IonText>Head to the "Me" tab at any time to update or add to your profile!</IonText>
+        <IonItem>
+          <IonLabel>
+            <p>Connect from Refreshments</p>
+            <IonText color="medium">
+              Let people tap your profile from posts/comments so they can reach out directly.
+            </IonText>
+          </IonLabel>
+          <IonToggle
+            slot="end"
+            checked={connectFromRefreshments}
+            onIonChange={e => handleConnectToggle(e.detail.checked)}
+          ></IonToggle>
+        </IonItem>
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton disabled={appLoading} color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>

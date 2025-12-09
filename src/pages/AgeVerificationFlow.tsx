@@ -3,11 +3,14 @@ import {
   IonCard,
   IonCardContent,
   IonCardTitle,
+  IonContent,
   IonModal,
   IonText,
 } from '@ionic/react';
-import React, { useState } from 'react';
+import React from 'react';
 import './AgeVerificationFlow.css';
+import './OnboardingV2.css';
+
 
 export type AgeCheckState = 'required' | 'success' | 'canceled' | 'failed' | 'error';
 
@@ -21,6 +24,13 @@ type Props = {
   onContinue?: () => void;
   onContactSupport?: () => void;
   onLogout?: () => void;
+  lastSessionId?: string | null;
+  onRefreshResult?: () => void;
+  fakeModeEnabled?: boolean;
+  onSimulatePass?: () => void;
+  onSimulateFail?: () => void;
+  onSimulateInconclusive?: () => void;
+  embedded?: boolean;
 };
 
 const AgeVerificationFlow: React.FC<Props> = ({
@@ -33,8 +43,15 @@ const AgeVerificationFlow: React.FC<Props> = ({
   onContinue,
   onContactSupport,
   onLogout,
+  lastSessionId,
+  onRefreshResult,
+  fakeModeEnabled = false,
+  onSimulatePass,
+  onSimulateFail,
+  onSimulateInconclusive,
+  embedded = false,
 }) => {
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfo, setShowInfo] = React.useState(false);
   const regionDisplay = regionName || 'your region';
   const providerLabel = providerName || 'our age-check partner';
 
@@ -67,6 +84,18 @@ const AgeVerificationFlow: React.FC<Props> = ({
     onContinue?.();
   };
 
+  const showFakeRefresh = Boolean(fakeModeEnabled && lastSessionId && onRefreshResult);
+  const showSimulateControls = Boolean(
+    fakeModeEnabled &&
+    onSimulatePass &&
+    onSimulateFail &&
+    onSimulateInconclusive
+  );
+
+  const refreshFakeResult = () => {
+    onRefreshResult?.();
+  };
+
   const renderRequired = () => (
     <>
       <IonCardTitle>Quick age check</IonCardTitle>
@@ -83,6 +112,24 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <IonButton expand="block" onClick={startHandler} disabled={verifying}>
         {verifying ? 'Opening…' : `Continue to ${providerLabel}`}
       </IonButton>
+      {showFakeRefresh && (
+        <IonButton expand="block" onClick={refreshFakeResult} disabled={verifying}>
+          Refresh Fake Result
+        </IonButton>
+      )}
+      {showSimulateControls && (
+        <>
+          <IonButton expand="block" color="success" onClick={onSimulatePass}>
+            Simulate Pass
+          </IonButton>
+          <IonButton expand="block" color="danger" onClick={onSimulateFail}>
+            Simulate Fail
+          </IonButton>
+          <IonButton expand="block" onClick={onSimulateInconclusive}>
+            Simulate Try Again
+          </IonButton>
+        </>
+      )}
       <button className="age-flow__link-button" type="button" onClick={() => setShowInfo(true)}>
         How this works
       </button>
@@ -101,9 +148,6 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <IonButton expand="block" onClick={continueHandler} disabled={verifying}>
         {verifying ? 'Finishing up…' : 'Continue'}
       </IonButton>
-      <IonText color="medium">
-        You can learn more about age checks anytime in Settings → Privacy.
-      </IonText>
     </>
   );
 
@@ -128,7 +172,7 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <IonCardTitle>We couldn’t confirm your age</IonCardTitle>
       <p>
         Based on the information from our age-check partner, we couldn’t confirm that you meet the
-        age requirement to use Refresh Connections in {regionUsage}.
+        age requirement to use Refresh Connections in your location.
       </p>
       <p>
         We know this can be frustrating. If you are over 18 and believe this is a mistake, contact
@@ -147,7 +191,7 @@ const AgeVerificationFlow: React.FC<Props> = ({
     <>
       <IonCardTitle>Something went wrong</IonCardTitle>
       <p>
-        We weren’t able to finish your age check this time. This may be a temporary issue with our
+        We weren’t able to complete your age check this time. This may be a temporary issue with our
         age-check partner.
       </p>
       <p>Please try again in a few minutes. If the problem keeps happening, get in touch with Support.</p>
@@ -176,51 +220,71 @@ const AgeVerificationFlow: React.FC<Props> = ({
     }
   };
 
-  return (
-    <>
-      <IonCard className="age-verification-flow">
-        <IonCardContent>{renderContent()}</IonCardContent>
-      </IonCard>
+  const cardContent = (
+    <IonCardContent className="age-verification-flow__body onboarding-v2__card-body onboarding-v2__card-body--tight">
+      {renderContent()}
+    </IonCardContent>
+  );
 
-      <IonModal isOpen={showInfo} onDidDismiss={() => setShowInfo(false)} initialBreakpoint={0.8} breakpoints={[0, 0.8]}>
-        <div className="age-flow__sheet">
-          <IonCardTitle>How this age check works</IonCardTitle>
-          <ul>
-            <li>Tap Continue to {providerLabel} to open a secure age-check screen.</li>
-            <li>{providerLabel} asks for what it needs to confirm your age (for example, a selfie, short video, or ID).</li>
-            <li>
-              {providerLabel} checks your age and sends Refresh Connections only an age result (like “18 or over”) plus a code to link that result to your account.
-            </li>
-            <li>
-              We use that result to confirm you can use the app in {regionUsage} and to meet online-safety
-              rules. We don’t use age-check results for advertising.
-            </li>
-          </ul>
-          <p className="age-flow__sheet-footer">
-            By continuing, you agree to{' '}
-            <a href="https://www.yoti.com/terms/" target="_blank" rel="noreferrer">
-              Yoti’s Terms
-            </a>
-            ,{' '}
-            <a href="https://www.yoti.com/privacy/" target="_blank" rel="noreferrer">
-              Privacy Notice
-            </a>{' '}
-            and the{' '}
-            <a href="https://refreshconnections.com/terms" target="_blank" rel="noreferrer">
-              Refresh Connections Terms of Service
-            </a>{' '}
-            and{' '}
-            <a href="https://refreshconnections.com/privacy" target="_blank" rel="noreferrer">
-              Privacy Policy
-            </a>
-            .
-          </p>
-          <IonButton expand="block" onClick={() => setShowInfo(false)}>
-            Got it
-          </IonButton>
-        </div>
-      </IonModal>
-    </>
+  const infoModal = (
+    <IonModal isOpen={showInfo} onDidDismiss={() => setShowInfo(false)} initialBreakpoint={0.8} breakpoints={[0, 0.8]}>
+      <div className="age-flow__sheet">
+        <IonCardTitle>How this age check works</IonCardTitle>
+        <ul>
+          <li>Tap Continue to {providerLabel} to open a secure age-check screen.</li>
+          <li>{providerLabel} asks for what it needs to confirm your age (for example, a selfie, short video, or ID).</li>
+          <li>
+            {providerLabel} checks your age and sends Refresh Connections only an age result (like “18 or over”) plus a code to link that result to your account.
+          </li>
+          <li>
+            We use that result to confirm you can use the app in {regionUsage} and to meet online-safety
+            rules. We don’t use age-check results for advertising.
+          </li>
+        </ul>
+        <p className="age-flow__sheet-footer">
+          By continuing, you agree to{' '}
+          <a href="https://www.yoti.com/terms/" target="_blank" rel="noreferrer">
+            Yoti’s Terms
+          </a>
+          ,{' '}
+          <a href="https://www.yoti.com/privacy/" target="_blank" rel="noreferrer">
+            Privacy Notice
+          </a>{' '}
+          and the{' '}
+          <a href="https://refreshconnections.com/terms" target="_blank" rel="noreferrer">
+            Refresh Connections Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="https://refreshconnections.com/privacy" target="_blank" rel="noreferrer">
+            Privacy Policy
+          </a>
+          .
+        </p>
+        <IonButton expand="block" onClick={() => setShowInfo(false)}>
+          Got it
+        </IonButton>
+      </div>
+    </IonModal>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        {cardContent}
+        {infoModal}
+      </>
+    );
+  }
+
+  return (
+    <IonContent className="age-verification-gate">
+      <div className="age-verification-gate__card">
+        <IonCard className="age-verification-flow onboarding-v2__card onboarding-v2__card--shallow">
+          {cardContent}
+        </IonCard>
+      </div>
+      {infoModal}
+    </IonContent>
   );
 };
 

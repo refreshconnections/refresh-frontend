@@ -7,6 +7,7 @@ export type EligibilityStatus = {
   higher_tier_passed: boolean;
   force_age_validation: boolean;
   higher_verification_partner_name: string | null;
+  failed_result: boolean;
   needs_age_verification: boolean;
   provider: string | null;
   region_name: string | null;
