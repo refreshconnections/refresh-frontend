@@ -86,3 +86,10 @@
 .age-flow__sheet-footer a {
   color: var(--ion-color-primary);
 }
+
+.age-flow__button-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}

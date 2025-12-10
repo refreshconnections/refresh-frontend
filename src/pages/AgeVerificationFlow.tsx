@@ -5,6 +5,7 @@ import {
   IonCardTitle,
   IonContent,
   IonModal,
+  IonSpinner,
   IonText,
 } from '@ionic/react';
 import React from 'react';
@@ -110,7 +111,16 @@ const AgeVerificationFlow: React.FC<Props> = ({
       </p>
       <p>If you don’t complete this step, you won’t be able to keep using Refresh Connections in {regionUsage}.</p>
       <IonButton expand="block" onClick={startHandler} disabled={verifying}>
-        {verifying ? 'Opening…' : `Continue to ${providerLabel}`}
+        {verifying ? (
+          <span className="age-flow__button-loading">
+            <IonSpinner name="crescent" />
+            <span>Opening…</span>
+          </span>
+        ) : state === 'required' ? (
+          `Continue to ${providerLabel}`
+        ) : (
+          'Try Yoti again'
+        )}
       </IonButton>
       {onRefreshResult && lastSessionId && (
         <IonButton

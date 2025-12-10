@@ -307,13 +307,32 @@ const AppV2: React.FC = () => {
         OneSignal.Notifications.removeEventListener("foregroundWillDisplay", foregroundDisplay);
       }
     };
-  }, [
+ }, [
     applyThemeFromPref,
     checkForBrokenStreak,
     lastYotiSessionId,
     queryClient,
     settingsCurrentProfile?.settings_streak_tracker,
   ]);
+
+  useEffect(() => {
+    let browserListener: PluginListenerHandle | null = null;
+    const registerBrowserListener = async () => {
+      try {
+        browserListener = await Browser.addListener("browserFinished", () => {
+          refreshYotiResultRef.current?.();
+        });
+      } catch (error) {
+        console.warn("Unable to register browser close listener", error);
+      }
+    };
+
+    registerBrowserListener();
+
+    return () => {
+      browserListener?.remove?.();
+    };
+  }, []);
 
   useEffect(() => {
 
