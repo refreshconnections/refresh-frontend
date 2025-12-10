@@ -107,6 +107,7 @@ import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/e
 import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
 import { consumeAgeCheckQuery } from '../utils/age-verification';
 import { apiClient } from '../hooks/api';
+import { useYotiCallbackListener, YotiCallbackPayload } from '../hooks/useYotiCallbackListener';
 
 
 
@@ -552,13 +553,13 @@ const AppV2: React.FC = () => {
       Boolean(ageCheckState));
 
   const startAgeVerification = async () => {
-    setLaunchingYoti(true);
-    try {
-      const session = await startYotiSession();
-      console.log('Launching Yoti at', session.redirect_url);
-      setLastYotiSessionId(session.session_id ?? null);
-      setAgeCheckState('required');
-      await Browser.open({ url: session.redirect_url });
+      setLaunchingYoti(true);
+      try {
+        const session = await startYotiSession();
+        console.log('Launching Yoti at', session.redirect_url);
+        setLastYotiSessionId(session.session_id ?? null);
+        setAgeCheckState('required');
+        await Browser.open({ url: session.redirect_url });
     } catch (error: any) {
       console.error('Failed to launch age verification', error);
       setLastYotiSessionId(null);
@@ -582,28 +583,42 @@ const AppV2: React.FC = () => {
     [queryClient]
   );
 
-  const refreshYotiResult = async () => {
-    if (!lastYotiSessionId) {
-      console.warn('No Yoti session to refresh');
-      return;
-    }
-    try {
-      const res = await apiClient.get('/account/yoti/callback/', {
-        params: { session_id: lastYotiSessionId },
-      });
-      console.log('Yoti result', res.data);
-      const status = res.data?.status;
-      if (status === 'passed') {
-        applyAgeCheckState('success');
-      } else if (status === 'failed') {
-        applyAgeCheckState('failed');
-      } else {
-        applyAgeCheckState('canceled');
+  const refreshYotiResult = useCallback(
+    async (sessionId?: string | null) => {
+      const targetSessionId = sessionId ?? lastYotiSessionId;
+      if (!targetSessionId) {
+        console.warn('No Yoti session to refresh');
+        return;
       }
-    } catch (error) {
-      console.error('Unable to refresh Yoti result', error);
-    }
-  };
+      setLastYotiSessionId(targetSessionId);
+      try {
+        const res = await apiClient.get('/account/yoti/callback/', {
+          params: { session_id: targetSessionId },
+        });
+        console.log('Yoti result', res.data);
+        const status = res.data?.status;
+        if (status === 'passed') {
+          applyAgeCheckState('success');
+        } else if (status === 'failed') {
+          applyAgeCheckState('failed');
+        } else {
+          applyAgeCheckState('canceled');
+        }
+      } catch (error) {
+        console.error('Unable to refresh Yoti result', error);
+      }
+    },
+    [lastYotiSessionId, applyAgeCheckState]
+  );
+
+  const handleYotiCallbackPayload = useCallback(
+    (payload: YotiCallbackPayload) => {
+      refreshYotiResult(payload.sessionId ?? undefined);
+    },
+    [refreshYotiResult]
+  );
+
+  useYotiCallbackListener(handleYotiCallbackPayload);
 
   const simulateYotiResult = useCallback(
     async (state: AgeCheckState) => {
