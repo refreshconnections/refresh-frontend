@@ -16,7 +16,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import Likes from '../pages/Likes';
 import Me from '../pages/Me';
@@ -182,6 +182,7 @@ const AppV2: React.FC = () => {
   const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
   const [launchingYoti, setLaunchingYoti] = useState(false);
   const fakeModeEnabled = process.env.NODE_ENV !== 'production';
+  const refreshYotiResultRef = useRef<((sessionId?: string | null) => Promise<void>) | null>(null);
 
 
 
@@ -263,41 +264,55 @@ const AppV2: React.FC = () => {
   }
 
   useEffect(() => {
-
     const foregroundDisplay = (event: any) => {
-
       event.preventDefault();
 
-      console.log("event", event?.notification)
+      console.log("event", event?.notification);
 
       if ("additionalData" in event?.notification && !!event.notification?.additionalData && "invalidate_key" in event.notification?.additionalData) {
-        queryClient.invalidateQueries({ queryKey: event.notification.additionalData['invalidate_key'] })
-      }
-      else if (event?.notification?.title?.includes("sent you a message")) {
-        queryClient.invalidateQueries({ queryKey: ['unread'] })
+        queryClient.invalidateQueries({ queryKey: event.notification.additionalData["invalidate_key"] });
+      } else if (event?.notification?.title?.includes("sent you a message")) {
+        queryClient.invalidateQueries({ queryKey: ["unread"] });
       }
       event.notification.display();
     };
 
+    let resumeListener: PluginListenerHandle | null = null;
 
-    const listen = async () => {
-      CapApp.addListener('resume', async () => {
-        await applyThemeFromPref()
-        await setTextZoom()
-        if (settingsCurrentProfile?.settings_streak_tracker) {
-          await checkForBrokenStreak()
-        }
-      })
-    }
-    listen();
+    const register = async () => {
+        resumeListener = await CapApp.addListener("resume", async () => {
+          await applyThemeFromPref();
+          await setTextZoom();
+          if (settingsCurrentProfile?.settings_streak_tracker) {
+            await checkForBrokenStreak();
+          }
+          console.log("resume")
+          if (lastYotiSessionId) {
+            await refreshYotiResultRef.current?.();
+          }
+        });
+    };
+
+    register();
 
     if (isMobile()) {
-      console.log("foreground handler")
+      console.log("foreground handler");
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", foregroundDisplay);
     }
 
-
-  }, [])
+    return () => {
+      resumeListener?.remove?.();
+      if (isMobile()) {
+        OneSignal.Notifications.removeEventListener("foregroundWillDisplay", foregroundDisplay);
+      }
+    };
+  }, [
+    applyThemeFromPref,
+    checkForBrokenStreak,
+    lastYotiSessionId,
+    queryClient,
+    settingsCurrentProfile?.settings_streak_tracker,
+  ]);
 
   useEffect(() => {
 
@@ -592,7 +607,7 @@ const AppV2: React.FC = () => {
       }
       setLastYotiSessionId(targetSessionId);
       try {
-        const res = await apiClient.get('/account/yoti/callback/', {
+        const res = await apiClient.get('/account/yoti/result/', {
           params: { session_id: targetSessionId },
         });
         console.log('Yoti result', res.data);
@@ -610,6 +625,10 @@ const AppV2: React.FC = () => {
     },
     [lastYotiSessionId, applyAgeCheckState]
   );
+
+  useEffect(() => {
+    refreshYotiResultRef.current = refreshYotiResult;
+  }, [refreshYotiResult]);
 
   const handleYotiCallbackPayload = useCallback(
     (payload: YotiCallbackPayload) => {

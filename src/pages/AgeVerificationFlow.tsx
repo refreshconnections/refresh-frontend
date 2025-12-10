@@ -112,6 +112,11 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <IonButton expand="block" onClick={startHandler} disabled={verifying}>
         {verifying ? 'Opening…' : `Continue to ${providerLabel}`}
       </IonButton>
+      {onRefreshResult && lastSessionId && (
+        <IonButton expand="block" fill="outline" onClick={onRefreshResult} disabled={verifying}>
+          Check status
+        </IonButton>
+      )}
       {showFakeRefresh && (
         <IonButton expand="block" onClick={refreshFakeResult} disabled={verifying}>
           Refresh Fake Result
@@ -161,6 +166,11 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <IonButton expand="block" onClick={retryHandler} disabled={verifying}>
         {verifying ? 'Opening…' : 'Try again'}
       </IonButton>
+      {onRefreshResult && lastSessionId && (
+        <IonButton expand="block" fill="outline" onClick={onRefreshResult}>
+          Check status
+        </IonButton>
+      )}
       <IonButton expand="block" fill="clear" onClick={logoutHandler}>
         Log out
       </IonButton>
