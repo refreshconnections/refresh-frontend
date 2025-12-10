@@ -4,6 +4,10 @@ export type YotiCallbackPayload = {
   type: 'yoti-verification';
   status?: string | null;
   sessionId?: string | null;
+  session?: {
+    id?: string | null;
+    session_id?: string | null;
+  };
 };
 
 const STORAGE_KEY = 'refresh-yoti-callback-payload';

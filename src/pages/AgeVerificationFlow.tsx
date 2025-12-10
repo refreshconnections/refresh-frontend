@@ -25,7 +25,7 @@ type Props = {
   onContactSupport?: () => void;
   onLogout?: () => void;
   lastSessionId?: string | null;
-  onRefreshResult?: () => void;
+  onRefreshResult?: (sessionId?: string | null) => void;
   fakeModeEnabled?: boolean;
   onSimulatePass?: () => void;
   onSimulateFail?: () => void;
@@ -113,7 +113,12 @@ const AgeVerificationFlow: React.FC<Props> = ({
         {verifying ? 'Opening…' : `Continue to ${providerLabel}`}
       </IonButton>
       {onRefreshResult && lastSessionId && (
-        <IonButton expand="block" fill="outline" onClick={onRefreshResult} disabled={verifying}>
+        <IonButton
+          expand="block"
+          fill="outline"
+          onClick={() => onRefreshResult(lastSessionId)}
+          disabled={verifying}
+        >
           Check status
         </IonButton>
       )}
@@ -167,7 +172,7 @@ const AgeVerificationFlow: React.FC<Props> = ({
         {verifying ? 'Opening…' : 'Try again'}
       </IonButton>
       {onRefreshResult && lastSessionId && (
-        <IonButton expand="block" fill="outline" onClick={onRefreshResult}>
+        <IonButton expand="block" fill="outline" onClick={() => onRefreshResult(lastSessionId)}>
           Check status
         </IonButton>
       )}

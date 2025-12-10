@@ -103,6 +103,7 @@ import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
 import AgeVerificationFlow, { AgeCheckState } from '../pages/AgeVerificationFlow';
+import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
 import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
 import { consumeAgeCheckQuery } from '../utils/age-verification';
@@ -600,9 +601,11 @@ const AppV2: React.FC = () => {
 
   const refreshYotiResult = useCallback(
     async (sessionId?: string | null) => {
-      const targetSessionId = sessionId ?? lastYotiSessionId;
+      const normalizedFromCallback = normalizeYotiSessionId(sessionId);
+      const normalizedFromState = normalizeYotiSessionId(lastYotiSessionId);
+      const targetSessionId = normalizedFromCallback ?? normalizedFromState;
       if (!targetSessionId) {
-        console.warn('No Yoti session to refresh');
+        console.warn('No valid Yoti session to refresh');
         return;
       }
       setLastYotiSessionId(targetSessionId);
@@ -632,7 +635,11 @@ const AppV2: React.FC = () => {
 
   const handleYotiCallbackPayload = useCallback(
     (payload: YotiCallbackPayload) => {
-      refreshYotiResult(payload.sessionId ?? undefined);
+      const payloadSessionId = extractSessionIdFromPayload(payload);
+      if (!payloadSessionId) {
+        console.warn('Yoti callback payload missing a session id', payload);
+      }
+      refreshYotiResult(payloadSessionId);
     },
     [refreshYotiResult]
   );

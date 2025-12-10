@@ -34,6 +34,7 @@ import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/ac
 import { apiClient } from '../hooks/api';
 import { Browser } from '@capacitor/browser';
 import { useYotiCallbackListener, YotiCallbackPayload } from '../hooks/useYotiCallbackListener';
+import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
 import {
   checkVerificationCode,
   handleLogoutCommon,
@@ -748,8 +749,11 @@ const OnboardingV2: React.FC = () => {
 
   const refreshYotiResult = useCallback(
     async (sessionId?: string | null) => {
-      const targetSessionId = sessionId ?? lastYotiSessionId;
+      const normalizedFromCallback = normalizeYotiSessionId(sessionId);
+      const normalizedFromState = normalizeYotiSessionId(lastYotiSessionId);
+      const targetSessionId = normalizedFromCallback ?? normalizedFromState;
       if (!targetSessionId) {
+        console.warn('No valid Yoti session to refresh');
         return;
       }
       setLastYotiSessionId(targetSessionId);
@@ -774,7 +778,11 @@ const OnboardingV2: React.FC = () => {
 
   const handleYotiCallbackPayload = useCallback(
     (payload: YotiCallbackPayload) => {
-      refreshYotiResult(payload.sessionId ?? undefined);
+      const payloadSessionId = extractSessionIdFromPayload(payload);
+      if (!payloadSessionId) {
+        console.warn('Yoti callback payload missing a session id', payload);
+      }
+      refreshYotiResult(payloadSessionId);
     },
     [refreshYotiResult]
   );
