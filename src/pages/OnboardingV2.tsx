@@ -754,7 +754,7 @@ const OnboardingV2: React.FC = () => {
       }
       setLastYotiSessionId(targetSessionId);
       try {
-        const res = await apiClient.get('/account/yoti/callback/', {
+        const res = await apiClient.get('/account/yoti/result/', {
           params: { session_id: targetSessionId },
         });
         const status = res.data?.status;
