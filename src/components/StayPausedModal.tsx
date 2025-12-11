@@ -30,8 +30,7 @@ const StayPausedModal: React.FC<Props> = (props) => {
           value: 'true',
         });
   
-        const response = await updateCurrentUserProfile({ created_profile: true, paused_profile: true })
-        const response2 = await updateCurrentUserProfile({ location_last_updated: null, romance_gender_last_updated: null, gender_last_updated: null })
+        const response = await updateCurrentUserProfile({ created_profile: true, paused_profile: true, location_last_updated: null, romance_gender_last_updated: null, gender_last_updated: null })
         queryClient.invalidateQueries({ queryKey: ['current'] })
 
         setAppLoading(true)
@@ -66,9 +65,15 @@ const StayPausedModal: React.FC<Props> = (props) => {
 
 
                 </IonCard>
-                <IonRow className="ion-justify-content-center" style={{paddingBottom: "30pt"}}>
-                    <IonButton fill="outline" onClick={onDismiss}>
+                <IonRow
+                    className="ion-justify-content-center"
+                    style={{ paddingBottom: "30pt", gap: "12px" }}
+                >
+                    <IonButton fill="outline" onClick={onDismiss} disabled={appLoading}>
                         Go Back
+                    </IonButton>
+                    <IonButton onClick={updateProfile} disabled={appLoading}>
+                        {appLoading ? 'Loading...' : 'Finish profile later'}
                     </IonButton>
                 </IonRow>
             </IonContent>

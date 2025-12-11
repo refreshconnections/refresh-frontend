@@ -11,7 +11,8 @@ import {
   IonRow,
   IonSpinner,
   IonText,
-  useIonAlert
+  useIonAlert,
+  useIonModal
 } from '@ionic/react';
 import { IonDatetime, IonDatetimeButton, IonModal } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
@@ -45,6 +46,7 @@ import {
   updateCurrentUserProfileWStatus
 } from '../hooks/utilities';
 import './OnboardingV2.css';
+import PersonalProfile from './PersonalProfile';
 
 const WelcomeSlide: React.FC = () => {
   const swiper = useSwiper();
@@ -100,7 +102,7 @@ const InfoSlide: React.FC = () => {
   return (
     <IonContent
       scrollY
-      className="onboarding-v2__slide onboarding-v2__welcome onboarding-v2__welcome-wrapper"
+      className="onboarding-v2__slide onboarding-v2__welcome onboarding-v2__welcome-wrapper onboarding-v2__info"
     >
       <div className="onboarding-v2__welcome-content">
         <div className="onboarding-v2__welcome-hero">
@@ -540,48 +542,63 @@ type ReadySlideProps = {
     event?: React.MouseEvent<HTMLIonButtonElement>
   ) => void;
   isCompleting: boolean;
+  onStartPersonalProfile: () => void;
+  onMarkOnboarded: () => void;
 };
 
-const ReadySlide: React.FC<ReadySlideProps> = ({ onFinish, isCompleting }) => {
+const ReadySlide: React.FC<ReadySlideProps> = ({
+  onFinish,
+  isCompleting,
+  onStartPersonalProfile,
+  onMarkOnboarded,
+}) => {
   return (
     <div className="onboarding-v2__slide onboarding-v2__ready">
       <IonCard className="onboarding-v2__card">
         <IonCardContent>
           <IonCardTitle>You're ready to get started!</IonCardTitle>
           <div className="onboarding-v2__ready-options">
-            <div className="onboarding-v2__option">
+            {/* Hide community flow for now */}
+            {/* <div className="onboarding-v2__option">
               <h2>Set up a community profile</h2>
               <p>Join in on conversations at the Refreshments Bar and other shared spaces.</p>
               <IonButton
                 expand="block"
                 disabled={isCompleting}
-                href="/community"
-                onClick={(event) => onFinish('/community', event)}
+                onClick={(event) => {
+                  onMarkOnboarded?.();
+                  onFinish('/community', event);
+                }}
               >
                 {isCompleting ? <IonSpinner name="dots" /> : 'Go to community'}
               </IonButton>
-            </div>
+            </div> */}
+    
             <div className="onboarding-v2__option">
               <h2>Set up a personal profile</h2>
               <p>Send Likes and exchange one-on-one messages when you're ready for personal connections.</p>
-              <IonButton
-                expand="block"
-                disabled={isCompleting}
-                href="/me"
-                onClick={(event) => onFinish('/me', event)}
-              >
-                {isCompleting ? <IonSpinner name="dots" /> : 'Start personal profile'}
-              </IonButton>
+            <IonButton
+              expand="block"
+              disabled={isCompleting}
+              onClick={() => {
+                onMarkOnboarded?.();
+                onStartPersonalProfile();
+              }}
+            >
+              {isCompleting ? <IonSpinner name="dots" /> : 'Start personal profile'}
+            </IonButton>
             </div>
             <div className="onboarding-v2__option">
               <h2>Just check out the app</h2>
-              <p>Take a look around first. You can always add a community or personal profile later.</p>
+              <p>Take a look around first. You can always add a personal profile later.</p>
               <IonButton
                 expand="block"
                 fill="outline"
                 disabled={isCompleting}
-                href="/community"
-                onClick={(event) => onFinish('/community', event)}
+                onClick={(event) => {
+                  onMarkOnboarded?.();
+                  onFinish('/community', event);
+                }}
               >
                 {isCompleting ? <IonSpinner name="dots" /> : 'Explore the app'}
               </IonButton>
@@ -608,7 +625,12 @@ const OnboardingV2: React.FC = () => {
   const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
   const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
   const fakeModeEnabled = process.env.NODE_ENV !== 'production';
-
+  const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
+    onDismiss: () => dismissPersonalProfile(),
+  });
+  const handleStartPersonalProfile = () => {
+    presentPersonalProfile();
+  };
   useEffect(() => {
     if (eligibilityStatus?.failed_result) {
       setAgeCheckState('failed');
@@ -633,6 +655,12 @@ const OnboardingV2: React.FC = () => {
       await Preferences.set({ key: 'ONBOARDED', value: 'true' });
     }
   });
+  const markOnboarded = useCallback(() => {
+    if (completeOnboarding.isPending) {
+      return;
+    }
+    completeOnboarding.mutate();
+  }, [completeOnboarding]);
   const completeAgeVerification = useCompleteAgeVerification({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
@@ -829,16 +857,17 @@ const OnboardingV2: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="onboarding-v2__content">
-        <Swiper
-          modules={[Pagination]}
-          pagination={{ clickable: true }}
-          className="onboarding-v2__swiper"
-          centeredSlides
-          onSwiper={(swiperInstance) => {
-            swiperRef.current = swiperInstance;
-            setSwiperReady(true);
-          }}
-        >
+          <Swiper
+            modules={[Pagination]}
+            pagination={{ clickable: true }}
+            className="onboarding-v2__swiper"
+            centeredSlides
+            allowTouchMove={false}
+            onSwiper={(swiperInstance) => {
+              swiperRef.current = swiperInstance;
+              setSwiperReady(true);
+            }}
+          >
           <SwiperSlide>
             <WelcomeSlide />
           </SwiperSlide>
@@ -889,7 +918,12 @@ const OnboardingV2: React.FC = () => {
             </SwiperSlide>
           )}
           <SwiperSlide>
-            <ReadySlide onFinish={handleFinish} isCompleting={completeOnboarding.isPending} />
+            <ReadySlide
+              onFinish={handleFinish}
+              isCompleting={completeOnboarding.isPending}
+              onStartPersonalProfile={handleStartPersonalProfile}
+              onMarkOnboarded={markOnboarded}
+            />
           </SwiperSlide>
           <SwiperSlide>
             <UnderAgeSlide />

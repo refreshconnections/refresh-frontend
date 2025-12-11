@@ -6,14 +6,14 @@ import {
   IonContent,
   IonModal,
   IonSpinner,
-  IonText,
 } from '@ionic/react';
 import React from 'react';
 import './AgeVerificationFlow.css';
 import './OnboardingV2.css';
 
-
 export type AgeCheckState = 'required' | 'success' | 'canceled' | 'failed' | 'error';
+export const YOTI_BROWSER_CLOSED_EVENT = 'refresh:yoti-browser-closed';
+const BROWSER_CHECK_COOLDOWN_MS = 5000;
 
 type Props = {
   state: AgeCheckState;
@@ -53,6 +53,9 @@ const AgeVerificationFlow: React.FC<Props> = ({
   embedded = false,
 }) => {
   const [showInfo, setShowInfo] = React.useState(false);
+  const [browserCheckActive, setBrowserCheckActive] = React.useState(false);
+  const [hasSeenBrowserClose, setHasSeenBrowserClose] = React.useState(false);
+  const browserCooldownRef = React.useRef<number | null>(null);
   const regionDisplay = regionName || 'your region';
   const providerLabel = providerName || 'our age-check partner';
 
@@ -97,6 +100,37 @@ const AgeVerificationFlow: React.FC<Props> = ({
     onRefreshResult?.();
   };
 
+  React.useEffect(() => {
+    if (verifying) {
+      setHasSeenBrowserClose(false);
+    }
+  }, [verifying]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleBrowserClose = () => {
+      setHasSeenBrowserClose(true);
+      setBrowserCheckActive(true);
+      if (browserCooldownRef.current) {
+        window.clearTimeout(browserCooldownRef.current);
+      }
+      browserCooldownRef.current = window.setTimeout(() => {
+        setBrowserCheckActive(false);
+      }, BROWSER_CHECK_COOLDOWN_MS);
+    };
+
+    window.addEventListener(YOTI_BROWSER_CLOSED_EVENT, handleBrowserClose);
+    return () => {
+      window.removeEventListener(YOTI_BROWSER_CLOSED_EVENT, handleBrowserClose);
+      if (browserCooldownRef.current) {
+        window.clearTimeout(browserCooldownRef.current);
+      }
+    };
+  }, []);
+
   const renderRequired = () => (
     <>
       <IonCardTitle>Quick age check</IonCardTitle>
@@ -110,16 +144,16 @@ const AgeVerificationFlow: React.FC<Props> = ({
         details, or payment information.
       </p>
       <p>If you don’t complete this step, you won’t be able to keep using Refresh Connections in {regionUsage}.</p>
-      <IonButton expand="block" onClick={startHandler} disabled={verifying}>
+      <IonButton expand="block" onClick={startHandler} disabled={verifying || browserCheckActive}>
         {verifying ? (
           <span className="age-flow__button-loading">
             <IonSpinner name="crescent" />
             <span>Opening…</span>
           </span>
-        ) : state === 'required' ? (
-          `Continue to ${providerLabel}`
-        ) : (
+        ) : hasSeenBrowserClose ? (
           'Try Yoti again'
+        ) : (
+          `Continue to ${providerLabel}`
         )}
       </IonButton>
       {onRefreshResult && lastSessionId && (
@@ -127,9 +161,16 @@ const AgeVerificationFlow: React.FC<Props> = ({
           expand="block"
           fill="outline"
           onClick={() => onRefreshResult(lastSessionId)}
-          disabled={verifying}
+          disabled={verifying || browserCheckActive}
         >
-          Check status
+          {browserCheckActive ? (
+            <span className="age-flow__button-loading">
+              <IonSpinner name="crescent" />
+              <span>Checking status…</span>
+            </span>
+          ) : (
+            'Check status'
+          )}
         </IonButton>
       )}
       {showFakeRefresh && (
@@ -178,12 +219,24 @@ const AgeVerificationFlow: React.FC<Props> = ({
         It looks like the age check with {providerLabel} wasn’t completed. To keep using Refresh
         Connections in {regionUsage}, you’ll need to finish this quick step.
       </p>
-      <IonButton expand="block" onClick={retryHandler} disabled={verifying}>
+      <IonButton expand="block" onClick={retryHandler} disabled={verifying || browserCheckActive}>
         {verifying ? 'Opening…' : 'Try again'}
       </IonButton>
       {onRefreshResult && lastSessionId && (
-        <IonButton expand="block" fill="outline" onClick={() => onRefreshResult(lastSessionId)}>
-          Check status
+        <IonButton
+          expand="block"
+          fill="outline"
+          onClick={() => onRefreshResult(lastSessionId)}
+          disabled={verifying || browserCheckActive}
+        >
+          {browserCheckActive ? (
+            <span className="age-flow__button-loading">
+              <IonSpinner name="crescent" />
+              <span>Checking status…</span>
+            </span>
+          ) : (
+            'Check status'
+          )}
         </IonButton>
       )}
       <IonButton expand="block" fill="clear" onClick={logoutHandler}>

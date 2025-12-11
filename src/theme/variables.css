@@ -78,6 +78,7 @@
 
     /* Set the background of the entire app */
   --ion-background-color: #f2f2fd;
+  --text-scale: 1;
 
   /* Set the font family of the entire app */
   /* --ion-font-family: 'Inter', sans-serif; */
@@ -87,6 +88,33 @@
   /* --ion-font-family: 'Nunito', sans-serif; */
   /* --ion-font-family: 'Fira Sans', sans-serif; */
 
+}
+
+h1 {
+  font-size: clamp(1.8rem, calc(2rem * var(--text-scale)), 3rem);
+  line-height: 1.2;
+}
+
+h2,
+h3,
+h4,
+h5,
+h6,
+.ion-title,
+.ion-card-title,
+.ion-label,
+.ion-text,
+.ion-button,
+button {
+  font-size: clamp(0.9rem, calc(1rem * var(--text-scale)), 2.3rem);
+}
+
+html {
+  font-size: clamp(14px, calc(16px * var(--text-scale)), 20px);
+}
+
+body {
+  font-size: calc(1rem * var(--text-scale));
 }
 
 .ion-color-gray {

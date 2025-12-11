@@ -102,7 +102,7 @@ import { IconPop } from './IconPop';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
-import AgeVerificationFlow, { AgeCheckState } from '../pages/AgeVerificationFlow';
+import AgeVerificationFlow, { AgeCheckState, YOTI_BROWSER_CLOSED_EVENT } from '../pages/AgeVerificationFlow';
 import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
 import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
@@ -317,9 +317,19 @@ const AppV2: React.FC = () => {
 
   useEffect(() => {
     let browserListener: PluginListenerHandle | null = null;
+    const dispatchBrowserClosedEvent = () => {
+      if (typeof window === "undefined") return;
+      try {
+        window.dispatchEvent(new CustomEvent(YOTI_BROWSER_CLOSED_EVENT));
+      } catch (error) {
+        console.warn("Unable to dispatch browser closed event", error);
+      }
+    };
+
     const registerBrowserListener = async () => {
       try {
         browserListener = await Browser.addListener("browserFinished", () => {
+          dispatchBrowserClosedEvent();
           refreshYotiResultRef.current?.();
         });
       } catch (error) {

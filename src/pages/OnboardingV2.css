@@ -5,6 +5,7 @@
   --padding-bottom: 0;
   --background: var(--ion-background-color, #ffffff);
   background: var(--ion-background-color, #ffffff);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .onboarding-v2__swiper {
@@ -14,11 +15,17 @@
 .onboarding-v2__slide {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: clamp(40px, 25vh, 160px) clamp(24px, 6vw, 72px) clamp(40px, 10vh, 120px);
+  padding: calc(clamp(40px, 25vh, 160px) + env(safe-area-inset-top, 0px))
+    clamp(24px, 6vw, 72px)
+    calc(clamp(40px, 10vh, 120px) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+
+.onboarding-v2__info {
+  padding-top: calc(clamp(40px, 25vh, 160px) + 4rem + env(safe-area-inset-top, 0px));
 }
 
 @media (max-width: 480px) {

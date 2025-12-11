@@ -1,3 +1,20 @@
-ion-card.hey {
-    color: red
+ion-page.loading-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--ion-background-color, #ffffff);
+}
+
+.loading-page__content {
+  text-align: center;
+  width: min(320px, 70vw);
+}
+
+.loading-page__content img {
+  width: 100%;
+  height: auto;
+  max-width: 220px;
 }

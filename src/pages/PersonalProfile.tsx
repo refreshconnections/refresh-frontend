@@ -102,13 +102,13 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           <SwiperSlide>
               <IonCard className="onboarding-slide" style={{ overflow: 'scroll', position: 'relative', height: '95vh' }}>
                 <IonCardContent style={{ padding: '20px' }}>
-                <IonCardTitle style={{ fontSize: '26px' }}>Update your profile</IonCardTitle>
+                <IonCardTitle style={{ fontSize: '26px' }}>Create your profile</IonCardTitle>
                 <img
                   src="../static/img/flower-mask.png"
                   style={{ width: '50%', alignSelf: 'center', margin: '30pt' }}
                 />
                 <IonText style={{ textAlign: 'center' }}>
-                  <h2>Finish your personal profile so other members can get to know you.</h2>
+                  <h2>Create your personal profile so other members can get to know you one-on-one.</h2>
                 </IonText>
               </IonCardContent>
               <IonRow className="onboarding-slide-buttons">
