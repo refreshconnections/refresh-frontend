@@ -13,7 +13,7 @@ import './OnboardingV2.css';
 
 export type AgeCheckState = 'required' | 'success' | 'canceled' | 'failed' | 'error';
 export const YOTI_BROWSER_CLOSED_EVENT = 'refresh:yoti-browser-closed';
-const BROWSER_CHECK_COOLDOWN_MS = 5000;
+const BROWSER_CLOSE_LOADING_MS = 2000;
 
 type Props = {
   state: AgeCheckState;
@@ -54,8 +54,11 @@ const AgeVerificationFlow: React.FC<Props> = ({
 }) => {
   const [showInfo, setShowInfo] = React.useState(false);
   const [browserCheckActive, setBrowserCheckActive] = React.useState(false);
+  const [browserCloseLoading, setBrowserCloseLoading] = React.useState(false);
   const [hasSeenBrowserClose, setHasSeenBrowserClose] = React.useState(false);
-  const browserCooldownRef = React.useRef<number | null>(null);
+  const browserCheckTimeoutRef = React.useRef<number | null>(null);
+  const lastSessionIdRef = React.useRef<string | null | undefined>(lastSessionId);
+  const refreshResultRef = React.useRef<Props['onRefreshResult']>(onRefreshResult);
   const regionDisplay = regionName || 'your region';
   const providerLabel = providerName || 'our age-check partner';
 
@@ -107,6 +110,14 @@ const AgeVerificationFlow: React.FC<Props> = ({
   }, [verifying]);
 
   React.useEffect(() => {
+    lastSessionIdRef.current = lastSessionId;
+  }, [lastSessionId]);
+
+  React.useEffect(() => {
+    refreshResultRef.current = onRefreshResult;
+  }, [onRefreshResult]);
+
+  React.useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -114,36 +125,41 @@ const AgeVerificationFlow: React.FC<Props> = ({
     const handleBrowserClose = () => {
       setHasSeenBrowserClose(true);
       setBrowserCheckActive(true);
-      if (browserCooldownRef.current) {
-        window.clearTimeout(browserCooldownRef.current);
+      setBrowserCloseLoading(true);
+      if (browserCheckTimeoutRef.current) {
+        window.clearTimeout(browserCheckTimeoutRef.current);
       }
-      browserCooldownRef.current = window.setTimeout(() => {
+      browserCheckTimeoutRef.current = window.setTimeout(() => {
+        setBrowserCloseLoading(false);
         setBrowserCheckActive(false);
-      }, BROWSER_CHECK_COOLDOWN_MS);
+        refreshResultRef.current?.(lastSessionIdRef.current);
+        browserCheckTimeoutRef.current = null;
+      }, BROWSER_CLOSE_LOADING_MS);
     };
 
     window.addEventListener(YOTI_BROWSER_CLOSED_EVENT, handleBrowserClose);
     return () => {
       window.removeEventListener(YOTI_BROWSER_CLOSED_EVENT, handleBrowserClose);
-      if (browserCooldownRef.current) {
-        window.clearTimeout(browserCooldownRef.current);
+      if (browserCheckTimeoutRef.current) {
+        window.clearTimeout(browserCheckTimeoutRef.current);
       }
     };
   }, []);
 
   const renderRequired = () => (
     <>
-      <IonCardTitle>Quick age check</IonCardTitle>
+      <IonCardTitle>Age Verification</IonCardTitle>
       <p>
-        Because of online-safety rules in {regionDisplay}, Refresh Connections needs to confirm that
+        Because of new social media regulations in {regionDisplay}, Refresh Connections needs to confirm that
         all members are adults.
       </p>
       <p>
-        We use {providerLabel}, a specialist age-check service. {providerLabel} checks your age and
-        sends Refresh Connections only an age result (for example, “18+ yes/no”)—not your photo, ID
-        details, or payment information.
+        We are using {providerLabel}, a specialist age-check service, which provides you a number of options for 
+        verifying your age, then sends Refresh Connections an age verification result (for example, "18+ yes/no") 
+        and a code to link that result to your account. It does not send your photo, ID details, payment information, 
+        or other data that you used in your choice to verify. Refresh only receives the yes or no result and account identifier. 
       </p>
-      <p>If you don’t complete this step, you won’t be able to keep using Refresh Connections in {regionUsage}.</p>
+      <p>If you don’t complete this step, you won’t be able to keep using Refresh Connections.</p>
       <IonButton expand="block" onClick={startHandler} disabled={verifying || browserCheckActive}>
         {verifying ? (
           <span className="age-flow__button-loading">
@@ -309,14 +325,13 @@ const AgeVerificationFlow: React.FC<Props> = ({
       <div className="age-flow__sheet">
         <IonCardTitle>How this age check works</IonCardTitle>
         <ul>
-          <li>Tap Continue to {providerLabel} to open a secure age-check screen.</li>
-          <li>{providerLabel} asks for what it needs to confirm your age (for example, a selfie, short video, or ID).</li>
+          <li>Tap Continue to {providerLabel} to open a secure age-check screen with a selection of ways to verify.</li>
+          <li>Based on your choice, {providerLabel} asks for what it needs to confirm your age (for example, a selfie, short video, your phone number, or ID).</li>
           <li>
             {providerLabel} checks your age and sends Refresh Connections only an age result (like “18 or over”) plus a code to link that result to your account.
           </li>
           <li>
-            We use that result to confirm you can use the app in {regionUsage} and to meet online-safety
-            rules. We don’t use age-check results for advertising.
+            We use that result to confirm you can use the app. We don’t use age-check results for advertising or marketing.
           </li>
         </ul>
         <p className="age-flow__sheet-footer">
@@ -357,8 +372,16 @@ const AgeVerificationFlow: React.FC<Props> = ({
   return (
     <IonContent className="age-verification-gate">
       <div className="age-verification-gate__card">
-        <IonCard className="age-verification-flow onboarding-v2__card onboarding-v2__card--shallow">
+        <IonCard className="age-verification-flow onboarding-v2__card onboarding-v2__card--shallow age-verification-flow__card">
           {cardContent}
+          {browserCloseLoading && (
+            <div className="age-flow__browser-loading">
+              <div className="age-flow__browser-loading__content">
+                <IonSpinner name="crescent" />
+                <p>Looking for your verification result…</p>
+              </div>
+            </div>
+          )}
         </IonCard>
       </div>
       {infoModal}

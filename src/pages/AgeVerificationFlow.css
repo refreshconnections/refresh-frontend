@@ -93,3 +93,34 @@
   justify-content: center;
   gap: 0.5rem;
 }
+
+.age-verification-flow__card {
+  position: relative;
+  overflow: hidden;
+}
+
+.age-flow__browser-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: inherit;
+  z-index: 10;
+  padding: 16px;
+}
+
+.age-flow__browser-loading__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
+.age-flow__browser-loading__content p {
+  margin: 0;
+  font-weight: 500;
+}

@@ -58,7 +58,7 @@ const WelcomeSlide: React.FC = () => {
           <h1>Welcome to Refresh Connections</h1>
           <p>
             We're a Covid conscientious community for building friendships, support, and (if you
-            choose) one-on-one connections. You decide how you show up and where you spend your time.
+            choose) one-on-one connections.
           </p>
         </div>
         <div className="onboarding-v2__cta">
@@ -137,8 +137,9 @@ const InfoSlide: React.FC = () => {
           <section className="fade-in">
             <h2>Getting started</h2>
             <p>
-              We'll verify your mobile number and birthdate so we can keep the community safe, then
-              you can explore the community and optionally turn on discovery for personal connections.
+              On the next two screens we’ll ask for your mobile number and birthdate. They help keep your account and the community safer.
+              <br/>
+            After that, you can start exploring the community—and, if you’d like, fill out a profile so you can join the discovery on the one-on-one connections side of the app.
             </p>
           </section>
         </div>
@@ -250,7 +251,7 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
         <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
           <IonCardTitle>Verify your mobile number </IonCardTitle>
           <p>
-            To set up your account, we use a mobile number to send a verification code.
+            We’ll send a short code by SMS to confirm this number is yours.
           </p>
           <div className="onboarding-v2__input-wrapper">
             <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
@@ -283,10 +284,9 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
             </IonButton>
             {showWhy && (
               <IonText color="medium">
-                We verify every account to help protect members from bad actors and duplicate accounts.
-                Your number isn't shared and is only used for verification and security. It's never shown to
-                other members or used for marketing texts, and how we handle it is explained in our Privacy
-                Policy.
+                We use your mobile number to help secure your account, support community safety by preventing duplicate accounts, and as a second check when you make important account changes.
+                Your number is never shown to other members or used for marketing texts, and how we handle it is explained in our Privacy Policy.
+                Temporary or anonymous numbers can’t be used.
               </IonText>
             )}
           </div>
@@ -327,7 +327,8 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   adultSlideIndex,
   underAgeSlideIndex
 }) => {
-  const [birthday, setBirthday] = useState<string | null>(null);
+  const defaultBirthday = '1990-01-01';
+  const [birthday, setBirthday] = useState<string | null>(defaultBirthday);
   const [age, setAge] = useState<number | null>(null);
   const [hasBirthday, setHasBirthday] = useState(false);
   const [isAdult, setIsAdult] = useState<boolean | null>(null);
@@ -355,9 +356,9 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   };
 
   useEffect(() => {
-    if (profileBirthDate && profileBirthDate !== '1001-01-01') {
-      handleChange(profileBirthDate);
-    }
+    const initialValue =
+      profileBirthDate && profileBirthDate !== '1001-01-01' ? profileBirthDate : defaultBirthday;
+    handleChange(initialValue);
   }, [profileBirthDate]);
 
   const saveBirthday = async () => {
@@ -589,7 +590,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
             </IonButton>
             </div>
             <div className="onboarding-v2__option">
-              <h2>Just check out the app</h2>
+              <h2>Check things out first</h2>
               <p>Take a look around first. You can always add a personal profile later.</p>
               <IonButton
                 expand="block"

@@ -107,6 +107,16 @@ ion-footer.add-comment ion-row {
   width: 95%;
 }
 
+ion-footer.add-comment ion-textarea[disabled] textarea,
+ion-footer.add-comment ion-textarea[readonly] textarea {
+  color: var(--ion-color-dark, #222);
+}
+
+ion-footer.add-comment ion-textarea[disabled] textarea::placeholder,
+ion-footer.add-comment ion-textarea[readonly] textarea::placeholder {
+  color: var(--ion-color-dark, #222);
+}
+
 
 ion-button.send-button {
   --padding-start: 10px;

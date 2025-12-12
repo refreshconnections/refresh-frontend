@@ -109,6 +109,7 @@ import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/ac
 import { consumeAgeCheckQuery } from '../utils/age-verification';
 import { apiClient } from '../hooks/api';
 import { useYotiCallbackListener, YotiCallbackPayload } from '../hooks/useYotiCallbackListener';
+import Loading from '../pages/Loading';
 
 
 
@@ -715,9 +716,7 @@ const AppV2: React.FC = () => {
   if (stillCheckingInfo) {
     return (
       <IonApp>
-        <IonContent>
-          <LoadingCard />
-        </IonContent>
+          <Loading />
       </IonApp>
     );
   }

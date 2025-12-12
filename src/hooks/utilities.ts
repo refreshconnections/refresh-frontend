@@ -2075,18 +2075,29 @@ export async function setTextZoom() {
 }
 
 function getTextZoomLimit(platform: string) {
+    return platform === 'android' ? 1.3 : 2.2;
+}
+
+function getXLargeZoom(platform: string) {
     return platform === 'android' ? 1.3 : 1.8;
 }
 
 async function translatePreferenceToZoom(value: string | null, platform: string) {
-    if (!value || value === 'auto' || value === 'default') {
+    if (!value || value === 'auto') {
+        const preferred = (await TextZoom.getPreferred())?.value ?? 1.0;
+        const limit = getTextZoomLimit(platform);
+        const osZoom = clampValue(preferred, limit);
+        const maxZoom = getXLargeZoom(platform);
+        return osZoom > maxZoom ? maxZoom : osZoom;
+    }
+    if (value === 'default') {
         return 1.0;
     }
     if (value === 'large') {
-        return platform === 'android' ? 1.1 : 1.2;
+        return platform === 'android' ? 1.1 : 1.4;
     }
     if (value === 'xl') {
-        return platform === 'android' ? 1.3 : 1.5;
+        return platform === 'android' ? 1.3 : 1.8;
     }
 
     const preferred = (await TextZoom.getPreferred())?.value ?? 1.0;
@@ -2533,7 +2544,7 @@ const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 // Use .match() with GLOBAL and then post-filter
 const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
-const URL_RE = /https?:\/\/[^\s]+/gi;
+const URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
 const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 

@@ -96,6 +96,17 @@ ion-col.filter-column ion-chip {
   background: var(--ion-color-gray)
 }
 
+.refreshments-local-indicator {
+  font-size: clamp(10px, calc(11px * var(--text-scale, 1.1)), 18px);
+  letter-spacing: 0.4px;
+}
+
+.refreshments-filter-title {
+  font-size: clamp(14px, calc(15px * var(--text-scale, 1.1)), 22px);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
 ion-row.hide {
   display: flex;
   justify-content: center
