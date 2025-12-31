@@ -1133,6 +1133,31 @@ export async function announcementUploadPhoto(data, announcement_id) {
     return response.data
 }
 
+export async function eventUploadPhoto(data, event_id) {
+    const url = `${BASE_URL}/api/event/upload_img/` + event_id
+
+    const token = localStorage.getItem("token")
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: data,
+        headers: {
+            'Authorization': "Token " + token,
+            'X-CSRFToken': Cookies.get('csrftoken'),
+            'accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Access-Control-Allow-Origin': '*',
+            'enctype': 'multipart/form-data',
+        }
+    });
+
+    console.log("event upload response", response)
+
+    return response.data
+}
+
 export async function getMessages(id) {
     const url = `${BASE_URL}/api/profiles/chats/messages/` + id + `/`;
 

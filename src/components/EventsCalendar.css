@@ -1,0 +1,167 @@
+.events-calendar-trigger {
+  margin: 0 0 14px;
+  padding: 0 10px;
+}
+
+.events-calendar-trigger ion-button {
+  --border-radius: 18px;
+  margin-left: auto;
+  border: 1px solid var(--ion-color-primary, #2a2a9c);
+}
+
+.refreshments-calendar-modal {
+  --background: #f7f6ff;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-mode-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-mode-switch ion-button {
+  flex: 1;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  min-height: 30px;
+  border-radius: 14px;
+}
+
+.refreshments-calendar-modal .calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.refreshments-calendar-modal .calendar-month-label {
+  font-weight: 600;
+}
+
+.refreshments-calendar-modal .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.refreshments-calendar-modal .calendar-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.refreshments-calendar-modal .calendar-day {
+  border: none;
+  background: #ffffff;
+  border-radius: 10px;
+  min-height: 52px;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+}
+
+.refreshments-calendar-modal .calendar-day--not-current {
+  opacity: 0.6;
+}
+
+.refreshments-calendar-modal .calendar-day--selected {
+  background: #feb68e;
+  color: #1f1f3d;
+  box-shadow: none;
+}
+
+.refreshments-calendar-modal .calendar-day--has-event:not(.calendar-day--selected) {
+  font-weight: 700;
+  border: 2px dotted #5b63d7;
+}
+
+.refreshments-calendar-modal .calendar-day--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.refreshments-calendar-modal .calendar-event-list {
+  margin-bottom: 16px;
+}
+
+.refreshments-calendar-modal .calendar-event-item {
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.refreshments-calendar-modal .calendar-event-item--selected {
+  background: var(--ion-color-step-100);
+}
+
+.refreshments-calendar-modal .calendar-event-detail {
+  margin-top: 12px;
+  width: calc(100% - 16px);
+  margin-left: auto;
+  margin-right: auto;
+  background: #ffffff;
+  border-radius: 20px;
+}
+
+.refreshments-calendar-modal .calendar-event-description {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.refreshments-calendar-modal .calendar-precautions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.refreshments-calendar-modal .calendar-event-detail ion-button {
+  margin-top: 8px;
+}
+
+.calendar-event-image {
+  width: 100%;
+  max-height: 150px;
+  border-radius: 16px;
+  object-fit: contain;
+  margin-top: 12px;
+  cursor: zoom-in;
+  background: #f5f4ff;
+  padding: 8px;
+}
+
+ion-toolbar.events-calendar-toolbar {
+  padding-top: 50px !important;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  background: transparent;
+}
+
+.calendar-grid.calendar-grid--week {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-add-event-row {
+  padding: 8px 0;
+}
+
+.events-calendar-event-form ion-item {
+  --border-radius: 10px;
+  margin: 8px;
+  background: #fff;
+  --box-shadow: 0 6px 12px rgba(34, 33, 88, 0.08);
+}

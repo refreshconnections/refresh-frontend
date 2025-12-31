@@ -1,17 +1,33 @@
 import {
-  IonContent, IonInfiniteScroll,
-  IonInfiniteScrollContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner
+  IonContent,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  RefresherEventDetail,
+  IonPage,
+  IonButton,
+  IonText,
+  IonRow,
+  IonRefresher,
+  IonRefresherContent,
+  IonCol,
+  IonAlert,
+  IonNote,
+  IonSpinner,
+  IonList,
+  useIonAlert,
+  useIonModal,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { arrowDown } from 'ionicons/icons';
-
 import "./Page.css"
 import "./Community.css"
+import "./Refreshments.css"
 import { useGetPosts } from '../hooks/api/refreshments/posts';
+import EventsCalendar from '../components/EventsCalendar';
 import RefreshmentsPost from '../components/RefreshmentsPosts/RefreshmentsPost';
 import { faMagnifyingGlass } from '@fortawesome/pro-solid-svg-icons/faMagnifyingGlass';
 import { faMegaphone } from '@fortawesome/pro-solid-svg-icons/faMegaphone';
 import { faFrown } from '@fortawesome/pro-regular-svg-icons/faFrown';
+import { faCalendar } from '@fortawesome/pro-solid-svg-icons/faCalendar';
 
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -38,6 +54,11 @@ import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocation
 const Refreshments: React.FC = () => {
 
   const queryClient = useQueryClient()
+  const renderCalendarTrigger = (open: () => void) => (
+    <IonButton color="light" fill="solid" className="events-calendar-inline-button refreshments-control-button" onClick={open}>
+      <FontAwesomeIcon icon={faCalendar} />
+    </IonButton>
+  )
 
 
   const [bar, setBar] = useState<string>("")
@@ -97,7 +118,6 @@ const Refreshments: React.FC = () => {
     })
   }
 
-
   useEffect(() => {
 
     setSomePosts(posts?.slice(0, length))
@@ -137,6 +157,9 @@ const Refreshments: React.FC = () => {
     setTimeout(async () => {
       queryClient.invalidateQueries({
         queryKey: ['filteredposts'], exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['events'],
       });
       event.detail.complete();
       setLittleLoading(false)
@@ -191,7 +214,7 @@ const Refreshments: React.FC = () => {
         </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         <IonRow className="filter-buttons">
-          <IonButton onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
+          <IonButton className="refreshments-control-button" onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
             {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
@@ -214,15 +237,16 @@ const Refreshments: React.FC = () => {
             </IonButton>
           </IonCol>
 
+          <EventsCalendar renderTrigger={renderCalendarTrigger} />
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
-            <IonButton color="tertiary" onClick={() => createPostPresent()}>
+            <IonButton className="refreshments-control-button" color="tertiary" onClick={() => createPostPresent()}>
               <FontAwesomeIcon icon={faMegaphone} />
             </IonButton>
             : isCommunityPlus(globalCurrentProfile?.subscription_level) && !settingsCurrentProfile?.settings_create_posts ?
               <></>
               :
               <>
-                <IonButton color="gray" onClick={() => setShowStoreAlert(true)}>
+                <IonButton className="refreshments-control-button" color="gray" onClick={() => setShowStoreAlert(true)}>
                   <FontAwesomeIcon icon={faMegaphone} />
                 </IonButton>
                 <IonAlert

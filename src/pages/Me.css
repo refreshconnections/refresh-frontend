@@ -53,7 +53,7 @@ ion-grid.me-dashboard ion-card-title {
 }
 
 .me-dashboard ion-card ion-card-title {
-  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-size: clamp(1.2rem, 3vw, 2rem);
   line-height: 1.2;
   text-align: center;
   white-space: normal;
