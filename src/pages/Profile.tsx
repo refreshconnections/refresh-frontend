@@ -1,4 +1,4 @@
-import { IonButton, IonCard, IonContent, IonPage, IonRow, IonText, useIonAlert, IonNote, IonFabButton, IonIcon, IonFab, IonCardContent } from '@ionic/react';
+import { IonButton, IonCard, IonContent, IonPage, IonRow, IonText, useIonAlert, IonNote, IonFabButton, IonIcon, IonFab, IonCardContent, useIonModal } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
 import SelfProfile from '../components/SelfProfile';
 import { updateCurrentUserProfile, updateCurrentModeration, sendAnEmail } from '../hooks/utilities';
@@ -15,6 +15,9 @@ import { useGetStatuses } from '../hooks/api/status';
 import StatusToast from '../components/StatusToast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/pro-solid-svg-icons/faArrowsRotate';
+import PersonalProfile from './PersonalProfile';
+import EditLocationModal from '../components/EditLocationModal';
+import EditUsernameModal from '../components/EditUsernameModal';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 
 const Profile: React.FC = () => {
@@ -29,6 +32,15 @@ const Profile: React.FC = () => {
 
 
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
+  const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
+    onDismiss: () => dismissPersonalProfile(),
+  });
+  const [presentLocationModal, dismissLocationModal] = useIonModal(EditLocationModal, {
+    onDismiss: () => dismissLocationModal(),
+  });
+  const [presentUsernameModal, dismissUsernameModal] = useIonModal(EditUsernameModal, {
+    onDismiss: () => dismissUsernameModal(),
+  });
 
 
   const statuses = useGetStatuses().data;
@@ -251,17 +263,27 @@ const Profile: React.FC = () => {
               </IonRow>
               :
               <></>}
-          {data?.created_profile ?
-            <SelfProfile /> :
+          {data?.created_profile ? (
+            <SelfProfile />
+          ) : (
             <IonCard className="created-no-shadow ">
-              <IonCardContent className="ion-justify-content-center" style={{ display: "flex", flexDirection: "column" }}>
-                <img alt="loading-freshy" src="../static/img/flower-mask.png" style={{ width: "40%", alignSelf: "center" }}></img>
-                <IonRow className="ion-justify-content-center" style={{ width: "100%" }}>
-                  <IonButton fill="clear" onClick={() => window.location.reload()}><FontAwesomeIcon icon={faArrowsRotate} /></IonButton>
-                </IonRow>
+              <IonCardContent className="ion-justify-content-center" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <img alt="refresh" src="../static/img/flower-mask.png" style={{ width: '40%', alignSelf: 'center' }} />
+                <IonText className="ion-text-center">
+                  <p style={{ marginTop: 0 }}>Finish your personal profile to unlock Picks and show up in the community.</p>
+                </IonText>
+                <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
+                  Create personal profile
+                </IonButton>
+                <IonButton onClick={() => presentUsernameModal()} expand="block" fill="outline" color="medium">
+                  Update username
+                </IonButton>
+                <IonButton onClick={() => presentLocationModal()} expand="block" fill="outline" color="medium">
+                  Update location
+                </IonButton>
               </IonCardContent>
             </IonCard>
-          }
+          )}
           
           {data?.name &&
           <IonRow className="ion-justify-content-center">

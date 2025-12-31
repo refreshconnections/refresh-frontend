@@ -4,10 +4,16 @@ ion-content.settings ion-note {
   justify-content: center;
   background: #22215e;
   color: white;
-  font-size: 14pt;
+  font-size: calc(14pt * var(--text-scale, 1));
   padding: 10pt;
 }
 
 ion-content.settings ion-label {
-  font-size: 17px !important
+  font-size: calc(17px * var(--text-scale, 1)) !important;
+}
+
+.settings__label-heading {
+  font-size: calc(17px * var(--text-scale, 1));
+  font-weight: normal;
+  display: block;
 }

@@ -13,18 +13,21 @@
   
   ion-card.opened-post ion-card-title {
     padding: 16px;
-    font-size: 24px;
+    font-size: calc(24px * var(--text-scale, 1));
     font-weight: bold;
   }
-  
+
   ion-card.opened-post ion-card-subtitle {
     padding: 16px;
     font-weight: normal;
-    color: var(--ion-color-darkposttext)
+    color: var(--ion-color-darkposttext);
+    font-size: calc(16px * var(--text-scale, 1));
   }
 
   ion-card.opened-post ion-card-content {
-    color: var(--ion-color-darkposttext)
+    color: var(--ion-color-darkposttext);
+    font-size: calc(16px * var(--text-scale, 1));
+    line-height: 1.6;
   }
 
   .css-fix {
@@ -49,6 +52,21 @@
     border-color: var(--ion-color-white);
     background: var(--ion-color-white);
     padding-left: 10pt;
+  }
+
+  ion-footer.create-comment ion-textarea[disabled],
+  ion-footer.create-comment ion-textarea[readonly] {
+    opacity: 0.8 !important;
+  }
+
+  ion-footer.create-comment ion-textarea[disabled] textarea,
+  ion-footer.create-comment ion-textarea[readonly] textarea {
+    color: var(--ion-color-darkposttext);
+  }
+
+  ion-footer.create-comment ion-textarea[disabled] textarea::placeholder,
+  ion-footer.create-comment ion-textarea[readonly] textarea::placeholder {
+    color: var(--ion-color-darkposttext);
   }
   
 
@@ -93,7 +111,7 @@ ion-card-content.post-markdown hr{
 }
 
 ion-card-content.post-markdown p {
-  font-size: 16px
+  font-size: calc(16px * var(--text-scale, 1));
 }
 
 .post-markdown ul {
@@ -109,13 +127,13 @@ ion-card-content.post-markdown p {
 }
 
 .post-markdown h1 {
-    font-size: 22px;
-    font-weight: 700
+    font-size: calc(22px * var(--text-scale, 1));
+    font-weight: 700;
 }
 
 .post-markdown h2 {
-    font-size: 20px;
-    font-weight: 700
+    font-size: calc(20px * var(--text-scale, 1));
+    font-weight: 700;
 }
 
 .post-markdown h3 {

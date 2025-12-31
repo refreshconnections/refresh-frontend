@@ -15,7 +15,7 @@ ion-list.messages .per-page {
 }
 
 ion-label.the-actual-message {
-    font-size: 17px !important;
+    font-size: clamp(17px, calc(18px * var(--text-scale, 1.1)), 22px) !important;
     line-height: 1.3 !important;
     white-space: pre-wrap !important;
 }
@@ -90,7 +90,6 @@ ion-toolbar.text-name .text-header ion-avatar {
     height: 30px;
     margin-right: 5pt;
 }
-
 
 
 
@@ -236,7 +235,7 @@ ion-list.messages ion-item.incoming ion-label.the-actual-message a {
 ion-footer ion-button.message-attachments {
     --padding-start: 5px;
     --padding-end: 0px;
-    font-size: larger
+    font-size: 18px;
 }
 
 ion-footer ion-button.message-send {

@@ -49,12 +49,12 @@ ion-list.comments ion-label {
 }
 
 ion-list.comments ion-label h3{
-  font-size: 13pt;
+  font-size: calc(13pt * var(--text-scale, 1));
 }
 
 ion-list.comments ion-label h4{
   color: var(--ion-color-black);
-  font-size: 11pt;
+  font-size: calc(11pt * var(--text-scale, 1));
 }
 
 ion-label .name-avatar {

@@ -43,7 +43,7 @@ ion-card.refreshments-card-in-list ion-row.hidden {
 }
 
 ion-card.refreshments-card-in-list ion-card-title{
-    font-size: 15pt;
+    font-size: calc(15pt * var(--text-scale, 1));
     font-weight: normal
     
 }
@@ -72,7 +72,8 @@ ion-card.refreshments-card-in-list ion-card-content{
     padding-bottom: 10pt;
     padding-inline-start: 0;
     padding-inline-end: 0;
-
+    font-size: calc(14pt * var(--text-scale, 1));
+    line-height: 1.4;
 }
 
 ion-row.post-likes {
@@ -88,7 +89,7 @@ ion-row.post-likes ion-row {
 }
 
 ion-row.post-likes ion-button {
-    font-size: 17pt;
+    font-size: calc(17pt * var(--text-scale, 1));
 }
 
 ion-card.refreshments-card-in-list .pinned{

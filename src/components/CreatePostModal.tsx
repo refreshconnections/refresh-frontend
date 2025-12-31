@@ -64,8 +64,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     const modal = useRef<HTMLIonModalElement>(null);
 
-
-
     const limits = useGetLimits().data
     const siteSettings = useGetSiteSettings().data
     const currentStreak = useGetCurrentStreak().data;
@@ -324,6 +322,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
         : undefined;
 
     const hasPii: boolean = useMemo(() => containsPii(content), [content]);
+    const mentionsPaymentHandle: boolean = useMemo(() => {
+        if (!content) return false;
+        return /(venmo|paypal|cashapp)/i.test(content);
+    }, [content]);
 
 
 
@@ -430,7 +432,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         <IonCard >
                             <IonItem color="white" lines="none">
                                 <IonCheckbox
-                                    className="createpostcheckbox "
+                                    className="createpostcheckbox"
                                     checked={local}
                                     onIonChange={(e) => setLocal(e.detail.checked)}
                                     labelPlacement="end"
@@ -620,21 +622,24 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     </IonCheckbox>
                                 </IonItem>
 
-                                {(issues.length > 0 || hasPii) && (
+                                {(issues.length > 0 || hasPii || mentionsPaymentHandle) && (
                                     <IonRow className="ion-padding ion-text-center">
                                         <IonText color="danger">
                                             {issues.map((msg, i) => (
                                                 <p key={i} style={{ margin: 0 }}>{msg}</p>
                                             ))}
                                         </IonText>
-                                        {hasPii &&
-                                            <>
-                                                <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
-
-                                                    <ContactDetailsPopover />
-                                                </p>
-                                            </>
-                                        }
+                                        {hasPii && (
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                                Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
+                                                <ContactDetailsPopover />
+                                            </p>
+                                        )}
+                                        {mentionsPaymentHandle && (
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                                Reminder: Requests for payment are only allowed for COVID conscientious events or verified charities on official platforms that provide receipts (personal Venmos, CashApp, etc. cannot be approved).
+                                            </p>
+                                        )}
                                     </IonRow>
                                 )}
 
@@ -685,6 +690,4 @@ const CreatePostModal: React.FC<Props> = (props) => {
 };
 
 export default CreatePostModal;
-
-
 

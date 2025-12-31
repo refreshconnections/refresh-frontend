@@ -21,6 +21,7 @@ import './Page.css';
 import './Picks.css';
 import { getPicksAndProfilesWithFiltersFn, usePicksAndProfilesWithFilters } from '../hooks/api/profiles/picks-and-profiles';
 import { userQueryKeys } from '../hooks/api';
+import PersonalProfile from './PersonalProfile';
 
 const Picksv2: React.FC = () => {
   const queryClient = useQueryClient();
@@ -73,6 +74,10 @@ const Picksv2: React.FC = () => {
     id: offendingId,
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
   });
+  const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
+    onDismiss: () => dismissPersonalProfile(),
+  });
+
 
   const picksStatus = statuses?.find(status => status.page.includes('picks'));
   const isBeforeExpiration = picksStatus?.active && (!picksStatus.expirationDateTime || new Date() < new Date(picksStatus.expirationDateTime));
@@ -418,7 +423,30 @@ const Picksv2: React.FC = () => {
     );
   }
 
-  if (!filterData.created_profile || filterData.deactivated_profile || filterData.paused_profile) {
+  if (!filterData.created_profile) {
+    return (
+      <IonPage>
+        <IonContent>
+          <IonRow className="page-title bigger">
+            <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+          </IonRow>
+          <IonCard className="prelaunch">
+            <IonCardTitle style={{ fontWeight: 'normal' }}>
+              You’ll need a personal profile before browsing Picks.
+            </IonCardTitle>
+            <IonCardContent>
+              <p style={{ marginTop: 0 }}>Finish setting up your profile to unlock Picks and start making one-on-one connections.</p>
+              <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
+                Create personal profile
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  if (filterData.deactivated_profile || filterData.paused_profile) {
     return (
       <IonPage>
         <IonContent>

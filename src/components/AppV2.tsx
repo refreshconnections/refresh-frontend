@@ -4,6 +4,7 @@ import {
   IonApp,
   IonBadge,
   IonContent,
+  IonButton,
   IonIcon,
   IonLabel,
   IonRouterOutlet,
@@ -15,7 +16,7 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Route, Redirect } from 'react-router-dom';
 import Likes from '../pages/Likes';
 import Me from '../pages/Me';
@@ -30,6 +31,7 @@ import Tutorial from '../pages/Tutorial';
 
 import { IonReactRouter } from '@ionic/react-router';
 import { Preferences } from '@capacitor/preferences';
+import { Browser } from '@capacitor/browser';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 
 import './App.css';
@@ -99,7 +101,15 @@ import MultipleAccountsDetected from '../pages/MultipleAccountsDetected';
 import { IconPop } from './IconPop';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
-
+import OnboardingV2 from '../pages/OnboardingV2';
+import AgeVerificationFlow, { AgeCheckState, YOTI_BROWSER_CLOSED_EVENT } from '../pages/AgeVerificationFlow';
+import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
+import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
+import { simulateFakeYotiResultForUser, startYotiSession } from '../hooks/api/account/yoti';
+import { consumeAgeCheckQuery } from '../utils/age-verification';
+import { apiClient } from '../hooks/api';
+import { useYotiCallbackListener, YotiCallbackPayload } from '../hooks/useYotiCallbackListener';
+import Loading from '../pages/Loading';
 
 
 
@@ -149,13 +159,15 @@ if (isMobile()) {
   OneSignalInit();
 }
 
-const App: React.FC = () => {
+const AppV2: React.FC = () => {
 
   // Version 3: July 6 2025
   // Version 4: Oct 15 2025
-  const currentVersion: number = 4
+  // Version 5: Dec 4 2025
+  const currentVersion: number = 5
 
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
 
   const [maintenance, setMaintenance] = useState(false);
@@ -167,6 +179,12 @@ const App: React.FC = () => {
   const [showRequireVersionUpdate, setShowRequireVersionUpdate] = useState(false);
   const [multipleAccountsDetected, setShowMultipleAccountsDetected] = useState(false);
   const [linkInstallComplete, setLinkInstallComplete] = useState(false);
+  const initialAgeResult = useMemo(() => consumeAgeCheckQuery(), []);
+  const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
+  const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
+  const [launchingYoti, setLaunchingYoti] = useState(false);
+  const fakeModeEnabled = process.env.NODE_ENV !== 'production';
+  const refreshYotiResultRef = useRef<((sessionId?: string | null) => Promise<void>) | null>(null);
 
 
 
@@ -176,6 +194,15 @@ const App: React.FC = () => {
   const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
 
+  const { data: eligibilityStatus, isLoading: eligibilityStatusLoading } = useEligibilityStatus(
+    loggedin
+  );
+  const completeAgeVerification = useCompleteAgeVerification({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+    },
+  });
+  const verifyingAgeGate = launchingYoti || completeAgeVerification.isPending;
 
 
   const hasMultipleAccounts = useMultipleAccountsCheck(linkInstallComplete).data;
@@ -223,76 +250,100 @@ const App: React.FC = () => {
   // const paths = ['/community', '/change', '/chats', '/picks', '/me', '/profile']
 
   const checkOnboarded = async () => {
-
     console.log("Gotta check if the user is onboarded")
-    const { value } = await Preferences.get({ key: 'ONBOARDED' });
-
-    if (value == "false") {
-      console.log(`User has not yet onboarded! Redirecting.`);
-      setShowOnboard(true)
-    }
-    else {
-      try {
-        console.log("Current USER PROFILE", globalCurrentProfile)
-        if (globalCurrentProfile?.created_profile == false) {
-          setShowOnboard(true)
-        }
-
-
+    try {
+      if (globalCurrentProfile?.onboarded === false) {
+        setShowOnboard(true)
       }
-      catch (e) {
-        console.log("I don't know what to do.", e)
-
-        console.log(e)
-        console.log("hmmmm", (e as any).response)
-        if ((e as any).response["status"] !== 503) {
-          console.log("shouldn't but did")
-          setShowIssueAlert(true)
-        }
-        else {
-          setMaintenance(true)
-        }
+    } catch (e) {
+      console.log("Onboarding check failed.", e)
+      if ((e as any)?.response?.status !== 503) {
+        setShowIssueAlert(true)
+      } else {
+        setMaintenance(true)
       }
-
     }
   }
 
   useEffect(() => {
-
     const foregroundDisplay = (event: any) => {
-
       event.preventDefault();
 
-      console.log("event", event?.notification)
+      console.log("event", event?.notification);
 
       if ("additionalData" in event?.notification && !!event.notification?.additionalData && "invalidate_key" in event.notification?.additionalData) {
-        queryClient.invalidateQueries({ queryKey: event.notification.additionalData['invalidate_key'] })
-      }
-      else if (event?.notification?.title?.includes("sent you a message")) {
-        queryClient.invalidateQueries({ queryKey: ['unread'] })
+        queryClient.invalidateQueries({ queryKey: event.notification.additionalData["invalidate_key"] });
+      } else if (event?.notification?.title?.includes("sent you a message")) {
+        queryClient.invalidateQueries({ queryKey: ["unread"] });
       }
       event.notification.display();
     };
 
+    let resumeListener: PluginListenerHandle | null = null;
 
-    const listen = async () => {
-      CapApp.addListener('resume', async () => {
-        await applyThemeFromPref()
-        await setTextZoom()
-        if (settingsCurrentProfile?.settings_streak_tracker) {
-          await checkForBrokenStreak()
-        }
-      })
-    }
-    listen();
+    const register = async () => {
+        resumeListener = await CapApp.addListener("resume", async () => {
+          await applyThemeFromPref();
+          await setTextZoom();
+          if (settingsCurrentProfile?.settings_streak_tracker) {
+            await checkForBrokenStreak();
+          }
+          console.log("resume")
+          if (lastYotiSessionId) {
+            await refreshYotiResultRef.current?.();
+          }
+        });
+    };
+
+    register();
 
     if (isMobile()) {
-      console.log("foreground handler")
+      console.log("foreground handler");
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", foregroundDisplay);
     }
 
+    return () => {
+      resumeListener?.remove?.();
+      if (isMobile()) {
+        OneSignal.Notifications.removeEventListener("foregroundWillDisplay", foregroundDisplay);
+      }
+    };
+ }, [
+    applyThemeFromPref,
+    checkForBrokenStreak,
+    lastYotiSessionId,
+    queryClient,
+    settingsCurrentProfile?.settings_streak_tracker,
+  ]);
 
-  }, [])
+  useEffect(() => {
+    let browserListener: PluginListenerHandle | null = null;
+    const dispatchBrowserClosedEvent = () => {
+      if (typeof window === "undefined") return;
+      try {
+        window.dispatchEvent(new CustomEvent(YOTI_BROWSER_CLOSED_EVENT));
+      } catch (error) {
+        console.warn("Unable to dispatch browser closed event", error);
+      }
+    };
+
+    const registerBrowserListener = async () => {
+      try {
+        browserListener = await Browser.addListener("browserFinished", () => {
+          dispatchBrowserClosedEvent();
+          refreshYotiResultRef.current?.();
+        });
+      } catch (error) {
+        console.warn("Unable to register browser close listener", error);
+      }
+    };
+
+    registerBrowserListener();
+
+    return () => {
+      browserListener?.remove?.();
+    };
+  }, []);
 
   useEffect(() => {
 
@@ -303,10 +354,9 @@ const App: React.FC = () => {
   }, [minVersion])
 
   useEffect(() => {
-    console.log("*** the useeffect");
 
     if (globalCurrentProfile) {
-      if (!globalCurrentProfile.created_profile && hasMultipleAccounts) {
+      if (!globalCurrentProfile?.onboarded && hasMultipleAccounts) {
         setShowMultipleAccountsDetected(true);
       } else {
         // If they *have* finished onboarding, never show multiple accounts warning
@@ -398,6 +448,7 @@ const App: React.FC = () => {
       };
 
       await SplashScreen.hide();
+      setAuthReady(true);
     }
 
     checkLoggedIn()
@@ -421,7 +472,18 @@ const App: React.FC = () => {
     setLoading(false)
 
 
-  }, [loggedin, globalCurrentProfile?.created_profile]);
+  }, [loggedin, globalCurrentProfile?.onboarded]);
+
+  useEffect(() => {
+    if (
+      ageCheckState === 'success' &&
+      eligibilityStatus?.needs_age_verification &&
+      !completeAgeVerification.isPending &&
+      !completeAgeVerification.isSuccess
+    ) {
+      completeAgeVerification.mutate();
+    }
+  }, [ageCheckState, eligibilityStatus?.needs_age_verification, completeAgeVerification]);
 
   useEffect(() => {
 
@@ -521,29 +583,207 @@ const App: React.FC = () => {
 
   }, [inAppPurchasesReady, globalCurrentProfile?.uuid])
 
-  if (loading) {
+  useEffect(() => {
+    if (eligibilityStatus?.failed_result) {
+      setAgeCheckState('failed');
+    }
+  }, [eligibilityStatus?.failed_result]);
+
+  const stillCheckingInfo =
+    loading || !authReady || globalIsLoading || settingsIsLoading || eligibilityStatusLoading;
+  const needsAgeVerificationGate =
+    loggedin &&
+    !showOnboard &&
+    (eligibilityStatus?.needs_age_verification ||
+      eligibilityStatus?.failed_result ||
+      Boolean(ageCheckState));
+
+  const startAgeVerification = async () => {
+      setLaunchingYoti(true);
+      try {
+        const session = await startYotiSession();
+        console.log('Launching Yoti at', session.redirect_url);
+        setLastYotiSessionId(session.session_id ?? null);
+        setAgeCheckState('required');
+        await Browser.open({ url: session.redirect_url });
+    } catch (error: any) {
+      console.error('Failed to launch age verification', error);
+      setLastYotiSessionId(null);
+      if (error?.response?.status === 403) {
+        setAgeCheckState('failed');
+      } else {
+        setAgeCheckState('error');
+      }
+    } finally {
+      setLaunchingYoti(false);
+    }
+  };
+
+  const applyAgeCheckState = useCallback(
+    (state: AgeCheckState) => {
+      setAgeCheckState(state);
+      if (state === 'success' || state === 'failed') {
+        queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+      }
+    },
+    [queryClient]
+  );
+
+  const refreshYotiResult = useCallback(
+    async (sessionId?: string | null) => {
+      const normalizedFromCallback = normalizeYotiSessionId(sessionId);
+      const normalizedFromState = normalizeYotiSessionId(lastYotiSessionId);
+      const targetSessionId = normalizedFromCallback ?? normalizedFromState;
+      if (!targetSessionId) {
+        console.warn('No valid Yoti session to refresh');
+        return;
+      }
+      setLastYotiSessionId(targetSessionId);
+      try {
+        const res = await apiClient.get('/account/yoti/result/', {
+          params: { session_id: targetSessionId },
+        });
+        console.log('Yoti result', res.data);
+        const status = res.data?.status;
+        if (status === 'passed') {
+          applyAgeCheckState('success');
+        } else if (status === 'failed') {
+          applyAgeCheckState('failed');
+        } else {
+          applyAgeCheckState('canceled');
+        }
+      } catch (error) {
+        console.error('Unable to refresh Yoti result', error);
+      }
+    },
+    [lastYotiSessionId, applyAgeCheckState]
+  );
+
+  useEffect(() => {
+    refreshYotiResultRef.current = refreshYotiResult;
+  }, [refreshYotiResult]);
+
+  const handleYotiCallbackPayload = useCallback(
+    (payload: YotiCallbackPayload) => {
+      const payloadSessionId = extractSessionIdFromPayload(payload);
+      if (!payloadSessionId) {
+        console.warn('Yoti callback payload missing a session id', payload);
+      }
+      refreshYotiResult(payloadSessionId);
+    },
+    [refreshYotiResult]
+  );
+
+  useYotiCallbackListener(handleYotiCallbackPayload);
+
+  const simulateYotiResult = useCallback(
+    async (state: AgeCheckState) => {
+      const fakeStatusMap: Partial<Record<AgeCheckState, 'passed' | 'failed' | 'inconclusive'>> = {
+        success: 'passed',
+        failed: 'failed',
+        canceled: 'inconclusive',
+      };
+      const fakeStatus = fakeStatusMap[state];
+      if (fakeModeEnabled && fakeStatus) {
+        try {
+          const res = await simulateFakeYotiResultForUser(fakeStatus);
+          if (res.status === 'passed') {
+            applyAgeCheckState('success');
+            return;
+          }
+          if (res.status === 'failed' || res.failed_result) {
+            applyAgeCheckState('failed');
+            return;
+          }
+          applyAgeCheckState('canceled');
+          return;
+        } catch (error) {
+          console.error('Failed to simulate fake Yoti result', error);
+        }
+      }
+      applyAgeCheckState(state);
+    },
+    [applyAgeCheckState, fakeModeEnabled]
+  );
+
+  const contactSupport = () => {
+    window.open(
+      'mailto:help@refreshconnections.com?subject=Age%20verification%20review%20request',
+      '_blank'
+    );
+  };
+
+  if (stillCheckingInfo) {
     return (
       <IonApp>
-        <IonContent>
-          <LoadingCard />
-        </IonContent>
+          <Loading />
       </IonApp>
-    )
+    );
   }
+
   if (window.location.pathname.includes('/construction')) {
-    return <Construction />
+    return <Construction />;
   }
+
   if (showRequireVersionUpdate) {
-    return <IonApp><VersionUpdateRequired /></IonApp>
+    return (
+      <IonApp>
+        <VersionUpdateRequired />
+      </IonApp>
+    );
   }
+
   if (!loggedin) {
-    return <IonApp><Login setLoggedin={setLoggedin} /></IonApp>
+    return (
+      <IonApp>
+        <Login setLoggedin={setLoggedin} />
+      </IonApp>
+    );
   }
+
   if (multipleAccountsDetected) {
-    return <IonApp><MultipleAccountsDetected /></IonApp>
+    return (
+      <IonApp>
+        <MultipleAccountsDetected />
+      </IonApp>
+    );
   }
+
   if (showOnboard) {
-    return <IonApp><Onboarding /></IonApp>
+    return (
+      <IonApp>
+        <OnboardingV2 />
+      </IonApp>
+    );
+  }
+
+  if (needsAgeVerificationGate) {
+    return (
+      <IonApp>
+        
+            <AgeVerificationFlow
+              state={ageCheckState || 'required'}
+              regionName={eligibilityStatus?.region_name}
+              providerName={eligibilityStatus?.provider ? 'Yoti' : undefined}
+              verifying={verifyingAgeGate}
+              onStart={startAgeVerification}
+              onRetry={startAgeVerification}
+              onContinue={() => {
+                setAgeCheckState(null);
+                queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
+              }}
+              onContactSupport={contactSupport}
+              onLogout={handleLogoutCommon}
+              lastSessionId={lastYotiSessionId}
+              onRefreshResult={refreshYotiResult}
+              fakeModeEnabled={fakeModeEnabled}
+              onSimulatePass={() => simulateYotiResult('success')}
+              onSimulateFail={() => simulateYotiResult('failed')}
+              onSimulateInconclusive={() => simulateYotiResult('canceled')}
+            />
+          
+      </IonApp>
+    );
   }
 
   return (
@@ -626,10 +866,10 @@ const App: React.FC = () => {
               <IonIcon icon={cafe} />
               <IonLabel>Refreshments</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="change" href="/change">
-              <IonIcon icon={flash} />
-              <IonLabel>Change</IonLabel>
-            </IonTabButton>
+          <IonTabButton tab="change" href="/change">
+            <IonIcon icon={flash} />
+            <IonLabel>Change</IonLabel>
+          </IonTabButton>
             <IonTabButton tab="person" href="/me">
               <IonIcon icon={personIcon} />
               <IonLabel>Me</IonLabel>
@@ -657,4 +897,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default AppV2;

@@ -2057,59 +2057,99 @@ export async function setFontSizePref(fontsize) {
 }
 
 export async function setTextZoom() {
+    if (!isMobile()) {
+        return;
+    }
+    const platform = Capacitor.getPlatform();
+    const limit = getTextZoomLimit(platform);
+    const stored = await Preferences.get({ key: 'textzoom' });
+    const desired = await translatePreferenceToZoom(stored.value, platform);
 
-    if (isMobile()) {
+    applyRootTextScale(desired);
 
-
-        const { value } = await Preferences.get({ key: 'textzoom' });
-
-        // Android text size values appear bigger and less customizable than iOS
-
-        if (value === 'default') {
-            await TextZoom.set({ value: 1.0 })
-        }
-        else if (value === 'large') {
-            if (Capacitor.getPlatform() === 'android') {
-                await TextZoom.set({ value: 1.1 })
-            }
-            else {
-                await TextZoom.set({ value: 1.2 })
-            }
-        }
-        else if (value === 'xl') {
-            if (Capacitor.getPlatform() === 'android') {
-                await TextZoom.set({ value: 1.3 })
-            }
-            else {
-                await TextZoom.set({ value: 1.5 })
-            }
-        }
-        else {
-            const percentage = (await TextZoom.getPreferred())
-            if (Capacitor.getPlatform() === 'android') {
-                if (percentage?.value > 1.5) {
-                    await TextZoom.set({ value: 1.3 })
-                }
-                else if (percentage?.value > 1.2) {
-                    await TextZoom.set({ value: 1.2 })
-                }
-                else {
-                    await TextZoom.set(percentage)
-                }
-            }
-            else if (Capacitor.getPlatform() === 'android' && percentage?.value > 1.3) {
-                await TextZoom.set({ value: 1.2 })
-            }
-            else if (Capacitor.getPlatform() === 'ios' && percentage?.value > 1.5) {
-                await TextZoom.set({ value: 1.5 })
-            }
-            else {
-                await TextZoom.set(percentage)
-            }
-        }
+    if (platform === 'android') {
+        await applyTextZoom(desired, limit);
     }
 
+    enforceTextSizeAdjust();
+}
 
+function getTextZoomLimit(platform: string) {
+    return platform === 'android' ? 1.3 : 2.2;
+}
+
+function getXLargeZoom(platform: string) {
+    return platform === 'android' ? 1.3 : 1.8;
+}
+
+async function translatePreferenceToZoom(value: string | null, platform: string) {
+    if (!value || value === 'auto') {
+        const preferred = (await TextZoom.getPreferred())?.value ?? 1.0;
+        const limit = getTextZoomLimit(platform);
+        const osZoom = clampValue(preferred, limit);
+        const maxZoom = getXLargeZoom(platform);
+        return osZoom > maxZoom ? maxZoom : osZoom;
+    }
+    if (value === 'default') {
+        return 1.0;
+    }
+    if (value === 'large') {
+        return platform === 'android' ? 1.1 : 1.4;
+    }
+    if (value === 'xl') {
+        return platform === 'android' ? 1.3 : 1.8;
+    }
+
+    const preferred = (await TextZoom.getPreferred())?.value ?? 1.0;
+    return clampValue(preferred, getTextZoomLimit(platform));
+}
+
+async function applyTextZoom(value: number, limit: number) {
+    const safeValue = clampValue(value, limit);
+    try {
+        await TextZoom.set({ value: safeValue });
+        await ensureTextZoomClamped(limit);
+    } catch (error) {
+        console.warn('Unable to set text zoom', error);
+    }
+}
+
+function clampValue(value: number, limit: number) {
+    const min = 1.0;
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return min;
+    }
+    return Math.min(Math.max(value, min), limit);
+}
+
+function enforceTextSizeAdjust() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.documentElement.style.setProperty('-webkit-text-size-adjust', '100%');
+    document.documentElement.style.setProperty('text-size-adjust', '100%');
+}
+
+async function ensureTextZoomClamped(limit: number) {
+    try {
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            const current = await TextZoom.get();
+            if (!current?.value || current.value <= limit) {
+                break;
+            }
+            await TextZoom.set({ value: limit });
+        }
+    } catch (error) {
+        console.warn('Unable to enforce text zoom clamp', error);
+    }
+}
+
+function applyRootTextScale(scale: number) {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const clamped = clampValue(scale, getTextZoomLimit(Capacitor.getPlatform()));
+    document.documentElement.style.setProperty('--text-scale', clamped.toString());
 }
 
 
@@ -2504,6 +2544,7 @@ const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 // Use .match() with GLOBAL and then post-filter
 const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
+const URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
 const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 
@@ -2513,6 +2554,7 @@ export function containsPii(input) {
 
     if (EMAIL_TEST.test(text)) return true;     // non-global => stable
 
-    const candidates = text.match(PHONE_CANDIDATE_RE) ?? [];
+    const withoutUrls = text.replace(URL_RE, " ");
+    const candidates = withoutUrls.match(PHONE_CANDIDATE_RE) ?? [];
     return candidates.some((c) => plausiblePhone(digits(c)));
 }

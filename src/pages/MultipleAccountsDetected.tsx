@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { IonContent, IonPage, IonRow, IonText, IonButton, IonFooter } from '@ionic/react';
 import React from 'react'
 import { handleLogoutCommon } from '../hooks/utilities';
+import "./MultipleAccountsDetected.css";
 
 
 
@@ -13,8 +14,8 @@ const MultipleAccountsDetected: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent className="ion-padding">
-            
+            <IonContent className="ion-padding multiple-accounts-detected">
+
             <IonRow className="page-title">
             <IonText className="bold" style={{padding: "15pt", textAlign: "center"}}>
               <h1>It looks like you've had an account with Refresh Connections before.</h1>

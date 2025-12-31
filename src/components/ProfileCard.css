@@ -148,6 +148,36 @@ ion-accordion-group .profile-card {
   color: var(--ion-color-black)
 }
 
+.profile-card,
+.profile-card ion-card-title,
+.profile-card ion-card-subtitle,
+.profile-card ion-accordion ion-item,
+.profile-card ion-accordion ion-label,
+.profile-card ion-accordion ion-note,
+.profile-card ion-card-content,
+.profile-card ion-card-content p,
+.profile-card ion-chip,
+.profile-card ion-button,
+.profile-card ion-text {
+  font-size: calc(1rem * var(--text-scale, 1));
+}
+
+.profile-card ion-card-title {
+  font-size: calc(1.5rem * var(--text-scale, 1));
+}
+
+.profile-card .basic-label,
+.profile-card .basic-value,
+.profile-card ion-card-content .field-label,
+.profile-card ion-card-content .field-value {
+  font-size: clamp(16px, calc(16px * var(--text-scale, 1.1)), 24px);
+}
+
+.profile-card ion-card-content ion-label p,
+.profile-card ion-card-content ion-label h2 {
+  font-size: clamp(18px, calc(18px * var(--text-scale, 1.2)), 28px);
+}
+
 ion-button.looking-for-buttons {
   --padding-start: 0;
   --padding-end: 0;

@@ -196,11 +196,15 @@ const Refreshments: React.FC = () => {
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
             <IonRow class="ion-flex-column">
-              {!bars || (bars == "all") ?
-                <IonText color="gray">Showing all posts</IonText> :
-                <IonText color="gray">Showing filtered posts</IonText>
-              }
-                <IonText style={{fontSize: "8pt"}} color="gray">Local posts {localPostsOn ? "on " : "off "}<FontAwesomeIcon icon={localPostsOn ? faLocationDot : faLocationDotSlash}/></IonText>
+              {!bars || (bars == "all") ? (
+                <IonText className="refreshments-filter-title" color="gray">Showing all posts</IonText>
+              ) : (
+                <IonText className="refreshments-filter-title" color="gray">Showing filtered posts</IonText>
+              )}
+                <IonText className="refreshments-local-indicator" color="gray">
+                  Local posts {localPostsOn ? "on " : "off "}
+                  <FontAwesomeIcon icon={localPostsOn ? faLocationDot : faLocationDotSlash}/>
+                </IonText>
 
             </IonRow>
 

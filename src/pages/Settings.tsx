@@ -524,7 +524,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem> */}
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Initiate mode</span>
+              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Initiate mode</span>
                   {data?.subscription_level == "pro" ?
                     <p>Only connect with people you Like first</p>
                     : <></>}
@@ -536,7 +536,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Pro banner</span>
+              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Pro banner</span>
                   {data?.subscription_level == "pro" ?
                     <p>Choose your banner in the Me tab under Profile - The Basics.</p>
                     : <></>}
@@ -548,7 +548,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show Chats Keep-it-going</span></IonLabel>
+              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Chats Keep-it-going</span></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_chats_next_reminder": e.detail.checked })}
                   disabled={data?.subscription_level !== "pro"}
@@ -591,7 +591,7 @@ const Settings: React.FC = () => {
             <IonList>
               <IonItem>
                 <IonLabel className="ion-text-wrap">
-                  <span style={{ fontSize: "17px" }}>Connect from Refreshments</span>
+                  <span className="settings__label-heading">Connect from Refreshments</span>
                   <p>View Profiles and send / receive Likes from posts and comments in the Refreshments Bar.</p>
                 </IonLabel>
                 <IonToggle slot="end"
@@ -609,7 +609,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Track your streak</span>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Track your streak</span>
                   <p>Earned streaks can unlock Pro features.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => setStreakTracker(e.detail.checked)}
@@ -618,7 +618,7 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Show streak increases</span>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show streak increases</span>
                   <p>A little pop-up will tell you every time your streak increases.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_show_streak_increase": e.detail.checked })}

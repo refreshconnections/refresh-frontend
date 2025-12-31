@@ -29,10 +29,10 @@ ion-grid.me-dashboard ion-card-title {
     top: 40%;
     left: 46%;
     color: white;
-    font-size: 1.3em;
+    font-size: calc(1.3em * var(--text-scale, 1));
     max-width: 60%;
     -webkit-text-size-adjust: none;
-    text-size-adjust: none
+    text-size-adjust: none;
 }
 
 @media only screen and (max-width: 380px) {
@@ -41,9 +41,20 @@ ion-grid.me-dashboard ion-card-title {
         top: 40%;
         left: 42%;
         color: white;
-        font-size: 1.2em;
+        font-size: calc(1.2em * var(--text-scale, 1));
         max-width: 60%;
         -webkit-text-size-adjust: none;
-        text-size-adjust: none
+        text-size-adjust: none;
     }
+}
+
+.me-dashboard ion-card {
+  border-radius: 16px;
+}
+
+.me-dashboard ion-card ion-card-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
