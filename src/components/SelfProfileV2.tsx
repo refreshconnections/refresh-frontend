@@ -221,13 +221,13 @@ const SelfProfileV2: React.FC = () => {
             fixation_movie: false,
             fixation_tv: false,
             fixation_topic: false,
-        fixation_musicalartist: false,
-        fixation_game: false,
-        fixation_album: false,
-        gender_sexuality_choices: false,
-        settings_show_gender_sexuality: false,
-        settings_show_long_covid: false,
-        long_covid_choices: false,
+            fixation_musicalartist: false,
+            fixation_game: false,
+            fixation_album: false,
+            gender_sexuality_choices: false,
+            settings_show_gender_sexuality: false,
+            settings_show_long_covid: false,
+            long_covid_choices: false,
         });
     }, [currentUserProfile]);
 
@@ -325,21 +325,8 @@ const SelfProfileV2: React.FC = () => {
         await updateCurrentUserProfile({ settings_show_gender_sexuality: checked });
         setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_gender_sexuality: checked }));
     };
-    const handleLongCovidToggle = async (value: string, checked: boolean) => {
-        setForm(prev => {
-            const next = checked
-                ? (prev.long_covid_choices.includes(value) ? prev.long_covid_choices : [...prev.long_covid_choices, value])
-                : prev.long_covid_choices.filter(v => v !== value);
-            updateCurrentUserProfile({ long_covid_choices: next });
-            setOriginalForm(prevOrg => ({ ...prevOrg, long_covid_choices: next }));
-            return { ...prev, long_covid_choices: next };
-        });
-    };
-    const toggleLongCovidShow = async (checked: boolean) => {
-        setForm(prev => ({ ...prev, settings_show_long_covid: checked }));
-        await updateCurrentUserProfile({ settings_show_long_covid: checked });
-        setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_long_covid: checked }));
-    };
+
+
 
     const summaryKeys = ['pronouns', 'job', 'politics', 'school'] as const;
     type SummaryKey = typeof summaryKeys[number];
@@ -375,15 +362,6 @@ const SelfProfileV2: React.FC = () => {
     };
     const getCovidLabel = (value: number) => Object.values(covidGroups).flat().find(item => item[0] === value)?.[1];
 
-    const longCovidOptions: [string, string][] = [
-        ['I have LC', 'living with Long Covid'],
-        ['LC caretaker', 'caring for someone with Long Covid'],
-        ['I need help remote', 'needing remote support'],
-        ['I need help local', 'needing local support'],
-        ['I could help remote', 'offering remote support'],
-        ['I could help local', 'offering local support'],
-    ];
-    const getLongCovidLabel = (value: string) => longCovidOptions.find(([val]) => val === value)?.[1];
     const genderSexualityOptions: [string, string][][] = [
         [
             ['straight', 'Straight/heterosexual'],
@@ -420,9 +398,7 @@ const SelfProfileV2: React.FC = () => {
     const covidSummary = form.covid_precautions
         .map(value => getCovidLabel(value))
         .filter(Boolean) as string[];
-    const longCovidSummary = form.long_covid_choices
-        .map(value => getLongCovidLabel(value))
-        .filter(Boolean) as string[];
+
     const talkAboutKeys = ['together_idea', 'freetime', 'hobby', 'petpeeve', 'talent'] as const;
     const favoriteKeys = ['fave_book', 'fave_movie', 'fave_tv', 'fave_topic', 'fave_musicalartist', 'fave_game', 'fave_album', 'fave_sport_watch', 'fave_sport_play'] as const;
     const fixationKeys = ['fixation_book', 'fixation_movie', 'fixation_tv', 'fixation_topic', 'fixation_musicalartist', 'fixation_game', 'fixation_album'] as const;
@@ -548,16 +524,15 @@ const SelfProfileV2: React.FC = () => {
                 </IonRow>
                 <IonAccordionGroup>
                     <IonAccordion value="basics">
-                        <IonItem slot="header" lines="none">
+                        <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
                                 <h2>Basics</h2>
-                                <IonText color="medium">Keep these current so friends always know what you’re up to.</IonText>
                             </IonLabel>
                         </IonItem>
                         <IonCardContent slot="content" className="no-padding-cc">
                             <IonRow>
                                 <IonCol size="12">
-                                    <IonCard>
+                                    <IonCard className="accordion-card">
                                         <IonCardContent className="card-grid basics-card">
                                             <div className="info-section">
                                                 <IonItem>
@@ -617,79 +592,71 @@ const SelfProfileV2: React.FC = () => {
                                 </IonCol>
                             </IonRow>
                         </IonCardContent>
-                </IonAccordion>
+                    </IonAccordion>
                 </IonAccordionGroup>
 
                 <IonAccordionGroup>
                     <IonAccordion value="lookingFor">
-                        <IonItem slot="header" lines="none">
+                        <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
                                 <h2>Looking for</h2>
-                                <IonText color="medium">Choose how you show up in other members' filters.</IonText>
                             </IonLabel>
                         </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
-                            <IonRow>
-                                <IonCol size="12">
-                                    <IonCard>
-                                        <IonCardContent className="card-grid">
-                                            <div className="field-header">
-                                                <p>Looking for</p>
-                                                <IonButton
-                                                    size="small"
-                                                    fill="outline"
-                                                    color="primary"
-                                                    onClick={() => setEditing(prev => ({ ...prev, looking_for: !prev.looking_for }))}
-                                                >
-                                                    {editing.looking_for ? 'Done' : 'Edit'}
-                                                </IonButton>
-                                            </div>
-                                            {form.looking_for.length > 0 ? (
-                                                <ul className="choice-summary">
-                                                    {form.looking_for.map(val => (
-                                                        <li key={val}>{val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}</li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <p className="placeholder">Nothing selected yet.</p>
-                                            )}
-                                            {editing.looking_for && (
-                                                <div className="choice-editor">
-                                                    <IonList lines="none">
-                                                        {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map(val => (
-                                                            <IonItem key={val} lines="none">
-                                                                <IonCheckbox
-                                                                    slot="start"
-                                                                    value={val}
-                                                                    checked={form.looking_for.includes(val)}
-                                                                    onIonChange={e => handleLookingForToggle(val, e.detail.checked)}
-                                                                />
-                                                                {val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}
-                                                            </IonItem>
-                                                        ))}
-                                                    </IonList>
-                                                </div>
-                                            )}
-                                        </IonCardContent>
-                                    </IonCard>
-                                </IonCol>
-                            </IonRow>
+
+                        <IonCardContent slot="content" className="card-grid">
+                            <div className="field-header">
+                                <p>Looking for</p>
+                                <IonButton
+                                    size="small"
+                                    fill="outline"
+                                    color="primary"
+                                    onClick={() => setEditing(prev => ({ ...prev, looking_for: !prev.looking_for }))}
+                                >
+                                    {editing.looking_for ? 'Done' : 'Edit'}
+                                </IonButton>
+                            </div>
+                            {form.looking_for.length > 0 ? (
+                                <ul className="choice-summary">
+                                    {form.looking_for.map(val => (
+                                        <li key={val}>{val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="placeholder">Nothing selected yet.</p>
+                            )}
+                            {editing.looking_for && (
+                                <div className="choice-editor">
+                                    <IonList lines="none">
+                                        {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map(val => (
+                                            <IonItem key={val} lines="none">
+                                                <IonCheckbox
+                                                    slot="start"
+                                                    value={val}
+                                                    checked={form.looking_for.includes(val)}
+                                                    onIonChange={e => handleLookingForToggle(val, e.detail.checked)}
+                                                />
+                                                {val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}
+                                            </IonItem>
+                                        ))}
+                                    </IonList>
+                                </div>
+                            )}
                         </IonCardContent>
+
                     </IonAccordion>
                 </IonAccordionGroup>
 
                 <IonAccordionGroup>
                     <IonAccordion value="genderSexuality">
-                        <IonItem slot="header" lines="none">
+                        <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
                                 <h2>Gender &amp; Sexuality</h2>
-                                <IonText color="medium">Keep these filters up to date so others can find you.</IonText>
                             </IonLabel>
                         </IonItem>
                         <IonCardContent slot="content" className="no-padding-cc">
                             <IonRow>
                                 <IonCol size="12">
-                                    <IonCard>
+                                    <IonCard className="accordion-card">
                                         <IonCardContent className="card-grid">
                                             <div className="field-header">
                                                 <p>Show on profile?</p>
@@ -749,16 +716,15 @@ const SelfProfileV2: React.FC = () => {
 
                 <IonAccordionGroup>
                     <IonAccordion value="covidBehaviors">
-                        <IonItem slot="header" lines="none">
+                        <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
                                 <h2>Covid Behaviors</h2>
-                                <IonText color="medium">Keep people informed about your precautions.</IonText>
                             </IonLabel>
                         </IonItem>
                         <IonCardContent slot="content" className="no-padding-cc">
                             <IonRow>
                                 <IonCol size="12">
-                                    <IonCard>
+                                    <IonCard className="accordion-card">
                                         <IonCardContent className="card-grid">
                                             <div className="field-header">
                                                 <p>Precautions</p>
@@ -809,84 +775,20 @@ const SelfProfileV2: React.FC = () => {
                                 </IonCol>
                             </IonRow>
                         </IonCardContent>
-                </IonAccordion>
-                </IonAccordionGroup>
-
-                <IonAccordionGroup>
-                    <IonAccordion value="longCovid">
-                        <IonItem slot="header" lines="none">
-                            <IonLabel>
-                                <h2>Long Covid Support</h2>
-                                <IonText color="medium">Share what kind of help you need or offer.</IonText>
-                            </IonLabel>
-                        </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
-                            <IonRow>
-                                <IonCol size="12">
-                                    <IonCard>
-                                        <IonCardContent className="card-grid">
-                                            <div className="field-header">
-                                                <p>Show on profile?</p>
-                                                <IonToggle
-                                                    slot="end"
-                                                    checked={form.settings_show_long_covid}
-                                                    onIonChange={e => toggleLongCovidShow(e.detail.checked)}
-                                                />
-                                            </div>
-                                            <div className="field-header">
-                                                <p>Long Covid choices</p>
-                                                <IonButton
-                                                    size="small"
-                                                    fill="outline"
-                                                    color="primary"
-                                                    onClick={() => setEditing(prev => ({ ...prev, long_covid_choices: !prev.long_covid_choices }))}
-                                                >
-                                                    {editing.long_covid_choices ? 'Done' : 'Edit'}
-                                                </IonButton>
-                                            </div>
-                                            {longCovidSummary.length > 0 ? (
-                                                <ul className="choice-summary">
-                                                    {longCovidSummary.map(label => (
-                                                        <li key={label}>{label}</li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <p className="placeholder">No long Covid preferences yet.</p>
-                                            )}
-                                            {editing.long_covid_choices && (
-                                                <div className="choice-editor">
-                                                    {longCovidOptions.map(([value, label]) => (
-                                                        <IonItem key={value} lines="none">
-                                                            <IonCheckbox
-                                                                slot="start"
-                                                                checked={form.long_covid_choices.includes(value)}
-                                                                onIonChange={e => handleLongCovidToggle(value, e.detail.checked)}
-                                                            />
-                                                            {label}
-                                                        </IonItem>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </IonCardContent>
-                                    </IonCard>
-                                </IonCol>
-                            </IonRow>
-                        </IonCardContent>
                     </IonAccordion>
                 </IonAccordionGroup>
 
                 <IonAccordionGroup>
                     <IonAccordion value="talk">
-                        <IonItem slot="header" lines="none">
+                        <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
                                 <h2>Let's Talk About</h2>
-                                <IonText color="medium">Share your vibe, favorites, and current fixations so others have something to ask about.</IonText>
                             </IonLabel>
                         </IonItem>
                         <IonCardContent slot="content" className="no-padding-cc">
                             <IonRow>
                                 <IonCol size="12">
-                                    <IonCard>
+                                    <IonCard className="accordion-card">
                                         <IonCardContent className="card-grid">
                                             <SectionHeader title="Tell me about..." />
                                             {talkAboutKeys.map(key => (

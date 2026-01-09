@@ -9,6 +9,38 @@
 .self-profile-v2 ion-accordion ion-item{
   --background: var(--ion-color-white)
 }
+.self-profile-v2 ion-accordion {
+  margin-bottom: 16px;
+  background: var(--ion-color-white);
+  border-radius: 10pt
+}
+
+.accordion-header {
+  --background: var(--ion-color-white);
+  margin: 0 12px;
+  transition: border-radius 0.2s;
+}
+
+.accordion-card {
+  border-top: none;
+  overflow: hidden;
+  transition: border-radius 0.2s;
+}
+
+.accordion-card ion-card-content {
+  padding: 0;
+}
+
+ion-accordion[aria-expanded='false'] .accordion-card {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+ion-accordion[aria-expanded='true'] .accordion-card {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 
 
 
@@ -294,8 +326,12 @@ ion-card-content .card-grid {
 }
 
 .self-profile-v2 ion-card {
-  border-radius: 20px;
   box-shadow: none;
   margin: 0 0 0 8px;
   --background: var(--ion-color-white);
+}
+
+.self-profile-v2 .no-padding-cc {
+  padding: 0 !important;
+  margin-bottom: 8px
 }
