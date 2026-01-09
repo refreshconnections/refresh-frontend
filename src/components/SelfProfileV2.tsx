@@ -8,6 +8,8 @@ import {
     IonLabel,
     IonTextarea,
     IonInput,
+    IonSelect,
+    IonSelectOption,
     IonGrid,
     IonRow,
     IonCol,
@@ -151,6 +153,7 @@ const SelfProfileV2: React.FC = () => {
     });
     const queryClient = useQueryClient();
     const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['current'] });
+    
     const [presentShowContactSupportAlert] = useIonAlert();
 
     useEffect(() => {
@@ -229,12 +232,9 @@ const SelfProfileV2: React.FC = () => {
             settings_show_long_covid: false,
             long_covid_choices: false,
         });
+       
     }, [currentUserProfile]);
 
-    const onChange = (key: keyof SimpleFormState) => (e: any) => {
-        const value = e?.detail?.value ?? '';
-        setForm(prev => ({ ...prev, [key]: value }));
-    };
     const isFieldEmpty = (key: keyof SimpleFormState) => {
         const value = form[key];
         if (Array.isArray(value)) {
@@ -286,19 +286,26 @@ const SelfProfileV2: React.FC = () => {
         },
     });
 
-    const startEdit = (key: keyof SimpleFormState) => setEditing(prev => ({ ...prev, [key]: true }));
+    const startEdit = (key: keyof SimpleFormState) => {
+        
+        setEditing(prev => ({ ...prev, [key]: true }));
+    };
     const stopEdit = (key: keyof SimpleFormState) => setEditing(prev => ({ ...prev, [key]: false }));
     const cancelEdit = (key: keyof SimpleFormState) => {
         setForm(prev => ({
             ...prev,
             [key]: originalForm[key],
         }));
+        
         stopEdit(key);
     };
 
-    const saveField = async (key: keyof SimpleFormState) => {
-        await updateCurrentUserProfile({ [key]: form[key] });
-        setOriginalForm(prev => ({ ...prev, [key]: form[key] }));
+    const saveField = async (key: keyof SimpleFormState, value?: string) => {
+        const nextValue = value ?? (form[key] as string);
+        await updateCurrentUserProfile({ [key]: nextValue });
+        setForm(prev => ({ ...prev, [key]: nextValue }));
+        setOriginalForm(prev => ({ ...prev, [key]: nextValue }));
+        
         stopEdit(key);
     };
     const handleCovidToggle = async (value: number, checked: boolean) => {
@@ -391,6 +398,8 @@ const SelfProfileV2: React.FC = () => {
         .map(value => getGenderSexualityLabel(value))
         .filter(Boolean) as string[];
 
+    const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
+
     if (!currentUserProfile) {
         return null;
     }
@@ -413,7 +422,7 @@ const SelfProfileV2: React.FC = () => {
         covid_precaution_info: { label: 'Covid behaviors', description: 'Let people know how you approach safety.' },
         looking_for: { label: 'Looking for', description: 'What types of connections you are open to.' },
         covid_precautions: { label: 'Covid precautions', description: 'Detailed precautions that describe your boundaries.' },
-        together_idea: { label: "Let's talk about...", description: 'What they can ask you about.' },
+        together_idea: { label: "What we could do together", description: 'What they can ask you about.' },
         freetime: { label: 'Freetime', description: 'What you do with your free time.' },
         hobby: { label: 'Hobby', description: 'Your favorite hobbies.' },
         petpeeve: { label: 'Pet peeve', description: 'Things that bother you.' },
@@ -440,6 +449,7 @@ const SelfProfileV2: React.FC = () => {
         long_covid_choices: { label: 'Long Covid choices', description: 'Support availability for Long Covid.' },
     };
 
+
     const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
         <div className="talk-section-header">
             <h3>{title}</h3>
@@ -449,6 +459,12 @@ const SelfProfileV2: React.FC = () => {
 
     const EditableField: React.FC<{ fieldKey: keyof SimpleFormState; multiline?: boolean }> = ({ fieldKey, multiline }) => {
         const value = form[fieldKey];
+        const [editorValue, setEditorValue] = useState((value as string) ?? '');
+        
+        useEffect(() => {
+        if (!editing[fieldKey]) return;
+        setEditorValue((form[fieldKey] as string) ?? '');
+        }, [editing[fieldKey]]);
         return (
             <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
                 <div className="editing-section">
@@ -460,9 +476,16 @@ const SelfProfileV2: React.FC = () => {
                                     <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
                                         Cancel
                                     </IonButton>
-                                    <IonButton size="small" color="success" onClick={() => saveField(fieldKey)}>
-                                        Save
-                                    </IonButton>
+                                <IonButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() => {
+                                        const valueToSave = fieldKey
+                                        saveField(fieldKey, valueToSave);
+                                    }}
+                                >
+                                    Save
+                                </IonButton>
                                 </>
                             ) : (
                                 <IonButton
@@ -479,25 +502,110 @@ const SelfProfileV2: React.FC = () => {
                     </div>
                     {editing[fieldKey] ? (
                         multiline ? (
-                            <IonTextarea
-                                value={value as string}
-                                onIonInput={onChange(fieldKey)}
-                                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
-                                autoGrow
-                                rows={4}
-                            />
+                                <IonTextarea
+                                    value={editorValue}
+                                    onIonInput={e => setEditorValue(e.detail.value ?? '')}
+                                    placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+                                    autoGrow
+                                    rows={4}
+                                />
+                            ) : (
+                                <IonInput
+                                    value={editorValue}
+                                    onIonInput={e => setEditorValue(e.detail.value ?? '')}
+                                    placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+                                    debounce={250}
+                                />
+                            )
                         ) : (
-                            <IonInput
-                                value={value as string}
-                                onIonInput={onChange(fieldKey)}
-                                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
-                                debounce={250}
-                            />
-                        )
-                    ) : (
                         <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>
                             {(value as string) || <i>Not provided</i>}
                         </h2>
+                    )}
+                </div>
+            </IonItem>
+        );
+    };
+
+    const EditablePronouns: React.FC = () => {
+        const value = form.pronouns;
+        const [editorValue, setEditorValue] = useState(value ?? '');
+        const [editorChoice, setEditorChoice] = useState<string>(
+            pronounOptions.includes(value as (typeof pronounOptions)[number]) ? (value as string) : 'custom',
+        );
+
+        useEffect(() => {
+            if (!editing.pronouns) return;
+            const nextValue = form.pronouns ?? '';
+            setEditorValue(nextValue);
+            setEditorChoice(pronounOptions.includes(nextValue as (typeof pronounOptions)[number]) ? nextValue : 'custom');
+        }, [editing.pronouns]);
+
+        return (
+            <IonItem className={`card-field ${editing.pronouns ? 'editing' : ''}`}>
+                <div className="editing-section">
+                    <div className="field-header">
+                        <p>{fieldLabels.pronouns.label}</p>
+                        <div className="field-actions">
+                            {editing.pronouns ? (
+                                <>
+                                    <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
+                                        Cancel
+                                    </IonButton>
+                                    <IonButton
+                                        size="small"
+                                        color="success"
+                                        onClick={() => {
+                                            saveField('pronouns', editorValue);
+                                        }}
+                                    >
+                                        Save
+                                    </IonButton>
+                                </>
+                            ) : (
+                                <IonButton
+                                    size="small"
+                                    fill="outline"
+                                    color="primary"
+                                    className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`}
+                                    onClick={() => startEdit('pronouns')}
+                                >
+                                    Edit
+                                </IonButton>
+                            )}
+                        </div>
+                    </div>
+                    {editing.pronouns ? (
+                        <>
+                            <IonSelect
+                                value={editorChoice}
+                                placeholder="Select pronouns"
+                                onIonChange={e => {
+                                    const nextChoice = e.detail.value as string;
+                                    setEditorChoice(nextChoice);
+                                    if (nextChoice !== 'custom') {
+                                        setEditorValue(nextChoice);
+                                    }
+                                }}
+                            >
+                                {pronounOptions.map(option => (
+                                    <IonSelectOption key={option} value={option}>
+                                        {option}
+                                    </IonSelectOption>
+                                ))}
+                                <IonSelectOption value="custom">Custom</IonSelectOption>
+                            </IonSelect>
+                            {editorChoice === 'custom' && (
+                                <IonInput
+                                    value={editorValue}
+                                    onIonInput={e => setEditorValue(e.detail.value ?? '')}
+                                    placeholder="Enter your pronouns"
+                                    debounce={250}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        <h2 className="multi-line">{value || <i>Not provided</i>}</h2>
                     )}
                 </div>
             </IonItem>
@@ -526,71 +634,65 @@ const SelfProfileV2: React.FC = () => {
                     <IonAccordion value="basics">
                         <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>
-                                <h2>Basics</h2>
+                                <h2>The Basics</h2>
                             </IonLabel>
                         </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
-                            <IonRow>
-                                <IonCol size="12">
-                                    <IonCard className="accordion-card">
-                                        <IonCardContent className="card-grid basics-card">
-                                            <div className="info-section">
-                                                <IonItem>
-                                                    <IonLabel>
-                                                        <p>Name:</p>
-                                                        <h2>{currentUserProfile.name}</h2>
-                                                    </IonLabel>
-                                                    <IonButton
-                                                        size="small"
-                                                        color="primary"
-                                                        fill="outline"
-                                                        className="tiny-edit"
-                                                        onClick={() => showContactSupport('name', 'name')}
-                                                    >
-                                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
-                                                    </IonButton>
-                                                </IonItem>
-                                                <IonItem>
-                                                    <IonLabel>
-                                                        <p>Age:</p>
-                                                        <h2>{currentUserProfile.age}</h2>
-                                                    </IonLabel>
-                                                    <IonButton
-                                                        size="small"
-                                                        color="primary"
-                                                        fill="outline"
-                                                        className="tiny-edit"
-                                                        onClick={() => showContactSupport('age', 'birthdate')}
-                                                    >
-                                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
-                                                    </IonButton>
-                                                </IonItem>
-                                                <IonItem>
-                                                    <IonLabel>
-                                                        <p>Location:</p>
-                                                        <h2>{currentUserProfile.location}</h2>
-                                                    </IonLabel>
-                                                    <IonButton size="small" color="primary" fill="outline" onClick={() => locationPresent()}>
-                                                        Edit
-                                                    </IonButton>
-                                                </IonItem>
-                                                <IonItem>
-                                                    <IonLabel>
-                                                        <p>Refreshments username:</p>
-                                                        <h2>{currentUserProfile.username}</h2>
-                                                    </IonLabel>
-                                                    <IonButton size="small" color="primary" fill="outline" onClick={() => usernamePresent()}>
-                                                        Edit
-                                                    </IonButton>
-                                                </IonItem>
-                                            </div>
-                                            {summaryKeys.map(key => (
-                                                <EditableField key={key} fieldKey={key} />
-                                            ))}
-                                        </IonCardContent>
-                                    </IonCard>
-                                </IonCol>
-                            </IonRow>
+                        <IonCardContent slot="content" className="accordion-body">
+
+                            <div className="info-section">
+                                <IonItem>
+                                    <IonLabel>
+                                        <p>Name:</p>
+                                        <h2>{currentUserProfile.name}</h2>
+                                    </IonLabel>
+                                    <IonButton
+                                        size="small"
+                                        color="primary"
+                                        fill="outline"
+                                        className="tiny-edit"
+                                        onClick={() => showContactSupport('name', 'name')}
+                                    >
+                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                    </IonButton>
+                                </IonItem>
+                                <IonItem>
+                                    <IonLabel>
+                                        <p>Age:</p>
+                                        <h2>{currentUserProfile.age}</h2>
+                                    </IonLabel>
+                                    <IonButton
+                                        size="small"
+                                        color="primary"
+                                        fill="outline"
+                                        className="tiny-edit"
+                                        onClick={() => showContactSupport('age', 'birthdate')}
+                                    >
+                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                    </IonButton>
+                                </IonItem>
+                                <IonItem>
+                                    <IonLabel>
+                                        <p>Location:</p>
+                                        <h2>{currentUserProfile.location}</h2>
+                                    </IonLabel>
+                                    <IonButton size="small" color="primary" fill="outline" onClick={() => locationPresent()}>
+                                        Edit
+                                    </IonButton>
+                                </IonItem>
+                                <IonItem>
+                                    <IonLabel>
+                                        <p>Refreshments username:</p>
+                                        <h2>{currentUserProfile.username}</h2>
+                                    </IonLabel>
+                                    <IonButton size="small" color="primary" fill="outline" onClick={() => usernamePresent()}>
+                                        Edit
+                                    </IonButton>
+                                </IonItem>
+                            </div>
+                            {summaryKeys.map(key =>
+                                key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />,
+                            )}
+
                         </IonCardContent>
                     </IonAccordion>
                 </IonAccordionGroup>
@@ -603,7 +705,7 @@ const SelfProfileV2: React.FC = () => {
                             </IonLabel>
                         </IonItem>
 
-                        <IonCardContent slot="content" className="card-grid">
+                        <IonCardContent slot="content" className="card-grid accordion-body">
                             <div className="field-header">
                                 <p>Looking for</p>
                                 <IonButton
@@ -653,7 +755,7 @@ const SelfProfileV2: React.FC = () => {
                                 <h2>Gender &amp; Sexuality</h2>
                             </IonLabel>
                         </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
+                        <IonCardContent slot="content" className="no-padding-cc accordion-body">
                             <IonRow>
                                 <IonCol size="12">
                                     <IonCard className="accordion-card">
@@ -721,7 +823,7 @@ const SelfProfileV2: React.FC = () => {
                                 <h2>Covid Behaviors</h2>
                             </IonLabel>
                         </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
+                        <IonCardContent slot="content" className="no-padding-cc accordion-body">
                             <IonRow>
                                 <IonCol size="12">
                                     <IonCard className="accordion-card">
@@ -785,12 +887,11 @@ const SelfProfileV2: React.FC = () => {
                                 <h2>Let's Talk About</h2>
                             </IonLabel>
                         </IonItem>
-                        <IonCardContent slot="content" className="no-padding-cc">
+                        <IonCardContent slot="content" className="no-padding-cc accordion-body">
                             <IonRow>
                                 <IonCol size="12">
                                     <IonCard className="accordion-card">
                                         <IonCardContent className="card-grid">
-                                            <SectionHeader title="Tell me about..." />
                                             {talkAboutKeys.map(key => (
                                                 <EditableField key={key} fieldKey={key} multiline />
                                             ))}

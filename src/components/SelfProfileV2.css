@@ -15,34 +15,10 @@
   border-radius: 10pt
 }
 
-.accordion-header {
-  --background: var(--ion-color-white);
-  margin: 0 12px;
-  transition: border-radius 0.2s;
+.accordion-body {
+  margin-bottom: 8px;
+  padding-top: 0px
 }
-
-.accordion-card {
-  border-top: none;
-  overflow: hidden;
-  transition: border-radius 0.2s;
-}
-
-.accordion-card ion-card-content {
-  padding: 0;
-}
-
-ion-accordion[aria-expanded='false'] .accordion-card {
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-}
-
-ion-accordion[aria-expanded='true'] .accordion-card {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-
-
-
 
 .preview-row {
   margin-bottom: 8px;
@@ -253,7 +229,6 @@ ion-card-content .card-grid {
 .accordion-header {
   --background: var(--ion-color-white);
   border-radius: 16px;
-  margin: 8px 0;
   pointer-events: none;
 }
 
@@ -279,7 +254,7 @@ ion-card-content .card-grid {
 }
 
 .accordion-header ion-label {
-  padding: 12px 16px;
+  padding: 8px;
 }
 
 .accordion-header .accordion-toggle {
@@ -329,9 +304,4 @@ ion-card-content .card-grid {
   box-shadow: none;
   margin: 0 0 0 8px;
   --background: var(--ion-color-white);
-}
-
-.self-profile-v2 .no-padding-cc {
-  padding: 0 !important;
-  margin-bottom: 8px
 }
