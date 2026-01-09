@@ -19,6 +19,7 @@ import PersonalProfile from './PersonalProfile';
 import EditLocationModal from '../components/EditLocationModal';
 import EditUsernameModal from '../components/EditUsernameModal';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
+import SelfProfileV2 from '../components/SelfProfileV2';
 
 const Profile: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -264,7 +265,7 @@ const Profile: React.FC = () => {
               :
               <></>}
           {data?.created_profile ? (
-            <SelfProfile />
+                        <SelfProfileV2 />
           ) : (
             <IonCard className="created-no-shadow ">
               <IonCardContent className="ion-justify-content-center" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

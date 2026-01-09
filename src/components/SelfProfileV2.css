@@ -1,0 +1,301 @@
+.self-profile-v2 {
+  padding: 8px 0;
+}
+
+.self-profile-v2 .section-title-row {
+  margin-bottom: 8px;
+}
+
+.self-profile-v2 ion-accordion ion-item{
+  --background: var(--ion-color-white)
+}
+
+
+
+.preview-row {
+  margin-bottom: 8px;
+}
+
+.info-card ion-item {
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+.info-section {
+  display: flex;
+  flex-direction: column;
+  padding-left: 0;
+}
+.info-section ion-item {
+  --background: transparent;
+  --padding-start: 16px;
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-section ion-item .tiny-edit {
+  min-width: 58px;
+  min-height: 34px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  padding: 0 14px;
+}
+
+.info-button {
+  --padding-inline: 0;
+  width: 32px;
+  height: 32px;
+}
+
+ion-card-content .card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  --background: var(--ion-color-white)
+}
+
+.card-field.editing {
+  align-items: stretch;
+}
+
+.editing-section {
+  width: 100%;
+}
+
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.field-header p {
+  font-weight: 600;
+  margin: 0;
+  color: var(--ion-color-medium);
+}
+
+.edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.card-field ion-label h2 {
+  font-size: 1rem;
+}
+
+.card-field ion-text small {
+  display: block;
+  margin-top: 4px;
+}
+
+.card-field ion-input,
+.card-field ion-textarea {
+  margin-top: 8px;
+  width: 100%;
+  display: block;
+  --background: var(--ion-color-white);
+  --border-radius: 12px;
+  --padding-start: 12px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-end: 12px;
+}
+
+.card-edit {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --background: var(--ion-color-light);
+  border-radius: 12px;
+}
+
+.card-edit ion-input,
+.card-edit ion-textarea {
+  width: 100%;
+}
+
+.card-field.editing ion-input::part(native),
+.card-field.editing ion-textarea::part(native) {
+  background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.choice-editor ion-input::part(native),
+.choice-editor ion-textarea::part(native) {
+  background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.field-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.gender-choices {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gender-choices .field-header {
+  flex-direction: row;
+  width: 100%;
+}
+
+.talk-section-header {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.talk-section-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.talk-section-header ion-text {
+  font-size: 0.85rem;
+}
+
+.edit-button.blank-edit {
+  --border-color: var(--ion-color-navy, #0b1c44);
+  color: var(--ion-color-navy, #0b1c44);
+}
+
+.edit-button.blank-edit::part(native) {
+  border-color: var(--ion-color-navy, #0b1c44);
+  color: var(--ion-color-navy, #0b1c44);
+}
+
+.field-actions .cancel-button {
+  min-width: 50px;
+  padding: 0 10px;
+}
+
+.field-actions.display-only {
+  margin-top: 4px;
+}
+
+.multi-line {
+  white-space: pre-line;
+}
+
+.save-row {
+  margin-top: 8px;
+}
+
+.list-edit ion-item {
+  --background: var(--ion-color-light);
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.covid-list ion-text {
+  display: block;
+  margin: 8px 0 4px;
+}
+
+
+.card-field.editing .field-header {
+  margin-bottom: 0;
+}
+
+.accordion-content {
+  padding: 0;
+}
+
+.accordion-header {
+  --background: var(--ion-color-white);
+  border-radius: 16px;
+  margin: 8px 0;
+  pointer-events: none;
+}
+
+.accordion-header.open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.accordion-header.open + .accordion-content {
+  padding-top: 0;
+  background: var(--ion-color-white);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  margin-top: -1px;
+}
+
+.accordion-header.open + .accordion-content ion-card {
+  margin-top: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.accordion-header ion-label {
+  padding: 12px 16px;
+}
+
+.accordion-header .accordion-toggle {
+  pointer-events: auto;
+  margin-right: 8px;
+}
+
+.accordion-toggle ion-icon {
+  transition: transform 0.2s ease;
+}
+
+.accordion-toggle.expanded ion-icon {
+  transform: rotate(180deg);
+}
+
+.choice-summary {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 0;
+  color: var(--ion-color-dark);
+}
+
+.choice-editor {
+  margin-top: 8px;
+}
+
+.choice-editor ion-item {
+  --background: var(--ion-color-light);
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.choice-editor ion-list {
+  margin: 0;
+}
+
+.choice-group + .choice-group {
+  margin-top: 12px;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--ion-color-medium);
+}
+
+.self-profile-v2 ion-card {
+  border-radius: 20px;
+  box-shadow: none;
+  margin: 0 0 0 8px;
+  --background: var(--ion-color-white);
+}

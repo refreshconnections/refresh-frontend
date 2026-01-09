@@ -16,6 +16,7 @@ import {
   IonTitle,
   IonToolbar,
   useIonModal,
+  IonCard,
 } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
@@ -26,6 +27,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
+import CreatePostModal from './CreatePostModal';
 
 import './CreateEventModal.css';
 
@@ -63,6 +65,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [lat, setLat] = useState<number | null>(null);
   const [long, setLong] = useState<number | null>(null);
   const [eventType, setEventType] = useState('');
+  const [showPostTip, setShowPostTip] = useState(false);
+  const { data: globalProfile } = useGetGlobalAppCurrentProfile();
+  const [presentPostModal, dismissPostModal] = useIonModal(CreatePostModal, {
+    preferred_name: globalProfile?.preferred_name ?? '',
+    username: globalProfile?.username ?? '',
+    onDismiss: () => dismissPostModal(),
+  });
   const [precautions, setPrecautions] = useState<string[]>([]);
   const [sensitive, setSensitive] = useState(false);
   const [sensitiveDescription, setSensitiveDescription] = useState('');
@@ -100,8 +109,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
       }
     dismissCitySelector();
   };
-
-  const { data: globalProfile } = useGetGlobalAppCurrentProfile();
 
   useEffect(() => {
     if (!postingIdentity) {
@@ -200,6 +207,28 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="create-event-modal">
+        <IonCard className="post-tip-card">
+          <IonItem>
+            <IonLabel>Want this to create a post too?</IonLabel>
+            <IonButton slot="end" fill="outline" onClick={() => setShowPostTip((prev) => !prev)}>
+              {showPostTip ? 'Hide info' : 'Show info'}
+            </IonButton>
+          </IonItem>
+          {showPostTip && (
+            <>
+              <IonItem lines="none">
+                <IonLabel className="ion-text-wrap">
+                  Use the Refreshments post form if you also want this event to appear in the feed; moderators can publish a post based on your event request. Clicking the button below will take you to that form.
+                </IonLabel>
+              </IonItem>
+              <IonItem lines="none">
+                <IonButton expand="block" onClick={() => presentPostModal()}>
+                  Open the post form
+                </IonButton>
+              </IonItem>
+            </>
+          )}
+        </IonCard>
         <IonList>
           <div className="create-event-section">
             <IonItem>

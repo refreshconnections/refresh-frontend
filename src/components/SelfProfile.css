@@ -90,6 +90,17 @@ ion-grid.picture-grid img{
   height: 100px;
 }
 
+.edit-mode-row {
+  margin: 8px 0;
+}
+
+.edit-mode-note {
+  padding: 0 16px 12px;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
 input[type="file"] {
   display: none;
 }

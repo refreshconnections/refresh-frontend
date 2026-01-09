@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { apiClient } from "../hooks/api/api-client";
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, useIonRouter, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 
@@ -97,6 +98,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [locationLabel, setLocationLabel] = useState<string>("");
     const [lat, setLat] = useState<number | null>(null);
     const [long, setLong] = useState<number | null>(null);
+    const [eventStart, setEventStart] = useState<string>("");
+    const [eventEnd, setEventEnd] = useState<string>("");
+    const [eventType, setEventType] = useState<string>("");
+    const [eventWarning, setEventWarning] = useState<string[] | null>(null);
 
     const [ackEmail, setAckEmail] = useState(false);
 
@@ -260,8 +265,48 @@ const CreatePostModal: React.FC<Props> = (props) => {
     });
 
 
-    async function handlePostSubmit(e: any) {
-        e.preventDefault();
+    const createEventFromPost = async (announcementId: number) => {
+        try {
+            const locationValue = (locationLabel || location) || null;
+            const eventPayload = {
+                name: title,
+                description: content,
+                start_datetime: eventStart,
+                end_datetime: eventEnd,
+                location: local ? locationValue : locationValue,
+                location_point_lat: local ? lat : null,
+                location_point_long: local ? long : null,
+                local_only: local ? 'true' : 'false',
+                sensitive: sensitiveContent ? 'true' : 'false',
+                sensitive_description: sensitiveDescription,
+                include_profile: includeProfile ? 'true' : 'false',
+                anonymous: byline === "Anonymous" ? 'true' : 'false',
+                event_type: eventType || (local ? 'in_person_only' : 'virtual_only'),
+                post: announcementId,
+            };
+
+            await apiClient.post('/api/event/', eventPayload);
+        } catch (error) {
+            console.error("Event creation failed", error);
+        }
+    };
+
+    async function handlePostSubmit(e?: any, skipWarning = false) {
+        if (e) {
+            e.preventDefault();
+        }
+
+        if (!skipWarning && bar === "events") {
+            const missing: string[] = [];
+            if (!eventType) missing.push("Event type");
+            if (!eventStart) missing.push("Event start");
+            if (!eventEnd) missing.push("Event end");
+            if (missing.length) {
+                setEventWarning(missing);
+                return;
+            }
+        }
+
         setAfterSendWait(true)
 
         setErrors([])
@@ -277,6 +322,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 uploadData.append("coverPhoto", imageDataToUpload);
                 await announcementUploadPhoto(uploadData, ann_response.data['announcement_id'])
             }
+            if (bar === "events" && eventStart && eventEnd && eventType) {
+                await createEventFromPost(ann_response.data['announcement_id']);
+            }
+            setEventStart("");
+            setEventEnd("");
+            setEventType("");
             setShowAlert(true)
         }
         catch (error: any) {
@@ -395,8 +446,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
                         <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
                     </IonCard>}
-                {isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2 && isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)) ?
-                    <form onSubmit={handlePostSubmit}>
+                {isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2 && isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)) ? (
+                    <>
+                        <form onSubmit={(e) => handlePostSubmit(e)}>
 
                         {/* Title */}
                         <IonCard>
@@ -489,6 +541,41 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 </IonSelect>
                             </IonItem>
                         </IonCard>
+
+                        {bar === "events" && (
+                            <IonCard>
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">
+                                        Event type<span className="required-star">*</span>
+                                    </IonLabel>
+                                    <IonSelect value={eventType} placeholder="Select event type" onIonChange={(e) => setEventType(e.detail.value ?? "")}>
+                                        <IonSelectOption value="virtual_only">Virtual only</IonSelectOption>
+                                        <IonSelectOption value="in_person_only">In-person only</IonSelectOption>
+                                        <IonSelectOption value="in_person_with_virtual_option">In-person + virtual</IonSelectOption>
+                                    </IonSelect>
+                                </IonItem>
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">
+                                        Event start<span className="required-star">*</span>
+                                    </IonLabel>
+                                    <IonInput
+                                        type="datetime-local"
+                                        value={eventStart}
+                                        onIonInput={(e) => setEventStart(e.detail.value ?? "")}
+                                    />
+                                </IonItem>
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">
+                                        Event end<span className="required-star">*</span>
+                                    </IonLabel>
+                                    <IonInput
+                                        type="datetime-local"
+                                        value={eventEnd}
+                                        onIonInput={(e) => setEventEnd(e.detail.value ?? "")}
+                                    />
+                                </IonItem>
+                            </IonCard>
+                        )}
 
                         {title && byline && bar &&
                             <>
@@ -662,9 +749,28 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         }
 
 
-                    </form>
-
-                    :
+                        </form>
+                        <IonAlert
+                            isOpen={!!eventWarning}
+                            header="Incomplete event details"
+                            message={`You chose "Event" but did not fill all required event fields (${eventWarning?.join(', ')}). The post will still be submitted, but we won't create a calendar entry until moderators review it.`}
+                            buttons={[
+                            {
+                                text: 'Cancel',
+                                role: 'cancel',
+                                handler: () => setEventWarning(null)
+                            },
+                            {
+                                text: 'Submit post anyway',
+                                handler: () => {
+                                    setEventWarning(null);
+                                    handlePostSubmit(undefined, true);
+                                }
+                            }
+                        ]}
+                        />
+                    </>
+                ) :
                     !isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ?
                         <IonCard color="white" className="ion-padding ion-text-center">
                             <IonText className="ion-text-center"><p>Your account needs to be at least 2 weeks old to submit a post. </p>
@@ -690,4 +796,3 @@ const CreatePostModal: React.FC<Props> = (props) => {
 };
 
 export default CreatePostModal;
-

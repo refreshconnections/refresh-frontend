@@ -951,6 +951,17 @@ const TextModal: React.FC<Props> = (props) => {
             setShowAttachments(false);
         } catch (e) {
             console.error('uploadPhoto failed', e);
+            const msg =
+                e instanceof Error
+                ? e.message
+                : typeof e === "string"
+                    ? e
+                    : JSON.stringify(e);
+
+            confirmAlert({
+                message: `Photo picker failed. Please check Photos permissions in Settings.\n\n${msg}`,
+                buttons: [{ text: "OK", role: "cancel" }],
+            });
         }
     };
 

@@ -1,0 +1,915 @@
+import {
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
+    IonButton,
+    IonItem,
+    IonLabel,
+    IonTextarea,
+    IonInput,
+    IonGrid,
+    IonRow,
+    IonCol,
+    IonText,
+    IonList,
+    IonCheckbox,
+    IonToggle,
+    IonAccordion,
+    IonAccordionGroup,
+    IonIcon,
+    useIonModal,
+    useIonAlert,
+} from '@ionic/react';
+import React, { useState, useEffect } from 'react';
+import './SelfProfileV2.css';
+
+import { updateCurrentUserProfile } from '../hooks/utilities';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import ProfileModal from './ProfileModal';
+import EditLocationModal from './EditLocationModal';
+import EditUsernameModal from './EditUsernameModal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { faFaceViewfinder, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
+import { chevronDownOutline } from 'ionicons/icons';
+import { useQueryClient } from '@tanstack/react-query';
+
+type SimpleFormState = {
+    pronouns: string;
+    bio: string;
+    location: string;
+    job: string;
+    politics: string;
+    school: string;
+    covid_precaution_info: string;
+    looking_for: string[];
+    covid_precautions: number[];
+    together_idea: string;
+    freetime: string;
+    hobby: string;
+    petpeeve: string;
+    talent: string;
+    fave_book: string;
+    fave_movie: string;
+    fave_tv: string;
+    fave_topic: string;
+    fave_musicalartist: string;
+    fave_game: string;
+    fave_album: string;
+    fave_sport_watch: string;
+    fave_sport_play: string;
+    fixation_book: string;
+    fixation_movie: string;
+    fixation_tv: string;
+    fixation_topic: string;
+    fixation_musicalartist: string;
+    fixation_game: string;
+    fixation_album: string;
+    gender_sexuality_choices: string[];
+    settings_show_gender_sexuality: boolean;
+    settings_show_long_covid: boolean;
+    long_covid_choices: string[];
+};
+
+const initialForm: SimpleFormState = {
+    pronouns: '',
+    bio: '',
+    location: '',
+    job: '',
+    politics: '',
+    school: '',
+    covid_precaution_info: '',
+    looking_for: [],
+    covid_precautions: [],
+    together_idea: '',
+    freetime: '',
+    hobby: '',
+    petpeeve: '',
+    talent: '',
+    fave_book: '',
+    fave_movie: '',
+    fave_tv: '',
+    fave_topic: '',
+    fave_musicalartist: '',
+    fave_game: '',
+    fave_album: '',
+    fave_sport_watch: '',
+    fave_sport_play: '',
+    fixation_book: '',
+    fixation_movie: '',
+    fixation_tv: '',
+    fixation_topic: '',
+    fixation_musicalartist: '',
+    fixation_game: '',
+    fixation_album: '',
+    gender_sexuality_choices: [],
+    settings_show_gender_sexuality: false,
+    settings_show_long_covid: false,
+    long_covid_choices: [],
+};
+
+const SelfProfileV2: React.FC = () => {
+    const currentUserProfile: any = useGetCurrentProfile().data;
+    const [form, setForm] = useState<SimpleFormState>(initialForm);
+    const [originalForm, setOriginalForm] = useState<SimpleFormState>(initialForm);
+    const [editing, setEditing] = useState<Record<keyof SimpleFormState, boolean>>({
+        pronouns: false,
+        bio: false,
+        location: false,
+        job: false,
+        politics: false,
+        school: false,
+        covid_precaution_info: false,
+        looking_for: false,
+        covid_precautions: false,
+        together_idea: false,
+        freetime: false,
+        hobby: false,
+        petpeeve: false,
+        talent: false,
+        fave_book: false,
+        fave_movie: false,
+        fave_tv: false,
+        fave_topic: false,
+        fave_musicalartist: false,
+        fave_game: false,
+        fave_album: false,
+        fave_sport_watch: false,
+        fave_sport_play: false,
+        fixation_book: false,
+        fixation_movie: false,
+        fixation_tv: false,
+        fixation_topic: false,
+        fixation_musicalartist: false,
+        fixation_game: false,
+        fixation_album: false,
+        long_covid_choices: false,
+        gender_sexuality_choices: false,
+        settings_show_gender_sexuality: false,
+        settings_show_long_covid: false,
+    });
+    const queryClient = useQueryClient();
+    const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['current'] });
+    const [presentShowContactSupportAlert] = useIonAlert();
+
+    useEffect(() => {
+        if (!currentUserProfile) return;
+        const nextForm = {
+            pronouns: currentUserProfile.pronouns ?? '',
+            bio: currentUserProfile.bio ?? '',
+            location: currentUserProfile.location ?? '',
+            job: currentUserProfile.job ?? '',
+            politics: currentUserProfile.politics ?? '',
+            school: currentUserProfile.school ?? '',
+            covid_precaution_info: currentUserProfile.covid_precaution_info ?? '',
+            looking_for: currentUserProfile.looking_for ?? [],
+            covid_precautions: currentUserProfile.covid_precautions ?? [],
+            together_idea: currentUserProfile.together_idea ?? '',
+            freetime: currentUserProfile.freetime ?? '',
+            hobby: currentUserProfile.hobby ?? '',
+            petpeeve: currentUserProfile.petpeeve ?? '',
+            talent: currentUserProfile.talent ?? '',
+            fave_book: currentUserProfile.fave_book ?? '',
+            fave_movie: currentUserProfile.fave_movie ?? '',
+            fave_tv: currentUserProfile.fave_tv ?? '',
+            fave_topic: currentUserProfile.fave_topic ?? '',
+            fave_musicalartist: currentUserProfile.fave_musicalartist ?? '',
+            fave_game: currentUserProfile.fave_game ?? '',
+            fave_album: currentUserProfile.fave_album ?? '',
+            fave_sport_watch: currentUserProfile.fave_sport_watch ?? '',
+            fave_sport_play: currentUserProfile.fave_sport_play ?? '',
+            fixation_book: currentUserProfile.fixation_book ?? '',
+            fixation_movie: currentUserProfile.fixation_movie ?? '',
+            fixation_tv: currentUserProfile.fixation_tv ?? '',
+            fixation_topic: currentUserProfile.fixation_topic ?? '',
+            fixation_musicalartist: currentUserProfile.fixation_musicalartist ?? '',
+            fixation_game: currentUserProfile.fixation_game ?? '',
+            fixation_album: currentUserProfile.fixation_album ?? '',
+            settings_show_long_covid: currentUserProfile.settings_show_long_covid ?? false,
+            long_covid_choices: currentUserProfile.long_covid_choices ?? [],
+            gender_sexuality_choices: currentUserProfile.gender_sexuality_choices ?? [],
+            settings_show_gender_sexuality: currentUserProfile.settings_show_gender_sexuality ?? false,
+        };
+        setForm(nextForm);
+        setOriginalForm(nextForm);
+        setEditing({
+            pronouns: false,
+            bio: false,
+            location: false,
+            job: false,
+            politics: false,
+            school: false,
+            covid_precaution_info: false,
+            looking_for: false,
+            covid_precautions: false,
+            together_idea: false,
+            freetime: false,
+            hobby: false,
+            petpeeve: false,
+            talent: false,
+            fave_book: false,
+            fave_movie: false,
+            fave_tv: false,
+            fave_topic: false,
+            fave_musicalartist: false,
+            fave_game: false,
+            fave_album: false,
+            fave_sport_watch: false,
+            fave_sport_play: false,
+            fixation_book: false,
+            fixation_movie: false,
+            fixation_tv: false,
+            fixation_topic: false,
+        fixation_musicalartist: false,
+        fixation_game: false,
+        fixation_album: false,
+        gender_sexuality_choices: false,
+        settings_show_gender_sexuality: false,
+        settings_show_long_covid: false,
+        long_covid_choices: false,
+        });
+    }, [currentUserProfile]);
+
+    const onChange = (key: keyof SimpleFormState) => (e: any) => {
+        const value = e?.detail?.value ?? '';
+        setForm(prev => ({ ...prev, [key]: value }));
+    };
+    const isFieldEmpty = (key: keyof SimpleFormState) => {
+        const value = form[key];
+        if (Array.isArray(value)) {
+            return value.length === 0;
+        }
+        return typeof value === 'string' ? value.trim() === '' : false;
+    };
+
+    const handleLookingForToggle = async (value: string, checked: boolean) => {
+        setForm(prev => {
+            const next = checked ? [...prev.looking_for, value] : prev.looking_for.filter(v => v !== value);
+            updateCurrentUserProfile({ looking_for: next });
+            return { ...prev, looking_for: next };
+        });
+    };
+
+    const showContactSupport = async (field: string, field2: string) => {
+        presentShowContactSupportAlert({
+            header: `We require you to contact support if you need to update your ${field}.`,
+            subHeader: `Please use our Help feature and include what you would like your ${field2} updated to.`,
+            buttons: [
+                { text: 'Nevermind', role: 'cancel' },
+                { text: 'Get Help', handler: () => { window.location.href = '/help'; } },
+            ],
+        });
+    };
+
+    const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
+        cardData: currentUserProfile,
+        pro: true,
+        settingsAlt: true,
+        profiletype: 'self',
+        yourName: currentUserProfile?.name || '',
+        onDismiss: (data: any, role: any) => {
+            refreshProfile();
+            profileDismiss(data, role);
+        },
+    });
+    const [locationPresent, locationDismiss] = useIonModal(EditLocationModal, {
+        onDismiss: () => {
+            refreshProfile();
+            locationDismiss();
+        },
+    });
+    const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
+        onDismiss: () => {
+            refreshProfile();
+            usernameDismiss();
+        },
+    });
+
+    const startEdit = (key: keyof SimpleFormState) => setEditing(prev => ({ ...prev, [key]: true }));
+    const stopEdit = (key: keyof SimpleFormState) => setEditing(prev => ({ ...prev, [key]: false }));
+    const cancelEdit = (key: keyof SimpleFormState) => {
+        setForm(prev => ({
+            ...prev,
+            [key]: originalForm[key],
+        }));
+        stopEdit(key);
+    };
+
+    const saveField = async (key: keyof SimpleFormState) => {
+        await updateCurrentUserProfile({ [key]: form[key] });
+        setOriginalForm(prev => ({ ...prev, [key]: form[key] }));
+        stopEdit(key);
+    };
+    const handleCovidToggle = async (value: number, checked: boolean) => {
+        setForm(prev => {
+            const next = checked
+                ? (prev.covid_precautions.includes(value) ? prev.covid_precautions : [...prev.covid_precautions, value])
+                : prev.covid_precautions.filter(v => v !== value);
+            updateCurrentUserProfile({ covid_precautions: next });
+            return { ...prev, covid_precautions: next };
+        });
+    };
+    const handleGenderSexualityToggle = async (value: string, checked: boolean) => {
+        setForm(prev => {
+            const next = checked
+                ? (prev.gender_sexuality_choices.includes(value) ? prev.gender_sexuality_choices : [...prev.gender_sexuality_choices, value])
+                : prev.gender_sexuality_choices.filter(v => v !== value);
+            updateCurrentUserProfile({ gender_sexuality_choices: next });
+            setOriginalForm(prevOrg => ({ ...prevOrg, gender_sexuality_choices: next }));
+            return { ...prev, gender_sexuality_choices: next };
+        });
+    };
+    const toggleGenderSexualityShow = async (checked: boolean) => {
+        setForm(prev => ({ ...prev, settings_show_gender_sexuality: checked }));
+        await updateCurrentUserProfile({ settings_show_gender_sexuality: checked });
+        setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_gender_sexuality: checked }));
+    };
+    const handleLongCovidToggle = async (value: string, checked: boolean) => {
+        setForm(prev => {
+            const next = checked
+                ? (prev.long_covid_choices.includes(value) ? prev.long_covid_choices : [...prev.long_covid_choices, value])
+                : prev.long_covid_choices.filter(v => v !== value);
+            updateCurrentUserProfile({ long_covid_choices: next });
+            setOriginalForm(prevOrg => ({ ...prevOrg, long_covid_choices: next }));
+            return { ...prev, long_covid_choices: next };
+        });
+    };
+    const toggleLongCovidShow = async (checked: boolean) => {
+        setForm(prev => ({ ...prev, settings_show_long_covid: checked }));
+        await updateCurrentUserProfile({ settings_show_long_covid: checked });
+        setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_long_covid: checked }));
+    };
+
+    const summaryKeys = ['pronouns', 'job', 'politics', 'school'] as const;
+    type SummaryKey = typeof summaryKeys[number];
+    const aboutKeys = ['bio'] as const;
+    type AboutKey = typeof aboutKeys[number];
+    const covidGroups: Record<string, [number, string][]> = {
+        Home: [
+            [18, 'I have no routine daily exposures'],
+            [3, 'I live with non-Covid cautious people'],
+            [8, 'I live alone/with others that share my level of Covid caution'],
+        ],
+        Work: [
+            [1, 'I work from home'],
+            [9, 'I go to work/school but always in a high quality mask'],
+            [16, 'My work requires poor/no masking'],
+        ],
+        Play: [
+            [2, 'I eat outside at restaurants with good airflow and spacing'],
+            [15, 'I do takeout from restaurants'],
+            [5, 'I attend outdoor events'],
+            [12, 'I attend outdoor events with a mask on'],
+            [6, 'I attend indoor events with a mask on'],
+        ],
+        Other: [
+            [4, "I'm immunocompromised/have a high-risk health condition"],
+            [17, 'I am a caregiver'],
+            [7, 'I only leave home/outdoors for medically necessary reasons'],
+            [10, 'I am living with Long Covid'],
+            [11, 'I use air purifiers and use HEPA filters'],
+            [13, 'I ask for testing before all meetups'],
+            [14, 'I ask for testing before indoor meetups'],
+        ],
+    };
+    const getCovidLabel = (value: number) => Object.values(covidGroups).flat().find(item => item[0] === value)?.[1];
+
+    const longCovidOptions: [string, string][] = [
+        ['I have LC', 'living with Long Covid'],
+        ['LC caretaker', 'caring for someone with Long Covid'],
+        ['I need help remote', 'needing remote support'],
+        ['I need help local', 'needing local support'],
+        ['I could help remote', 'offering remote support'],
+        ['I could help local', 'offering local support'],
+    ];
+    const getLongCovidLabel = (value: string) => longCovidOptions.find(([val]) => val === value)?.[1];
+    const genderSexualityOptions: [string, string][][] = [
+        [
+            ['straight', 'Straight/heterosexual'],
+            ['gay', 'Gay/homosexual'],
+            ['lesbian', 'Lesbian'],
+            ['bi', 'Bi'],
+            ['pan', 'Pan'],
+            ['gray ace', 'Gray ace'],
+            ['ace', 'Ace'],
+            ['demi', 'Demisexual'],
+            ['queer', 'Queer'],
+        ],
+        [
+            ['man', 'Man'],
+            ['woman', 'Woman'],
+            ['nb', 'Nonbinary/gender nonconforming'],
+            ['genderfluid', 'Gender Fluid'],
+            ['cis', 'Cis'],
+            ['trans', 'Trans'],
+            ['intersex', 'Intersex'],
+            ['mono', 'Monogamous'],
+            ['poly', 'Polyamorous'],
+        ],
+    ];
+    const getGenderSexualityLabel = (value: string) => genderSexualityOptions.flat().find(([val]) => val === value)?.[1];
+    const genderSexualitySummary = form.gender_sexuality_choices
+        .map(value => getGenderSexualityLabel(value))
+        .filter(Boolean) as string[];
+
+    if (!currentUserProfile) {
+        return null;
+    }
+
+    const covidSummary = form.covid_precautions
+        .map(value => getCovidLabel(value))
+        .filter(Boolean) as string[];
+    const longCovidSummary = form.long_covid_choices
+        .map(value => getLongCovidLabel(value))
+        .filter(Boolean) as string[];
+    const talkAboutKeys = ['together_idea', 'freetime', 'hobby', 'petpeeve', 'talent'] as const;
+    const favoriteKeys = ['fave_book', 'fave_movie', 'fave_tv', 'fave_topic', 'fave_musicalartist', 'fave_game', 'fave_album', 'fave_sport_watch', 'fave_sport_play'] as const;
+    const fixationKeys = ['fixation_book', 'fixation_movie', 'fixation_tv', 'fixation_topic', 'fixation_musicalartist', 'fixation_game', 'fixation_album'] as const;
+
+    const fieldLabels: Record<keyof SimpleFormState, { label: string; description: string }> = {
+        location: { label: 'Location', description: 'Where you spend most of your time.' },
+        pronouns: { label: 'Pronouns', description: 'How others can refer to you.' },
+        job: { label: 'Job', description: 'Current profession or focus.' },
+        politics: { label: 'Politics', description: 'Share how you lean on issues.' },
+        school: { label: 'School', description: 'Education you are currently attending or attended.' },
+        bio: { label: 'Bio', description: 'A quick snapshot for people meeting you.' },
+        covid_precaution_info: { label: 'Covid behaviors', description: 'Let people know how you approach safety.' },
+        looking_for: { label: 'Looking for', description: 'What types of connections you are open to.' },
+        covid_precautions: { label: 'Covid precautions', description: 'Detailed precautions that describe your boundaries.' },
+        together_idea: { label: "Let's talk about...", description: 'What they can ask you about.' },
+        freetime: { label: 'Freetime', description: 'What you do with your free time.' },
+        hobby: { label: 'Hobby', description: 'Your favorite hobbies.' },
+        petpeeve: { label: 'Pet peeve', description: 'Things that bother you.' },
+        talent: { label: 'Talent', description: 'Skills you bring to connect.' },
+        fave_book: { label: 'Favorite book', description: 'Books you currently love.' },
+        fave_movie: { label: 'Favorite movie', description: 'Movies you keep rewatching.' },
+        fave_tv: { label: 'Favorite TV show', description: 'Series that hooked you.' },
+        fave_topic: { label: 'Favorite topic', description: 'Conversations you love.' },
+        fave_musicalartist: { label: 'Favorite musical artist', description: 'The artist you jam to.' },
+        fave_game: { label: 'Favorite game', description: 'Games you like to play.' },
+        fave_album: { label: 'Favorite album', description: 'Albums on repeat.' },
+        fave_sport_watch: { label: 'Favorite sport to watch', description: 'Sports you enjoy watching.' },
+        fave_sport_play: { label: 'Favorite sport to play', description: 'Activities you like to play.' },
+        fixation_book: { label: 'Current book', description: 'Book you can’t stop reading.' },
+        fixation_movie: { label: 'Current movie', description: 'Movie you keep thinking about.' },
+        fixation_tv: { label: 'Current TV show', description: 'TV you keep up with.' },
+        fixation_topic: { label: 'Current topic', description: 'Topic you’re curious about.' },
+        fixation_musicalartist: { label: 'Current musical artist', description: 'Artist you have on repeat.' },
+        fixation_game: { label: 'Current game', description: 'Game you’re playing.' },
+        fixation_album: { label: 'Current album', description: 'Album you’re listening to.' },
+        gender_sexuality_choices: { label: 'Gender & sexuality choices', description: 'Filters other members see.' },
+        settings_show_gender_sexuality: { label: 'Show gender/sexuality filters', description: 'Toggle visibility on your profile.' },
+        settings_show_long_covid: { label: 'Show Long Covid info', description: 'Display these choices on your profile.' },
+        long_covid_choices: { label: 'Long Covid choices', description: 'Support availability for Long Covid.' },
+    };
+
+    const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
+        <div className="talk-section-header">
+            <h3>{title}</h3>
+            {subtitle && <IonText color="medium">{subtitle}</IonText>}
+        </div>
+    );
+
+    const EditableField: React.FC<{ fieldKey: keyof SimpleFormState; multiline?: boolean }> = ({ fieldKey, multiline }) => {
+        const value = form[fieldKey];
+        return (
+            <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
+                <div className="editing-section">
+                    <div className="field-header">
+                        <p>{fieldLabels[fieldKey].label}</p>
+                        <div className="field-actions">
+                            {editing[fieldKey] ? (
+                                <>
+                                    <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
+                                        Cancel
+                                    </IonButton>
+                                    <IonButton size="small" color="success" onClick={() => saveField(fieldKey)}>
+                                        Save
+                                    </IonButton>
+                                </>
+                            ) : (
+                                <IonButton
+                                    size="small"
+                                    fill="outline"
+                                    color="primary"
+                                    className={`edit-button ${isFieldEmpty(fieldKey) ? 'blank-edit' : ''}`}
+                                    onClick={() => startEdit(fieldKey)}
+                                >
+                                    Edit
+                                </IonButton>
+                            )}
+                        </div>
+                    </div>
+                    {editing[fieldKey] ? (
+                        multiline ? (
+                            <IonTextarea
+                                value={value as string}
+                                onIonInput={onChange(fieldKey)}
+                                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+                                autoGrow
+                                rows={4}
+                            />
+                        ) : (
+                            <IonInput
+                                value={value as string}
+                                onIonInput={onChange(fieldKey)}
+                                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+                                debounce={250}
+                            />
+                        )
+                    ) : (
+                        <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>
+                            {(value as string) || <i>Not provided</i>}
+                        </h2>
+                    )}
+                </div>
+            </IonItem>
+        );
+    };
+
+    return (
+        <div className="self-profile-v2">
+            <IonGrid>
+                <IonRow className="section-title-row">
+                    <IonCol>
+                        <IonText color="primary">
+                            <h1>Profile</h1>
+                        </IonText>
+                    </IonCol>
+                </IonRow>
+                <IonRow className="preview-row">
+                    <IonCol className="ion-justify-content-end">
+                        <IonButton fill="clear" onClick={() => profilePresent()}>
+                            <FontAwesomeIcon icon={faFaceViewfinder as IconProp} />
+                            &nbsp; See how others see your profile
+                        </IonButton>
+                    </IonCol>
+                </IonRow>
+                <IonAccordionGroup>
+                    <IonAccordion value="basics">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Basics</h2>
+                                <IonText color="medium">Keep these current so friends always know what you’re up to.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid basics-card">
+                                            <div className="info-section">
+                                                <IonItem>
+                                                    <IonLabel>
+                                                        <p>Name:</p>
+                                                        <h2>{currentUserProfile.name}</h2>
+                                                    </IonLabel>
+                                                    <IonButton
+                                                        size="small"
+                                                        color="primary"
+                                                        fill="outline"
+                                                        className="tiny-edit"
+                                                        onClick={() => showContactSupport('name', 'name')}
+                                                    >
+                                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                                    </IonButton>
+                                                </IonItem>
+                                                <IonItem>
+                                                    <IonLabel>
+                                                        <p>Age:</p>
+                                                        <h2>{currentUserProfile.age}</h2>
+                                                    </IonLabel>
+                                                    <IonButton
+                                                        size="small"
+                                                        color="primary"
+                                                        fill="outline"
+                                                        className="tiny-edit"
+                                                        onClick={() => showContactSupport('age', 'birthdate')}
+                                                    >
+                                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                                    </IonButton>
+                                                </IonItem>
+                                                <IonItem>
+                                                    <IonLabel>
+                                                        <p>Location:</p>
+                                                        <h2>{currentUserProfile.location}</h2>
+                                                    </IonLabel>
+                                                    <IonButton size="small" color="primary" fill="outline" onClick={() => locationPresent()}>
+                                                        Edit
+                                                    </IonButton>
+                                                </IonItem>
+                                                <IonItem>
+                                                    <IonLabel>
+                                                        <p>Refreshments username:</p>
+                                                        <h2>{currentUserProfile.username}</h2>
+                                                    </IonLabel>
+                                                    <IonButton size="small" color="primary" fill="outline" onClick={() => usernamePresent()}>
+                                                        Edit
+                                                    </IonButton>
+                                                </IonItem>
+                                            </div>
+                                            {summaryKeys.map(key => (
+                                                <EditableField key={key} fieldKey={key} />
+                                            ))}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="lookingFor">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Looking for</h2>
+                                <IonText color="medium">Choose how you show up in other members' filters.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid">
+                                            <div className="field-header">
+                                                <p>Looking for</p>
+                                                <IonButton
+                                                    size="small"
+                                                    fill="outline"
+                                                    color="primary"
+                                                    onClick={() => setEditing(prev => ({ ...prev, looking_for: !prev.looking_for }))}
+                                                >
+                                                    {editing.looking_for ? 'Done' : 'Edit'}
+                                                </IonButton>
+                                            </div>
+                                            {form.looking_for.length > 0 ? (
+                                                <ul className="choice-summary">
+                                                    {form.looking_for.map(val => (
+                                                        <li key={val}>{val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="placeholder">Nothing selected yet.</p>
+                                            )}
+                                            {editing.looking_for && (
+                                                <div className="choice-editor">
+                                                    <IonList lines="none">
+                                                        {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map(val => (
+                                                            <IonItem key={val} lines="none">
+                                                                <IonCheckbox
+                                                                    slot="start"
+                                                                    value={val}
+                                                                    checked={form.looking_for.includes(val)}
+                                                                    onIonChange={e => handleLookingForToggle(val, e.detail.checked)}
+                                                                />
+                                                                {val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}
+                                                            </IonItem>
+                                                        ))}
+                                                    </IonList>
+                                                </div>
+                                            )}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="genderSexuality">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Gender &amp; Sexuality</h2>
+                                <IonText color="medium">Keep these filters up to date so others can find you.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid">
+                                            <div className="field-header">
+                                                <p>Show on profile?</p>
+                                                <IonToggle
+                                                    slot="end"
+                                                    checked={form.settings_show_gender_sexuality}
+                                                    onIonChange={e => toggleGenderSexualityShow(e.detail.checked)}
+                                                />
+                                            </div>
+                                            <div className="field-header">
+                                                <p>Choices</p>
+                                                <IonButton
+                                                    size="small"
+                                                    fill="outline"
+                                                    color="primary"
+                                                    onClick={() => setEditing(prev => ({ ...prev, gender_sexuality_choices: !prev.gender_sexuality_choices }))}
+                                                >
+                                                    {editing.gender_sexuality_choices ? 'Done' : 'Edit'}
+                                                </IonButton>
+                                            </div>
+                                            {genderSexualitySummary.length > 0 ? (
+                                                <ul className="choice-summary">
+                                                    {genderSexualitySummary.map(label => (
+                                                        <li key={label}>{label}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="placeholder">Not specified yet.</p>
+                                            )}
+                                            {editing.gender_sexuality_choices && (
+                                                <div className="choice-editor gender-choices">
+                                                    {genderSexualityOptions.map(group => (
+                                                        <div key={group[0][0]} className="choice-group">
+                                                            <IonList lines="none">
+                                                                {group.map(([value, label]) => (
+                                                                    <IonItem key={value} lines="none">
+                                                                        <IonCheckbox
+                                                                            slot="start"
+                                                                            checked={form.gender_sexuality_choices.includes(value)}
+                                                                            onIonChange={e => handleGenderSexualityToggle(value, e.detail.checked)}
+                                                                        />
+                                                                        {label}
+                                                                    </IonItem>
+                                                                ))}
+                                                            </IonList>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="covidBehaviors">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Covid Behaviors</h2>
+                                <IonText color="medium">Keep people informed about your precautions.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid">
+                                            <div className="field-header">
+                                                <p>Precautions</p>
+                                                <IonButton
+                                                    size="small"
+                                                    fill="outline"
+                                                    color="primary"
+                                                    onClick={() => setEditing(prev => ({ ...prev, covid_precautions: !prev.covid_precautions }))}
+                                                >
+                                                    {editing.covid_precautions ? 'Done' : 'Edit'}
+                                                </IonButton>
+                                            </div>
+                                            {covidSummary.length > 0 ? (
+                                                <ul className="choice-summary">
+                                                    {covidSummary.map(label => (
+                                                        <li key={label}>{label}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="placeholder">No choices yet.</p>
+                                            )}
+                                            {editing.covid_precautions && (
+                                                <div className="choice-editor">
+                                                    {Object.entries(covidGroups).map(([section, items]) => (
+                                                        <div key={section}>
+                                                            <IonText color="medium">
+                                                                <strong>{section}</strong>
+                                                            </IonText>
+                                                            <IonList lines="none">
+                                                                {items.map(([value, label]) => (
+                                                                    <IonItem key={value}>
+                                                                        <IonCheckbox
+                                                                            slot="start"
+                                                                            checked={form.covid_precautions.includes(value)}
+                                                                            onIonChange={e => handleCovidToggle(value, e.detail.checked)}
+                                                                        />
+                                                                        {label}
+                                                                    </IonItem>
+                                                                ))}
+                                                            </IonList>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <EditableField fieldKey="covid_precaution_info" multiline />
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="longCovid">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Long Covid Support</h2>
+                                <IonText color="medium">Share what kind of help you need or offer.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid">
+                                            <div className="field-header">
+                                                <p>Show on profile?</p>
+                                                <IonToggle
+                                                    slot="end"
+                                                    checked={form.settings_show_long_covid}
+                                                    onIonChange={e => toggleLongCovidShow(e.detail.checked)}
+                                                />
+                                            </div>
+                                            <div className="field-header">
+                                                <p>Long Covid choices</p>
+                                                <IonButton
+                                                    size="small"
+                                                    fill="outline"
+                                                    color="primary"
+                                                    onClick={() => setEditing(prev => ({ ...prev, long_covid_choices: !prev.long_covid_choices }))}
+                                                >
+                                                    {editing.long_covid_choices ? 'Done' : 'Edit'}
+                                                </IonButton>
+                                            </div>
+                                            {longCovidSummary.length > 0 ? (
+                                                <ul className="choice-summary">
+                                                    {longCovidSummary.map(label => (
+                                                        <li key={label}>{label}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="placeholder">No long Covid preferences yet.</p>
+                                            )}
+                                            {editing.long_covid_choices && (
+                                                <div className="choice-editor">
+                                                    {longCovidOptions.map(([value, label]) => (
+                                                        <IonItem key={value} lines="none">
+                                                            <IonCheckbox
+                                                                slot="start"
+                                                                checked={form.long_covid_choices.includes(value)}
+                                                                onIonChange={e => handleLongCovidToggle(value, e.detail.checked)}
+                                                            />
+                                                            {label}
+                                                        </IonItem>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="talk">
+                        <IonItem slot="header" lines="none">
+                            <IonLabel>
+                                <h2>Let's Talk About</h2>
+                                <IonText color="medium">Share your vibe, favorites, and current fixations so others have something to ask about.</IonText>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard>
+                                        <IonCardContent className="card-grid">
+                                            <SectionHeader title="Tell me about..." />
+                                            {talkAboutKeys.map(key => (
+                                                <EditableField key={key} fieldKey={key} multiline />
+                                            ))}
+                                            <SectionHeader title="Favorites" />
+                                            {favoriteKeys.map(key => (
+                                                <EditableField key={key} fieldKey={key} />
+                                            ))}
+                                            <SectionHeader title="Fixations" />
+                                            {fixationKeys.map(key => (
+                                                <EditableField key={key} fieldKey={key} />
+                                            ))}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+            </IonGrid>
+        </div>
+    );
+};
+
+export default SelfProfileV2;
