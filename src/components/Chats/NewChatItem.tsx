@@ -7,6 +7,7 @@ import TextModal from "../TextModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCommentHeart } from "@fortawesome/pro-solid-svg-icons";
+import { chatQueryKeys } from "../../hooks/api/chats/chat-query-keys";
 
 
 
@@ -29,7 +30,10 @@ const NewChatItem: React.FC<Props> = (props) => {
 
     const handleDismiss = () => {
         queryClient.invalidateQueries({
-            queryKey: ['chats'],
+            queryKey: chatQueryKeys.all,
+        })
+        queryClient.invalidateQueries({
+            queryKey: chatQueryKeys.paginated,
         })
         queryClient.invalidateQueries({
             queryKey: ['mutuals-no-dialog'],

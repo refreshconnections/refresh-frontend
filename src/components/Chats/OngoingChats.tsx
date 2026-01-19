@@ -1,5 +1,5 @@
-import { IonButton, IonList, IonRow } from "@ionic/react";
-import React, { useEffect, useMemo, useState } from "react";
+import { IonButton, IonList, IonRow, IonSpinner } from "@ionic/react";
+import React from "react";
 import ChatItem from "./ChatItem";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -7,27 +7,16 @@ import { useQueryClient } from "@tanstack/react-query";
 
 
 type Props = {
-  mutualConnectionsList: number[];
   currentUserProfile: any;
-  chatsList: any
+  chatsList: any;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
 };
 
 
 const OngoingChats: React.FC<Props> = (props) => {
-  const { mutualConnectionsList, currentUserProfile, chatsList } = props;
-
-
-  const [length, setLength] = useState(5)
-  const [someChats, setSomeChats] = useState(chatsList?.slice(0, 5))
-
-  useEffect(() => {
-
-    setSomeChats(chatsList?.slice(0, length))
-
-    console.log("chatsList", chatsList)
-
-
-  }, [chatsList, length])
+  const { currentUserProfile, chatsList, hasNextPage, isFetchingNextPage, onLoadMore } = props;
 
 
 
@@ -39,19 +28,20 @@ const OngoingChats: React.FC<Props> = (props) => {
   return (
     <>
       <IonList id="wl" lines="full">
-        {someChats?.map((e: any) => (
+        {chatsList?.map((e: any) => (
           <li key={e.id}>
             <ChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
 
           </li>
         ))}
       </IonList>
-      {chatsList?.length > length ?
+      {hasNextPage ? (
         <IonRow className="ion-justify-content-center">
-          <IonButton size="small" fill="outline" onClick={() => setLength(length + 3)}>See more</IonButton>
+          <IonButton size="small" fill="outline" onClick={onLoadMore} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? <IonSpinner name="dots" /> : "Load more"}
+          </IonButton>
         </IonRow>
-        : <></>
-      }
+      ) : null}
     </>
   )
 };

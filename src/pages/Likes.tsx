@@ -51,7 +51,7 @@ const Likes: React.FC = () => {
 
   const currentUserProfile = useGetCurrentProfile().data;
   const currentStreak = useGetCurrentStreak().data;
-  const mutuals = useGetMutualConnectionsNoDialogWOpenerCheck().data;
+  const mutualsData = useGetMutualConnectionsNoDialogWOpenerCheck().data;
   const statuses = useGetStatuses().data;
 
   const [profileCardData, setProfileCardData] = useState<any>(null);
@@ -83,6 +83,11 @@ const Likes: React.FC = () => {
 
   const isProOrStreak =
     isPersonalPlus(currentUserProfile?.subscription_level) || currentStreak?.streak_count >= 7;
+
+  const mutuals = useMemo(
+    () => mutualsData?.pages.flatMap(page => page?.results ?? []) ?? [],
+    [mutualsData]
+  );
 
   const paginatedVisibleConnections = useMemo(() => {
     return incomingPages?.pages?.map((page) => page.results) ?? [];
@@ -126,7 +131,7 @@ const Likes: React.FC = () => {
   }
 
   // Optionally update other queries (non-destructive)
-  ['mutuals', 'mutuals-no-dialog'].forEach((key) => {
+  ['mutuals', 'mutuals-no-dialog-paginated'].forEach((key) => {
     queryClient.invalidateQueries({ queryKey: [key] });
   });
   profileDismiss();
@@ -151,7 +156,7 @@ const Likes: React.FC = () => {
 
   const handleRefresh = (event: CustomEvent<RefresherEventDetail>) => {
     setTimeout(async () => {
-      ['current', 'mutuals', 'mutuals-no-dialog', 'incoming-paginated'].forEach((key) => {
+      ['current', 'mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       event.detail.complete();
@@ -175,7 +180,7 @@ const Likes: React.FC = () => {
 
   const handleLeaveLikes = () => {
     setTimeout(async () => {
-      ['mutuals', 'mutuals-no-dialog', 'incoming-paginated'].forEach((key) => {
+      ['mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }, 500);

@@ -11,6 +11,7 @@ import { addToHiddenDialogs, increaseStreak, newMessagePush, removeFromHiddenDia
 import './ProfileModal.css'
 import ReportModal from './ReportModal';
 import { useQueryClient } from '@tanstack/react-query';
+import { chatQueryKeys } from '../hooks/api/chats/chat-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCommentHeart } from '@fortawesome/pro-solid-svg-icons';
@@ -224,7 +225,8 @@ const ProfileModal: React.FC<Props> = (props) => {
         const response = await updateBlockedConnections(connection)
         onActionDismiss('ActionTaken');
         queryClient.invalidateQueries({ queryKey: ['current'] })
-        queryClient.invalidateQueries({ queryKey: ['chats'] })
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.all })
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals'] })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
         onDismiss()
@@ -247,7 +249,8 @@ const ProfileModal: React.FC<Props> = (props) => {
         onActionDismiss('ActionTaken');
         queryClient.invalidateQueries({ queryKey: ['current'] })
         queryClient.invalidateQueries({ queryKey: ['mutuals'] })
-        queryClient.invalidateQueries({ queryKey: ['chats'] })
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.all })
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
         onDismiss()
         return response
@@ -396,4 +399,3 @@ const ProfileModal: React.FC<Props> = (props) => {
 
 
 export default ProfileModal;
-

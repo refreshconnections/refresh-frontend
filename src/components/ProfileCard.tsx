@@ -97,7 +97,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
     const [showStoreAlert, setShowStoreAlert] = useState(false);
 
-    const [altShow, setAltShow] = useState<number | null>(null);
+    const [altShow, setAltShow] = useState<string | null>(null);
     const [showStreakLetsTalkAbouts, setShowStreakLetsTalkAbouts] = useState<boolean>(false);
 
 
@@ -116,6 +116,18 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
     }, [cardData])
 
+
+    const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const preferredOrder = Array.isArray(cardData?.photo_order) && cardData.photo_order.length > 0
+        ? cardData.photo_order
+        : photoKeys;
+    const existingPhotos = photoKeys.filter(key => cardData?.[key]);
+    const orderedPhotos = [
+        ...preferredOrder.filter((key: string) => existingPhotos.includes(key)),
+        ...existingPhotos.filter(key => !preferredOrder.includes(key)),
+    ];
+    const primaryPhotoKey = orderedPhotos[0] || 'pic1_main';
+    const secondaryPhotoKeys = orderedPhotos.filter(key => key !== primaryPhotoKey);
 
     if (cardData?.deactivated_profile || currentUserProfile?.blocked_by?.includes(cardData?.user)) {
         return (
@@ -141,8 +153,8 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                         )}
                         <img
                             className={`profilepic ${imageLoaded ? 'loaded' : 'loading'}`}
-                            alt="Picture 1"
-                            src={cardData.pic1_main || "../static/img/null.png"}
+                            alt={cardData?.[`${primaryPhotoKey}_alt`] || "Profile photo"}
+                            src={cardData?.[primaryPhotoKey] || "../static/img/null.png"}
                             onError={(e) => onImgError(e)}
                             loading="lazy"
                             onLoad={() => setImageLoaded(true)}
@@ -176,17 +188,17 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                         : <></>}
 
 
-                    {altShow === 1 ?
+                    {altShow === primaryPhotoKey ?
                         <IonRow className="show-alt-profile">
-                            <IonText>{cardData.pic1_alt}</IonText>
+                            <IonText>{cardData?.[`${primaryPhotoKey}_alt`]}</IonText>
                         </IonRow>
                         : <></>}
                 </div>
 
 
                 <IonCardHeader className="leave-end-room ">
-                    {settingsAlt && cardData.pic1_alt ?
-                        <IonButton className="alt-desc-profile" fill="clear" size="small" onClick={altShow !== 1 ? () => setAltShow(1) : () => setAltShow(null)}>
+                    {settingsAlt && cardData?.[`${primaryPhotoKey}_alt`] ?
+                        <IonButton className="alt-desc-profile" fill="clear" size="small" onClick={altShow !== primaryPhotoKey ? () => setAltShow(primaryPhotoKey) : () => setAltShow(null)}>
                             <FontAwesomeIcon icon={faSubtitles} />
                         </IonButton>
                         : <></>}
@@ -437,144 +449,34 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                             onInit={(swiper) => { swiperRef.current = swiper; }}
 
                         >
-                            {cardData.pic2 !== null ?
-                                <SwiperSlide>
+                            {secondaryPhotoKeys.map(key => (
+                                <SwiperSlide key={key}>
                                     <IonCard>
-                                        <img alt="Picture 2" src={cardData.pic2} onError={(e) => onImgError(e)} />
-                                        {altShow == 2 ?
+                                        <img
+                                            alt={cardData?.[`${key}_alt`] || 'Profile photo'}
+                                            src={cardData?.[key]}
+                                            onError={(e) => onImgError(e)}
+                                        />
+                                        {altShow === key ? (
                                             <IonRow className="show-alt">
-                                                <IonText>{cardData.pic2_alt}</IonText>
+                                                <IonText>{cardData?.[`${key}_alt`]}</IonText>
                                             </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 2 && cardData.pic2_alt ? () => setAltShow(2) : () => setAltShow(null)}>{cardData.pic2_caption}
-                                            {settingsAlt && (cardData.pic2_alt !== null && cardData.pic2_alt !== '') ?
+                                        ) : null}
+                                        <IonCardSubtitle
+                                            onClick={
+                                                settingsAlt && altShow !== key && cardData?.[`${key}_alt`]
+                                                    ? () => setAltShow(key)
+                                                    : () => setAltShow(null)
+                                            }
+                                        >
+                                            {cardData?.[`${key}_caption`]}
+                                            {settingsAlt && cardData?.[`${key}_alt`] ? (
                                                 <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
+                                            ) : null}
                                         </IonCardSubtitle>
                                     </IonCard>
                                 </SwiperSlide>
-                                : null}
-                            {cardData.pic3 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt={cardData.pic3_alt || "Picture 3"} src={cardData.pic3} onError={(e) => onImgError(e)} />
-                                        {altShow == 3 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic3_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 3 && cardData.pic3_alt ? () => setAltShow(3) : () => setAltShow(null)}>{cardData.pic3_caption}
-                                            {settingsAlt && (cardData.pic3_alt !== null && cardData.pic3_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles}
-                                                />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic4 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 4" src={cardData.pic4} onError={(e) => onImgError(e)} />
-                                        {altShow == 4 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic4_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 4 && cardData.pic4_alt ? () => setAltShow(4) : () => setAltShow(null)}>{cardData.pic4_caption}
-                                            {settingsAlt && (cardData.pic4_alt !== null && cardData.pic4_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic5 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 5" src={cardData.pic5} onError={(e) => onImgError(e)} />
-                                        {altShow == 5 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic5_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 5 && cardData.pic5_alt !== null ? () => setAltShow(5) : () => setAltShow(null)}>{cardData.pic5_caption}
-                                            {settingsAlt && (cardData.pic5_alt !== null && cardData.pic5_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic6 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 6" src={cardData.pic6} onError={(e) => onImgError(e)} />
-                                        {altShow == 6 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic6_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 6 && cardData.pic6_alt ? () => setAltShow(6) : () => setAltShow(null)}>{cardData.pic6_caption}
-                                            {settingsAlt && (cardData.pic6_alt !== null && cardData.pic6_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic7 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 7" src={cardData.pic7} onError={(e) => onImgError(e)} />
-                                        {altShow == 7 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic7_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 7 && cardData.pic7_alt ? () => setAltShow(7) : () => setAltShow(null)}>{cardData.pic7_caption}
-                                            {settingsAlt && (cardData.pic7_alt !== null && cardData.pic7_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic8 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 8" src={cardData.pic8} onError={(e) => onImgError(e)} />
-                                        {altShow == 8 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic8_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 8 ? () => setAltShow(8) : () => setAltShow(null)}>{cardData.pic8_caption}
-                                            {settingsAlt && (cardData.pic8_alt !== null && cardData.pic8_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
-                            {cardData.pic9 !== null ?
-                                <SwiperSlide>
-                                    <IonCard>
-                                        <img alt="Picture 9" src={cardData.pic9} onError={(e) => onImgError(e)} />
-                                        {altShow == 9 ?
-                                            <IonRow className="show-alt">
-                                                <IonText>{cardData.pic9_alt}</IonText>
-                                            </IonRow>
-                                            : <></>}
-                                        <IonCardSubtitle onClick={settingsAlt && altShow !== 9 && cardData.pic9_alt ? () => setAltShow(9) : () => setAltShow(null)}>{cardData.pic9_caption}
-                                            {settingsAlt && (cardData.pic9_alt !== null && cardData.pic9_alt !== '') ?
-                                                <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
-                                                : <></>}
-                                        </IonCardSubtitle>
-                                    </IonCard>
-                                </SwiperSlide>
-                                : null}
+                            ))}
                         </Swiper>
                         {somethingInLetsTalkAbout(cardData) ?
                             <IonAccordionGroup className="profile-card" value="preferences">

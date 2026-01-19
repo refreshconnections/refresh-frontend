@@ -1,5 +1,5 @@
 import { IonButton, IonList, IonRow, IonSpinner, IonText } from "@ionic/react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import NewChatItem from "./NewChatItem";
 import { useGetMutualConnectionsNoDialogWOpenerCheck } from "../../hooks/api/profiles/mutuals-no-dialog";
 
@@ -15,7 +15,14 @@ type Props = {
 const NewChats: React.FC<Props> = (props) => {
   const { currentUserProfile } = props;
 
-  const {data: noDialogsMutualConnections, isPending} = useGetMutualConnectionsNoDialogWOpenerCheck()
+  const {
+    data: noDialogsMutualConnectionsData,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useGetMutualConnectionsNoDialogWOpenerCheck();
+  const noDialogsMutualConnections = noDialogsMutualConnectionsData?.pages.flatMap(page => page?.results ?? []) ?? [];
 
 
   // // usememo here?
@@ -26,26 +33,19 @@ const NewChats: React.FC<Props> = (props) => {
 
   // const noDialogsMutualConnections = useMemo(() => getDifference(mutualConnectionsList, chatsList), [mutualConnectionsList, chatsList])
 
-  const [length, setLength] = useState(5)
-  // const [someChats, setSomeChats] = useState([])
-
-  // useEffect(() => {
-  //   setSomeChats(noDialogsMutualConnections?.slice(0, length))
-  // }, [noDialogsMutualConnections, length])
-
   const visibleChats = useMemo(() => {
   const seen = new Set();
-  return noDialogsMutualConnections?.slice(0, length).filter(item => {
+  return noDialogsMutualConnections.filter(item => {
     const key = item.user_id || item.id;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
-}, [noDialogsMutualConnections, length]);
+}, [noDialogsMutualConnections]);
 
   return (
     <>
-      {isPending && <IonRow className="ion-justify-content-center" style={{paddingTop: "20pt"}}><IonSpinner name="bubbles"></IonSpinner></IonRow>}
+      {isLoading && <IonRow className="ion-justify-content-center" style={{paddingTop: "20pt"}}><IonSpinner name="bubbles"></IonSpinner></IonRow>}
       {noDialogsMutualConnections?.length > 0 ?
         <IonRow className="page-title">
           <IonText>
@@ -61,12 +61,13 @@ const NewChats: React.FC<Props> = (props) => {
           </li>
         ))}
       </IonList>
-      {noDialogsMutualConnections?.length > length ?
+      {hasNextPage ? (
       <IonRow className="ion-justify-content-center">
-      <IonButton size="small" fill="outline" onClick={() => setLength(length + 5)}>See more</IonButton>
+        <IonButton size="small" fill="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          {isFetchingNextPage ? <IonSpinner name="bubbles"></IonSpinner> : "See more"}
+        </IonButton>
       </IonRow>
-      : <></>
-      }
+      ) : null}
     </>
 
 

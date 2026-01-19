@@ -20,6 +20,10 @@ import {
     IonAccordion,
     IonAccordionGroup,
     IonIcon,
+    IonReorder,
+    IonReorderGroup,
+    IonThumbnail,
+    useIonActionSheet,
     useIonModal,
     useIonAlert,
 } from '@ionic/react';
@@ -31,11 +35,15 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import ProfileModal from './ProfileModal';
 import EditLocationModal from './EditLocationModal';
 import EditUsernameModal from './EditUsernameModal';
+import CroppedImageModal from './CroppedImageModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { faFaceViewfinder, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
-import { chevronDownOutline } from 'ionicons/icons';
+import { chevronDownOutline, ellipsisHorizontal } from 'ionicons/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import Resizer from 'react-image-file-resizer';
+import { Camera, CameraResultType } from '@capacitor/camera';
+import { decode } from 'base64-arraybuffer';
 
 type SimpleFormState = {
     pronouns: string;
@@ -115,6 +123,12 @@ const SelfProfileV2: React.FC = () => {
     const currentUserProfile: any = useGetCurrentProfile().data;
     const [form, setForm] = useState<SimpleFormState>(initialForm);
     const [originalForm, setOriginalForm] = useState<SimpleFormState>(initialForm);
+    const [photoOrder, setPhotoOrder] = useState<string[]>([]);
+    const [photoOrderDraft, setPhotoOrderDraft] = useState<string[]>([]);
+    const [editingPhotoOrder, setEditingPhotoOrder] = useState(false);
+    const [photoEditImage, setPhotoEditImage] = useState<any>(null);
+    const [photoEditName, setPhotoEditName] = useState<string | null>(null);
+    const [photoEditField, setPhotoEditField] = useState<string | null>(null);
     const [editing, setEditing] = useState<Record<keyof SimpleFormState, boolean>>({
         pronouns: false,
         bio: false,
@@ -155,6 +169,8 @@ const SelfProfileV2: React.FC = () => {
     const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['current'] });
     
     const [presentShowContactSupportAlert] = useIonAlert();
+    const [presentPhotoAlert] = useIonAlert();
+    const [presentPhotoActionSheet] = useIonActionSheet();
 
     useEffect(() => {
         if (!currentUserProfile) return;
@@ -196,6 +212,17 @@ const SelfProfileV2: React.FC = () => {
         };
         setForm(nextForm);
         setOriginalForm(nextForm);
+        const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+        const preferredOrder = Array.isArray(currentUserProfile.photo_order) && currentUserProfile.photo_order.length > 0
+            ? currentUserProfile.photo_order
+            : photoKeys;
+        const existingPhotos = photoKeys.filter(key => currentUserProfile[key]);
+        const mergedOrder = [
+            ...preferredOrder.filter((key: string) => existingPhotos.includes(key)),
+            ...existingPhotos.filter(key => !preferredOrder.includes(key)),
+        ];
+        setPhotoOrder(mergedOrder);
+        setPhotoOrderDraft(mergedOrder);
         setEditing({
             pronouns: false,
             bio: false,
@@ -283,6 +310,15 @@ const SelfProfileV2: React.FC = () => {
         onDismiss: () => {
             refreshProfile();
             usernameDismiss();
+        },
+    });
+    const [photoCropPresent, photoCropDismiss] = useIonModal(CroppedImageModal, {
+        image: photoEditImage,
+        picDb: photoEditField,
+        imageName: photoEditName,
+        onDismiss: async () => {
+            photoCropDismiss();
+            refreshProfile();
         },
     });
 
@@ -399,6 +435,28 @@ const SelfProfileV2: React.FC = () => {
         .filter(Boolean) as string[];
 
     const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
+    const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const photoLabels: Record<string, string> = {
+        pic1_main: 'Profile photo',
+    };
+    const captionOptions = [
+        'Me in my best mask',
+        'Salting the vibes',
+        'A favorite from the-before-times',
+        'The fam',
+        'A selfie',
+        'My bestie',
+        'Me at work',
+        'My happy place',
+        'A random picture I love',
+        'I just liked this outfit',
+        'Could use a buddy for this!',
+        "It's not home without...",
+        'Living life',
+        "Cheesin'",
+        'Recognize this place?',
+        '',
+    ];
 
     if (!currentUserProfile) {
         return null;
@@ -612,6 +670,213 @@ const SelfProfileV2: React.FC = () => {
         );
     };
 
+    const handlePhotoReorder = (event: CustomEvent) => {
+        const from = event.detail.from as number;
+        const to = event.detail.to as number;
+        if (!editingPhotoOrder) {
+            event.detail.complete();
+            return;
+        }
+        if (from === to) {
+            event.detail.complete();
+            return;
+        }
+        setPhotoOrderDraft(prev => {
+            const next = [...prev];
+            next.splice(to, 0, ...next.splice(from, 1));
+            return next;
+        });
+        event.detail.complete();
+    };
+    const getPhotoCount = () => photoKeys.filter(key => currentUserProfile?.[key]).length;
+    const getNextEmptyPhotoKey = () => photoKeys.find(key => !currentUserProfile?.[key]);
+    const getPhotoCaption = (key: string) => {
+        const value = currentUserProfile?.[`${key}_caption`];
+        if (!value || value === 'profile picture') return '';
+        return value;
+    };
+    const getPhotoAltText = (key: string) => currentUserProfile?.[`${key}_alt`] || '';
+
+    const openAltTextAlert = async (photoKey: string) => {
+        presentShowContactSupportAlert({
+            header: `Add alt text`,
+            subHeader: 'This description is used by screen readers and shown to help others understand your photo.',
+            inputs: [
+                {
+                    name: 'description',
+                    type: 'text',
+                    placeholder: 'Add alt text',
+                    value: currentUserProfile?.[`${photoKey}_alt`] || '',
+                },
+            ],
+            buttons: [
+                { text: 'Nevermind', role: 'cancel' },
+                {
+                    text: 'Save',
+                    handler: async (data: any) => {
+                        const value = (data?.description || '').slice(0, 300);
+                        await updateCurrentUserProfile({ [`${photoKey}_alt`]: value });
+                        refreshProfile();
+                    },
+                },
+            ],
+        });
+    };
+
+    const openCustomCaptionAlert = async (photoKey: string) => {
+        const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
+        presentShowContactSupportAlert({
+            header: 'Add your own caption',
+            message: '',
+            buttons: [
+                { text: 'Nevermind', role: 'cancel' },
+                {
+                    text: 'Save',
+                    handler: async (data: any) => {
+                        const value = (data?.description || '').slice(0, 30);
+                        await updateCurrentUserProfile({ [`${photoKey}_caption`]: value });
+                        refreshProfile();
+                    },
+                },
+            ],
+            inputs: [
+                {
+                    name: 'description',
+                    type: 'text',
+                    placeholder: 'Add custom caption',
+                    value: currentCaption,
+                    attributes: { maxlength: 30 },
+                },
+            ],
+        } as any);
+    };
+
+    const openCaptionAlert = async (photoKey: string) => {
+        const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
+        presentPhotoAlert({
+            header: 'Edit caption',
+            message: '',
+            inputs: [
+                ...captionOptions.map(option => ({
+                    type: 'radio',
+                    name: 'caption',
+                    label: option === '' ? '(No caption)' : option,
+                    value: option,
+                    checked: option === currentCaption,
+                })),
+                {
+                    type: 'radio',
+                    name: 'caption',
+                    label: '(Write your own)',
+                    value: '__custom__',
+                    checked: currentCaption && !captionOptions.includes(currentCaption),
+                },
+            ],
+            buttons: [
+                { text: 'Nevermind', role: 'cancel' },
+                {
+                    text: 'Save',
+                    handler: async (data: any) => {
+                        const selected = data?.caption ?? data;
+                        if (selected === '__custom__') {
+                            setTimeout(() => openCustomCaptionAlert(photoKey), 250);
+                            return;
+                        }
+                        await updateCurrentUserProfile({ [`${photoKey}_caption`]: selected ?? '' });
+                        refreshProfile();
+                    },
+                },
+            ],
+        } as any);
+    };
+
+    const replacePhoto = async (photoKey: string, photoLabel: string) => {
+        const photo = await Camera.getPhoto({
+            quality: 90,
+            allowEditing: false,
+            resultType: CameraResultType.Base64,
+        });
+
+        const photoBlob = new Blob([new Uint8Array(decode(photo.base64String!))], {
+            type: `image/${photo.format}`,
+        });
+
+        Resizer.imageFileResizer(
+            photoBlob,
+            1500,
+            1500,
+            'JPEG',
+            90,
+            0,
+            uri => {
+                setPhotoEditImage(uri);
+                setPhotoEditField(photoKey);
+                setPhotoEditName(photoLabel);
+                photoCropPresent();
+            },
+            'base64',
+        );
+    };
+
+    const openPhotoActions = (photoKey: string) => {
+        const canEditCaption = photoKey !== 'pic1_main';
+        const totalPhotos = getPhotoCount();
+        presentPhotoActionSheet({
+            header: photoLabels[photoKey] || 'Photo',
+            buttons: [
+                {
+                    text: 'Replace photo',
+                    handler: () => replacePhoto(photoKey, photoLabels[photoKey] || photoKey),
+                },
+                ...(canEditCaption
+                    ? [{
+                        text: 'Edit caption',
+                        handler: () => openCaptionAlert(photoKey),
+                    }]
+                    : []),
+                {
+                    text: 'Edit alt text',
+                    handler: () => openAltTextAlert(photoKey),
+                },
+                {
+                    text: 'Delete photo',
+                    role: 'destructive',
+                    handler: async () => {
+                        if (totalPhotos <= 3) {
+                            presentPhotoAlert({
+                                header: 'Deleting this photo will pause your profile until you have at least 3 photos.',
+                                subHeader: 'You can replace it now or delete it and pause your profile.',
+                                message: '',
+                                buttons: [
+                                    { text: 'Nevermind', role: 'cancel' },
+                                    {
+                                        text: 'Replace instead',
+                                        handler: () => replacePhoto(photoKey, photoLabels[photoKey] || photoKey),
+                                    },
+                                    {
+                                        text: 'Delete',
+                                        role: 'destructive',
+                                        handler: async () => {
+                                            await updateCurrentUserProfile({ [photoKey]: null, paused_profile: true });
+                                            refreshProfile();
+                                        },
+                                    },
+                                ],
+                            } as any);
+                            return;
+                        }
+                        await updateCurrentUserProfile({ [photoKey]: null });
+                        refreshProfile();
+                    },
+                },
+                {
+                    text: 'Cancel',
+                    role: 'cancel',
+                },
+            ],
+        });
+    };
+
     return (
         <div className="self-profile-v2">
             <IonGrid>
@@ -693,6 +958,101 @@ const SelfProfileV2: React.FC = () => {
                                 key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />,
                             )}
 
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="photos">
+                        <IonItem slot="header" lines="none" className="accordion-header">
+                            <IonLabel>
+                                <h2>Photos</h2>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="accordion-body">
+                            <div className="field-header">
+                                {editingPhotoOrder && (
+                                    <IonText color="medium">
+                                        <p>Drag the three lines to reorder.</p>
+                                    </IonText>
+                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+                                    {editingPhotoOrder && (
+                                        <IonButton
+                                            size="small"
+                                            fill="clear"
+                                            color="medium"
+                                            onClick={() => {
+                                                setPhotoOrderDraft(photoOrder);
+                                                setEditingPhotoOrder(false);
+                                            }}
+                                        >
+                                            Cancel
+                                        </IonButton>
+                                    )}
+                                    <IonButton
+                                        size="small"
+                                        fill={editingPhotoOrder ? "solid" : "outline"}
+                                        color={editingPhotoOrder ? "success" : "primary"}
+                                        onClick={async () => {
+                                            if (!editingPhotoOrder) {
+                                                setEditingPhotoOrder(true);
+                                                setPhotoOrderDraft(photoOrder);
+                                                return;
+                                            }
+                                            await updateCurrentUserProfile({ photo_order: photoOrderDraft });
+                                            setPhotoOrder(photoOrderDraft);
+                                            setEditingPhotoOrder(false);
+                                        }}
+                                    >
+                                        {editingPhotoOrder ? "Save order" : "Edit order"}
+                                    </IonButton>
+                                </div>
+                            </div>
+                            {photoOrder.length > 0 ? (
+                                <IonReorderGroup disabled={!editingPhotoOrder} onIonItemReorder={handlePhotoReorder}>
+                                    {photoOrderDraft.map(key => (
+                                        <IonItem key={key} button onClick={() => openPhotoActions(key)} detailIcon={ellipsisHorizontal}>
+                                            <IonThumbnail slot="start" style={{ width: '96px', height: '96px' }}>
+                                                <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} />
+                                            </IonThumbnail>
+                                            <IonLabel>
+                                                {getPhotoCaption(key) ? (
+                                                    <IonText color="dark">
+                                                        <p>{getPhotoCaption(key)}</p>
+                                                    </IonText>
+                                                ) : null}
+                                                {getPhotoAltText(key) ? <p>Alt: {getPhotoAltText(key)}</p> : null}
+                                                {!getPhotoCaption(key) && !getPhotoAltText(key) ? <p className="placeholder">Add a caption or alt text</p> : null}
+                                            </IonLabel>
+                                            <IonReorder slot="end" />
+                                        </IonItem>
+                                    ))}
+                                </IonReorderGroup>
+                            ) : (
+                                <p className="placeholder">Add photos to reorder them.</p>
+                            )}
+                            {getPhotoCount() < 9 && (
+                                <IonRow className="ion-justify-content-center ion-padding">
+                                    <IonButton
+                                        size="small"
+                                        fill="outline"
+                                        onClick={() => {
+                                            const nextKey = getNextEmptyPhotoKey();
+                                            if (!nextKey) return;
+                                            replacePhoto(nextKey, photoLabels[nextKey] || nextKey);
+                                        }}
+                                    >
+                                        Add photo
+                                    </IonButton>
+                                </IonRow>
+                            )}
+                            {['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9']
+                                .filter(key => currentUserProfile?.[key]).length < 3 && (
+                                <IonText color="danger">
+                                    <p>Heads up: you need at least 3 photos to keep your profile active.</p>
+                                </IonText>
+                            )}
                         </IonCardContent>
                     </IonAccordion>
                 </IonAccordionGroup>
