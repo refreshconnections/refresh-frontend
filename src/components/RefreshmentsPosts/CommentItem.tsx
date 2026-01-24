@@ -16,7 +16,7 @@ import { faComments } from '@fortawesome/pro-regular-svg-icons/faComments';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { useGetIndividualComment } from "../../hooks/api/refreshments/individual-comment";
 
-import { alert as alertIcon, removeCircleOutline, chatbubble } from 'ionicons/icons';
+import { alert as alertIcon, removeCircleOutline, chatbubble, informationCircleOutline } from 'ionicons/icons';
 import CommentReplies from "./CommentReplies";
 import ProfileModal from "../ProfileModal";
 import moment from "moment";
@@ -101,6 +101,19 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
+  const [presentSidenoteInfo] = useIonAlert();
+
+  const isOwner = globalCurrentProfile?.user === comment?.user;
+  const showOwnHidden = isOwner && (comment?.sidenoted || comment?.removed);
+  const canShowComment = comment?.approved && ((!comment?.sidenoted && !comment?.removed) || showSidenotes || showOwnHidden);
+
+  const showSidenoteInfo = () => {
+    presentSidenoteInfo({
+      header: 'Comment has been sidenoted',
+      message: "Sidenoted comments don't show up for most members by default to keep threads on topic.",
+      buttons: ['OK'],
+    });
+  };
 
   const heartComment = async () => {
 
@@ -327,7 +340,7 @@ const CommentItem: React.FC<Props> = (props) => {
         </IonItem>
         :
         <>
-          {comment?.approved && ((!comment?.sidenoted && !comment?.removed) || showSidenotes) ?
+          {canShowComment ?
             <>
               <IonItemSliding key={comment?.id} >
                 <IonItem id={`comment-${comment?.id}`} className={replyTo?.id == comment.id ? "replyingto" : recentlyPosted(comment.uploadDateTime) && globalCurrentProfile?.user == comment.user ? "selfrecent" : recentlyPosted(comment.uploadDateTime) ? "writtenrecent" : globalCurrentProfile?.user == comment.user ? "selfwritten" : "written"}>
@@ -338,8 +351,47 @@ const CommentItem: React.FC<Props> = (props) => {
                         :
                         comment?.removed ?
                           <>
-                            <h4 style={{ color: "maroon" }}>This comment has been removed.</h4>
+                            <h4 style={{ color: "maroon" }}>
+                              {isOwner ? "Removed comments only visible to you." : "This comment has been removed."}
+                            </h4>
+                            {isOwner && (
+                              <div className="name-avatar">
+                                {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile) ? (
+                                  <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar>
+                                ) : <></>}
+                                <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                              </div>
+                            )}
+                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
                             {comment?.removed_reason ? <h4>Reason: {comment?.removed_reason}</h4> : <></>}
+                            <ModerationNote
+                              moderationNote={comment.moderation_note}
+                              moderationIconOnly={false}
+                              moderationNoteLonger={comment.moderation_note_longer}
+                            />
+                          </>
+                          : comment?.sidenoted ?
+                          <>
+                            <IonRow className="ion-align-items-center">
+                              <h4 style={{ color: "maroon", marginRight: "6px" }}>This comment has been sidenoted.</h4>
+                              {isOwner && (
+                                <IonButton fill="clear" size="small" onClick={showSidenoteInfo}>
+                                  <IonIcon icon={informationCircleOutline}></IonIcon>
+                                </IonButton>
+                              )}
+                            </IonRow>
+                            <div className="name-avatar">
+                              {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile) ? (
+                                <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar>
+                              ) : <></>}
+                              <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                            </div>
+                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
+                            <ModerationNote
+                              moderationNote={comment.moderation_note}
+                              moderationIconOnly={false}
+                              moderationNoteLonger={comment.moderation_note_longer}
+                            />
                           </>
                           :
                           <>

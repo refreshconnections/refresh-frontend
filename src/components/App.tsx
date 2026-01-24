@@ -16,7 +16,7 @@ import {
 } from '@ionic/react';
 import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { Route, Redirect } from 'react-router-dom';
+import { Route, Redirect, useParams } from 'react-router-dom';
 import Likes from '../pages/Likes';
 import Me from '../pages/Me';
 import Login from './Login';
@@ -83,6 +83,8 @@ import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapApp } from "@capacitor/app";
 import { Device } from '@capacitor/device';
 import Activity from '../pages/Activity';
+import SubmittedPosts from '../pages/SubmittedPosts';
+import SubmittedPostPreview from '../pages/SubmittedPostPreview';
 import { useGetCurrentStreak } from '../hooks/api/profiles/current-streak';
 import moment from 'moment';
 import { useGetUnreadCount } from '../hooks/api/chats/unread-count';
@@ -107,6 +109,16 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 
 
 setupIonicReact();
+
+const CommunityPostRoute: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+
+  if (id === 'submitted') {
+    return <SubmittedPosts />;
+  }
+
+  return <OpenedPost />;
+};
 
 // For PWA Camera 
 defineCustomElements(window);
@@ -566,8 +578,14 @@ const App: React.FC = () => {
             <Route exact path="/community">
               <Refreshments />
             </Route>
-            <Route path="/community/:id">
-              <OpenedPost />
+            <Route exact path="/community/submitted">
+              <SubmittedPosts />
+            </Route>
+            <Route exact path="/community/submitted/:id">
+              <SubmittedPostPreview />
+            </Route>
+            <Route exact path="/community/:id">
+              <CommunityPostRoute />
             </Route>
             <Route path="/me">
               <Me />

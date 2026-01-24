@@ -172,8 +172,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
   const clampTarget = (candidate: Moment) => clampToRange(candidate);
 
   const openEventsCalendar = () => {
-    const target = events.length ? moment(events[0].start_datetime) : today.clone();
-    const clamped = clampTarget(target);
+    const clamped = clampTarget(today.clone());
     setSelectedDate(clamped.toDate());
     setCalendarMonth(clamped.clone().startOf('month'));
     setIsCalendarOpen(true);

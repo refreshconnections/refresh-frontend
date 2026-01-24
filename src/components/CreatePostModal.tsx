@@ -27,6 +27,7 @@ import ContactDetailsPopover from "./ContactDetailsPopover";
 type Props = {
     preferred_name: string,
     username: string,
+    initialCategory?: string,
     onDismiss: () => void;
 };
 
@@ -61,7 +62,7 @@ function isMoreThanTwoWeeksOld(registrationDate: string): boolean {
 
 const CreatePostModal: React.FC<Props> = (props) => {
 
-    const { preferred_name, username, onDismiss } = props;
+    const { preferred_name, username, initialCategory, onDismiss } = props;
 
     const modal = useRef<HTMLIonModalElement>(null);
 
@@ -130,6 +131,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setIncludeProfile(false)
         }
     }, [byline])
+
+    useEffect(() => {
+        if (initialCategory && !bar) {
+            setBar(initialCategory);
+        }
+    }, [initialCategory, bar]);
 
     useEffect(() => {
         console.log("hi content", content, containsPii(content ?? ''))

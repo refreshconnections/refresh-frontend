@@ -70,6 +70,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [presentPostModal, dismissPostModal] = useIonModal(CreatePostModal, {
     preferred_name: globalProfile?.preferred_name ?? '',
     username: globalProfile?.username ?? '',
+    initialCategory: 'events',
     onDismiss: () => dismissPostModal(),
   });
   const [precautions, setPrecautions] = useState<string[]>([]);
@@ -218,7 +219,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             <>
               <IonItem lines="none">
                 <IonLabel className="ion-text-wrap">
-                  Use the Refreshments post form if you also want this event to appear in the feed; moderators can publish a post based on your event request. Clicking the button below will take you to that form.
+                  Use the Refreshments post form if you also want this event to appear in the Refreshments feed. Clicking the button below will take you to that form.
                 </IonLabel>
               </IonItem>
               <IonItem lines="none">

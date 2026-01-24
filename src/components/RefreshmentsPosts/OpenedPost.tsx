@@ -370,7 +370,7 @@ const OpenedPost: React.FC = () => {
 
     const hiddenCommentsInfo = () => {
         presentWhyHiddenAlert({
-            header: 'Some comments have been hidden.',
+            header: 'Some comments have been hidden to keep this thread on topic.',
             subHeader: "You can show sidenoted comments using the ellipsis button at the top of the post.",
             buttons: [
                 {
