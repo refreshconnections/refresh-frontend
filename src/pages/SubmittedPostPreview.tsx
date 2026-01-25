@@ -17,6 +17,7 @@ import {
   useIonToast,
   IonCard,
   IonCardContent,
+  useIonRouter,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -85,6 +86,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [draftTitle, setDraftTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const [presentToast] = useIonToast();
+  const router = useIonRouter();
 
   const {
     data,
@@ -215,7 +217,7 @@ const SubmittedPostPreview: React.FC = () => {
     try {
       await apiClient.post(`/api/announcements/submitted/${post.id}/approve_edit/`);
       presentToast({ message: 'Approved the edit.', duration: 2500, color: 'success' });
-      window.location.href = `/community/${post.id}`;
+      router.push(`/community/${post.id}`);
     } catch (error) {
       presentToast({ message: 'Could not approve. Try again.', duration: 2500, color: 'danger' });
     } finally {

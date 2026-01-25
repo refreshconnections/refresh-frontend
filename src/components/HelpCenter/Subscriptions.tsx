@@ -29,7 +29,7 @@ const Subscriptions: React.FC = () => {
           <IonLabel className="ion-text-wrap">I have an active subscription but the app thinks I do not</IonLabel>
         </IonItem>
         <div className="ion-padding" slot="content">
-          Sometimes the respective app store and the app get out of sync. Try the <span style={{fontWeight: "bold"}}>Restore purchases</span> button in the Me tab &gt; <a href="/Store">Store</a> section.
+          Sometimes the respective app store and the app get out of sync. Try the <span style={{fontWeight: "bold"}}>Restore purchases</span> button in the Me tab &gt; <IonRouterLink routerLink="/store">Store</IonRouterLink> section.
             <br/><br/>
             Also, make sure you are signed into the same iTunes or Google Play account used to purchase the subscription.
         </div>

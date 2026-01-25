@@ -19,6 +19,7 @@ import {
   IonHeader,
   IonChip,
   useIonModal,
+  useIonRouter,
 } from '@ionic/react';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -91,6 +92,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
   };
 
   const queryClient = useQueryClient();
+  const router = useIonRouter();
   const { data: eventsResponse, isLoading: eventsLoading } = useGetEvents();
   const events = eventsResponse ?? [];
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -373,8 +375,10 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
                   <IonButton
                     fill="outline"
                     size="small"
-                    routerLink={`/community/${selectedEvent.post}`}
-                    onClick={() => setIsCalendarOpen(false)}
+                    onClick={() => {
+                      setIsCalendarOpen(false);
+                      router.push(`/community/${selectedEvent.post}`);
+                    }}
                   >
                     View post
                   </IonButton>

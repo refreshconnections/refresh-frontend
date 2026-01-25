@@ -16,6 +16,7 @@ import {
   IonList,
   useIonAlert,
   useIonModal,
+  useIonRouter,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import "./Page.css"
@@ -54,6 +55,7 @@ import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocation
 const Refreshments: React.FC = () => {
 
   const queryClient = useQueryClient()
+  const router = useIonRouter();
   const renderCalendarTrigger = (open: () => void) => (
     <IonButton color="light" fill="solid" className="events-calendar-inline-button refreshments-control-button" onClick={open}>
       <FontAwesomeIcon icon={faCalendar} />
@@ -145,6 +147,7 @@ const Refreshments: React.FC = () => {
     radiusProp: radius,
     localProp: local,
     sortProp: sort,
+    onNavigate: (path: string) => router.push(path),
     onDismiss: (bars: string, local: boolean, radius: number | null, sortSelected: string) => handleFilterDismiss(bars, local, radius, sortSelected),
   });
 

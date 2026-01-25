@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, useIonPopover } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, useIonPopover, useIonRouter } from '@ionic/react';
 import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
@@ -299,6 +299,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const [presentConfirmAlert] = useIonAlert();
     const [presentRemoveMessageAlert] = useIonAlert();
+    const router = useIonRouter();
 
     const confirmAlert = async (alertProps: CustomAlert) => {
         presentConfirmAlert({
@@ -309,6 +310,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const [attachmentsInfoShow, attachmentsInfoDismiss] = useIonModal(AttachmentsInfoModal, {
         onDismiss: () => attachmentsInfoDismiss(),
+        onNavigate: (path: string) => router.push(path),
     });
 
     const [presentPopover, dismissPopover] = useIonPopover(MessageLikePopover, {

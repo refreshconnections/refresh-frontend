@@ -18,11 +18,11 @@ import {
   useIonModal,
   IonCard,
 } from '@ionic/react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { apiClient } from '../hooks/api/api-client';
 import CitySelectorModal from './CitySelectorModal';
-import { eventUploadPhoto } from '../hooks/utilities';
+import { eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
@@ -84,8 +84,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [imageAlt, setImageAlt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'custom'>('none');
+  const [recurrenceCount, setRecurrenceCount] = useState(1);
+  const [recurrenceCustomDates, setRecurrenceCustomDates] = useState<string[]>([]);
+  const [recurrenceDescriptions, setRecurrenceDescriptions] = useState<string[]>([]);
+  const [recurrenceEndDates, setRecurrenceEndDates] = useState<string[]>([]);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
+  const [baseDescriptionExpanded, setBaseDescriptionExpanded] = useState(false);
+  const [expandedDateEdits, setExpandedDateEdits] = useState<Record<number, boolean>>({});
 
   const openingCitySelectorRef = useRef(false);
+  const recurrenceTypeRef = useRef(recurrenceType);
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: (selectedCity?: City) => handleCityDismiss(selectedCity),
   });
@@ -121,6 +130,125 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     setIncludeProfile(postingIdentity !== 'anonymous');
   }, [postingIdentity]);
 
+  const defaultStartDatetime = useMemo(() => (
+    moment().add(7, 'days').hour(20).minute(0).second(0).format('YYYY-MM-DDTHH:mm')
+  ), []);
+
+  const normalizeDatetime = (value: string) => {
+    if (!value) return value;
+    const parsed = moment(value);
+    if (!parsed.isValid()) return value;
+    const minutes = parsed.minutes();
+    let rounded = Math.round(minutes / 15) * 15;
+    if (rounded === 60) {
+      parsed.add(1, 'hour');
+      rounded = 0;
+    }
+    parsed.minutes(rounded).seconds(0);
+    return parsed.format('YYYY-MM-DDTHH:mm');
+  };
+
+  const computeWeeklyOccurrences = (base: string, total: number) => {
+    const baseMoment = moment(base);
+    if (!baseMoment.isValid() || total <= 1) {
+      return [];
+    }
+    const results: string[] = [];
+    let cursor = baseMoment.clone().add(1, 'day');
+    let guard = 0;
+    while (results.length < total - 1 && guard < 730) {
+      if (cursor.day() === baseMoment.day()) {
+        results.push(cursor.clone().hour(baseMoment.hour()).minute(baseMoment.minute()).format('YYYY-MM-DDTHH:mm'));
+      }
+      cursor = cursor.add(1, 'day');
+      guard += 1;
+    }
+    return results;
+  };
+
+  const computeMonthlyOccurrences = (base: string, total: number) => {
+    const baseMoment = moment(base);
+    if (!baseMoment.isValid() || total <= 1) {
+      return [];
+    }
+    const day = baseMoment.date();
+    const results: string[] = [];
+    for (let i = 1; i < total; i += 1) {
+      const next = baseMoment.clone().add(i, 'month');
+      const daysInMonth = next.daysInMonth();
+      next.date(Math.min(day, daysInMonth));
+      results.push(next.format('YYYY-MM-DDTHH:mm'));
+    }
+    return results;
+  };
+
+  const summaryDates = useMemo(() => {
+    if (recurrenceType === 'weekly') {
+      return computeWeeklyOccurrences(startDatetime, recurrenceCount);
+    }
+    if (recurrenceType === 'monthly') {
+      return computeMonthlyOccurrences(startDatetime, recurrenceCount);
+    }
+    if (recurrenceType === 'custom') {
+      return recurrenceCustomDates.filter((date) => date);
+    }
+    return [];
+  }, [recurrenceType, recurrenceCount, startDatetime, recurrenceCustomDates]);
+
+  useEffect(() => {
+    const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+    setRecurrenceDescriptions((prev) => {
+      if (prev.length === targetLength) return prev;
+      const next = [...prev.slice(0, targetLength)];
+      while (next.length < targetLength) {
+        next.push(description || '');
+      }
+      return next;
+    });
+  }, [summaryDates, recurrenceCustomDates.length, recurrenceType, description]);
+
+  useEffect(() => {
+    if (recurrenceType !== 'custom') return;
+    setRecurrenceEndDates((prev) => {
+      const next = [...prev.slice(0, recurrenceCustomDates.length)];
+      while (next.length < recurrenceCustomDates.length) {
+        next.push('');
+      }
+      return next;
+    });
+  }, [recurrenceCustomDates.length, recurrenceType]);
+
+  useEffect(() => {
+    const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+    setExpandedDescriptions((prev) => {
+      const next: Record<number, boolean> = {};
+      for (let i = 0; i < targetLength; i += 1) {
+        if (prev[i]) next[i] = true;
+      }
+      return next;
+    });
+  }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
+
+  useEffect(() => {
+    const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+    setExpandedDateEdits((prev) => {
+      const next: Record<number, boolean> = {};
+      for (let i = 0; i < targetLength + 1; i += 1) {
+        if (prev[i]) next[i] = true;
+      }
+      return next;
+    });
+  }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
+
+  const displayDates = useMemo(() => {
+    if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+      if (startDatetime) {
+        return [startDatetime, ...summaryDates];
+      }
+    }
+    return summaryDates;
+  }, [recurrenceType, startDatetime, summaryDates]);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,11 +278,100 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
       setError('Name, description, type, start, and end are required.');
       return;
     }
+    const startMoment = moment(startDatetime);
+    const endMoment = moment(endDatetime);
+    if (!startMoment.isValid() || !endMoment.isValid()) {
+      setError('Start and end must be valid dates.');
+      return;
+    }
+    if (startMoment.isBefore(moment())) {
+      setError('Events can’t start in the past.');
+      return;
+    }
+    if (endMoment.isBefore(startMoment)) {
+      setError('End date can’t be before the start date.');
+      return;
+    }
+    if (!startMoment.isSame(endMoment, 'day')) {
+      setError('Start and end must be on the same day.');
+      return;
+    }
+
+    const subscriptionLevel = globalProfile?.subscription_level;
+    const maxRecurringEvents = isPro(subscriptionLevel)
+      ? 10
+      : isCommunityPlus(subscriptionLevel)
+        ? 5
+        : 1;
+
+    const trimmedCustomDates = recurrenceCustomDates
+      .map((date) => (date ?? '').trim())
+      .filter((date) => date);
+
+    if (recurrenceType !== 'none') {
+      if (maxRecurringEvents <= 1) {
+        setError('Recurring events are available for Community+ and Pro members.');
+        return;
+      }
+      if (recurrenceType === 'custom' && trimmedCustomDates.length === 0) {
+        setError('Add at least one additional date.');
+        return;
+      }
+      if (recurrenceType !== 'custom' && recurrenceCount > maxRecurringEvents) {
+        setError(`Recurring events are limited to ${maxRecurringEvents} total events.`);
+        return;
+      }
+      if (recurrenceType === 'custom' && (trimmedCustomDates.length + 1) > maxRecurringEvents) {
+        setError(`Recurring events are limited to ${maxRecurringEvents} total events.`);
+        return;
+      }
+      if (recurrenceType === 'custom') {
+        const normalized = trimmedCustomDates.map((value) => normalizeDatetime(value));
+        for (let i = 1; i < normalized.length; i += 1) {
+          if (moment(normalized[i]).isBefore(moment(normalized[i - 1]))) {
+            setError('Recurring dates must be in order (later dates after earlier ones).');
+            return;
+          }
+        }
+        const endNormalized = recurrenceEndDates.map((value, index) => value || normalizeDatetime(normalized[index] || ''));
+        for (let i = 0; i < normalized.length; i += 1) {
+          const startValue = normalized[i];
+          const endValue = endNormalized[i];
+          if (!startValue || !endValue) {
+            setError('Each recurring date needs an end time.');
+            return;
+          }
+          const startTime = moment(startValue);
+          const endTime = moment(endValue);
+          if (!endTime.isSame(startTime, 'day')) {
+            setError('Recurring date end times must be on the same day.');
+            return;
+          }
+          if (endTime.isBefore(startTime)) {
+            setError('Recurring date end times can’t be before the start.');
+            return;
+          }
+        }
+      }
+    }
 
     setSubmitting(true);
     setError(null);
 
     try {
+      const baseStartDate = startDatetime ? new Date(startDatetime) : null;
+      const recurrenceMonthDay = baseStartDate ? baseStartDate.getDate() : null;
+      const descriptionsForPayload = recurrenceType === 'custom'
+        ? trimmedCustomDates.map((_, index) => recurrenceDescriptions[index] ?? '')
+        : summaryDates.map((_, index) => recurrenceDescriptions[index] ?? '');
+      const endsForPayload = recurrenceType === 'custom'
+        ? trimmedCustomDates.map((value, index) => recurrenceEndDates[index] || normalizeDatetime(value))
+        : summaryDates.map((value, index) => {
+          const fallbackEnd = baseDurationMinutes > 0
+            ? moment(value).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+            : value;
+          return recurrenceEndDates[index] || normalizeDatetime(fallbackEnd);
+        });
       const payload = {
         name,
         description,
@@ -172,6 +389,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         in_person_precautions: precautions,
         external_link: externalLink || null,
         external_registration_required: externalRegistrationRequired ? 'true' : 'false',
+        recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
+        recurrence_count: recurrenceType !== 'custom' ? recurrenceCount : null,
+        recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates : null,
+        recurrence_month_day: recurrenceType === 'monthly' ? recurrenceMonthDay : null,
+        recurrence_descriptions: recurrenceType !== 'none'
+          ? descriptionsForPayload
+          : null,
+        recurrence_end_datetimes: recurrenceType !== 'none' ? endsForPayload : null,
       };
 
       const response = await apiClient.post('/api/event/', payload);
@@ -197,6 +422,70 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     onDismiss?.();
   };
 
+  const subscriptionLevel = globalProfile?.subscription_level;
+  const maxRecurringEvents = isPro(subscriptionLevel)
+    ? 10
+    : isCommunityPlus(subscriptionLevel)
+      ? 5
+      : 1;
+
+  const canUseRecurring = maxRecurringEvents > 1;
+  const maxCustomDates = Math.max(maxRecurringEvents - 1, 0);
+
+  const dateErrorMessages = new Set([
+    'Start and end must be valid dates.',
+    'Events can’t start in the past.',
+    'End date can’t be before the start date.',
+    'Start and end must be on the same day.',
+  ]);
+  const recurrenceErrorMessages = new Set([
+    'Add at least one additional date.',
+    'Recurring dates must be in order (later dates after earlier ones).',
+    'Each recurring date needs an end time.',
+    'Recurring date end times must be on the same day.',
+    'Recurring date end times can’t be before the start.',
+  ]);
+  const dateError = error && dateErrorMessages.has(error) ? error : null;
+  const recurrenceError = error && recurrenceErrorMessages.has(error) ? error : null;
+  const showGlobalError = error && !dateError && !recurrenceError;
+  const baseDurationMinutes = useMemo(() => {
+    const start = moment(startDatetime);
+    const end = moment(endDatetime);
+    if (!start.isValid() || !end.isValid()) return 0;
+    return Math.max(end.diff(start, 'minutes'), 0);
+  }, [startDatetime, endDatetime]);
+
+  const formatEndTime = (startValue: string) => {
+    const start = moment(startValue);
+    if (!start.isValid() || baseDurationMinutes <= 0) return '';
+    return start.add(baseDurationMinutes, 'minutes').format('h:mm A');
+  };
+
+  useEffect(() => {
+    if (!canUseRecurring) return;
+    if (recurrenceType === 'none') {
+      setRecurrenceCount(1);
+      setRecurrenceCustomDates([]);
+      setRecurrenceDescriptions([]);
+      setRecurrenceEndDates([]);
+      setExpandedDateEdits({});
+      recurrenceTypeRef.current = recurrenceType;
+      return;
+    }
+    if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+      const defaultCount = Math.min(3, maxRecurringEvents);
+      setRecurrenceCount((prev) => {
+        if (recurrenceTypeRef.current !== recurrenceType) {
+          return defaultCount;
+        }
+        return prev < 2 ? defaultCount : Math.min(prev, maxRecurringEvents);
+      });
+    } else if (recurrenceCount < 2) {
+      setRecurrenceCount(2);
+    }
+    recurrenceTypeRef.current = recurrenceType;
+  }, [canUseRecurring, maxRecurringEvents, recurrenceCount, recurrenceType]);
+
   return (
     <>
       <IonHeader>
@@ -219,7 +508,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             <>
               <IonItem lines="none">
                 <IonLabel className="ion-text-wrap">
-                  Use the Refreshments post form if you also want this event to appear in the Refreshments feed. Clicking the button below will take you to that form.
+                  Use the post submission form if you also want this event to appear in the Refreshments feed. Clicking the button below will take you to that form.
                 </IonLabel>
               </IonItem>
               <IonItem lines="none">
@@ -256,8 +545,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               </IonLabel>
               <IonInput
                 type="datetime-local"
+                step="900"
                 value={startDatetime}
-                onIonChange={(event) => setStartDatetime(event.detail.value ?? '')}
+                onIonChange={(event) => setStartDatetime(normalizeDatetime(event.detail.value ?? ''))}
+                onIonFocus={() => {
+                  if (!startDatetime) {
+                    setStartDatetime(defaultStartDatetime);
+                  }
+                }}
               />
             </IonItem>
             <IonItem>
@@ -266,10 +561,26 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               </IonLabel>
               <IonInput
                 type="datetime-local"
+                step="900"
                 value={endDatetime}
-                onIonChange={(event) => setEndDatetime(event.detail.value ?? '')}
+                onIonChange={(event) => setEndDatetime(normalizeDatetime(event.detail.value ?? ''))}
+                onIonFocus={() => {
+                  if (endDatetime) return;
+                  if (startDatetime) {
+                    const next = moment(startDatetime).add(1, 'hour').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
+                    setEndDatetime(next);
+                  } else {
+                    const next = moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+                    setEndDatetime(next);
+                  }
+                }}
               />
             </IonItem>
+            {dateError && (
+              <IonItem lines="none">
+                <IonText color="danger">{dateError}</IonText>
+              </IonItem>
+            )}
           </div>
           <div className="create-event-section">
             <IonItem>
@@ -336,6 +647,356 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                   />
                 </IonItem>
               </>
+            )}
+          </div>
+          <div className="create-event-section">
+            <IonItem>
+              <IonLabel position="stacked">
+                Repeat
+                <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 600, color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '999px', padding: '2px 6px', display: 'inline-block' }}>
+                  Pro
+                </span>
+              </IonLabel>
+              <IonSelect
+                value={recurrenceType}
+                onIonChange={(event) => setRecurrenceType(event.detail.value ?? 'none')}
+                disabled={!canUseRecurring}
+              >
+                <IonSelectOption value="none">Does not repeat</IonSelectOption>
+                <IonSelectOption value="weekly">Weekly</IonSelectOption>
+                <IonSelectOption value="monthly">Monthly</IonSelectOption>
+                <IonSelectOption value="custom">Custom dates</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+            {!canUseRecurring && (
+              <IonItem lines="none">
+                <IonText color="medium">Recurring events are available for Community+ and Pro members.</IonText>
+              </IonItem>
+            )}
+            {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && (
+              <IonItem>
+                <IonLabel position="stacked">How many recurring dates?</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    onClick={() => setRecurrenceCount((prev) => Math.max(prev - 1, 2))}
+                    disabled={recurrenceCount <= 2}
+                  >
+                    -
+                  </IonButton>
+                  <IonText>{recurrenceCount}</IonText>
+                  <IonButton
+                    fill="outline"
+                    onClick={() => setRecurrenceCount((prev) => Math.min(prev + 1, maxRecurringEvents))}
+                    disabled={recurrenceCount >= maxRecurringEvents}
+                  >
+                    +
+                  </IonButton>
+                </div>
+              </IonItem>
+            )}
+            {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && displayDates.length > 0 && (
+              <>
+                <IonItem lines="none">
+                  <IonText color="medium">
+                    Dates (auto-generated) • Your time zone
+                  </IonText>
+                </IonItem>
+                {displayDates.map((dateValue, index) => {
+                  const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly') && index === 0;
+                  const descriptionIndex = isBaseDate ? -1 : index - 1;
+                  return (
+                  <IonItem key={`recurrence-date-${dateValue}-${index}`} lines="none">
+                    <div style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                            {moment(dateValue).format('ddd, MMM D')}
+                          </div>
+                          <div style={{ fontSize: '14px' }}>
+                            {moment(dateValue).format('h:mm A')}
+                            {baseDurationMinutes > 0 && (
+                              <> – {recurrenceEndDates[descriptionIndex]
+                                ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
+                                : formatEndTime(dateValue)}</>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {!isBaseDate && (
+                            <IonButton
+                              fill="clear"
+                              onClick={() =>
+                                setExpandedDateEdits((prev) => ({ ...prev, [index]: !prev[index] }))
+                              }
+                            >
+                              {expandedDateEdits[index] ? 'Hide date edit' : 'Edit date'}
+                            </IonButton>
+                          )}
+                          <IonButton
+                            fill="clear"
+                            onClick={() => {
+                              if (isBaseDate) {
+                                setBaseDescriptionExpanded((prev) => !prev);
+                              } else {
+                                const hasCustom = (recurrenceDescriptions[descriptionIndex] ?? '') !== (description ?? '');
+                                setExpandedDescriptions((prev) => {
+                                  if (hasCustom && prev[descriptionIndex]) return prev;
+                                  return {
+                                    ...prev,
+                                    [descriptionIndex]: !prev[descriptionIndex],
+                                  };
+                                });
+                              }
+                            }}
+                          >
+                            {isBaseDate
+                              ? (baseDescriptionExpanded ? 'Hide edit' : 'Edit description')
+                              : (expandedDescriptions[descriptionIndex] ? 'Hide edit' : 'Edit description')}
+                          </IonButton>
+                        </div>
+                      </div>
+                      {!isBaseDate && expandedDateEdits[index] && (
+                        <div style={{ marginTop: '8px' }}>
+                          <IonInput
+                            type="datetime-local"
+                            step="900"
+                            value={dateValue}
+                            onIonChange={(event) => {
+                              const updated = [...displayDates];
+                              updated[index] = normalizeDatetime(event.detail.value ?? '');
+                              const newCustomDates = updated.slice(1);
+                              const newDescriptions = recurrenceDescriptions.slice(0, newCustomDates.length);
+                              setRecurrenceCustomDates(newCustomDates);
+                              setRecurrenceDescriptions(newDescriptions);
+                              setRecurrenceEndDates((prev) => {
+                                const next = [...prev.slice(0, newCustomDates.length)];
+                                while (next.length < newCustomDates.length) {
+                                  const defaultEnd = baseDurationMinutes > 0
+                                    ? moment(newCustomDates[next.length]).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                    : newCustomDates[next.length];
+                                  next.push(defaultEnd);
+                                }
+                                return next;
+                              });
+                              setRecurrenceType('custom');
+                            }}
+                          />
+                          {(() => {
+                            const fallbackEnd = dateValue
+                              ? (baseDurationMinutes > 0
+                                ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                : dateValue)
+                              : '';
+                            return (
+                              <IonInput
+                                type="datetime-local"
+                                step="900"
+                                value={recurrenceEndDates[descriptionIndex] || fallbackEnd}
+                                onIonChange={(event) => {
+                                  const nextEnds = [...recurrenceEndDates];
+                                  nextEnds[descriptionIndex] = normalizeDatetime(event.detail.value ?? '');
+                                  setRecurrenceEndDates(nextEnds);
+                                }}
+                                onIonFocus={() => {
+                                  if (recurrenceEndDates[descriptionIndex] || !fallbackEnd) return;
+                                  const nextEnds = [...recurrenceEndDates];
+                                  nextEnds[descriptionIndex] = fallbackEnd;
+                                  setRecurrenceEndDates(nextEnds);
+                                }}
+                              />
+                            );
+                          })()}
+                          {dateValue && (
+                            <IonText color="medium" style={{ marginTop: '6px' }}>
+                              Ends at {recurrenceEndDates[descriptionIndex]
+                                ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
+                                : formatEndTime(dateValue)}
+                            </IonText>
+                          )}
+                        </div>
+                      )}
+                      {isBaseDate && !baseDescriptionExpanded && description && (
+                        <IonText color="medium">
+                          <p style={{ marginTop: '8px' }}>{description}</p>
+                        </IonText>
+                      )}
+                      {isBaseDate && baseDescriptionExpanded && (
+                        <div style={{ marginTop: '8px' }}>
+                          <IonTextarea
+                            value={description ?? ''}
+                            placeholder="Defaults to the main description unless you change it"
+                            autoGrow
+                            onIonChange={(event) => {
+                              setDescription(event.detail.value ?? '');
+                            }}
+                          />
+                          <IonButton
+                            fill="clear"
+                            onClick={() => setDescription('')}
+                          >
+                            Clear
+                          </IonButton>
+                        </div>
+                      )}
+                      {!isBaseDate && expandedDescriptions[descriptionIndex] && (
+                        <div style={{ marginTop: '8px' }}>
+                          <IonTextarea
+                            value={recurrenceDescriptions[descriptionIndex] ?? ''}
+                            placeholder="Defaults to the main description unless you change it"
+                            autoGrow
+                            onIonChange={(event) => {
+                              const nextDescriptions = [...recurrenceDescriptions];
+                              nextDescriptions[descriptionIndex] = event.detail.value ?? '';
+                              setRecurrenceDescriptions(nextDescriptions);
+                            }}
+                          />
+                          <IonButton
+                            fill="clear"
+                            onClick={() => {
+                              const nextDescriptions = [...recurrenceDescriptions];
+                              nextDescriptions[descriptionIndex] = '';
+                              setRecurrenceDescriptions(nextDescriptions);
+                            }}
+                          >
+                            Clear
+                          </IonButton>
+                        </div>
+                      )}
+                    </div>
+                  </IonItem>
+                  );
+                })}
+              </>
+            )}
+            {canUseRecurring && recurrenceType === 'custom' && (
+              <>
+                {recurrenceCustomDates.map((dateValue, index) => (
+                  <IonItem key={`custom-date-${index}`}>
+                    <IonLabel position="stacked">Extra date {index + 1}</IonLabel>
+                    <IonInput
+                      type="datetime-local"
+                      step="900"
+                      value={dateValue}
+                      onIonChange={(event) => {
+                        const nextDates = [...recurrenceCustomDates];
+                        nextDates[index] = normalizeDatetime(event.detail.value ?? '');
+                        setRecurrenceCustomDates(nextDates);
+                      }}
+                      onIonFocus={() => {
+                        if (dateValue) return;
+                        const nextDates = [...recurrenceCustomDates];
+                        nextDates[index] = defaultStartDatetime;
+                        setRecurrenceCustomDates(nextDates);
+                        if (!recurrenceEndDates[index]) {
+                          const nextEnds = [...recurrenceEndDates];
+                          nextEnds[index] = baseDurationMinutes > 0
+                            ? moment(defaultStartDatetime).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                            : defaultStartDatetime;
+                          setRecurrenceEndDates(nextEnds);
+                        }
+                      }}
+                    />
+                    {(() => {
+                      const fallbackEnd = dateValue
+                        ? (baseDurationMinutes > 0
+                          ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                          : dateValue)
+                        : '';
+                      return (
+                        <IonInput
+                          type="datetime-local"
+                          step="900"
+                          value={recurrenceEndDates[index] || fallbackEnd}
+                          onIonChange={(event) => {
+                            const nextEnds = [...recurrenceEndDates];
+                            nextEnds[index] = normalizeDatetime(event.detail.value ?? '');
+                            setRecurrenceEndDates(nextEnds);
+                          }}
+                          onIonFocus={() => {
+                            if (recurrenceEndDates[index] || !fallbackEnd) return;
+                            const nextEnds = [...recurrenceEndDates];
+                            nextEnds[index] = fallbackEnd;
+                            setRecurrenceEndDates(nextEnds);
+                          }}
+                        />
+                      );
+                    })()}
+                    {dateValue && (
+                      <IonText color="medium" style={{ marginTop: '6px' }}>
+                        Ends at {recurrenceEndDates[index]
+                          ? moment(recurrenceEndDates[index]).format('h:mm A')
+                          : formatEndTime(dateValue)}
+                      </IonText>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonButton
+                        fill="clear"
+                        onClick={() =>
+                          setExpandedDescriptions((prev) => ({ ...prev, [index]: !prev[index] }))
+                        }
+                      >
+                        {expandedDescriptions[index] ? 'Hide edit' : 'Edit description'}
+                      </IonButton>
+                      <IonButton
+                        fill="clear"
+                        onClick={() => {
+                          const nextDescriptions = [...recurrenceDescriptions];
+                          nextDescriptions[index] = '';
+                          setRecurrenceDescriptions(nextDescriptions);
+                        }}
+                      >
+                        Clear
+                      </IonButton>
+                    </div>
+                    {expandedDescriptions[index] && (
+                      <IonTextarea
+                        value={recurrenceDescriptions[index] ?? ''}
+                        placeholder="Defaults to the main description unless you change it"
+                        autoGrow
+                        onIonChange={(event) => {
+                          const nextDescriptions = [...recurrenceDescriptions];
+                          nextDescriptions[index] = event.detail.value ?? '';
+                          setRecurrenceDescriptions(nextDescriptions);
+                        }}
+                      />
+                    )}
+                    <IonButton
+                      slot="end"
+                      fill="clear"
+                      onClick={() => {
+                        const nextDates = recurrenceCustomDates.filter((_, i) => i !== index);
+                        setRecurrenceCustomDates(nextDates);
+                        setRecurrenceDescriptions((prev) => prev.filter((_, i) => i !== index));
+                        setRecurrenceEndDates((prev) => prev.filter((_, i) => i !== index));
+                      }}
+                    >
+                      Remove
+                    </IonButton>
+                  </IonItem>
+                ))}
+                <IonItem lines="none">
+                  <IonButton
+                    fill="outline"
+                    onClick={() => {
+                      if (recurrenceCustomDates.length < maxCustomDates) {
+                        setRecurrenceCustomDates([...recurrenceCustomDates, '']);
+                      }
+                    }}
+                    disabled={recurrenceCustomDates.length >= maxCustomDates}
+                  >
+                    Add another date
+                  </IonButton>
+                  <IonText color="medium" style={{ marginLeft: '12px' }}>
+                    {recurrenceCustomDates.length}/{maxCustomDates} extra dates
+                  </IonText>
+                </IonItem>
+              </>
+            )}
+            {recurrenceError && (
+              <IonItem lines="none">
+                <IonText color="danger">{recurrenceError}</IonText>
+              </IonItem>
             )}
           </div>
           <div className="create-event-section">
@@ -419,7 +1080,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               <IonInput value={imageAlt} onIonChange={(event) => setImageAlt(event.detail.value ?? '')} />
             </IonItem>
           ) : null}
-          {error && (
+          {showGlobalError && (
             <IonItem>
               <IonText color="danger">{error}</IonText>
             </IonItem>

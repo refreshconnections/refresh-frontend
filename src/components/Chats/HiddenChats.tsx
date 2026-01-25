@@ -44,7 +44,7 @@ const HiddenChats: React.FC<Props> = (props) => {
                 {open ?
                   <>
                     {hiddenChatsLoading ? (
-                      <IonRow className="ion-justify-content-center ion-padding">
+                      <IonRow className="ion-justify-content-center ion-padding" style={{ minHeight: "120px" }}>
                         <IonSpinner name="dots" />
                       </IonRow>
                     ) : (

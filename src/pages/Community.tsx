@@ -1,4 +1,4 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
 import { arrowDown } from 'ionicons/icons';
 
@@ -32,6 +32,7 @@ import { useGetAllAnnouncementsTake1Fn } from '../hooks/api/announcements-take-1
 
 const Community: React.FC = () => {
 
+  const router = useIonRouter();
   const [myLikes, setMyLikes] = useState<any>(null);
 
   const [pageUrl, setPageUrl] = useState<string>("");
@@ -361,13 +362,13 @@ const Community: React.FC = () => {
                 {
                   text: 'What is my streak?',
                   handler: async () => {
-                      window.location.pathname = "/activity"
+                      router.push("/activity")
                   }
                 },
                 {
                   text: 'Get Pro!',
                   handler: async () => {
-                    window.location.pathname = "/store"
+                    router.push("/store")
                   }
                 }]}
               />
@@ -396,7 +397,7 @@ const Community: React.FC = () => {
                 
                 <IonRow className="ion-justify-content-center">
                 <IonButton size="small" onClick={()=>setShowPostOverride(showPostOverride => [...showPostOverride,item.id] )}>Show anyway</IonButton>
-                <IonButton size="small" fill="outline" href="/settings">Update sensitivity settings</IonButton>
+                <IonButton size="small" fill="outline" routerLink="/settings">Update sensitivity settings</IonButton>
                 </IonRow>
                 </>
                 :

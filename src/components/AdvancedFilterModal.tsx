@@ -16,6 +16,7 @@ import { removeFromCapacitorLocalStorage } from "../hooks/capacitorPreferences/a
 type Props = {
   currentProfileData: any;
   pro: boolean;
+  onOpenTips: () => void;
   onDismiss: (changes: boolean) => void;
 };
 
@@ -181,7 +182,7 @@ const tooRestrictive = (theArray: string[], extra = false) => {
 }
 
 const AdvancedFilterModal: React.FC<Props> = (props) => {
-  const { onDismiss, currentProfileData } = props;
+  const { onDismiss, currentProfileData, onOpenTips } = props;
 
   // tanstack query
   const currentUserProfile = useGetCurrentProfile().data;
@@ -881,6 +882,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   }
 
+  const handleOpenTips = async () => {
+    onDismiss(false);
+    onOpenTips();
+  };
+
   // Don't show use effect
   useEffect(() => {
 
@@ -965,7 +971,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       ></IonToast>
       <IonContent className="adv-filters">
         <IonRow className="pad-bottom">
-          <IonButton size="small" fill="outline" href="/tips">How to use filters</IonButton>
+          <IonButton size="small" fill="outline" onClick={handleOpenTips}>How to use filters</IonButton>
           <IonButton size="small" fill="outline" color="danger" onClick={clearFilterAlert}>Clear filters</IonButton>
         </IonRow>
         <IonRow className="ion-justify-content-center">

@@ -1,6 +1,6 @@
 import { IonAvatar, IonButton, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useEffect, useState } from "react";
-import { authorSidenoteComment, increaseStreak, isPersonalPlus, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
+import { authorSidenoteComment, editComment, increaseStreak, isPersonalPlus, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
@@ -20,7 +20,7 @@ import { alert as alertIcon, removeCircleOutline, chatbubble, informationCircleO
 import CommentReplies from "./CommentReplies";
 import ProfileModal from "../ProfileModal";
 import moment from "moment";
-import { faMessageXmark } from "@fortawesome/pro-solid-svg-icons";
+import { faMessageXmark, faPen } from "@fortawesome/pro-solid-svg-icons";
 import { useGetLimits } from "../../hooks/api/profiles/current-limits";
 import { useGetDynamicIndividualComment } from "../../hooks/api/refreshments/individual-comment-dynamic";
 import { useGetStaticIndividualComment } from "../../hooks/api/refreshments/individual-comment-static";
@@ -97,11 +97,16 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const [liked, setLiked] = useState<boolean>(false)
   const [likedLength, setLikedLength] = useState(0)
+  const [commentText, setCommentText] = useState<string>(comment?.text ?? "");
+  const [originalTextState, setOriginalTextState] = useState<string>(comment?.original_text ?? "");
+  const [editedAtState, setEditedAtState] = useState<string>(comment?.edited_at ?? "");
+  const [showEdited, setShowEdited] = useState(false);
 
 
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
   const [presentSidenoteInfo] = useIonAlert();
+  const [presentEditAlert] = useIonAlert();
 
   const isOwner = globalCurrentProfile?.user === comment?.user;
   const showOwnHidden = isOwner && (comment?.sidenoted || comment?.removed);
@@ -114,6 +119,54 @@ const CommentItem: React.FC<Props> = (props) => {
       buttons: ['OK'],
     });
   };
+
+  const canEdit = isOwner
+    && !comment?.removed
+    && !comment?.sidenoted
+    && moment().diff(comment?.uploadDateTime, 'minutes') <= 5;
+
+  const editCommentAlert = () => {
+    presentEditAlert({
+      header: 'Edit comment',
+      inputs: [
+        {
+          name: 'text',
+          type: 'textarea',
+          value: commentText ?? '',
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Save',
+          handler: async (data) => {
+            const newText = (data?.text ?? '').trim();
+            if (!newText) {
+              return false;
+            }
+            try {
+              if (!originalTextState) {
+                setOriginalTextState(commentText);
+              }
+              await editComment(comment?.id, newText);
+              setCommentText(newText);
+              setEditedAtState(new Date().toISOString());
+              queryClient.invalidateQueries({ queryKey: postQueryKeys.comment(comment?.id) });
+              queryClient.invalidateQueries({ queryKey: postQueryKeys.staticcomment(comment?.id) });
+            } catch (e) {
+              return false;
+            }
+            return true;
+          }
+        }
+      ]
+    });
+  };
+
+  const editedLabelVisible = !!((comment?.edited_at && comment?.original_text) || (editedAtState && originalTextState));
 
   const heartComment = async () => {
 
@@ -139,6 +192,13 @@ const CommentItem: React.FC<Props> = (props) => {
     }
 
   }, [comment?.like_count])
+
+  useEffect(() => {
+    setCommentText(comment?.text ?? "");
+    setOriginalTextState(comment?.original_text ?? "");
+    setEditedAtState(comment?.edited_at ?? "");
+    setShowEdited(false);
+  }, [comment?.text, comment?.original_text, comment?.edited_at]);
 
   useEffect(() => {
 
@@ -362,7 +422,7 @@ const CommentItem: React.FC<Props> = (props) => {
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                               </div>
                             )}
-                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
                             {comment?.removed_reason ? <h4>Reason: {comment?.removed_reason}</h4> : <></>}
                             <ModerationNote
                               moderationNote={comment.moderation_note}
@@ -386,7 +446,7 @@ const CommentItem: React.FC<Props> = (props) => {
                               ) : <></>}
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
-                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
                             <ModerationNote
                               moderationNote={comment.moderation_note}
                               moderationIconOnly={false}
@@ -400,7 +460,14 @@ const CommentItem: React.FC<Props> = (props) => {
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
                               {profileLoading && <IonSpinner name="bubbles"></IonSpinner>}
                             </div>
-                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                            {editedLabelVisible && showEdited && (
+                              <IonText color="medium">
+                                <p style={{ marginTop: "4px" }}>
+                                  Original ({getTime(comment?.uploadDateTime)}): {comment?.original_text || originalTextState}
+                                </p>
+                              </IonText>
+                            )}
 
                           </>
                       }
@@ -430,6 +497,18 @@ const CommentItem: React.FC<Props> = (props) => {
                             moderationNoteLonger={comment.moderation_note_longer}
                           />
                         </div>
+                        {editedLabelVisible && (
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            onClick={() => setShowEdited((prev) => !prev)}
+                            style={{ marginRight: "4px" }}
+                          >
+                            <IonText color="medium" style={{ fontSize: "10pt" }}>
+                              {showEdited ? "hide edited" : "edited"}
+                            </IonText>
+                          </IonButton>
+                        )}
                         <div style={{ alignItems: "center", display: "inline-flex", paddingTop: "5pt" }} >
                           <IonButton fill="clear" color="primary" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton>
                           {comment?.reply_count > 0 ?
@@ -464,6 +543,13 @@ const CommentItem: React.FC<Props> = (props) => {
                   <IonItemOptions side="end">
                     <>
                       <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                      {canEdit && (
+                        <IonItemOption color="medium">
+                          <IonButton fill="clear" color="white" onClick={() => editCommentAlert()}>
+                            <FontAwesomeIcon icon={faPen} />
+                          </IonButton>
+                        </IonItemOption>
+                      )}
                       {(limits?.comments_removed < 5 && recentlyPosted(comment.uploadDateTime)) &&
                         <IonItemOption color="black" ><IonButton fill="clear" color="white" onClick={() => removeCommentAlert()}><FontAwesomeIcon icon={faMessageXmark}></FontAwesomeIcon></IonButton></IonItemOption>
                       }

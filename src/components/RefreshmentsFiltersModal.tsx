@@ -23,11 +23,12 @@ type Props = {
   radiusProp: number | null
   localProp: boolean,
   sortProp: string,
+  onNavigate: (path: string) => void;
   onDismiss: (bars: string, localPosts: boolean, radius: number | null, sortSelected: string) => void;
 };
 
 const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
-  const { onDismiss, barsProp, localProp, radiusProp, sortProp } = props;
+  const { onDismiss, barsProp, localProp, radiusProp, sortProp, onNavigate } = props;
 
   const queryClient = useQueryClient()
 
@@ -213,6 +214,11 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
   }
 
+  const handleNavigate = async (path: string) => {
+    await handleDone();
+    onNavigate(path);
+  };
+
 
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: async (selectedCity?: { name: string, lat: number, lng: number }) => {
@@ -300,7 +306,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
             <IonButton onClick={() => locationPresent()}>Share location</IonButton>
           </IonRow>)}
         <IonRow className="ion-padding ion-justify-content-center">
-          <IonButton color="navy" href="/community/submitted">
+          <IonButton color="navy" onClick={() => handleNavigate('/community/submitted')}>
             My submitted posts
           </IonButton>
         </IonRow>

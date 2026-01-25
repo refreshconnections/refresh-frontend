@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from 'prop-types';
 import axios from "axios";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonLabel, IonInput, IonCheckbox, IonButton, IonItem, IonRow, IonModal, IonButtons, IonNote, IonAlert } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonLabel, IonInput, IonCheckbox, IonButton, IonItem, IonRow, IonModal, IonButtons, IonNote, IonAlert, useIonRouter } from '@ionic/react';
 import Cookies from 'js-cookie';
 
 import './ResetPasswordModalInner.css'
@@ -20,6 +20,7 @@ interface OpenResetModalInterface {
 
 const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPasswordModalOpen, urlpath}) => {
 
+    const router = useIonRouter();
     const [newpassword, setNewPassword] = useState("");
     const [newpassword2, setNewPassword2] = useState("");
 
@@ -80,7 +81,7 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
                 <IonToolbar className="modal-title">
                     <IonTitle>Reset</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton href="/">Cancel</IonButton>
+                        <IonButton onClick={() => router.push("/")}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
@@ -93,7 +94,7 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
                         text: 'OK',
                         role: 'confirm',
                         handler: () => {
-                            window.location.href = "/"
+                            router.push("/")
                         },
                       }]}
                 />

@@ -718,6 +718,30 @@ export async function removeComment(comment_id) {
     return response.data
 }
 
+export async function editComment(comment_id, text) {
+    const url = `${BASE_URL}/api/refreshments/comment/edit/`;
+
+    const data = {
+        "comment_id": comment_id,
+        "text": text
+    }
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken
+    }
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: data,
+        headers: headers
+    });
+
+    return response.data
+}
+
 export async function markAllInChatAsRead(sender_id) {
     const url = `${BASE_URL}/api/profiles/chats/mark_all_messages_in_chat_as_read/`;
 

@@ -13,7 +13,7 @@ const Construction: React.FC = () => {
     <IonPage>
       <IonContent className="construction">
         <IonFab slot="fixed" vertical="bottom" horizontal="start">
-            <IonFabButton href="/community" color="light" size="small">
+            <IonFabButton routerLink="/community" color="light" size="small">
                 <IonIcon icon={refresh}></IonIcon>
             </IonFabButton>
           </IonFab>

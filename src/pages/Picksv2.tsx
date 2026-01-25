@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonButton, IonFab, IonFabButton, IonIcon, IonRow, IonFabList, useIonAlert, useIonModal, IonCard, IonCardTitle, IonCardContent } from '@ionic/react';
+import { IonContent, IonPage, IonButton, IonFab, IonFabButton, IonIcon, IonRow, IonFabList, useIonAlert, useIonModal, IonCard, IonCardTitle, IonCardContent, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { heartOutline as heartIcon, bugOutline as bugIcon, hourglass as hourglassIcon, square as squareIcon, alert as alertIcon, filter as filterIcon } from 'ionicons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -17,6 +17,7 @@ import ReportModal from '../components/ReportModal';
 import { LikeMessageAlertModal } from './LikeMessageAlertModal';
 import StatusToast from '../components/StatusToast';
 import { IconPop } from '../components/IconPop';
+import Tips from './Tips';
 import './Page.css';
 import './Picks.css';
 import { getPicksAndProfilesWithFiltersFn, usePicksAndProfilesWithFilters } from '../hooks/api/profiles/picks-and-profiles';
@@ -24,6 +25,7 @@ import { userQueryKeys } from '../hooks/api';
 import PersonalProfile from './PersonalProfile';
 
 const Picksv2: React.FC = () => {
+  const router = useIonRouter();
   const queryClient = useQueryClient();
 
   const { data: filterData, isLoading: filterDataIsLoading } = useGetCurrentProfile();
@@ -286,9 +288,14 @@ const Picksv2: React.FC = () => {
     setButtonLoading(false);
   };
 
+  const [tipsPresent, tipsDismiss] = useIonModal(Tips, {
+    onDismiss: () => tipsDismiss(),
+  });
+
   const [filterPresent, filterDismiss] = useIonModal(AdvancedFilterModal, {
     currentProfileData: filterData,
     pro: filterData?.subscription_level,
+    onOpenTips: () => tipsPresent(),
     onDismiss: async (changes: boolean) => {
       // Close the modal first
       filterDismiss();
