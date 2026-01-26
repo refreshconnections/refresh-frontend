@@ -6,6 +6,7 @@ import {
   IonHeader,
   IonInput,
   IonItem,
+  IonAlert,
   IonLabel,
   IonList,
   IonRow,
@@ -25,6 +26,7 @@ import CitySelectorModal from './CitySelectorModal';
 import { eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
+import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import CreatePostModal from './CreatePostModal';
@@ -84,12 +86,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [imageAlt, setImageAlt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'custom'>('none');
+  const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
   const [recurrenceCount, setRecurrenceCount] = useState(1);
   const [recurrenceCustomDates, setRecurrenceCustomDates] = useState<string[]>([]);
   const [recurrenceDescriptions, setRecurrenceDescriptions] = useState<string[]>([]);
   const [recurrenceEndDates, setRecurrenceEndDates] = useState<string[]>([]);
+  const [recurrenceExternalLinks, setRecurrenceExternalLinks] = useState<string[]>([]);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
+  const [expandedExternalLinks, setExpandedExternalLinks] = useState<Record<number, boolean>>({});
   const [baseDescriptionExpanded, setBaseDescriptionExpanded] = useState(false);
   const [expandedDateEdits, setExpandedDateEdits] = useState<Record<number, boolean>>({});
 
@@ -182,12 +187,27 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     return results;
   };
 
+  const computeDailyOccurrences = (base: string, total: number) => {
+    const baseMoment = moment(base);
+    if (!baseMoment.isValid() || total <= 1) {
+      return [];
+    }
+    const results: string[] = [];
+    for (let i = 1; i < total; i += 1) {
+      results.push(baseMoment.clone().add(i, 'day').format('YYYY-MM-DDTHH:mm'));
+    }
+    return results;
+  };
+
   const summaryDates = useMemo(() => {
     if (recurrenceType === 'weekly') {
       return computeWeeklyOccurrences(startDatetime, recurrenceCount);
     }
     if (recurrenceType === 'monthly') {
       return computeMonthlyOccurrences(startDatetime, recurrenceCount);
+    }
+    if (recurrenceType === 'daily') {
+      return computeDailyOccurrences(startDatetime, recurrenceCount);
     }
     if (recurrenceType === 'custom') {
       return recurrenceCustomDates.filter((date) => date);
@@ -206,6 +226,18 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
       return next;
     });
   }, [summaryDates, recurrenceCustomDates.length, recurrenceType, description]);
+
+  useEffect(() => {
+    const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+    setRecurrenceExternalLinks((prev) => {
+      if (prev.length === targetLength) return prev;
+      const next = [...prev.slice(0, targetLength)];
+      while (next.length < targetLength) {
+        next.push(externalLink || '');
+      }
+      return next;
+    });
+  }, [summaryDates, recurrenceCustomDates.length, recurrenceType, externalLink]);
 
   useEffect(() => {
     if (recurrenceType !== 'custom') return;
@@ -231,6 +263,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
 
   useEffect(() => {
     const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+    setExpandedExternalLinks((prev) => {
+      const next: Record<number, boolean> = {};
+      for (let i = 0; i < targetLength; i += 1) {
+        if (prev[i]) next[i] = true;
+      }
+      return next;
+    });
+  }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
+
+  useEffect(() => {
+    const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
     setExpandedDateEdits((prev) => {
       const next: Record<number, boolean> = {};
       for (let i = 0; i < targetLength + 1; i += 1) {
@@ -241,7 +284,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
 
   const displayDates = useMemo(() => {
-    if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+    if (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') {
       if (startDatetime) {
         return [startDatetime, ...summaryDates];
       }
@@ -372,6 +415,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             : value;
           return recurrenceEndDates[index] || normalizeDatetime(fallbackEnd);
         });
+      const linksForPayload = recurrenceType === 'custom'
+        ? trimmedCustomDates.map((_, index) => recurrenceExternalLinks[index] ?? '')
+        : summaryDates.map((_, index) => recurrenceExternalLinks[index] ?? '');
       const payload = {
         name,
         description,
@@ -397,6 +443,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
           ? descriptionsForPayload
           : null,
         recurrence_end_datetimes: recurrenceType !== 'none' ? endsForPayload : null,
+        recurrence_external_links: recurrenceType !== 'none' ? linksForPayload : null,
       };
 
       const response = await apiClient.post('/api/event/', payload);
@@ -431,6 +478,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
 
   const canUseRecurring = maxRecurringEvents > 1;
   const maxCustomDates = Math.max(maxRecurringEvents - 1, 0);
+
+  const handleRecurrenceChange = (value: string) => {
+    if (!canUseRecurring && value !== 'none') {
+      setShowRecurringUpgrade(true);
+      setRecurrenceType('none');
+      return;
+    }
+    setRecurrenceType(value as 'none' | 'weekly' | 'monthly' | 'daily' | 'custom');
+  };
 
   const dateErrorMessages = new Set([
     'Start and end must be valid dates.',
@@ -468,11 +524,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
       setRecurrenceCustomDates([]);
       setRecurrenceDescriptions([]);
       setRecurrenceEndDates([]);
+      setRecurrenceExternalLinks([]);
       setExpandedDateEdits({});
+      setExpandedExternalLinks({});
       recurrenceTypeRef.current = recurrenceType;
       return;
     }
-    if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+    if (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') {
       const defaultCount = Math.min(3, maxRecurringEvents);
       setRecurrenceCount((prev) => {
         if (recurrenceTypeRef.current !== recurrenceType) {
@@ -651,18 +709,97 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
           </div>
           <div className="create-event-section">
             <IonItem>
+              <IonLabel position="stacked">Post as</IonLabel>
+              <IonSelect
+                value={postingIdentity}
+                onIonChange={(event) => setPostingIdentity(event.detail.value ?? 'anonymous')}
+              >
+                {globalProfile?.username && (
+                  <IonSelectOption value={globalProfile.username}>
+                    {globalProfile.preferred_name
+                      ? `${globalProfile.preferred_name} (${globalProfile.username})`
+                      : globalProfile.username}
+                  </IonSelectOption>
+                )}
+                <IonSelectOption value="anonymous">Anonymous</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+            <IonItem>
+              <IonLabel>Sensitive</IonLabel>
+              <IonCheckbox slot="end" checked={sensitive} onIonChange={(event) => setSensitive(event.detail.checked)} />
+            </IonItem>
+            {sensitive ? (
+              <IonItem>
+                <IonLabel position="stacked">Sensitive description</IonLabel>
+                <IonTextarea
+                  value={sensitiveDescription}
+                  onIonChange={(event) => setSensitiveDescription(event.detail.value ?? '')}
+                  rows={2}
+                />
+              </IonItem>
+            ) : null}
+            <IonItem>
+              <IonLabel>External registration required</IonLabel>
+              <IonCheckbox
+                slot="end"
+                checked={externalRegistrationRequired}
+                onIonChange={(event) => setExternalRegistrationRequired(event.detail.checked)}
+              />
+            </IonItem>
+          </div>
+          <div className="create-event-section">
+            <IonItem>
+              <IonLabel position="stacked">External link</IonLabel>
+              <IonInput value={externalLink} onIonChange={(event) => setExternalLink(event.detail.value ?? '')} />
+            </IonItem>
+            <IonItem color="white" lines="none">
+              <IonLabel>Photo (optional)</IonLabel>
+              {imageData ? (
+                <>
+                  <IonLabel>
+                    <IonText>Photo attached</IonText>
+                  </IonLabel>
+                  <IonButton slot="end" color="danger" onClick={() => handleRemovePhoto()}>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </IonButton>
+                </>
+              ) : (
+                <IonButton slot="end" color="tertiary" onClick={handleAttachPhotoClick}>
+                  <FontAwesomeIcon icon={faImage} /> &nbsp; Attach Photo
+                </IonButton>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                hidden
+              />
+            </IonItem>
+          </div>
+          {imageData ? (
+            <IonItem className="image-preview-item">
+              <img src={imageData} alt={imageAlt || 'Event preview'} />
+            </IonItem>
+          ) : null}
+          {imageData ? (
+            <IonItem color="white" lines="none">
+              <IonLabel position="stacked">Image alt text (optional)</IonLabel>
+              <IonInput value={imageAlt} onIonChange={(event) => setImageAlt(event.detail.value ?? '')} />
+            </IonItem>
+          ) : null}
+          <div className="create-event-section">
+            <IonItem>
               <IonLabel position="stacked">
                 Repeat
-                <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 600, color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '999px', padding: '2px 6px', display: 'inline-block' }}>
-                  Pro
-                </span>
+                <FontAwesomeIcon style={{ marginLeft: '6px' }} color="var(--ion-color-medium)" icon={faStar} />
               </IonLabel>
               <IonSelect
                 value={recurrenceType}
-                onIonChange={(event) => setRecurrenceType(event.detail.value ?? 'none')}
-                disabled={!canUseRecurring}
+                onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'none')}
               >
                 <IonSelectOption value="none">Does not repeat</IonSelectOption>
+                <IonSelectOption value="daily">Daily</IonSelectOption>
                 <IonSelectOption value="weekly">Weekly</IonSelectOption>
                 <IonSelectOption value="monthly">Monthly</IonSelectOption>
                 <IonSelectOption value="custom">Custom dates</IonSelectOption>
@@ -703,12 +840,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                   </IonText>
                 </IonItem>
                 {displayDates.map((dateValue, index) => {
-                  const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly') && index === 0;
+                  const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') && index === 0;
                   const descriptionIndex = isBaseDate ? -1 : index - 1;
                   return (
                   <IonItem key={`recurrence-date-${dateValue}-${index}`} lines="none">
                     <div style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: '16px', fontWeight: 600 }}>
                             {moment(dateValue).format('ddd, MMM D')}
@@ -722,7 +859,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                             )}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                           {!isBaseDate && (
                             <IonButton
                               fill="clear"
@@ -754,6 +891,19 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                               ? (baseDescriptionExpanded ? 'Hide edit' : 'Edit description')
                               : (expandedDescriptions[descriptionIndex] ? 'Hide edit' : 'Edit description')}
                           </IonButton>
+                          {!isBaseDate && (
+                            <IonButton
+                              fill="clear"
+                              onClick={() =>
+                                setExpandedExternalLinks((prev) => ({
+                                  ...prev,
+                                  [descriptionIndex]: !prev[descriptionIndex],
+                                }))
+                              }
+                            >
+                              {expandedExternalLinks[descriptionIndex] ? 'Hide link' : 'Edit link'}
+                            </IonButton>
+                          )}
                         </div>
                       </div>
                       {!isBaseDate && expandedDateEdits[index] && (
@@ -776,6 +926,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                                     ? moment(newCustomDates[next.length]).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
                                     : newCustomDates[next.length];
                                   next.push(defaultEnd);
+                                }
+                                return next;
+                              });
+                              setRecurrenceExternalLinks((prev) => {
+                                const next = [...prev.slice(0, newCustomDates.length)];
+                                while (next.length < newCustomDates.length) {
+                                  next.push(externalLink || '');
                                 }
                                 return next;
                               });
@@ -863,6 +1020,19 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                           </IonButton>
                         </div>
                       )}
+                      {!isBaseDate && expandedExternalLinks[descriptionIndex] && (
+                        <div style={{ marginTop: '8px' }}>
+                          <IonInput
+                            value={recurrenceExternalLinks[descriptionIndex] ?? externalLink}
+                            placeholder="Add a link for this date (optional)"
+                            onIonChange={(event) => {
+                              const nextLinks = [...recurrenceExternalLinks];
+                              nextLinks[descriptionIndex] = event.detail.value ?? '';
+                              setRecurrenceExternalLinks(nextLinks);
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </IonItem>
                   );
@@ -940,6 +1110,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                       </IonButton>
                       <IonButton
                         fill="clear"
+                        onClick={() =>
+                          setExpandedExternalLinks((prev) => ({ ...prev, [index]: !prev[index] }))
+                        }
+                      >
+                        {expandedExternalLinks[index] ? 'Hide link' : 'Edit link'}
+                      </IonButton>
+                      <IonButton
+                        fill="clear"
                         onClick={() => {
                           const nextDescriptions = [...recurrenceDescriptions];
                           nextDescriptions[index] = '';
@@ -961,6 +1139,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                         }}
                       />
                     )}
+                    {expandedExternalLinks[index] && (
+                      <IonInput
+                        value={recurrenceExternalLinks[index] ?? externalLink}
+                        placeholder="Add a link for this date (optional)"
+                        onIonChange={(event) => {
+                          const nextLinks = [...recurrenceExternalLinks];
+                          nextLinks[index] = event.detail.value ?? '';
+                          setRecurrenceExternalLinks(nextLinks);
+                        }}
+                      />
+                    )}
                     <IonButton
                       slot="end"
                       fill="clear"
@@ -969,6 +1158,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                         setRecurrenceCustomDates(nextDates);
                         setRecurrenceDescriptions((prev) => prev.filter((_, i) => i !== index));
                         setRecurrenceEndDates((prev) => prev.filter((_, i) => i !== index));
+                        setRecurrenceExternalLinks((prev) => prev.filter((_, i) => i !== index));
                       }}
                     >
                       Remove
@@ -999,92 +1189,23 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               </IonItem>
             )}
           </div>
-          <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">Post as</IonLabel>
-              <IonSelect
-                value={postingIdentity}
-                onIonChange={(event) => setPostingIdentity(event.detail.value ?? 'anonymous')}
-              >
-                {globalProfile?.username && (
-                  <IonSelectOption value={globalProfile.username}>
-                    {globalProfile.preferred_name
-                      ? `${globalProfile.preferred_name} (${globalProfile.username})`
-                      : globalProfile.username}
-                  </IonSelectOption>
-                )}
-                <IonSelectOption value="anonymous">Anonymous</IonSelectOption>
-              </IonSelect>
-            </IonItem>
-            <IonItem>
-              <IonLabel>Sensitive</IonLabel>
-              <IonCheckbox slot="end" checked={sensitive} onIonChange={(event) => setSensitive(event.detail.checked)} />
-            </IonItem>
-            {sensitive ? (
-              <IonItem>
-                <IonLabel position="stacked">Sensitive description</IonLabel>
-                <IonTextarea
-                  value={sensitiveDescription}
-                  onIonChange={(event) => setSensitiveDescription(event.detail.value ?? '')}
-                  rows={2}
-                />
-              </IonItem>
-            ) : null}
-            <IonItem>
-              <IonLabel>External registration required</IonLabel>
-              <IonCheckbox
-                slot="end"
-                checked={externalRegistrationRequired}
-                onIonChange={(event) => setExternalRegistrationRequired(event.detail.checked)}
-              />
-            </IonItem>
-          </div>
-          <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">External link</IonLabel>
-              <IonInput value={externalLink} onIonChange={(event) => setExternalLink(event.detail.value ?? '')} />
-            </IonItem>
-            <IonItem color="white" lines="none">
-              <IonLabel>Photo (optional)</IonLabel>
-              {imageData ? (
-                <>
-                  <IonLabel>
-                    <IonText>Photo attached</IonText>
-                  </IonLabel>
-                  <IonButton slot="end" color="danger" onClick={() => handleRemovePhoto()}>
-                    <FontAwesomeIcon icon={faTrash} />
-                  </IonButton>
-                </>
-              ) : (
-                <IonButton slot="end" color="tertiary" onClick={handleAttachPhotoClick}>
-                  <FontAwesomeIcon icon={faImage} /> &nbsp; Attach Photo
-                </IonButton>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                hidden
-              />
-            </IonItem>
-          </div>
-          {imageData ? (
-            <IonItem className="image-preview-item">
-              <img src={imageData} alt={imageAlt || 'Event preview'} />
-            </IonItem>
-          ) : null}
-          {imageData ? (
-            <IonItem color="white" lines="none">
-              <IonLabel position="stacked">Image alt text (optional)</IonLabel>
-              <IonInput value={imageAlt} onIonChange={(event) => setImageAlt(event.detail.value ?? '')} />
-            </IonItem>
-          ) : null}
           {showGlobalError && (
             <IonItem>
               <IonText color="danger">{error}</IonText>
             </IonItem>
           )}
+          <IonAlert
+            isOpen={showRecurringUpgrade}
+            header="Recurring events"
+            message="Join Community+ or Pro to post recurring events."
+            buttons={[
+              {
+                text: 'OK',
+                handler: () => setShowRecurringUpgrade(false),
+              },
+            ]}
+            onDidDismiss={() => setShowRecurringUpgrade(false)}
+          />
         </IonList>
         <IonRow className="create-event-actions">
           <IonButton expand="block" onClick={handleSubmit} disabled={submitting}>

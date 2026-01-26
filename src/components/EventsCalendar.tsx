@@ -76,9 +76,17 @@ const formatPrecautionLabel = (value: string) =>
 
 type EventsCalendarProps = {
   renderTrigger?: (open: () => void) => React.ReactNode;
+  initialDate?: string;
+  openOnLoad?: boolean;
+  onAutoOpenHandled?: () => void;
 };
 
-const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
+const EventsCalendar: React.FC<EventsCalendarProps> = ({
+  renderTrigger,
+  initialDate,
+  openOnLoad,
+  onAutoOpenHandled,
+}) => {
   const profile = useGetCurrentProfile().data;
   const isPremium = isCommunityPlus(profile?.subscription_level);
   const today = moment();
@@ -173,12 +181,21 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
 
   const clampTarget = (candidate: Moment) => clampToRange(candidate);
 
-  const openEventsCalendar = () => {
-    const clamped = clampTarget(today.clone());
+  const openEventsCalendar = (dateOverride?: string) => {
+    const candidate = dateOverride ? moment(dateOverride) : today.clone();
+    const clamped = clampTarget(candidate.isValid() ? candidate : today.clone());
     setSelectedDate(clamped.toDate());
     setCalendarMonth(clamped.clone().startOf('month'));
     setIsCalendarOpen(true);
   };
+
+  useEffect(() => {
+    if (!openOnLoad || !initialDate) return;
+    const candidate = moment(initialDate);
+    if (!candidate.isValid()) return;
+    openEventsCalendar(candidate.format('YYYY-MM-DD'));
+    onAutoOpenHandled?.();
+  }, [initialDate, onAutoOpenHandled, openOnLoad]);
 
   const handleSelectDay = (date: Date) => {
     const day = moment(date);
@@ -205,9 +222,10 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({ renderTrigger }) => {
   const displayDays = viewMode === 'month' ? calendarDays : weekDays;
   const isWeekView = viewMode === 'week';
 
-  const triggerNode = renderTrigger ? renderTrigger(openEventsCalendar) : (
+  const handleOpenCalendar = () => openEventsCalendar();
+  const triggerNode = renderTrigger ? renderTrigger(handleOpenCalendar) : (
     <IonRow className="events-calendar-trigger">
-      <IonButton fill="outline" color="primary" onClick={openEventsCalendar}>
+      <IonButton fill="outline" color="primary" onClick={handleOpenCalendar}>
         <IonIcon icon={calendarNumber} slot="start" />
         Events calendar
       </IonButton>

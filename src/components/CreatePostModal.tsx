@@ -105,14 +105,17 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [eventEnd, setEventEnd] = useState<string>("");
     const [eventType, setEventType] = useState<string>("");
     const [eventWarning, setEventWarning] = useState<string[] | null>(null);
-    const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'custom'>('none');
+    const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
     const [recurrenceCount, setRecurrenceCount] = useState(1);
     const [recurrenceCustomDates, setRecurrenceCustomDates] = useState<string[]>([]);
     const [recurrenceDescriptions, setRecurrenceDescriptions] = useState<string[]>([]);
     const [recurrenceEndDates, setRecurrenceEndDates] = useState<string[]>([]);
     const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
+    const [recurrenceExternalLinks, setRecurrenceExternalLinks] = useState<string[]>([]);
+    const [expandedExternalLinks, setExpandedExternalLinks] = useState<Record<number, boolean>>({});
     const [baseDescriptionExpanded, setBaseDescriptionExpanded] = useState(false);
     const [expandedDateEdits, setExpandedDateEdits] = useState<Record<number, boolean>>({});
+    const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
 
     const [ackEmail, setAckEmail] = useState(false);
 
@@ -200,12 +203,27 @@ const CreatePostModal: React.FC<Props> = (props) => {
         return results;
     };
 
+    const computeDailyOccurrences = (base: string, total: number) => {
+        const baseMoment = moment(base);
+        if (!baseMoment.isValid() || total <= 1) {
+            return [];
+        }
+        const results: string[] = [];
+        for (let i = 1; i < total; i += 1) {
+            results.push(baseMoment.clone().add(i, 'day').format('YYYY-MM-DDTHH:mm'));
+        }
+        return results;
+    };
+
     const summaryDates = useMemo(() => {
         if (recurrenceType === 'weekly') {
             return computeWeeklyOccurrences(eventStart, recurrenceCount);
         }
         if (recurrenceType === 'monthly') {
             return computeMonthlyOccurrences(eventStart, recurrenceCount);
+        }
+        if (recurrenceType === 'daily') {
+            return computeDailyOccurrences(eventStart, recurrenceCount);
         }
         if (recurrenceType === 'custom') {
             return recurrenceCustomDates.filter((date) => date);
@@ -224,6 +242,18 @@ const CreatePostModal: React.FC<Props> = (props) => {
             return next;
         });
     }, [summaryDates, recurrenceCustomDates.length, recurrenceType, content]);
+
+    useEffect(() => {
+        const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+        setRecurrenceExternalLinks((prev) => {
+            if (prev.length === targetLength) return prev;
+            const next = [...prev.slice(0, targetLength)];
+            while (next.length < targetLength) {
+                next.push(link || '');
+            }
+            return next;
+        });
+    }, [summaryDates, recurrenceCustomDates.length, recurrenceType, link]);
 
     useEffect(() => {
         if (recurrenceType !== 'custom') return;
@@ -249,6 +279,17 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     useEffect(() => {
         const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
+        setExpandedExternalLinks((prev) => {
+            const next: Record<number, boolean> = {};
+            for (let i = 0; i < targetLength; i += 1) {
+                if (prev[i]) next[i] = true;
+            }
+            return next;
+        });
+    }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
+
+    useEffect(() => {
+        const targetLength = recurrenceType === 'custom' ? recurrenceCustomDates.length : summaryDates.length;
         setExpandedDateEdits((prev) => {
             const next: Record<number, boolean> = {};
             for (let i = 0; i < targetLength + 1; i += 1) {
@@ -259,7 +300,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     }, [summaryDates, recurrenceCustomDates.length, recurrenceType]);
 
     const displayDates = useMemo(() => {
-        if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+        if (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') {
             if (eventStart) {
                 return [eventStart, ...summaryDates];
             }
@@ -449,6 +490,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         : value;
                     return recurrenceEndDates[index] || normalizeDatetime(fallbackEnd);
                 });
+            const linksForPayload = recurrenceType === 'custom'
+                ? trimmedCustomDates.map((_, index) => recurrenceExternalLinks[index] ?? '')
+                : summaryDates.map((_, index) => recurrenceExternalLinks[index] ?? '');
             const eventPayload = {
                 name: title,
                 description: content,
@@ -464,6 +508,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 anonymous: byline === "Anonymous" ? 'true' : 'false',
                 event_type: eventType || (local ? 'in_person_only' : 'virtual_only'),
                 post: announcementId,
+                external_link: link || null,
                 recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
                 recurrence_count: recurrenceType !== 'custom' ? Math.min(recurrenceCount, maxRecurringEvents) : null,
                 recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates : null,
@@ -473,6 +518,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     : null,
                 recurrence_end_datetimes: recurrenceType !== 'none'
                     ? endsForPayload
+                    : null,
+                recurrence_external_links: recurrenceType !== 'none'
+                    ? linksForPayload
                     : null,
             };
 
@@ -723,6 +771,15 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const canUseRecurring = maxRecurringEvents > 1;
     const maxCustomDates = Math.max(maxRecurringEvents - 1, 0);
 
+    const handleRecurrenceChange = (value: string) => {
+        if (!canUseRecurring && value !== "none") {
+            setShowRecurringUpgrade(true);
+            setRecurrenceType("none");
+            return;
+        }
+        setRecurrenceType(value as 'none' | 'weekly' | 'monthly' | 'daily' | 'custom');
+    };
+
     useEffect(() => {
         if (!canUseRecurring) return;
         if (recurrenceType === 'none') {
@@ -731,10 +788,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setRecurrenceDescriptions([]);
             setExpandedDateEdits({});
             setRecurrenceEndDates([]);
+            setRecurrenceExternalLinks([]);
+            setExpandedExternalLinks({});
             recurrenceTypeRef.current = recurrenceType;
             return;
         }
-        if (recurrenceType === 'weekly' || recurrenceType === 'monthly') {
+        if (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') {
             const defaultCount = Math.min(3, maxRecurringEvents);
             setRecurrenceCount((prev) => {
                 if (recurrenceTypeRef.current !== recurrenceType) {
@@ -922,353 +981,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonText color="danger">{dateErrors[0]}</IonText>
                                 </IonItem>
                             )}
-                                <IonItem color="white" lines="none">
-                                    <IonLabel position="stacked">
-                                        Repeat
-                                        <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: "#6b7280", border: "1px solid #d1d5db", borderRadius: "999px", padding: "2px 6px", display: "inline-block" }}>
-                                            Pro
-                                        </span>
-                                    </IonLabel>
-                                    <IonSelect
-                                        value={recurrenceType}
-                                        onIonChange={(e) => setRecurrenceType(e.detail.value ?? "none")}
-                                        disabled={!canUseRecurring}
-                                    >
-                                        <IonSelectOption value="none">Does not repeat</IonSelectOption>
-                                        <IonSelectOption value="weekly">Weekly</IonSelectOption>
-                                        <IonSelectOption value="monthly">Monthly</IonSelectOption>
-                                        <IonSelectOption value="custom">Custom dates</IonSelectOption>
-                                    </IonSelect>
-                                </IonItem>
-                                {!canUseRecurring && (
-                                    <IonItem color="white" lines="none">
-                                        <IonText color="medium">Recurring events are available for Community+ and Pro members.</IonText>
-                                    </IonItem>
-                                )}
-                                {canUseRecurring && recurrenceType !== "none" && recurrenceType !== "custom" && (
-                                    <IonItem color="white" lines="none">
-                                        <IonLabel position="stacked">How many recurring dates?</IonLabel>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
-                                            <IonButton
-                                                fill="outline"
-                                                onClick={() => setRecurrenceCount((prev) => Math.max(prev - 1, 2))}
-                                                disabled={recurrenceCount <= 2}
-                                            >
-                                                -
-                                            </IonButton>
-                                            <IonText>{recurrenceCount}</IonText>
-                                            <IonButton
-                                                fill="outline"
-                                                onClick={() => setRecurrenceCount((prev) => Math.min(prev + 1, maxRecurringEvents))}
-                                                disabled={recurrenceCount >= maxRecurringEvents}
-                                            >
-                                                +
-                                            </IonButton>
-                                        </div>
-                                    </IonItem>
-                                )}
-                                {canUseRecurring && recurrenceType !== "none" && recurrenceType !== "custom" && displayDates.length > 0 && (
-                                    <>
-                                        <IonItem color="white" lines="none">
-                                            <IonText color="medium">Dates (auto-generated) • Your time zone</IonText>
-                                        </IonItem>
-                                        {displayDates.map((dateValue, index) => {
-                                            const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly') && index === 0;
-                                            const descriptionIndex = isBaseDate ? -1 : index - 1;
-                                            return (
-                                            <IonItem color="white" lines="none" key={`recurrence-date-${dateValue}-${index}`}>
-                                                <div style={{ width: "100%" }}>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ fontSize: "16px", fontWeight: 600 }}>
-                                                                {moment(dateValue).format('ddd, MMM D')}
-                                                            </div>
-                                                            <div style={{ fontSize: "14px" }}>
-                                                                {moment(dateValue).format('h:mm A')}
-                                                                {baseDurationMinutes > 0 && (
-                                                                    <> – {recurrenceEndDates[descriptionIndex]
-                                                                        ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
-                                                                        : formatEndTime(dateValue)}</>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                            {!isBaseDate && (
-                                                            <IonButton
-                                                                fill="clear"
-                                                                onClick={() =>
-                                                                    setExpandedDateEdits((prev) => ({ ...prev, [index]: !prev[index] }))
-                                                                }
-                                                            >
-                                                                {expandedDateEdits[index] ? "Hide date edit" : "Edit date"}
-                                                            </IonButton>
-                                                            )}
-                                                            <IonButton
-                                                                fill="clear"
-                                                                onClick={() => {
-                                                                    if (isBaseDate) {
-                                                                        setBaseDescriptionExpanded((prev) => !prev);
-                                                                    } else {
-                                                                        const hasCustom = (recurrenceDescriptions[descriptionIndex] ?? "") !== (content ?? "");
-                                                                        setExpandedDescriptions((prev) => {
-                                                                            if (hasCustom && prev[descriptionIndex]) return prev;
-                                                                            return {
-                                                                                ...prev,
-                                                                                [descriptionIndex]: !prev[descriptionIndex],
-                                                                            };
-                                                                        });
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {isBaseDate
-                                                                    ? (baseDescriptionExpanded ? "Hide edit" : "Edit description")
-                                                                    : (expandedDescriptions[descriptionIndex] ? "Hide edit" : "Edit description")}
-                                                            </IonButton>
-                                                        </div>
-                                                    </div>
-                                                    {!isBaseDate && expandedDateEdits[index] && (
-                                                        <div style={{ marginTop: "8px" }}>
-                                                            <IonInput
-                                                                type="datetime-local"
-                                                                step="900"
-                                                                value={dateValue}
-                                                                onIonChange={(event) => {
-                                                                    const updated = [...displayDates];
-                                                                    updated[index] = normalizeDatetime(event.detail.value ?? "");
-                                                                    const newCustomDates = updated.slice(1);
-                                                                    const newDescriptions = recurrenceDescriptions.slice(0, newCustomDates.length);
-                                                                    setRecurrenceCustomDates(newCustomDates);
-                                                                    setRecurrenceDescriptions(newDescriptions);
-                                                                    setRecurrenceEndDates((prev) => {
-                                                                        const next = [...prev.slice(0, newCustomDates.length)];
-                                                                        while (next.length < newCustomDates.length) {
-                                                                            const defaultEnd = baseDurationMinutes > 0
-                                                                                ? moment(newCustomDates[next.length]).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
-                                                                                : newCustomDates[next.length];
-                                                                            next.push(defaultEnd);
-                                                                        }
-                                                                        return next;
-                                                                    });
-                                                                    setRecurrenceType("custom");
-                                                                }}
-                                                            />
-                                                            {(() => {
-                                                                const fallbackEnd = dateValue
-                                                                    ? (baseDurationMinutes > 0
-                                                                        ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
-                                                                        : dateValue)
-                                                                    : "";
-                                                                return (
-                                                                    <IonInput
-                                                                        type="datetime-local"
-                                                                        step="900"
-                                                                        value={recurrenceEndDates[descriptionIndex] || fallbackEnd}
-                                                                        onIonChange={(event) => {
-                                                                            const nextEnds = [...recurrenceEndDates];
-                                                                            nextEnds[descriptionIndex] = normalizeDatetime(event.detail.value ?? "");
-                                                                            setRecurrenceEndDates(nextEnds);
-                                                                        }}
-                                                                        onIonFocus={() => {
-                                                                            if (recurrenceEndDates[descriptionIndex] || !fallbackEnd) return;
-                                                                            const nextEnds = [...recurrenceEndDates];
-                                                                            nextEnds[descriptionIndex] = fallbackEnd;
-                                                                            setRecurrenceEndDates(nextEnds);
-                                                                        }}
-                                                                    />
-                                                                );
-                                                            })()}
-                                                            {dateValue && (
-                                                                <IonText color="medium" style={{ marginTop: "6px" }}>
-                                                                    Ends at {recurrenceEndDates[descriptionIndex]
-                                                                        ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
-                                                                        : formatEndTime(dateValue)}
-                                                                </IonText>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {isBaseDate && !baseDescriptionExpanded && content && (
-                                                        <IonText color="medium">
-                                                            <p style={{ marginTop: "8px" }}>{content}</p>
-                                                        </IonText>
-                                                    )}
-                                                    {isBaseDate && baseDescriptionExpanded && (
-                                                        <div style={{ marginTop: "8px" }}>
-                                                            <IonTextarea
-                                                                value={content ?? ""}
-                                                                placeholder="Defaults to the main description unless you change it"
-                                                                autoGrow
-                                                                onIonChange={(event) => {
-                                                                    setContent(event.detail.value ?? "");
-                                                                }}
-                                                            />
-                                                            <IonButton
-                                                                fill="clear"
-                                                                onClick={() => setContent("")}
-                                                            >
-                                                                Clear
-                                                            </IonButton>
-                                                        </div>
-                                                    )}
-                                                    {!isBaseDate && expandedDescriptions[descriptionIndex] && (
-                                                        <div style={{ marginTop: "8px" }}>
-                                                            <IonTextarea
-                                                                value={recurrenceDescriptions[descriptionIndex] ?? ""}
-                                                                placeholder="Defaults to the main description unless you change it"
-                                                                autoGrow
-                                                                onIonChange={(event) => {
-                                                                    const nextDescriptions = [...recurrenceDescriptions];
-                                                                    nextDescriptions[descriptionIndex] = event.detail.value ?? "";
-                                                                    setRecurrenceDescriptions(nextDescriptions);
-                                                                }}
-                                                            />
-                                                            <IonButton
-                                                                fill="clear"
-                                                                onClick={() => {
-                                                                    const nextDescriptions = [...recurrenceDescriptions];
-                                                                    nextDescriptions[descriptionIndex] = "";
-                                                                    setRecurrenceDescriptions(nextDescriptions);
-                                                                }}
-                                                            >
-                                                                Clear
-                                                            </IonButton>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </IonItem>
-                                            );
-                                        })}
-                                    </>
-                                )}
-                                {canUseRecurring && recurrenceType === "custom" && (
-                                    <>
-                                        {recurrenceCustomDates.map((dateValue, index) => (
-                                            <IonItem color="white" lines="none" key={`custom-date-${index}`}>
-                                                <IonLabel position="stacked">Extra date {index + 1}</IonLabel>
-                                            <IonInput
-                                                type="datetime-local"
-                                                step="900"
-                                                value={dateValue}
-                                                onIonInput={(e) => {
-                                                    const nextDates = [...recurrenceCustomDates];
-                                                    nextDates[index] = normalizeDatetime(e.detail.value ?? "");
-                                                    setRecurrenceCustomDates(nextDates);
-                                                }}
-                                                onIonFocus={() => {
-                                                    if (dateValue) return;
-                                                    const nextDates = [...recurrenceCustomDates];
-                                                    nextDates[index] = defaultStartDatetime;
-                                                    setRecurrenceCustomDates(nextDates);
-                                                    if (!recurrenceEndDates[index]) {
-                                                        const nextEnds = [...recurrenceEndDates];
-                                                        nextEnds[index] = baseDurationMinutes > 0
-                                                            ? moment(defaultStartDatetime).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
-                                                            : defaultStartDatetime;
-                                                        setRecurrenceEndDates(nextEnds);
-                                                    }
-                                                }}
-                                            />
-                                            {(() => {
-                                                const fallbackEnd = dateValue
-                                                    ? (baseDurationMinutes > 0
-                                                        ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
-                                                        : dateValue)
-                                                    : "";
-                                                return (
-                                                    <IonInput
-                                                        type="datetime-local"
-                                                        step="900"
-                                                        value={recurrenceEndDates[index] || fallbackEnd}
-                                                        onIonInput={(e) => {
-                                                            const nextEnds = [...recurrenceEndDates];
-                                                            nextEnds[index] = normalizeDatetime(e.detail.value ?? "");
-                                                            setRecurrenceEndDates(nextEnds);
-                                                        }}
-                                                        onIonFocus={() => {
-                                                            if (recurrenceEndDates[index] || !fallbackEnd) return;
-                                                            const nextEnds = [...recurrenceEndDates];
-                                                            nextEnds[index] = fallbackEnd;
-                                                            setRecurrenceEndDates(nextEnds);
-                                                        }}
-                                                    />
-                                                );
-                                            })()}
-                                            {baseDurationMinutes > 0 && dateValue && (
-                                                <IonText color="medium" style={{ marginTop: "6px" }}>
-                                                    Ends at {recurrenceEndDates[index]
-                                                        ? moment(recurrenceEndDates[index]).format('h:mm A')
-                                                        : formatEndTime(dateValue)}
-                                                </IonText>
-                                            )}
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                <IonButton
-                                                    fill="clear"
-                                                    onClick={() =>
-                                                        setExpandedDescriptions((prev) => ({ ...prev, [index]: !prev[index] }))
-                                                    }
-                                                >
-                                                    {expandedDescriptions[index] ? "Hide edit" : "Edit description"}
-                                                </IonButton>
-                                                <IonButton
-                                                    fill="clear"
-                                                    onClick={() => {
-                                                        const nextDescriptions = [...recurrenceDescriptions];
-                                                        nextDescriptions[index] = "";
-                                                        setRecurrenceDescriptions(nextDescriptions);
-                                                    }}
-                                                >
-                                                    Clear
-                                                </IonButton>
-                                            </div>
-                                            {expandedDescriptions[index] && (
-                                                <IonTextarea
-                                                    value={recurrenceDescriptions[index] ?? ""}
-                                                    placeholder="Defaults to the main description unless you change it"
-                                                    autoGrow
-                                                    onIonChange={(event) => {
-                                                        const nextDescriptions = [...recurrenceDescriptions];
-                                                        nextDescriptions[index] = event.detail.value ?? "";
-                                                        setRecurrenceDescriptions(nextDescriptions);
-                                                    }}
-                                                />
-                                            )}
-                                            <IonButton
-                                                slot="end"
-                                                fill="clear"
-                                                onClick={() => {
-                                                    const nextDates = recurrenceCustomDates.filter((_, i) => i !== index);
-                                                    setRecurrenceCustomDates(nextDates);
-                                                    setRecurrenceDescriptions((prev) => prev.filter((_, i) => i !== index));
-                                                    setRecurrenceEndDates((prev) => prev.filter((_, i) => i !== index));
-                                                }}
-                                            >
-                                                Remove
-                                            </IonButton>
-                                        </IonItem>
-                                    ))}
-                                        <IonItem color="white" lines="none">
-                                            <IonButton
-                                                fill="outline"
-                                                onClick={() => {
-                                                    if (recurrenceCustomDates.length < maxCustomDates) {
-                                                        setRecurrenceCustomDates([...recurrenceCustomDates, ""]);
-                                                    }
-                                                }}
-                                                disabled={recurrenceCustomDates.length >= maxCustomDates}
-                                            >
-                                                Add another date
-                                            </IonButton>
-                                            <IonText color="medium" style={{ marginLeft: "12px" }}>
-                                                {recurrenceCustomDates.length}/{maxCustomDates} extra dates
-                                            </IonText>
-                                        </IonItem>
-                                    </>
-                                )}
-                                {recurrenceErrors.length > 0 && (
-                                    <IonItem color="white" lines="none">
-                                        <IonText color="danger">{recurrenceErrors[0]}</IonText>
-                                    </IonItem>
-                                )}
-                            </IonCard>
+                                </IonCard>
                         )}
 
                         {title && byline && bar &&
@@ -1384,7 +1097,407 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         </IonItem>}
                                 </IonCard>
 
-
+                                {bar === "events" && (
+                                    <IonCard>
+                                        <IonItem color="white" lines="none">
+                                            <IonLabel position="stacked">
+                                                Repeat
+                                                <FontAwesomeIcon style={{ marginLeft: "6px" }} color="var(--ion-color-medium)" icon={faStar} />
+                                            </IonLabel>
+                                            <IonSelect
+                                                value={recurrenceType}
+                                                onIonChange={(e) => handleRecurrenceChange(e.detail.value ?? "none")}
+                                            >
+                                                <IonSelectOption value="none">Does not repeat</IonSelectOption>
+                                                <IonSelectOption value="daily">Daily</IonSelectOption>
+                                                <IonSelectOption value="weekly">Weekly</IonSelectOption>
+                                                <IonSelectOption value="monthly">Monthly</IonSelectOption>
+                                                <IonSelectOption value="custom">Custom dates</IonSelectOption>
+                                            </IonSelect>
+                                        </IonItem>
+                                        {!canUseRecurring && (
+                                            <IonItem color="white" lines="none">
+                                                <IonText color="medium">Recurring events are available for Community+ and Pro members.</IonText>
+                                            </IonItem>
+                                        )}
+                                        {canUseRecurring && recurrenceType !== "none" && recurrenceType !== "custom" && (
+                                            <IonItem color="white" lines="none">
+                                                <IonLabel position="stacked">How many recurring dates?</IonLabel>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                                                    <IonButton
+                                                        fill="outline"
+                                                        onClick={() => setRecurrenceCount((prev) => Math.max(prev - 1, 2))}
+                                                        disabled={recurrenceCount <= 2}
+                                                    >
+                                                        -
+                                                    </IonButton>
+                                                    <IonText>{recurrenceCount}</IonText>
+                                                    <IonButton
+                                                        fill="outline"
+                                                        onClick={() => setRecurrenceCount((prev) => Math.min(prev + 1, maxRecurringEvents))}
+                                                        disabled={recurrenceCount >= maxRecurringEvents}
+                                                    >
+                                                        +
+                                                    </IonButton>
+                                                </div>
+                                            </IonItem>
+                                        )}
+                                        {canUseRecurring && recurrenceType !== "none" && recurrenceType !== "custom" && displayDates.length > 0 && (
+                                            <>
+                                                <IonItem color="white" lines="none">
+                                                    <IonText color="medium">Dates (auto-generated) • Your time zone</IonText>
+                                                </IonItem>
+                                                {displayDates.map((dateValue, index) => {
+                                                    const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') && index === 0;
+                                                    const descriptionIndex = isBaseDate ? -1 : index - 1;
+                                                    return (
+                                                    <IonItem color="white" lines="none" key={`recurrence-date-${dateValue}-${index}`}>
+                                                        <div style={{ width: "100%" }}>
+                                                    <div>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                                                                {moment(dateValue).format('ddd, MMM D')}
+                                                            </div>
+                                                            <div style={{ fontSize: "14px" }}>
+                                                                        {moment(dateValue).format('h:mm A')}
+                                                                        {baseDurationMinutes > 0 && (
+                                                                            <> – {recurrenceEndDates[descriptionIndex]
+                                                                                ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
+                                                                                : formatEndTime(dateValue)}</>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                                                                    {!isBaseDate && (
+                                                                    <IonButton
+                                                                        fill="clear"
+                                                                        onClick={() =>
+                                                                            setExpandedDateEdits((prev) => ({ ...prev, [index]: !prev[index] }))
+                                                                        }
+                                                                    >
+                                                                        {expandedDateEdits[index] ? "Hide date edit" : "Edit date"}
+                                                                    </IonButton>
+                                                                    )}
+                                                                    <IonButton
+                                                                        fill="clear"
+                                                                        onClick={() => {
+                                                                            if (isBaseDate) {
+                                                                                setBaseDescriptionExpanded((prev) => !prev);
+                                                                            } else {
+                                                                                const hasCustom = (recurrenceDescriptions[descriptionIndex] ?? "") !== (content ?? "");
+                                                                                setExpandedDescriptions((prev) => {
+                                                                                    if (hasCustom && prev[descriptionIndex]) return prev;
+                                                                                    return {
+                                                                                        ...prev,
+                                                                                        [descriptionIndex]: !prev[descriptionIndex],
+                                                                                    };
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {isBaseDate
+                                                                            ? (baseDescriptionExpanded ? "Hide edit" : "Edit description")
+                                                                            : (expandedDescriptions[descriptionIndex] ? "Hide edit" : "Edit description")}
+                                                                    </IonButton>
+                                                                    {!isBaseDate && (
+                                                                        <IonButton
+                                                                            fill="clear"
+                                                                            onClick={() =>
+                                                                                setExpandedExternalLinks((prev) => ({
+                                                                                    ...prev,
+                                                                                    [descriptionIndex]: !prev[descriptionIndex],
+                                                                                }))
+                                                                            }
+                                                                        >
+                                                                            {expandedExternalLinks[descriptionIndex] ? "Hide link" : "Edit link"}
+                                                                        </IonButton>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {!isBaseDate && expandedDateEdits[index] && (
+                                                                <div style={{ marginTop: "8px" }}>
+                                                                    <IonInput
+                                                                        type="datetime-local"
+                                                                        step="900"
+                                                                        value={dateValue}
+                                                                        onIonChange={(event) => {
+                                                                            const updated = [...displayDates];
+                                                                            updated[index] = normalizeDatetime(event.detail.value ?? "");
+                                                                            const newCustomDates = updated.slice(1);
+                                                                            const newDescriptions = recurrenceDescriptions.slice(0, newCustomDates.length);
+                                                                            setRecurrenceCustomDates(newCustomDates);
+                                                                            setRecurrenceDescriptions(newDescriptions);
+                                                                            setRecurrenceEndDates((prev) => {
+                                                                                const next = [...prev.slice(0, newCustomDates.length)];
+                                                                                while (next.length < newCustomDates.length) {
+                                                                                    const defaultEnd = baseDurationMinutes > 0
+                                                                                        ? moment(newCustomDates[next.length]).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                                                                        : newCustomDates[next.length];
+                                                                                    next.push(defaultEnd);
+                                                                                }
+                                                                                return next;
+                                                                            });
+                                                                            setRecurrenceExternalLinks((prev) => {
+                                                                                const next = [...prev.slice(0, newCustomDates.length)];
+                                                                                while (next.length < newCustomDates.length) {
+                                                                                    next.push(link || "");
+                                                                                }
+                                                                                return next;
+                                                                            });
+                                                                            setRecurrenceType("custom");
+                                                                        }}
+                                                                    />
+                                                                    {(() => {
+                                                                        const fallbackEnd = dateValue
+                                                                            ? (baseDurationMinutes > 0
+                                                                                ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                                                                : dateValue)
+                                                                            : "";
+                                                                        return (
+                                                                            <IonInput
+                                                                                type="datetime-local"
+                                                                                step="900"
+                                                                                value={recurrenceEndDates[descriptionIndex] || fallbackEnd}
+                                                                                onIonChange={(event) => {
+                                                                                    const nextEnds = [...recurrenceEndDates];
+                                                                                    nextEnds[descriptionIndex] = normalizeDatetime(event.detail.value ?? "");
+                                                                                    setRecurrenceEndDates(nextEnds);
+                                                                                }}
+                                                                                onIonFocus={() => {
+                                                                                    if (recurrenceEndDates[descriptionIndex] || !fallbackEnd) return;
+                                                                                    const nextEnds = [...recurrenceEndDates];
+                                                                                    nextEnds[descriptionIndex] = fallbackEnd;
+                                                                                    setRecurrenceEndDates(nextEnds);
+                                                                                }}
+                                                                            />
+                                                                        );
+                                                                    })()}
+                                                                    {dateValue && (
+                                                                        <IonText color="medium" style={{ marginTop: "6px" }}>
+                                                                            Ends at {recurrenceEndDates[descriptionIndex]
+                                                                                ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
+                                                                                : formatEndTime(dateValue)}
+                                                                        </IonText>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            {isBaseDate && !baseDescriptionExpanded && content && (
+                                                                <IonText color="medium">
+                                                                    <p style={{ marginTop: "8px" }}>{content}</p>
+                                                                </IonText>
+                                                            )}
+                                                            {isBaseDate && baseDescriptionExpanded && (
+                                                                <div style={{ marginTop: "8px" }}>
+                                                                    <IonTextarea
+                                                                        value={content ?? ""}
+                                                                        placeholder="Defaults to the main description unless you change it"
+                                                                        autoGrow
+                                                                        onIonChange={(event) => {
+                                                                            setContent(event.detail.value ?? "");
+                                                                        }}
+                                                                    />
+                                                                    <IonButton
+                                                                        fill="clear"
+                                                                        onClick={() => setContent("")}
+                                                                    >
+                                                                        Clear
+                                                                    </IonButton>
+                                                                </div>
+                                                            )}
+                                                            {!isBaseDate && expandedDescriptions[descriptionIndex] && (
+                                                                <div style={{ marginTop: "8px" }}>
+                                                                    <IonTextarea
+                                                                        value={recurrenceDescriptions[descriptionIndex] ?? ""}
+                                                                        placeholder="Defaults to the main description unless you change it"
+                                                                        autoGrow
+                                                                        onIonChange={(event) => {
+                                                                            const nextDescriptions = [...recurrenceDescriptions];
+                                                                            nextDescriptions[descriptionIndex] = event.detail.value ?? "";
+                                                                            setRecurrenceDescriptions(nextDescriptions);
+                                                                        }}
+                                                                    />
+                                                                    <IonButton
+                                                                        fill="clear"
+                                                                        onClick={() => {
+                                                                            const nextDescriptions = [...recurrenceDescriptions];
+                                                                            nextDescriptions[descriptionIndex] = "";
+                                                                            setRecurrenceDescriptions(nextDescriptions);
+                                                                        }}
+                                                                    >
+                                                                        Clear
+                                                                    </IonButton>
+                                                                </div>
+                                                            )}
+                                                            {!isBaseDate && expandedExternalLinks[descriptionIndex] && (
+                                                                <div style={{ marginTop: "8px" }}>
+                                                                    <IonInput
+                                                                        value={recurrenceExternalLinks[descriptionIndex] ?? link ?? ""}
+                                                                        placeholder="Add a link for this date (optional)"
+                                                                        onIonChange={(event) => {
+                                                                            const nextLinks = [...recurrenceExternalLinks];
+                                                                            nextLinks[descriptionIndex] = event.detail.value ?? "";
+                                                                            setRecurrenceExternalLinks(nextLinks);
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </IonItem>
+                                                    );
+                                                })}
+                                            </>
+                                        )}
+                                        {canUseRecurring && recurrenceType === "custom" && (
+                                            <>
+                                                {recurrenceCustomDates.map((dateValue, index) => (
+                                                    <IonItem color="white" lines="none" key={`custom-date-${index}`}>
+                                                        <IonLabel position="stacked">Extra date {index + 1}</IonLabel>
+                                                    <IonInput
+                                                        type="datetime-local"
+                                                        step="900"
+                                                        value={dateValue}
+                                                        onIonInput={(e) => {
+                                                            const nextDates = [...recurrenceCustomDates];
+                                                            nextDates[index] = normalizeDatetime(e.detail.value ?? "");
+                                                            setRecurrenceCustomDates(nextDates);
+                                                        }}
+                                                        onIonFocus={() => {
+                                                            if (dateValue) return;
+                                                            const nextDates = [...recurrenceCustomDates];
+                                                            nextDates[index] = defaultStartDatetime;
+                                                            setRecurrenceCustomDates(nextDates);
+                                                            if (!recurrenceEndDates[index]) {
+                                                                const nextEnds = [...recurrenceEndDates];
+                                                                nextEnds[index] = baseDurationMinutes > 0
+                                                                    ? moment(defaultStartDatetime).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                                                    : defaultStartDatetime;
+                                                                setRecurrenceEndDates(nextEnds);
+                                                            }
+                                                        }}
+                                                    />
+                                                    {(() => {
+                                                        const fallbackEnd = dateValue
+                                                            ? (baseDurationMinutes > 0
+                                                                ? moment(dateValue).add(baseDurationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm')
+                                                                : dateValue)
+                                                            : "";
+                                                        return (
+                                                            <IonInput
+                                                                type="datetime-local"
+                                                                step="900"
+                                                                value={recurrenceEndDates[index] || fallbackEnd}
+                                                                onIonInput={(e) => {
+                                                                    const nextEnds = [...recurrenceEndDates];
+                                                                    nextEnds[index] = normalizeDatetime(e.detail.value ?? "");
+                                                                    setRecurrenceEndDates(nextEnds);
+                                                                }}
+                                                                onIonFocus={() => {
+                                                                    if (recurrenceEndDates[index] || !fallbackEnd) return;
+                                                                    const nextEnds = [...recurrenceEndDates];
+                                                                    nextEnds[index] = fallbackEnd;
+                                                                    setRecurrenceEndDates(nextEnds);
+                                                                }}
+                                                            />
+                                                        );
+                                                    })()}
+                                                    {baseDurationMinutes > 0 && dateValue && (
+                                                        <IonText color="medium" style={{ marginTop: "6px" }}>
+                                                            Ends at {recurrenceEndDates[index]
+                                                                ? moment(recurrenceEndDates[index]).format('h:mm A')
+                                                                : formatEndTime(dateValue)}
+                                                        </IonText>
+                                                    )}
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                        <IonButton
+                                                            fill="clear"
+                                                            onClick={() =>
+                                                                setExpandedDescriptions((prev) => ({ ...prev, [index]: !prev[index] }))
+                                                            }
+                                                        >
+                                                            {expandedDescriptions[index] ? "Hide edit" : "Edit description"}
+                                                        </IonButton>
+                                                        <IonButton
+                                                            fill="clear"
+                                                            onClick={() =>
+                                                                setExpandedExternalLinks((prev) => ({ ...prev, [index]: !prev[index] }))
+                                                            }
+                                                        >
+                                                            {expandedExternalLinks[index] ? "Hide link" : "Edit link"}
+                                                        </IonButton>
+                                                        <IonButton
+                                                            fill="clear"
+                                                            onClick={() => {
+                                                                const nextDescriptions = [...recurrenceDescriptions];
+                                                                nextDescriptions[index] = "";
+                                                                setRecurrenceDescriptions(nextDescriptions);
+                                                            }}
+                                                        >
+                                                            Clear
+                                                        </IonButton>
+                                                    </div>
+                                                    {expandedDescriptions[index] && (
+                                                        <IonTextarea
+                                                            value={recurrenceDescriptions[index] ?? ""}
+                                                            placeholder="Defaults to the main description unless you change it"
+                                                            autoGrow
+                                                            onIonChange={(event) => {
+                                                                const nextDescriptions = [...recurrenceDescriptions];
+                                                                nextDescriptions[index] = event.detail.value ?? "";
+                                                                setRecurrenceDescriptions(nextDescriptions);
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {expandedExternalLinks[index] && (
+                                                        <IonInput
+                                                            value={recurrenceExternalLinks[index] ?? link ?? ""}
+                                                            placeholder="Add a link for this date (optional)"
+                                                            onIonChange={(event) => {
+                                                                const nextLinks = [...recurrenceExternalLinks];
+                                                                nextLinks[index] = event.detail.value ?? "";
+                                                                setRecurrenceExternalLinks(nextLinks);
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <IonButton
+                                                        slot="end"
+                                                        fill="clear"
+                                                        onClick={() => {
+                                                            const nextDates = recurrenceCustomDates.filter((_, i) => i !== index);
+                                                            setRecurrenceCustomDates(nextDates);
+                                                            setRecurrenceDescriptions((prev) => prev.filter((_, i) => i !== index));
+                                                            setRecurrenceEndDates((prev) => prev.filter((_, i) => i !== index));
+                                                            setRecurrenceExternalLinks((prev) => prev.filter((_, i) => i !== index));
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </IonButton>
+                                                </IonItem>
+                                            ))}
+                                                <IonItem color="white" lines="none">
+                                                    <IonButton
+                                                        fill="outline"
+                                                        onClick={() => {
+                                                            if (recurrenceCustomDates.length < maxCustomDates) {
+                                                                setRecurrenceCustomDates([...recurrenceCustomDates, ""]);
+                                                            }
+                                                        }}
+                                                        disabled={recurrenceCustomDates.length >= maxCustomDates}
+                                                    >
+                                                        Add another date
+                                                    </IonButton>
+                                                    <IonText color="medium" style={{ marginLeft: "12px" }}>
+                                                        {recurrenceCustomDates.length}/{maxCustomDates} extra dates
+                                                    </IonText>
+                                                </IonItem>
+                                            </>
+                                        )}
+                                        {recurrenceErrors.length > 0 && (
+                                            <IonItem color="white" lines="none">
+                                                <IonText color="danger">{recurrenceErrors[0]}</IonText>
+                                            </IonItem>
+                                        )}
+                                    </IonCard>
+                                )}
 
                                 {/* Submit Button */}
 
@@ -1462,6 +1575,18 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 }
                             }
                         ]}
+                        />
+                        <IonAlert
+                            isOpen={showRecurringUpgrade}
+                            header="Recurring events"
+                            message="Join Community+ or Pro to post recurring events."
+                            buttons={[
+                                {
+                                    text: "OK",
+                                    handler: () => setShowRecurringUpgrade(false)
+                                }
+                            ]}
+                            onDidDismiss={() => setShowRecurringUpgrade(false)}
                         />
                     </>
                 ) :

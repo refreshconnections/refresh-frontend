@@ -22,7 +22,7 @@ export type RefreshEvent = {
   include_profile?: boolean
   user?: number | null
   anonymous?: boolean
-  approved?: boolean
+  status?: string
   uploadDateTime?: string
 }
 

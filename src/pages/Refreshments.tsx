@@ -50,17 +50,43 @@ import { useGetSiteSettings } from '../hooks/api/sitesettings';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { faLocationDot  } from '@fortawesome/pro-solid-svg-icons/faLocationDot';
 import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocationDotSlash';
+import { useHistory, useLocation } from 'react-router-dom';
 
 
 const Refreshments: React.FC = () => {
 
   const queryClient = useQueryClient()
   const router = useIonRouter();
+  const history = useHistory();
+  const location = useLocation();
   const renderCalendarTrigger = (open: () => void) => (
     <IonButton color="light" fill="solid" className="events-calendar-inline-button refreshments-control-button" onClick={open}>
       <FontAwesomeIcon icon={faCalendar} />
     </IonButton>
   )
+
+  const [calendarDateParam, setCalendarDateParam] = useState<string | null>(null);
+  const [calendarAutoOpen, setCalendarAutoOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const dateParam = params.get('calendarDate');
+    if (dateParam) {
+      setCalendarDateParam(dateParam);
+      setCalendarAutoOpen(true);
+    } else {
+      setCalendarDateParam(null);
+      setCalendarAutoOpen(false);
+    }
+  }, [location.search]);
+
+  const handleCalendarAutoOpenHandled = () => {
+    if (!calendarDateParam) return;
+    const params = new URLSearchParams(location.search);
+    params.delete('calendarDate');
+    history.replace({ pathname: location.pathname, search: params.toString() });
+    setCalendarAutoOpen(false);
+  };
 
 
   const [bar, setBar] = useState<string>("")
@@ -240,7 +266,12 @@ const Refreshments: React.FC = () => {
             </IonButton>
           </IonCol>
 
-          <EventsCalendar renderTrigger={renderCalendarTrigger} />
+          <EventsCalendar
+            renderTrigger={renderCalendarTrigger}
+            initialDate={calendarDateParam ?? undefined}
+            openOnLoad={calendarAutoOpen}
+            onAutoOpenHandled={handleCalendarAutoOpenHandled}
+          />
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
             <IonButton className="refreshments-control-button" color="tertiary" onClick={() => createPostPresent()}>
               <FontAwesomeIcon icon={faMegaphone} />
