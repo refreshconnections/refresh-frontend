@@ -118,6 +118,15 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
 
     const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+
+    const livedExperienceLabels: Record<string, string> = {
+        poc: 'POC',
+        spiritual: 'Spiritual',
+        neurodivergent: 'Neurodivergent',
+        disability: 'Disability',
+        chronic_illness: 'Chronic illness',
+        sober: 'Sober',
+    };
     const preferredOrder = Array.isArray(cardData?.photo_order) && cardData.photo_order.length > 0
         ? cardData.photo_order
         : photoKeys;
@@ -307,6 +316,17 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                         </IonItem>
                                         {cardData.kids_info ?
                                             <IonItem> <IonLabel><p>Kids info:</p> <h2 className="wrap">{cardData.kids_info}</h2></IonLabel> </IonItem> : <></>}
+                                        {cardData.settings_show_lived_experiences && cardData.lived_experiences?.length ? (
+                                            <IonItem>
+                                                <IonLabel className="ion-text-wrap" style={{ textWrap: "balance" }}>
+                                                    <p style={{ textAlign: "center" }}>
+                                                        {`• ${cardData.lived_experiences
+                                                            .map((value: string) => livedExperienceLabels[value] ?? value)
+                                                            .join(' • ')} •`}
+                                                    </p>
+                                                </IonLabel>
+                                            </IonItem>
+                                        ) : null}
                                         {cardData.job ?
                                             <IonItem> <IonLabel><p>Job:</p> <h2 className="wrap">{cardData.job}</h2></IonLabel> </IonItem> : <></>}
                                         {cardData.school ?

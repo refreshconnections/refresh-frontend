@@ -25,6 +25,7 @@ interface Filters {
   filter_keyword: string | null,
   filter_gender_sexuality: string[],
   filter_lc: string[],
+  filter_lived_experiences: string[],
   filter_looking_for_single_selection: string | null,
   filter_age_gt: number | null,
   filter_age_lt: number | null,
@@ -188,7 +189,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const currentUserProfile = useGetCurrentProfile().data;
   const queryClient = useQueryClient()
 
-
   const [greaterThanFilter, setGreaterThanFilter] = useState<number | null>(currentProfileData?.filter_age_gt)
   const [lessThanFilter, setLessThanFilter] = useState<number | null>(currentProfileData?.filter_age_lt)
   const [distanceFilter, setDistanceFilter] = useState<number | null>(currentProfileData?.filter_distance)
@@ -203,6 +203,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const [lcCount, setLcCount] = useState<number>((currentProfileData?.filter_lc).length)
   const [gsCount, setGsCount] = useState<number>((currentProfileData?.filter_gender_sexuality).length)
+  const [livedExperienceCount, setLivedExperienceCount] = useState<number>((currentProfileData?.filter_lived_experiences ?? []).length)
   const [limitCount, setLimitCount] = useState<number>(0)
   const [doneBusy, setDoneBusy] = useState(false);
 
@@ -217,6 +218,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const lcFilterChecked: string[] = currentProfileData?.filter_lc
   const genderSexualityFilterChecked: string[] = currentProfileData?.filter_gender_sexuality
+  const livedExperienceFilterChecked: string[] = currentProfileData?.filter_lived_experiences ?? [];
+  const livedExperiences: string[] = currentProfileData?.lived_experiences ?? [];
 
   const [dontshowSexualityFilterChecked, setDontshowSexualityFilterChecked] = useState<string[]>(currentProfileData?.dontshow_gendersexuality ?? [])
   const [onlyshowSexualityFilterChecked, setOnlyshowSexualityFilterChecked] = useState<string[]>(currentProfileData?.onlyshow_gendersexuality ?? [])
@@ -236,6 +239,14 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   // const [lcFilterChecked, setLcFilterChecked] =  useState<string []>(currentProfileData?.filter_lc ?? []);
   // const [genderSexualityFilterChecked, setGenderSexualityFilterChecked] =  useState<string []>(currentProfileData?.filter_gender_sexuality ?? []);
   const [keywordFilter, setKeywordFilter] = useState<string | null>(currentProfileData?.filter_keyword);
+  const livedExperienceOptions = [
+    { value: "poc", label: "POC" },
+    { value: "spiritual", label: "Spiritual" },
+    { value: "neurodivergent", label: "Neurodivergent" },
+    { value: "disability", label: "Disability" },
+    { value: "chronic_illness", label: "Chronic illness" },
+    { value: "sober", label: "Sober" },
+  ];
 
   const [showLCFilters, setShowLCFilters] = useState<boolean>(false)
 
@@ -711,6 +722,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       filter_keyword: null,
       filter_gender_sexuality: [],
       filter_lc: [],
+      filter_lived_experiences: [],
       filter_looking_for_single_selection: null,
       filter_age_gt: null,
       filter_age_lt: null,
@@ -815,6 +827,18 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     })
   }
 
+  const addLivedExperienceFilterCheckbox = (event: any) => {
+    setSomethingChanged(true)
+    if (event.detail.checked) {
+      livedExperienceFilterChecked.push(event.detail.value);
+      setLivedExperienceCount(livedExperienceFilterChecked.length)
+    } else {
+      const index = livedExperienceFilterChecked.findIndex((category: string) => category === event.detail.value);
+      livedExperienceFilterChecked.splice(index, 1);
+      setLivedExperienceCount(livedExperienceFilterChecked.length)
+    }
+  }
+
   const handleLocationDismiss = async () => {
     locationDismiss();
     setCurrLat(currentUserProfile?.location_point_lat)
@@ -855,6 +879,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       await updateCurrentUserProfile({
         filter_gender_sexuality: genderSexualityFilterChecked,
         filter_lc: lcFilterChecked,
+        filter_lived_experiences: livedExperienceFilterChecked,
         filter_any_all: anyOrAll,
         dontshow_gendersexuality: saveDontShow,
         dontshow_gendersexuality_any_all: saveDontShowAnyAll,
@@ -1105,6 +1130,44 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             </IonAccordion>
           </IonAccordionGroup >
           : <></>}
+
+        <IonAccordionGroup>
+          <IonAccordion>
+            <IonItem slot="header">
+              <IonLabel className="ion-text-wrap">Lived experiences</IonLabel>
+              {livedExperienceCount > 0 ? <IonBadge color="primary">{livedExperienceCount} filters</IonBadge> : <></>}
+            </IonItem>
+            <IonGrid className="filter-grid" slot="content">
+              <IonRow className="lr-pad">
+              </IonRow>
+              {livedExperiences.length === 0 ? (
+                <IonRow className="lr-pad">
+                  <IonText className="ion-text-wrap">(No lived experiences set on your profile.)</IonText>
+                </IonRow>
+              ) : (
+                <IonRow>
+                  <IonCol>
+                    <IonList>
+                      {livedExperienceOptions
+                        .filter(option => livedExperiences.includes(option.value))
+                        .map(option => (
+                          <IonItem key={option.value}>
+                            <IonCheckbox
+                              slot="start"
+                              value={option.value}
+                              checked={livedExperienceFilterChecked.includes(option.value)}
+                              onIonChange={e => addLivedExperienceFilterCheckbox(e)}
+                            />
+                            {option.label}
+                          </IonItem>
+                        ))}
+                    </IonList>
+                  </IonCol>
+                </IonRow>
+              )}
+            </IonGrid>
+          </IonAccordion>
+        </IonAccordionGroup>
 
         <IonAccordionGroup >
           <IonAccordion>

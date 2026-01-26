@@ -80,6 +80,8 @@ type SimpleFormState = {
     settings_show_gender_sexuality: boolean;
     settings_show_long_covid: boolean;
     long_covid_choices: string[];
+    lived_experiences: string[];
+    settings_show_lived_experiences: boolean;
 };
 
 const initialForm: SimpleFormState = {
@@ -117,6 +119,8 @@ const initialForm: SimpleFormState = {
     settings_show_gender_sexuality: false,
     settings_show_long_covid: false,
     long_covid_choices: [],
+    lived_experiences: [],
+    settings_show_lived_experiences: false,
 };
 
 const SelfProfileV2: React.FC = () => {
@@ -164,6 +168,8 @@ const SelfProfileV2: React.FC = () => {
         gender_sexuality_choices: false,
         settings_show_gender_sexuality: false,
         settings_show_long_covid: false,
+        lived_experiences: false,
+        settings_show_lived_experiences: false,
     });
     const queryClient = useQueryClient();
     const refreshProfile = () => queryClient.invalidateQueries({ queryKey: ['current'] });
@@ -209,6 +215,8 @@ const SelfProfileV2: React.FC = () => {
             long_covid_choices: currentUserProfile.long_covid_choices ?? [],
             gender_sexuality_choices: currentUserProfile.gender_sexuality_choices ?? [],
             settings_show_gender_sexuality: currentUserProfile.settings_show_gender_sexuality ?? false,
+            lived_experiences: currentUserProfile.lived_experiences ?? [],
+            settings_show_lived_experiences: currentUserProfile.settings_show_lived_experiences ?? false,
         };
         setForm(nextForm);
         setOriginalForm(nextForm);
@@ -258,6 +266,8 @@ const SelfProfileV2: React.FC = () => {
             settings_show_gender_sexuality: false,
             settings_show_long_covid: false,
             long_covid_choices: false,
+            lived_experiences: false,
+            settings_show_lived_experiences: false,
         });
        
     }, [currentUserProfile]);
@@ -369,6 +379,23 @@ const SelfProfileV2: React.FC = () => {
         setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_gender_sexuality: checked }));
     };
 
+    const handleLivedExperienceToggle = async (value: string, checked: boolean) => {
+        setForm(prev => {
+            const next = checked
+                ? (prev.lived_experiences.includes(value) ? prev.lived_experiences : [...prev.lived_experiences, value])
+                : prev.lived_experiences.filter(v => v !== value);
+            updateCurrentUserProfile({ lived_experiences: next });
+            setOriginalForm(prevOrg => ({ ...prevOrg, lived_experiences: next }));
+            return { ...prev, lived_experiences: next };
+        });
+    };
+
+    const toggleLivedExperiencesShow = async (checked: boolean) => {
+        setForm(prev => ({ ...prev, settings_show_lived_experiences: checked }));
+        await updateCurrentUserProfile({ settings_show_lived_experiences: checked });
+        setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_lived_experiences: checked }));
+    };
+
 
 
     const summaryKeys = ['pronouns', 'job', 'politics', 'school'] as const;
@@ -432,6 +459,19 @@ const SelfProfileV2: React.FC = () => {
     const getGenderSexualityLabel = (value: string) => genderSexualityOptions.flat().find(([val]) => val === value)?.[1];
     const genderSexualitySummary = form.gender_sexuality_choices
         .map(value => getGenderSexualityLabel(value))
+        .filter(Boolean) as string[];
+
+    const livedExperienceOptions: [string, string][] = [
+        ['poc', 'POC'],
+        ['spiritual', 'Spiritual'],
+        ['neurodivergent', 'Neurodivergent'],
+        ['disability', 'Disability'],
+        ['chronic_illness', 'Chronic illness'],
+        ['sober', 'Sober'],
+    ];
+    const getLivedExperienceLabel = (value: string) => livedExperienceOptions.find(([val]) => val === value)?.[1];
+    const livedExperienceSummary = form.lived_experiences
+        .map(value => getLivedExperienceLabel(value))
         .filter(Boolean) as string[];
 
     const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
@@ -505,6 +545,8 @@ const SelfProfileV2: React.FC = () => {
         settings_show_gender_sexuality: { label: 'Show gender/sexuality filters', description: 'Toggle visibility on your profile.' },
         settings_show_long_covid: { label: 'Show Long Covid info', description: 'Display these choices on your profile.' },
         long_covid_choices: { label: 'Long Covid choices', description: 'Support availability for Long Covid.' },
+        settings_show_lived_experiences: { label: 'Show lived experiences', description: 'Display these choices on your profile.' },
+        lived_experiences: { label: 'Lived experiences', description: 'Self-selected lived experience tags.' },
     };
 
 
@@ -1166,6 +1208,70 @@ const SelfProfileV2: React.FC = () => {
                                                             </IonList>
                                                         </div>
                                                     ))}
+                                                </div>
+                                            )}
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        </IonCardContent>
+                    </IonAccordion>
+                </IonAccordionGroup>
+
+                <IonAccordionGroup>
+                    <IonAccordion value="livedExperiences">
+                        <IonItem slot="header" lines="none" className="accordion-header">
+                            <IonLabel>
+                                <h2>Lived Experiences</h2>
+                            </IonLabel>
+                        </IonItem>
+                        <IonCardContent slot="content" className="no-padding-cc accordion-body">
+                            <IonRow>
+                                <IonCol size="12">
+                                    <IonCard className="accordion-card">
+                                        <IonCardContent className="card-grid">
+                                            <div className="field-header">
+                                                <p>Show on profile?</p>
+                                                <IonToggle
+                                                    slot="end"
+                                                    checked={form.settings_show_lived_experiences}
+                                                    onIonChange={e => toggleLivedExperiencesShow(e.detail.checked)}
+                                                />
+                                            </div>
+                                            <div className="field-header">
+                                                <p>Choices</p>
+                                                <IonButton
+                                                    size="small"
+                                                    fill="outline"
+                                                    color="primary"
+                                                    onClick={() => setEditing(prev => ({ ...prev, lived_experiences: !prev.lived_experiences }))}
+                                                >
+                                                    {editing.lived_experiences ? 'Done' : 'Edit'}
+                                                </IonButton>
+                                            </div>
+                                            {livedExperienceSummary.length > 0 ? (
+                                                <ul className="choice-summary">
+                                                    {livedExperienceSummary.map(label => (
+                                                        <li key={label}>{label}</li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="placeholder">Not specified yet.</p>
+                                            )}
+                                            {editing.lived_experiences && (
+                                                <div className="choice-editor">
+                                                    <IonList lines="none">
+                                                        {livedExperienceOptions.map(([value, label]) => (
+                                                            <IonItem key={value} lines="none">
+                                                                <IonCheckbox
+                                                                    slot="start"
+                                                                    checked={form.lived_experiences.includes(value)}
+                                                                    onIonChange={e => handleLivedExperienceToggle(value, e.detail.checked)}
+                                                                />
+                                                                {label}
+                                                            </IonItem>
+                                                        ))}
+                                                    </IonList>
                                                 </div>
                                             )}
                                         </IonCardContent>
