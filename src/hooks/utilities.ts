@@ -558,6 +558,34 @@ export async function uploadPhoto(photo) {
     return response.data
 }
 
+export async function uploadCommunityProfilePhoto(photo) {
+    const url = `${BASE_URL}/api/profiles/community_profile/upload_img/`
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json; charset=UTF-8',
+    }
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: photo,
+        headers: {
+            'Authorization': "Token " + localStorage.getItem("token"),
+            'X-CSRFToken': Cookies.get('csrftoken'),
+            'accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Access-Control-Allow-Origin': '*',
+            'enctype': 'multipart/form-data',
+        }
+    });
+
+    return response.data
+}
+
 export async function getChats() {
     const url = `${BASE_URL}/api/profiles/chats/dialogs/`;
 
@@ -1451,7 +1479,7 @@ export async function sendAnEmail(to_email, subject, message) {
 }
 
 export function onImgError(e) {
-    const img = e.currentTarget;
+  const img = e.currentTarget;
 
     // Prevent infinite fallback loop
     if (img.dataset.fallback !== 'true') {
@@ -2094,6 +2122,27 @@ async function paintSystemBars(isDark: boolean, bg: string) {
       await styleModule.StatusBar.setStyle({ style: isDark ? styleModule.Style.Light : styleModule.Style.Dark });
     } catch {}
   }
+}
+
+export function normalizeLocalMediaUrl(url?: string | null) {
+  if (!url) return undefined;
+  const baseUrl = BASE_URL || '';
+
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  if (!baseUrl) return url;
+
+  if (url.startsWith('/media') || url.startsWith('/static')) {
+    return `${baseUrl}${url}`;
+  }
+
+  if (url.startsWith('media/') || url.startsWith('static/')) {
+    return `${baseUrl}/${url}`;
+  }
+
+  return url;
 }
 
 

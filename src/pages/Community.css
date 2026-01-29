@@ -122,6 +122,11 @@ ion-avatar.byline-avatar {
   margin-right: 5pt;
 }
 
+ion-avatar.connect-avatar {
+  border: 2px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
 .display-flex {
   display: flex;
   align-items: center

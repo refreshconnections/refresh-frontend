@@ -2,10 +2,6 @@
   padding: 8px 0;
 }
 
-.self-profile-v2 .section-title-row {
-  margin-bottom: 8px;
-}
-
 .self-profile-v2 ion-accordion ion-item{
   --background: var(--ion-color-white)
 }
@@ -21,6 +17,7 @@
 }
 
 .preview-row {
+  justify-content: center;
   margin-bottom: 8px;
 }
 
@@ -297,7 +294,7 @@ ion-card-content .card-grid {
 
 .placeholder {
   margin: 0;
-  color: var(--ion-color-medium);
+  color: var(--ion-color-black);
 }
 
 .self-profile-v2 ion-card {

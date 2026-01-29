@@ -104,6 +104,7 @@ import { IconPop } from './IconPop';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
+import CommunityOnboarding from '../pages/CommunityOnboarding';
 import AgeVerificationFlow, { AgeCheckState, YOTI_BROWSER_CLOSED_EVENT } from '../pages/AgeVerificationFlow';
 import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
@@ -817,6 +818,9 @@ const AppV2: React.FC = () => {
             </Route>
             <Route exact path="/community">
               <Refreshments />
+            </Route>
+            <Route exact path="/community-onboarding">
+              <CommunityOnboarding />
             </Route>
             <Route exact path="/community/submitted">
               <SubmittedPosts />

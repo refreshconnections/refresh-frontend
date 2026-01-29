@@ -7,16 +7,15 @@ import { alert as alertIcon } from 'ionicons/icons';
 import "./Page.css"
 import "./PostDetails.css"
 
-import { getCurrentUserProfile, onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment, getProfileCardInfo, isPersonalPlus } from '../hooks/utilities';
+import { onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment, normalizeLocalMediaUrl } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons/faHeart';
 import { faCommentPlus } from '@fortawesome/pro-solid-svg-icons/faCommentPlus';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 
 
-import EditUsernameModal from '../components/EditUsernameModal';
 import ReportModal from '../components/ReportModal';
-import ProfileModal from '../components/ProfileModal';
+import CommunityProfileModal from '../components/CommunityProfileModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
@@ -30,13 +29,13 @@ type Props = {
 const PostDetails: React.FC<Props> = (props) => {
 
   const [data, setData] = useState<any>(props.comments);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [communityProfileUserId, setCommunityProfileUserId] = useState<number | null>(null);
+  const [communityProfileAnonymous, setCommunityProfileAnonymous] = useState<boolean>(false);
   console.log("props ", props.comments)
   const [myLikes, setMyLikes] = useState<any>(null);
   const [commentInput, setCommentInput] = useState<string | null>(null);
   const [offendingText, setOffendingText] = useState<string | null>(null);
   const [offendingId, setOffendingId] = useState<number | null>(null);
-  const [connected, setConnected] = useState<string | null>(null);
   const [noComment, setNoComment] = useState<boolean>(false);
   const [closed, setClosed] = useState<boolean>(false);
 
@@ -78,14 +77,6 @@ const PostDetails: React.FC<Props> = (props) => {
 
     return strDate
   }
-
-  const handleUsernameDismiss = async () => {
-    usernameDismiss();
-  }
-
-  const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
-    onDismiss: handleUsernameDismiss
-  });
 
   const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
 
@@ -140,50 +131,42 @@ const PostDetails: React.FC<Props> = (props) => {
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
   });
 
-  const handleProfileDismiss = async () =>{
-    queryClient.invalidateQueries({ queryKey: ['current'] })
-    profileDismiss()
-  }
-
-
-  
-  const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: profileData,
-    profiletype: connected,
-    pro: isPersonalPlus(me?.subscription_level),
-    settingsAlt: me?.settings_show_alt || true,
-    yourName: me?.name || '',
-    onDismiss: () => handleProfileDismiss(),
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: communityProfileUserId,
+    isAnonymous: communityProfileAnonymous,
+    onDismiss: () => {
+      setCommunityProfileUserId(null);
+      setCommunityProfileAnonymous(false);
+      communityProfileDismiss();
+    },
   });
 
-
-  const openModal = async (id: any) => {
-    setProfileData(await getProfileCardInfo(id))
-    
-    console.log("id, ", id)
-    console.log("mut, ", me.mutual_connections)
-    console.log("outgoing, ", me.outgoing_connections)
-    console.log("hi again me here", profileData)
-    if (me?.mutual_connections.includes(id) || me?.outgoing_connections.includes(id)) {
-      console.log("HERE")
-      setConnected("connected-nodismiss")
-    }
-    else {
-      setConnected("unconnected-nodismiss")
-    }
-    profilePresent();
+  const openModal = async (id: any, isAnonymous: boolean) => {
+    if (isAnonymous) return;
+    setCommunityProfileUserId(id);
+    setCommunityProfileAnonymous(isAnonymous);
   }
 
   const onClickHandler = (item) => {
 
-    if (me?.settings_community_profile && item.settings_community_profile && !item.removed && !(me?.user === item.user)) {
-      openModal(item.user)
-    }
-    else {
-      setProfileData(null)
+    if (item?.user) {
+      openModal(item.user, !item?.username || String(item?.username).toLowerCase() === 'anonymous');
     }
 
   }
+
+  useEffect(() => {
+    if (communityProfileUserId !== null) {
+      communityProfilePresent({
+        showBackdrop: false,
+        backdropDismiss: true,
+        initialBreakpoint: 0.8,
+        handleBehavior: 'none',
+        expandToScroll: false,
+        cssClass: 'community-profile-modal',
+      });
+    }
+  }, [communityProfileUserId, communityProfilePresent]);
 
 
 
@@ -207,7 +190,16 @@ const PostDetails: React.FC<Props> = (props) => {
                   :
                   <>
                   <div className="name-avatar">
-                  {(item.settings_community_profile && me?.settings_community_profile && !item.removed) ? <IonAvatar><img src={item.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
+                  {!item?.username || String(item?.username).toLowerCase() === 'anonymous' ? <></> : (
+                    <IonAvatar className={(me?.settings_community_profile && item.settings_community_profile && item.profile_image) ? "connect-avatar" : "refresh-avatar"}>
+                      <img
+                        src={(me?.settings_community_profile && item.settings_community_profile && item.profile_image)
+                          ? normalizeLocalMediaUrl(item.profile_image)
+                          : "../static/img/refresh-flower-blue.png"}
+                        onError={(e) => onImgError(e)}
+                      />
+                    </IonAvatar>
+                  )}
                   <h3> {item.username ? item.username : "Anonymous"}</h3>
                   </div>
                   <h4>{item.text}</h4>
@@ -257,7 +249,7 @@ const PostDetails: React.FC<Props> = (props) => {
         </IonRow>
         :
         <IonRow className="ion-justify-content-center comment-username">
-          <IonButton onClick={() => usernamePresent()} color="tertiary">
+          <IonButton routerLink="/community-onboarding" color="tertiary">
             Set a public username to post a comment!
           </IonButton>
         </IonRow>}
@@ -269,4 +261,3 @@ const PostDetails: React.FC<Props> = (props) => {
 
 
 export default PostDetails;
-

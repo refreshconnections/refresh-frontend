@@ -1,7 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
-import { useProfileDetails } from "../../hooks/api/profiles/details";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement, normalizeLocalMediaUrl } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
@@ -20,8 +19,7 @@ import { faComments } from '@fortawesome/pro-regular-svg-icons/faComments';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import Comments from "./Comments";
 import { useGetCommentsNotShownCount } from "../../hooks/api/refreshments/comments-not-shown";
-import ProfileModal from "../ProfileModal";
-import EditUsernameModal from "../EditUsernameModal";
+import CommunityProfileModal from "../CommunityProfileModal";
 import { faCommentPlus } from "@fortawesome/pro-solid-svg-icons/faCommentPlus";
 
 import Markdown from 'react-markdown'
@@ -381,28 +379,11 @@ const OpenedPost: React.FC = () => {
         })
     }
 
-    const handleProfileDismiss = async () => {
-        queryClient.invalidateQueries({ queryKey: ['current'] })
-        queryClient.invalidateQueries({ queryKey: ['mutuals'] })
-        queryClient.invalidateQueries({ queryKey: ['outgoing'] })
-        profileDismiss()
-    }
-
-    const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-        cardData: useProfileDetails(staticContentPost?.user).data,
-        profiletype: (mutualConnections?.includes(staticContentPost?.user) || outgoingConnections?.includes(staticContentPost?.user)) ? "connected-nodismiss" : "unconnected-nodismiss",
-        pro: isPersonalPlus(globalCurrentProfile?.subscription_level),
-        settingsAlt: settingsCurrentProfile?.settings_alt_text || true,
-        yourName: globalCurrentProfile?.name || '',
-        onDismiss: () => handleProfileDismiss(),
-    });
-
-    const handleUsernameDismiss = async () => {
-        usernameDismiss();
-    }
-
-    const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
-        onDismiss: handleUsernameDismiss
+    const postAnonymous = !staticContentPost?.include_profile || !staticContentPost?.byline || String(staticContentPost?.byline).toLowerCase() === 'anonymous';
+    const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+        userId: staticContentPost?.user ?? null,
+        isAnonymous: postAnonymous,
+        onDismiss: () => communityProfileDismiss(),
     });
 
     const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
@@ -534,9 +515,35 @@ const OpenedPost: React.FC = () => {
                                 <IonRow className="ion-align-items-center">
                                     {/* <IonCol size="7"> */}
 
-                                    <IonCol className="byline-col" size="7" onClick={settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile && !(globalCurrentProfile?.user == staticContentPost?.user) ? () => profilePresent() : () => { }}>
-                                        {(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile) ? <IonAvatar className="byline-avatar"><img src={staticContentPost?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
-                                        <IonText>by {staticContentPost?.byline || "Anonymous"}</IonText>
+                                    <IonCol
+                                      className="byline-col"
+                                      size="7"
+                                      onClick={() =>
+                                        !postAnonymous && staticContentPost?.user
+                                          ? communityProfilePresent({
+                                              showBackdrop: false,
+                                              backdropDismiss: true,
+                                              initialBreakpoint: 0.8,
+                                              handleBehavior: 'none',
+                                              expandToScroll: false,
+                                              cssClass: 'community-profile-modal',
+                                            })
+                                          : null
+                                      }
+                                    >
+                                        {postAnonymous ? <></> : (
+                                          <IonAvatar className={(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.profile_image) ? "byline-avatar connect-avatar" : "byline-avatar refresh-avatar"}>
+                                              <img
+                                                src={(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.profile_image)
+                                                  ? normalizeLocalMediaUrl(staticContentPost?.profile_image)
+                                                  : "../static/img/refresh-flower-blue.png"}
+                                                onError={(e) => onImgError(e)}
+                                              />
+                                          </IonAvatar>
+                                        )}
+                                        <IonText>
+                                          by {postAnonymous ? "Anonymous" : (staticContentPost?.username || staticContentPost?.byline)}
+                                        </IonText>
                                     </IonCol>
 
                                     <IonCol size="5" >
@@ -744,7 +751,7 @@ const OpenedPost: React.FC = () => {
                                 </>
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">
-                                    <IonButton onClick={() => usernamePresent()} color="tertiary">
+                                    <IonButton routerLink="/community-onboarding" color="tertiary">
                                         Set a public username to post a comment!
                                     </IonButton>
                                 </IonRow>}
@@ -786,5 +793,3 @@ const OpenedPost: React.FC = () => {
 };
 
 export default OpenedPost;
-
-

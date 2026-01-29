@@ -5,7 +5,7 @@ import { arrowDown } from 'ionicons/icons';
 import "./Page.css"
 import "./Community.css"
 
-import { getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getProfileCardInfo, getAllAnnouncementsAtOnce, isCommunityPlus, isPersonalPlus } from '../hooks/utilities';
+import { getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus, normalizeLocalMediaUrl } from '../hooks/utilities';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
@@ -25,7 +25,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import CreatePostModal from '../components/CreatePostModal';
 import PostDetails from './PostDetails';
 import ReportModal from '../components/ReportModal';
-import ProfileModal from '../components/ProfileModal';
+import CommunityProfileModal from '../components/CommunityProfileModal';
 import { faSubtitles } from '@fortawesome/pro-regular-svg-icons/faSubtitles';
 import { useGetAllAnnouncementsTake1Fn } from '../hooks/api/announcements-take-1/all-anns';
 
@@ -58,9 +58,9 @@ const Community: React.FC = () => {
   const commentInputRef = useRef<null | HTMLDivElement>(null)
   const postRefs = useRef<any[]>([])
 
-  const [connected, setConnected] = useState<string | null>(null);
 
-  const [profileData, setProfileData] = useState<any>(null);
+  const [communityProfileUserId, setCommunityProfileUserId] = useState<number | null>(null);
+  const [communityProfileAnonymous, setCommunityProfileAnonymous] = useState<boolean>(false);
 
   const [littleLoading, setLittleLoading] = useState<boolean>(false);
 
@@ -280,34 +280,34 @@ const Community: React.FC = () => {
     setOffendingTitle(title)
   }
 
-  const handleProfileDismiss = async () =>{
-    queryClient.invalidateQueries({ queryKey: ['current'] })
-    profileDismiss()
-  }
-
-  const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: profileData,
-    profiletype: connected,
-    pro: isPersonalPlus(me?.subscription_level),
-    settingsAlt: me?.settings_alt_text || true,
-    yourName: me?.name || '',
-    onDismiss: () => handleProfileDismiss(),
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: communityProfileUserId,
+    isAnonymous: communityProfileAnonymous,
+    onDismiss: () => {
+      setCommunityProfileUserId(null);
+      setCommunityProfileAnonymous(false);
+      communityProfileDismiss();
+    },
   });
 
+  const openModal = (id: number, isAnonymous: boolean) => {
+    if (isAnonymous) return;
+    setCommunityProfileUserId(id);
+    setCommunityProfileAnonymous(isAnonymous);
+  };
 
-  const openModal = async (id: any) => {
-    setProfileData(await getProfileCardInfo(id))
-    console.log("id, ", id)
-    console.log("mut, ", me?.mutual_connections)
-    console.log("outgoing, ", me?.outgoing_connections)
-    if (me?.mutual_connections.includes(id) || me?.outgoing_connections.includes(id)) {
-      setConnected("connected-nodismiss")
+  useEffect(() => {
+    if (communityProfileUserId !== null) {
+      communityProfilePresent({
+        showBackdrop: false,
+        backdropDismiss: true,
+        initialBreakpoint: 0.8,
+        handleBehavior: 'none',
+        expandToScroll: false,
+        cssClass: 'community-profile-modal',
+      });
     }
-    else {
-      setConnected("unconnected-nodismiss")
-    }
-    profilePresent();
-  }
+  }, [communityProfileUserId, communityProfilePresent]);
 
   return (
     <IonPage>
@@ -436,10 +436,33 @@ const Community: React.FC = () => {
                 : <></>}
                 <IonCardSubtitle>
                   <IonRow className="ion-align-items-center">
-                    <IonCol size="5" onClick={me?.settings_community_profile && item.settings_community_profile && !item.removed && !(me?.user == item.user) ? ()=>openModal(item.user) : ()=>setProfileData(null)}>
+                    <IonCol
+                      size="5"
+                      onClick={() =>
+                        item?.user
+                          ? openModal(
+                              item.user,
+                              !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous'
+                            )
+                          : null
+                      }
+                    >
                       <div className="display-flex">
-                      {(me?.settings_community_profile && item.settings_community_profile && !item.removed && item.include_profile) ? <IonAvatar className="byline-avatar"><img src={item.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
-                      <IonText>By {item.byline == "" || item.byline == null ? "Anonymous" : item.byline}</IonText>
+                      {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous') ? <></> : (
+                        <IonAvatar className={(me?.settings_community_profile && item.settings_community_profile && item.profile_image) ? "byline-avatar connect-avatar" : "byline-avatar refresh-avatar"}>
+                          <img
+                            src={(me?.settings_community_profile && item.settings_community_profile && item.profile_image)
+                              ? normalizeLocalMediaUrl(item.profile_image)
+                              : "../static/img/refresh-flower-blue.png"}
+                            onError={(e) => onImgError(e)}
+                          />
+                        </IonAvatar>
+                      )}
+                      <IonText>
+                        By {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous')
+                          ? "Anonymous"
+                          : (item.username || item.byline)}
+                      </IonText>
                       </div>
                     </IonCol>
                     <IonCol size="3" className="justify-center">

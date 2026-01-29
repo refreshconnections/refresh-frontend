@@ -559,8 +559,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
         <IonCardContent>
           <IonCardTitle>You're ready to get started!</IonCardTitle>
           <div className="onboarding-v2__ready-options">
-            {/* Hide community flow for now */}
-            {/* <div className="onboarding-v2__option">
+            <div className="onboarding-v2__option">
               <h2>Set up a community profile</h2>
               <p>Join in on conversations at the Refreshments Bar and other shared spaces.</p>
               <IonButton
@@ -568,12 +567,12 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
                 disabled={isCompleting}
                 onClick={(event) => {
                   onMarkOnboarded?.();
-                  onFinish('/community', event);
+                  onFinish('/community-onboarding', event);
                 }}
               >
-                {isCompleting ? <IonSpinner name="dots" /> : 'Go to community'}
+                {isCompleting ? <IonSpinner name="dots" /> : 'Start community profile'}
               </IonButton>
-            </div> */}
+            </div>
     
             <div className="onboarding-v2__option">
               <h2>Set up a personal profile</h2>

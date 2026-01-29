@@ -1,7 +1,6 @@
 import { IonAvatar, IonButton, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useEffect, useState } from "react";
-import { authorSidenoteComment, editComment, increaseStreak, isPersonalPlus, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
-import { useProfileDetails } from "../../hooks/api/profiles/details";
+import { authorSidenoteComment, editComment, increaseStreak, likeComment, normalizeLocalMediaUrl, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
 
@@ -18,7 +17,7 @@ import { useGetIndividualComment } from "../../hooks/api/refreshments/individual
 
 import { alert as alertIcon, removeCircleOutline, chatbubble, informationCircleOutline } from 'ionicons/icons';
 import CommentReplies from "./CommentReplies";
-import ProfileModal from "../ProfileModal";
+import CommunityProfileModal from "../CommunityProfileModal";
 import moment from "moment";
 import { faMessageXmark, faPen } from "@fortawesome/pro-solid-svg-icons";
 import { useGetLimits } from "../../hooks/api/profiles/current-limits";
@@ -74,21 +73,12 @@ const CommentItem: React.FC<Props> = (props) => {
 
   // const commentReplies = useGetCommentReplies(comment_id).data
 
-  // const profileDetails = useProfileDetails(comment?.user).data
-  const [profileOpen, setProfileOpen] = useState<boolean>(false)
-  const [enabled, setEnabled] = useState<boolean>(false)
-
-  const { data, isFetching: profileLoading, error, refetch } = useProfileDetails(comment?.user, enabled);
-
-
-  useEffect(() => {
-
-    if (profileOpen && data) {
-      profilePresent()
-      setEnabled(false)
-    }
-
-  }, [data, profileOpen])
+  const profileLoading = false;
+  const showConnectBorders = Boolean(settingsCurrentProfile?.settings_community_profile);
+  const showCommentConnectBorder = showConnectBorders && Boolean(comment?.settings_community_profile);
+  const communityImage = normalizeLocalMediaUrl(comment?.profile_image);
+  const showCommunityImage = showCommentConnectBorder && Boolean(communityImage);
+  const refreshLogoSrc = '../static/img/refresh-flower-blue.png';
 
 
 
@@ -353,29 +343,24 @@ const CommentItem: React.FC<Props> = (props) => {
     })
   }
 
-  const handleProfileDismiss = async () => {
-    queryClient.invalidateQueries({ queryKey: ['current'] })
-    setProfileOpen(false)
-    profileDismiss()
-  }
-
-  const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: data,
-    profiletype: (mutualConnections?.includes(comment?.user) || outgoingConnections?.includes(comment?.user) || data?.initiate_mode) ? "connected-nodismiss" : "unconnected-nodismiss",
-    pro: isPersonalPlus(globalCurrentProfile?.subscription_level),
-    settingsAlt: settingsCurrentProfile?.settings_alt_text || true,
-    yourName: globalCurrentProfile?.name || '',
-    onDismiss: () => handleProfileDismiss(),
+  const commentAnonymous = !comment?.username || String(comment?.username).toLowerCase() === 'anonymous';
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: comment?.user ?? null,
+    isAnonymous: commentAnonymous,
+    onDismiss: () => communityProfileDismiss(),
   });
 
   const onClickProfileHandler = () => {
-
-
-    if (settingsCurrentProfile?.settings_community_profile && comment?.settings_community_profile && !comment?.removed && !(globalCurrentProfile?.user === comment?.user)) {
-      setEnabled(true)
-      setProfileOpen(true)
-    }
-
+    if (commentAnonymous) return;
+    if (!comment?.user) return;
+    communityProfilePresent({
+      showBackdrop: false,
+      backdropDismiss: true,
+      initialBreakpoint: 0.8,
+      handleBehavior: 'none',
+      expandToScroll: false,
+      cssClass: 'community-profile-modal',
+    });
   }
 
 
@@ -414,11 +399,13 @@ const CommentItem: React.FC<Props> = (props) => {
                             <h4 style={{ color: "maroon" }}>
                               {isOwner ? "Removed comments only visible to you." : "This comment has been removed."}
                             </h4>
-                            {isOwner && (
-                              <div className="name-avatar">
-                                {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile) ? (
-                                  <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar>
-                                ) : <></>}
+                                {isOwner && (
+                                  <div className="name-avatar">
+                                {commentAnonymous ? <></> : (
+                                  <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
+                                    <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                  </IonAvatar>
+                                )}
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                               </div>
                             )}
@@ -441,9 +428,11 @@ const CommentItem: React.FC<Props> = (props) => {
                               )}
                             </IonRow>
                             <div className="name-avatar">
-                              {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile) ? (
-                                <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar>
-                              ) : <></>}
+                              {commentAnonymous ? <></> : (
+                                <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
+                                  <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                </IonAvatar>
+                              )}
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
                             <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
@@ -456,7 +445,11 @@ const CommentItem: React.FC<Props> = (props) => {
                           :
                           <>
                             <div className="name-avatar" onClick={() => onClickProfileHandler()}>
-                              {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile && !comment?.removed) ? <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
+                              {commentAnonymous ? <></> : (
+                                <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
+                                  <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                </IonAvatar>
+                              )}
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
                               {profileLoading && <IonSpinner name="bubbles"></IonSpinner>}
                             </div>

@@ -195,3 +195,8 @@ ion-textarea.comment-creator {
   margin: .25rem 0;
   border-radius: 2px;
 }
+
+ion-avatar.connect-avatar {
+  border: 2px solid var(--ion-color-primary);
+  border-radius: 999px;
+}

@@ -16,6 +16,7 @@ export const userQueryKeys = {
     global_current: ['global-current'],
     settings_current: ['settings-current'],
     refreshments_current: ['refreshments-current'],
+    community_profile: ['community-profile'],
     moderation: () => [...userQueryKeys.current, 'moderation'],
     streak: () => ['streak'],
     limits: () => ['limits'],

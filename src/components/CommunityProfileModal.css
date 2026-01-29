@@ -1,0 +1,60 @@
+ion-modal.community-profile-modal {
+  --background: transparent;
+  --backdrop-opacity: 0;
+  --ion-background-color: transparent;
+}
+
+ion-modal.community-profile-modal::part(content) {
+  background: transparent;
+  box-shadow: none;
+}
+
+ion-modal.community-profile-modal::part(backdrop) {
+  background: transparent;
+}
+
+ion-modal.community-profile-modal ion-content {
+  --background: transparent;
+  --ion-background-color: transparent;
+}
+
+ion-modal.community-profile-modal .ion-page {
+  background: transparent;
+}
+
+.community-profile-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  background: transparent;
+}
+
+.community-profile-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--ion-card-background, #ffffff);
+}
+
+.community-profile-card-content {
+  background: var(--ion-card-background, #ffffff);
+}
+
+.community-profile-inline-button {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  text-transform: none;
+  vertical-align: baseline;
+}
+
+.community-profile-inline-button::part(native) {
+  padding: 0;
+  line-height: inherit;
+  vertical-align: baseline;
+}

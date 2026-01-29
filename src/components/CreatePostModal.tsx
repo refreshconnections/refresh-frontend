@@ -342,11 +342,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const recurrenceTypeRef = useRef(recurrenceType);
 
     const userHandle = (username ?? "").trim();
-    const pref = (preferred_name ?? "").trim();
-
-    // Build the combined label/value once
-    const combinedLabel = pref && userHandle ? `${pref} (${userHandle})` : pref || "";
-    const combinedValue = combinedLabel; // keep value same as label for simplicity
 
 
 
@@ -854,11 +849,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     {/* Only show the plain username option if username exists */}
                                     {userHandle && (
                                         <IonSelectOption value={userHandle}>{userHandle}</IonSelectOption>
-                                    )}
-
-                                    {/* Show "Preferred (username)" if username exists, otherwise just Preferred */}
-                                    {combinedLabel && (
-                                        <IonSelectOption value={combinedValue}>{combinedLabel}</IonSelectOption>
                                     )}
                                     <IonSelectOption value="Anonymous">Anonymous</IonSelectOption>
                                 </IonSelect>

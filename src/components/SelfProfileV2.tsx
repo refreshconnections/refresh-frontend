@@ -36,6 +36,7 @@ import ProfileModal from './ProfileModal';
 import EditLocationModal from './EditLocationModal';
 import EditUsernameModal from './EditUsernameModal';
 import CroppedImageModal from './CroppedImageModal';
+import CommunityProfileSection from './CommunityProfileSection';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { faFaceViewfinder, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
@@ -922,16 +923,9 @@ const SelfProfileV2: React.FC = () => {
     return (
         <div className="self-profile-v2">
             <IonGrid>
-                <IonRow className="section-title-row">
-                    <IonCol>
-                        <IonText color="primary">
-                            <h1>Profile</h1>
-                        </IonText>
-                    </IonCol>
-                </IonRow>
                 <IonRow className="preview-row">
-                    <IonCol className="ion-justify-content-end">
-                        <IonButton fill="clear" onClick={() => profilePresent()}>
+                    <IonCol className="ion-text-center">
+                        <IonButton color="primary" onClick={() => profilePresent()}>
                             <FontAwesomeIcon icon={faFaceViewfinder as IconProp} />
                             &nbsp; See how others see your profile
                         </IonButton>
@@ -1376,6 +1370,7 @@ const SelfProfileV2: React.FC = () => {
                         </IonCardContent>
                     </IonAccordion>
                 </IonAccordionGroup>
+                <CommunityProfileSection />
             </IonGrid>
         </div>
     );

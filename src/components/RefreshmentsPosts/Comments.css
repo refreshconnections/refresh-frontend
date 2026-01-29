@@ -133,3 +133,12 @@ ion-item .commentdiv {
   margin-inline-start: 0;  /* remove Ionic’s extra gap */
   pointer-events: none;
 }
+
+ion-avatar.connect-avatar {
+  border: 2px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+ion-avatar.refresh-avatar img {
+  filter: grayscale(1);
+}

@@ -23,6 +23,7 @@ import Login from './Login';
 import Profile from '../pages/Profile';
 import Community from '../pages/Community';
 import Onboarding from '../pages/Onboarding';
+import CommunityOnboarding from '../pages/CommunityOnboarding';
 import Store from '../pages/Store';
 import Settings from '../pages/Settings';
 import Help from '../pages/Help';
@@ -577,6 +578,9 @@ const App: React.FC = () => {
             </Route>
             <Route exact path="/community">
               <Refreshments />
+            </Route>
+            <Route exact path="/community-onboarding">
+              <CommunityOnboarding />
             </Route>
             <Route exact path="/community/submitted">
               <SubmittedPosts />
