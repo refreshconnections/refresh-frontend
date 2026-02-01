@@ -25,7 +25,6 @@ ion-card.onboarding-slide ion-item {
     --background: var(--ion-color-white);
     --border-radius: 10px;
     --inner-border-width: 0;
-    margin-bottom: 10px;
 }
 
 ion-card.onboarding-slide ion-item.tb-padding {
@@ -47,19 +46,64 @@ ion-card.onboarding-slide ion-item ion-input {
 ion-card.onboarding-slide .scrollable-list {
    overflow: auto;
     --background: var(--ion-color-white);
+    background: var(--ion-color-white);
+    --inner-border-width: 0;
+    margin-bottom: 6px;
     border-radius: 10px;
-    --padding-top: 15px;
-    --padding-bottom: 15px;
-    --inner-border-width: 0
+    padding: 10px;
 }
 
-ion-card.onboarding-slide .scrollable-list ion-list{
-   --background: var(--ion-color-white);
-   background: var(--ion-color-white);
- }
+ion-card.onboarding-slide .scrollable-list ion-list {
+    --background: var(--ion-color-white);
+    background: var(--ion-color-white);
+}
 
 ion-card.onboarding-slide .scrollable-list ion-item{
-    --background: var(--ion-color-white)
+    --background: var(--ion-color-white);
+}
+
+ion-card.onboarding-slide .onboarding-option-card {
+    background: var(--ion-color-white);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+}
+
+ion-card.onboarding-slide .onboarding-option-card .scrollable-list {
+    max-height: 220px;
+    overflow: auto;
+    flex: 0 1 auto;
+}
+
+ion-card.onboarding-slide .onboarding-option-card .onboarding-subtext {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+ion-card.onboarding-slide .onboarding-option-card.compact .scrollable-list {
+    max-height: 260px;
+}
+
+ion-card.onboarding-slide .onboarding-option-note {
+    text-align: center;
+    margin: 0;
+}
+
+ion-card.onboarding-slide ion-item.onboarding-toggle-row {
+    --background: transparent;
+    --inner-border-width: 0;
+    margin-top: 4px;
+}
+
+ion-card.onboarding-slide .onboarding-checkbox-list ion-item {
+    --inner-padding-top: 3px;
+    --inner-padding-bottom: 3px;
+    margin-bottom: 1px;
+    border-radius: 8px;
 }
 
 ion-card.onboarding-slide .onboarding-slide-buttons ion-button {
@@ -77,6 +121,12 @@ ion-card.onboarding-slide ion-text {
     padding-bottom: 20px
 }
 
+ion-card.onboarding-slide ion-text.onboarding-subtext {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 0.9rem;
+}
+
 ion-item.no-bottom-line {
     --inner-border-width: 0
 }
@@ -91,15 +141,17 @@ ion-card.onboarding-slide ion-card-content {
 }
 
 ion-card.onboarding-slide ion-card-content.w-checkboxes {
-    max-height: 500px;
+    height: 70%;
+    max-height: none;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     display: flex;
+    gap: 10px;
     padding-top: 10px;
     padding-bottom: 10px;
     padding-left: 20px;
-    padding-right: 20px
-    
+    padding-right: 20px;
+    min-height: 0;
 }
 
 ion-card.onboarding-slide .photo-caps ion-select {
@@ -173,6 +225,10 @@ ion-card.onboarding-slide ion-row.with-button ion-item{
 
     .scrollable-list {
         max-height: 200pt;
+    }
+
+    ion-card.onboarding-slide .onboarding-option-card .scrollable-list {
+        max-height: 220px;
     }
 
     ion-card.onboarding-slide ion-card-title {

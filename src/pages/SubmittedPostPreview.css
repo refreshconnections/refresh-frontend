@@ -1,0 +1,66 @@
+.submitted-post-preview {
+  --padding-start: 4px;
+  --padding-end: 4px;
+}
+
+ion-toolbar.modal-title {
+  padding-top: 50px !important;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+.submitted-post-preview ion-card {
+  box-shadow: none;
+  background: var(--ion-color-white);
+}
+
+.submitted-post-preview .status-row {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+  gap: 8px;
+}
+
+.submitted-post-preview .preview-card {
+  margin-bottom: 8px;
+}
+
+.submitted-post-preview .preview-card ion-card-title {
+  font-size: calc(22px * var(--text-scale, 1));
+}
+
+.submitted-post-preview .preview-card ion-card-content {
+  padding-top: 4px;
+}
+
+.submitted-post-preview .detail-block p {
+  margin: 4px 0 0;
+}
+
+.submitted-post-preview .submitted-meta {
+  margin-top: 4px;
+}
+
+.submitted-post-preview .help-row {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+
+.submitted-post-preview .help-note {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.submitted-post-preview .requested-edit {
+  margin-bottom: 16px;
+}
+
+.submitted-post-preview .edit-card {
+  margin-top: 12px;
+}
+
+.submitted-post-preview .edit-card ion-card-content {
+  padding-left: 12px;
+  padding-right: 12px;
+}

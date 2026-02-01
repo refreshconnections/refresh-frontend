@@ -5,6 +5,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react'
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
 
 import './CantAccessCard.css';
@@ -22,13 +23,24 @@ const OnboardingCardBio: React.FC = () => {
 
   const [bio, setBio] = useState<string | null>(null);
   const swiper = useSwiper();
+  const currentProfile = useGetCurrentProfile().data;
+
+  useEffect(() => {
+    if (bio !== null) return;
+    if (currentProfile?.bio) {
+      setBio(currentProfile.bio);
+    }
+  }, [bio, currentProfile?.bio]);
 
 
 
   const updateProfile = async (e: any) => {
 
     if (bio !== null) {
-      const response = await updateCurrentUserProfile({ bio: bio })
+      const existing = currentProfile?.bio ?? '';
+      if (bio !== existing) {
+        await updateCurrentUserProfile({ bio: bio })
+      }
     }
     swiper.slideNext()
 

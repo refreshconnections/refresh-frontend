@@ -10,7 +10,7 @@ import {
   useIonAlert,
   useIonModal,
 } from '@ionic/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import './Page.css';
 import './Onboarding.css';
@@ -24,17 +24,21 @@ import 'swiper/css/pagination';
 import { Navigation, Pagination, Scrollbar } from 'swiper';
 import OnboardingCardGenderIdentity from '../components/OnboardingCardGenderIdentity';
 import OnboardingCardDone from '../components/OnboardingCardDone';
-import OnboardingCardCoords from '../components/OnboardingCardCoords';
-import OnboardingCardLocation from '../components/OnboardingCardLocation';
+import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
+import OnboardingCardLocationLabel from '../components/OnboardingCardLocationLabel';
 import OnboardingCardLookingFor from '../components/OnboardingCardLookingFor';
 import OnboardingCardCovid from '../components/OnboardingCardCovid';
 import OnboardingCardProfilePic from '../components/OnboardingCardProfilePic';
 import OnboardingCardPictures from '../components/OnboardingCardPictures';
 import OnboardingCardName from '../components/OnboardingCardName';
 import OnboardingCardBio from '../components/OnboardingCardBio';
-import OnboardingCardConversation from '../components/OnboardingCardConversation';
-import { handleLogoutCommon, setFontSizePref, setTextZoom, setThemePref } from '../hooks/utilities';
+import OnboardingCardLetsTalkAbout from '../components/OnboardingCardLetsTalkAbout';
+import { handleLogoutCommon, setFontSizePref, setTextZoom, setThemePref, updateCurrentUserProfile } from '../hooks/utilities';
 import StayPausedModal from '../components/StayPausedModal';
+import OnboardingCardPronouns from '../components/OnboardingCardPronouns';
+import OnboardingCardLivedExperiences from '../components/OnboardingCardLivedExperiences';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { Preferences } from '@capacitor/preferences';
 
 type PersonalProfileProps = {
   onDismiss?: () => void;
@@ -45,6 +49,10 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
     onDismiss: () => stayPausedDismiss(),
   });
+  const swiperRef = useRef<any>(null);
+  const currentProfile = useGetCurrentProfile().data;
+  const showConnectToggle = !currentProfile?.created_profile;
+  const SLIDE_KEY = 'personal_profile_onboarding_slide';
 
   const SwiperButtonPrev = ({ children }) => {
     const swiper = useSwiper();
@@ -69,6 +77,21 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     setThemeandFont();
   }, []);
 
+  useEffect(() => {
+    const restoreSlide = async () => {
+      if (currentProfile?.created_profile) {
+        await Preferences.remove({ key: SLIDE_KEY });
+        return;
+      }
+      const stored = await Preferences.get({ key: SLIDE_KEY });
+      const storedIndex = stored?.value ? Number(stored.value) : 0;
+      if (swiperRef.current && Number.isFinite(storedIndex) && storedIndex > 0) {
+        swiperRef.current.slideTo(storedIndex, 0);
+      }
+    };
+    restoreSlide();
+  }, [currentProfile?.created_profile]);
+
   const confirmLogoutAlert = async () => {
     confirmLogout({
       header: `Are you sure you want to return to login?`,
@@ -88,21 +111,39 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     });
   };
 
+  const handleFinishLater = async () => {
+    await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
+    if (onDismiss) {
+      onDismiss();
+      return;
+    }
+    window.location.pathname = '/community';
+  };
+
   return (
     <IonPage>
       <IonContent className="ignore-keyboard ">
         <Swiper
-          modules={[Navigation, Pagination, Scrollbar]}
+          modules={[Navigation, Pagination]}
           pagination={{ type: 'progressbar' }}
-          scrollbar={{ draggable: true }}
           centeredSlides
           allowTouchMove={false}
-          className="onboarding "
+          className="onboarding"
+          onSwiper={(swiperInstance) => {
+            swiperRef.current = swiperInstance;
+          }}
+          onSlideChange={async (swiperInstance) => {
+            if (currentProfile?.created_profile) {
+              await Preferences.remove({ key: SLIDE_KEY });
+              return;
+            }
+            await Preferences.set({ key: SLIDE_KEY, value: String(swiperInstance.activeIndex) });
+          }}
         >
           <SwiperSlide>
               <IonCard className="onboarding-slide" style={{ overflow: 'scroll', position: 'relative', height: '95vh' }}>
                 <IonCardContent style={{ padding: '20px' }}>
-                <IonCardTitle style={{ fontSize: '26px' }}>Create your profile</IonCardTitle>
+              <IonCardTitle style={{ fontSize: '26px' }}>Create your personal profile</IonCardTitle>
                 <img
                   src="../static/img/flower-mask.png"
                   style={{ width: '50%', alignSelf: 'center', margin: '30pt' }}
@@ -110,24 +151,13 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                 <IonText style={{ textAlign: 'center' }}>
                   <h2>Create your personal profile so other members can get to know you one-on-one.</h2>
                 </IonText>
+                <IonText style={{ textAlign: 'center' }}>
+                  <h2>You'll need a personal profile to send likes and private messages.</h2>
+                </IonText>
               </IonCardContent>
               <IonRow className="onboarding-slide-buttons">
                 <SwiperButtonNext>Let’s go</SwiperButtonNext>
               </IonRow>
-              <IonButton
-                size="small"
-                fill="clear"
-                style={{
-                  position: 'absolute',
-                  bottom: '20px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '90%',
-                }}
-                onClick={onDismiss ?? confirmLogoutAlert}
-              >
-                {onDismiss ? 'Close' : 'Or return to login'}
-              </IonButton>
             </IonCard>
           </SwiperSlide>
 
@@ -135,45 +165,27 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
             <OnboardingCardName />
           </SwiperSlide>
           <SwiperSlide>
+            <OnboardingCardPronouns />
+          </SwiperSlide>
+          <SwiperSlide>
+            <OnboardingCardLocationCoords />
+          </SwiperSlide>
+          <SwiperSlide>
+            <OnboardingCardLocationLabel />
+          </SwiperSlide>
+          <SwiperSlide>
+            <OnboardingCardLookingFor />
+          </SwiperSlide>
+          <SwiperSlide>
             <OnboardingCardGenderIdentity />
           </SwiperSlide>
-          <SwiperSlide>
-            <OnboardingCardCoords />
-          </SwiperSlide>
-          <SwiperSlide>
-            <OnboardingCardLocation />
-          </SwiperSlide>
-          <SwiperSlide>
-            <IonCard className="onboarding-slide" style={{ overflow: 'scroll' }}>
-              <IonCardContent style={{ padding: '30px' }}>
-                <IonCardTitle>Now it's picture time.</IonCardTitle>
-                <IonText style={{ fontsize: '12pt' }}>
-                  The next screen will ask if you want to upload photos and create an active profile so you can start
-                  making one-on-one connections.
-                </IonText>
-                <IonText style={{ fontsize: '12pt' }}>
-                  Alternatively, you can choose to join without uploading photos and still participate fully in the
-                  community forum. You can always upload photos and start making one-on-one connections later.
-                </IonText>
-                <IonText style={{ fontsize: '12pt' }}>
-                  Please make sure your photos are in line with our{' '}
-                  <a href="https://www.refreshconnections.com/communitysafety">Community Guidelines</a> and{' '}
-                  <a href="https://www.refreshconnections.com/Principles">Member Principles</a> as you agreed to in our{' '}
-                  <a href="https://www.refreshconnections.com/terms">Terms and Conditions of Use</a>.
-                </IonText>
-              </IonCardContent>
-              <IonRow className="onboarding-slide-buttons">
-                <SwiperButtonPrev>Back</SwiperButtonPrev>
-                <SwiperButtonNext>Next</SwiperButtonNext>
-              </IonRow>
-              <IonRow>
-                <IonButton fill="clear" onClick={() => stayPausedOpen()}>
-                  Don't feel like adding pictures yet?
-                </IonButton>
-              </IonRow>
-            </IonCard>
-          </SwiperSlide>
 
+          <SwiperSlide>
+            <OnboardingCardLivedExperiences />
+          </SwiperSlide>
+          <SwiperSlide>
+            <OnboardingCardCovid />
+          </SwiperSlide>
           <SwiperSlide>
             <OnboardingCardProfilePic />
           </SwiperSlide>
@@ -181,21 +193,30 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
             <OnboardingCardPictures />
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLookingFor />
-          </SwiperSlide>
-          <SwiperSlide>
-            <OnboardingCardCovid />
-          </SwiperSlide>
-          <SwiperSlide>
             <OnboardingCardBio />
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardConversation />
+            <OnboardingCardLetsTalkAbout />
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardDone />
+            <OnboardingCardDone showConnectToggle={showConnectToggle} />
           </SwiperSlide>
         </Swiper>
+        <IonButton
+          size="small"
+          fill="clear"
+          style={{
+            position: 'fixed',
+            bottom: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            zIndex: 5,
+          }}
+          onClick={handleFinishLater}
+        >
+          Finish later
+        </IonButton>
       </IonContent>
     </IonPage>
   );

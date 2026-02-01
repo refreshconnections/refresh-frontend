@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import useFetch from '../hooks/useFetch';
 
 import { updateCurrentUserProfile, uploadPhoto } from '../hooks/utilities';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
 
 import './CantAccessCard.css';
@@ -27,11 +28,26 @@ const OnboardingCardLookingFor: React.FC = () => {
 
   const swiper = useSwiper();
   const [lookingFor, setLookingFor] = useState<string[]>([]);
+  const currentProfile = useGetCurrentProfile().data;
+
+  useEffect(() => {
+    if (currentProfile?.looking_for && lookingFor.length === 0) {
+      setLookingFor(currentProfile.looking_for);
+    }
+  }, [currentProfile?.looking_for, lookingFor.length]);
   
   const updateProfile = async (e: any) => {
     
     if (lookingFor.length !== 0) {
-      await updateCurrentUserProfile({ looking_for: lookingFor })        
+      const existing = currentProfile?.looking_for ?? [];
+      const nextSorted = [...lookingFor].sort();
+      const existingSorted = [...existing].sort();
+      const unchanged =
+        nextSorted.length === existingSorted.length &&
+        nextSorted.every((value, index) => value === existingSorted[index]);
+      if (!unchanged) {
+        await updateCurrentUserProfile({ looking_for: lookingFor })        
+      }
 
       
       swiper.slideNext()
@@ -67,38 +83,38 @@ const OnboardingCardLookingFor: React.FC = () => {
       <IonCardContent className="w-checkboxes">
         <IonCardTitle>What kind of connections are you looking to make?</IonCardTitle>
         <IonText>These will be shown on your profile. You can change these at any time. </IonText>
-        <IonItem className="scrollable-list">
-          <IonList lines="none">
+        <div className="onboarding-option-card compact">
+          <IonList className="scrollable-list onboarding-checkbox-list" lines="none">
             <IonItem>
-              <IonCheckbox slot="start" value="friendship" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="friendship" checked={lookingFor.includes("friendship")} onIonChange={e => addLookingForCheckbox(e)} />
               Friendships
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="romance" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="romance" checked={lookingFor.includes("romance")} onIonChange={e => addLookingForCheckbox(e)} />
               Romance
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="virtual connection" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="virtual connection" checked={lookingFor.includes("virtual connection")} onIonChange={e => addLookingForCheckbox(e)} />
               Virtual Connection
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="virtual only" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="virtual only" checked={lookingFor.includes("virtual only")} onIonChange={e => addLookingForCheckbox(e)} />
               Virtual Connection Only
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="job" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="job" checked={lookingFor.includes("job")} onIonChange={e => addLookingForCheckbox(e)} />
               Job
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="housing" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="housing" checked={lookingFor.includes("housing")} onIonChange={e => addLookingForCheckbox(e)} />
               Housing / roommate
             </IonItem>
             <IonItem>
-              <IonCheckbox slot="start" value="families" onIonChange={e => addLookingForCheckbox(e)} />
+              <IonCheckbox slot="start" value="families" checked={lookingFor.includes("families")} onIonChange={e => addLookingForCheckbox(e)} />
               Families
            </IonItem>
           </IonList>
-        </IonItem>
+        </div>
       </IonCardContent>
       <IonNote style={{textAlign: "center"}}>Scroll for all options!</IonNote>
       <IonRow className="onboarding-slide-buttons">

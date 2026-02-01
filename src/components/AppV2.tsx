@@ -17,7 +17,7 @@ import {
 } from '@ionic/react';
 import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Route, Redirect, useParams } from 'react-router-dom';
+import { Route, Redirect, useParams, useLocation } from 'react-router-dom';
 import Likes from '../pages/Likes';
 import Me from '../pages/Me';
 import Login from './Login';
@@ -799,11 +799,13 @@ const AppV2: React.FC = () => {
     );
   }
 
-  return (
-    <IonApp>
-      <IonReactRouter>
-        <IonTabs>
-          <IonRouterOutlet>
+  const TabsShell: React.FC = () => {
+    const location = useLocation();
+    const hideTabs = location.pathname === '/community-onboarding';
+
+    return (
+      <IonTabs>
+        <IonRouterOutlet>
             <Route path="/picks">
               <Picksv2 />
             </Route>
@@ -871,7 +873,8 @@ const AppV2: React.FC = () => {
               <Activity />
             </Route>
             <Redirect exact from="/" to="/community" />
-          </IonRouterOutlet>
+        </IonRouterOutlet>
+        {!hideTabs && (
           <IonTabBar slot="bottom">
             <IonTabButton tab="picks" href="/picks">
               <IonIcon icon={flowerIcon} />
@@ -888,16 +891,24 @@ const AppV2: React.FC = () => {
               <IonIcon icon={cafe} />
               <IonLabel>Refreshments</IonLabel>
             </IonTabButton>
-          <IonTabButton tab="change" href="/change">
-            <IonIcon icon={flash} />
-            <IonLabel>Change</IonLabel>
-          </IonTabButton>
+            <IonTabButton tab="change" href="/change">
+              <IonIcon icon={flash} />
+              <IonLabel>Change</IonLabel>
+            </IonTabButton>
             <IonTabButton tab="person" href="/me">
               <IonIcon icon={personIcon} />
               <IonLabel>Me</IonLabel>
             </IonTabButton>
           </IonTabBar>
-        </IonTabs>
+        )}
+      </IonTabs>
+    );
+  };
+
+  return (
+    <IonApp>
+      <IonReactRouter>
+        <TabsShell />
       </IonReactRouter>
       <IonAlert
         isOpen={showIssueAlert}

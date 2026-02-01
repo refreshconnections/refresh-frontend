@@ -14,6 +14,8 @@ import {
   IonNote,
   IonPage,
   IonRow,
+  IonSegment,
+  IonSegmentButton,
   IonText,
   IonSpinner,
   IonTitle,
@@ -23,6 +25,7 @@ import React, { useMemo, useState } from 'react';
 import { useGetSubmittedAnnouncements } from '../hooks/api/announcements-take-1/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
+import './SubmittedPosts.css';
 
 const statusLabelMap: Record<string, string> = {
   pending: 'Pending moderator review',
@@ -64,16 +67,45 @@ const getLastEditedDate = (post: any) => {
   return candidate ? new Date(candidate) : null;
 };
 
+const getApprovedDate = (item: any) => (
+  item?.approvalDateTime ||
+  item?.approved_at ||
+  item?.approvedAt ||
+  item?.approval_date ||
+  item?.approvedDateTime
+);
+
+const getSubmittedDate = (item: any) => (
+  item?.uploadDateTime ||
+  item?.submitted_at ||
+  item?.submittedAt ||
+  item?.created_at ||
+  item?.createdAt
+);
+
+const formatShortDate = (value: string | Date | null | undefined) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
 const SubmittedPosts: React.FC = () => {
   const history = useHistory();
   const now = useMemo(() => new Date(), []);
   const {
     data,
     isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = useGetSubmittedAnnouncements();
   const {
     data: eventsData,
     isLoading: eventsLoading,
+    fetchNextPage: fetchNextEventsPage,
+    hasNextPage: eventsHasNextPage,
+    isFetchingNextPage: eventsIsFetchingNextPage,
   } = useGetSubmittedEvents();
 
   const submissions = useMemo(() => {
@@ -103,6 +135,7 @@ const SubmittedPosts: React.FC = () => {
     return eventsData?.pages?.flatMap((page) => page?.results ?? []) ?? [];
   }, [eventsData]);
 
+  const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
 
@@ -134,151 +167,192 @@ const SubmittedPosts: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar>
+        <IonToolbar className="modal-title">
           <IonButtons slot="start">
             <IonBackButton defaultHref="/community" />
           </IonButtons>
-          <IonTitle>My Submitted Posts</IonTitle>
+          <IonTitle>My submissions</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
-        {isLoading && (
-          <IonRow class="ion-justify-content-center ion-padding">
-            <IonSpinner name="dots" />
-          </IonRow>
-        )}
+      <IonContent className="ion-padding submitted-posts">
+        <IonRow className="segments">
+          <IonSegment value={activeSegment}>
+            <IonSegmentButton value="posts" onClick={() => setActiveSegment('posts')}>
+              <IonLabel>Posts</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="events" onClick={() => setActiveSegment('events')}>
+              <IonLabel>Events</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </IonRow>
 
-        {!isLoading && submissions.length === 0 && (
-          <IonRow class="ion-justify-content-center ion-padding">
-            <IonNote>No submitted posts yet.</IonNote>
-          </IonRow>
-        )}
+        {activeSegment === 'posts' && (
+          <>
+            {isLoading && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonSpinner name="dots" />
+              </IonRow>
+            )}
 
-        {submissions.length > 0 && submissions.map((post) => {
-          const rawStatus =
-            post?.approval_status ?? (post?.approved ? 'approved' : 'pending');
-          const lastEditedAtDate = getLastEditedDate(post);
-          const daysSince = lastEditedAtDate
-            ? (now.getTime() - lastEditedAtDate.getTime()) / (1000 * 60 * 60 * 24)
-            : 0;
+            {!isLoading && submissions.length === 0 && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonNote>No submitted posts yet.</IonNote>
+              </IonRow>
+            )}
+
+            {submissions.length > 0 && submissions.map((post) => {
+              const rawStatus =
+                post?.approval_status ?? (post?.approved ? 'approved' : 'pending');
+              const lastEditedAtDate = getLastEditedDate(post);
+              const daysSince = lastEditedAtDate
+                ? (now.getTime() - lastEditedAtDate.getTime()) / (1000 * 60 * 60 * 24)
+                : 0;
               const status = rawStatus === 'needs_edit' && daysSince > 5
                 ? 'rejected'
                 : rawStatus;
               const statusLabel = statusLabelMap[status] ?? 'Pending moderator review';
               const statusColor = statusColorMap[status] ?? 'medium';
-              const submittedAt = lastEditedAtDate
-                ? lastEditedAtDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                : null;
+              const dateValue = status === 'approved'
+                ? getApprovedDate(post) ?? getLastEditedDate(post)
+                : getSubmittedDate(post) ?? getLastEditedDate(post);
+              const dateLabel = formatShortDate(dateValue);
 
-          return (
-            <IonCard
-              key={post?.id}
-              color="white"
-              onClick={() =>
-                (status === 'approved'
-                  ? history.push(`/community/${post?.id}`)
-                  : history.push(`/community/submitted/${post?.id}`, { post })
-                )
-              }
-            >
-              <IonCardContent>
-                <IonRow class="ion-justify-content-between ion-align-items-center">
-                  <div>
-                    <h2>{post?.title}</h2>
-                    {submittedAt && <p>Submitted {submittedAt}</p>}
-                  </div>
-                  <IonBadge color={statusColor}>{statusLabel}</IonBadge>
-                </IonRow>
-              </IonCardContent>
-            </IonCard>
-          );
-        })}
+              return (
+                <IonCard
+                  key={post?.id}
+                  color="white"
+                  onClick={() =>
+                    (status === 'approved'
+                      ? history.push(`/community/${post?.id}`)
+                      : history.push(`/community/submitted/${post?.id}`, { post })
+                    )
+                  }
+                >
+                  <IonCardContent>
+                    <div className="submission-card-row">
+                      <div className="submission-card-main">
+                        <h2>{post?.title}</h2>
+                        {dateLabel && <p>{dateLabel}</p>}
+                      </div>
+                      <div className="submission-card-badge">
+                        <IonBadge color={statusColor}>{statusLabel}</IonBadge>
+                      </div>
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              );
+            })}
 
-        <IonRow class="ion-padding">
-          <IonText>
-            <h2>My Submitted Events</h2>
-          </IonText>
-        </IonRow>
-
-        {eventsLoading && (
-          <IonRow class="ion-justify-content-center ion-padding">
-            <IonSpinner name="dots" />
-          </IonRow>
+            {hasNextPage && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonButton
+                  color="navy"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Loading...' : 'Show more'}
+                </IonButton>
+              </IonRow>
+            )}
+          </>
         )}
 
-        {!eventsLoading && submittedEvents.length === 0 && (
-          <IonRow class="ion-justify-content-center ion-padding">
-            <IonNote>No submitted events yet.</IonNote>
-          </IonRow>
+        {activeSegment === 'events' && (
+          <>
+            {eventsLoading && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonSpinner name="dots" />
+              </IonRow>
+            )}
+
+            {!eventsLoading && submittedEvents.length === 0 && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonNote>No submitted events yet.</IonNote>
+              </IonRow>
+            )}
+
+            {!eventsLoading && submittedEvents.length > 0 && submittedEvents.map((event) => {
+              const status = (event?.status ?? 'pending').toLowerCase();
+              const statusLabel = eventStatusLabelMap[status] ?? 'Pending moderator review';
+              const statusColor = eventStatusColorMap[status] ?? 'medium';
+              const dateValue = status === 'approved'
+                ? getApprovedDate(event) ?? getLastEditedDate(event)
+                : getSubmittedDate(event) ?? getLastEditedDate(event);
+              const dateLabel = formatShortDate(dateValue);
+
+              return (
+                <IonCard key={`event-${event?.id}`} color="white">
+                  <IonCardContent>
+                    <div className="submission-card-row" onClick={() => handleEventClick(event)}>
+                      <div className="submission-card-main">
+                        <h2>{event?.name}</h2>
+                        {dateLabel && <p>{dateLabel}</p>}
+                      </div>
+                      <div className="submission-card-badge">
+                        <IonBadge color={statusColor}>{statusLabel}</IonBadge>
+                      </div>
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              );
+            })}
+
+            {eventsHasNextPage && (
+              <IonRow class="ion-justify-content-center ion-padding">
+                <IonButton
+                  color="navy"
+                  onClick={() => fetchNextEventsPage()}
+                  disabled={eventsIsFetchingNextPage}
+                >
+                  {eventsIsFetchingNextPage ? 'Loading...' : 'Show more'}
+                </IonButton>
+              </IonRow>
+            )}
+          </>
         )}
-
-        {!eventsLoading && submittedEvents.length > 0 && submittedEvents.map((event) => {
-          const status = (event?.status ?? 'pending').toLowerCase();
-          const statusLabel = eventStatusLabelMap[status] ?? 'Pending moderator review';
-          const statusColor = eventStatusColorMap[status] ?? 'medium';
-          const eventDate = event?.start_datetime
-            ? new Date(event.start_datetime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-            : null;
-
-          return (
-            <IonCard key={`event-${event?.id}`} color="white">
-              <IonCardContent>
-                <IonRow class="ion-justify-content-between ion-align-items-center" onClick={() => handleEventClick(event)}>
-                  <div>
-                    <h2>{event?.name}</h2>
-                    {eventDate && <p>Event {eventDate}</p>}
-                  </div>
-                  <IonBadge color={statusColor}>{statusLabel}</IonBadge>
-                </IonRow>
-              </IonCardContent>
-            </IonCard>
-          );
-        })}
         <IonModal isOpen={eventDetailOpen} onDidDismiss={() => setEventDetailOpen(false)}>
           <IonHeader>
-            <IonToolbar>
+            <IonToolbar className="modal-title">
               <IonButtons slot="start">
                 <IonButton onClick={() => setEventDetailOpen(false)}>Back</IonButton>
               </IonButtons>
               <IonTitle>Event details</IonTitle>
             </IonToolbar>
           </IonHeader>
-          <IonContent className="ion-padding">
-            <IonText>
-              <h2>{selectedEvent?.name}</h2>
-            </IonText>
-            <IonBadge color={eventStatusColorMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'medium'}>
-              {eventStatusLabelMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'Pending moderator review'}
-            </IonBadge>
-            <IonList>
-              {formatEventDateTime(selectedEvent) && (
-                <IonItem>
-                  <IonLabel>Date</IonLabel>
-                  <IonText>{formatEventDateTime(selectedEvent)}</IonText>
-                </IonItem>
-              )}
-              {selectedEvent?.location && (
-                <IonItem>
-                  <IonLabel>Location</IonLabel>
-                  <IonText>{selectedEvent.location}</IonText>
-                </IonItem>
-              )}
-              {selectedEvent?.description && (
-                <IonItem>
-                  <IonLabel>Description</IonLabel>
-                  <IonText>{selectedEvent.description}</IonText>
-                </IonItem>
-              )}
-              {selectedEvent?.external_link && (
-                <IonItem>
-                  <IonLabel>Link</IonLabel>
-                  <IonText>{selectedEvent.external_link}</IonText>
-                </IonItem>
-              )}
-            </IonList>
-            <IonButton expand="block" onClick={() => setEventDetailOpen(false)}>
-              Close
-            </IonButton>
+          <IonContent className="ion-padding submitted-posts">
+            <IonCard color="white" className="preview-card">
+              <IonCardContent>
+                <IonText color="dark">
+                  <h2>{selectedEvent?.name}</h2>
+                </IonText>
+                <IonRow className="status-row">
+                  <IonBadge color={eventStatusColorMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'medium'}>
+                    {eventStatusLabelMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'Pending moderator review'}
+                  </IonBadge>
+                </IonRow>
+                <IonText color="medium" className="detail-block">
+                  {formatEventDateTime(selectedEvent) && (
+                    <p><strong>Date:</strong> {formatEventDateTime(selectedEvent)}</p>
+                  )}
+                  {selectedEvent?.location && (
+                    <p><strong>Location:</strong> {selectedEvent.location}</p>
+                  )}
+                  {selectedEvent?.external_link && (
+                    <p><strong>Link:</strong> {selectedEvent.external_link}</p>
+                  )}
+                </IonText>
+                {selectedEvent?.description && (
+                  <IonText color="dark">
+                    <p>{selectedEvent.description}</p>
+                  </IonText>
+                )}
+              </IonCardContent>
+            </IonCard>
+            <IonRow class="ion-justify-content-center">
+              <IonButton onClick={() => setEventDetailOpen(false)}>
+                Close
+              </IonButton>
+            </IonRow>
           </IonContent>
         </IonModal>
       </IonContent>

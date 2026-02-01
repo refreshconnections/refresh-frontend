@@ -178,6 +178,7 @@ const SelfProfileV2: React.FC = () => {
     const [presentShowContactSupportAlert] = useIonAlert();
     const [presentPhotoAlert] = useIonAlert();
     const [presentPhotoActionSheet] = useIonActionSheet();
+    const [photosAccordionValue, setPhotosAccordionValue] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         if (!currentUserProfile) return;
@@ -993,12 +994,20 @@ const SelfProfileV2: React.FC = () => {
                             {summaryKeys.map(key =>
                                 key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />,
                             )}
+                            <div style={{ marginTop: '12px' }}>
+                                {aboutKeys.map(key => (
+                                    <EditableField key={key} fieldKey={key} multiline />
+                                ))}
+                            </div>
 
                         </IonCardContent>
                     </IonAccordion>
                 </IonAccordionGroup>
 
-                <IonAccordionGroup>
+                <IonAccordionGroup
+                    value={photosAccordionValue}
+                    onIonChange={(ev) => setPhotosAccordionValue(ev.detail.value as string | undefined)}
+                >
                     <IonAccordion value="photos">
                         <IonItem slot="header" lines="none" className="accordion-header">
                             <IonLabel>

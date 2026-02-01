@@ -24,6 +24,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useGetSubmittedAnnouncements } from '../hooks/api/announcements-take-1/submitted-anns';
 import Markdown from 'react-markdown';
 import { apiClient } from '../hooks/api/api-client';
+import './SubmittedPostPreview.css';
 
 type SubmittedPost = {
   id: number;
@@ -35,6 +36,10 @@ type SubmittedPost = {
   coverPhoto?: string;
   disclaimer?: string;
   comment_instructions?: string;
+  byline?: string;
+  location?: string;
+  sensitive?: boolean;
+  sensitive_description?: string;
   approvalDateTime?: string;
   last_edited?: string;
   last_edited_at?: string;
@@ -44,6 +49,7 @@ type SubmittedPost = {
   approval_status?: string;
   moderator_edit_request?: string;
   moderator_edit_reason?: string;
+  moderator_edit_or_rejection_reason?: string;
   markdown?: boolean;
 };
 
@@ -164,10 +170,15 @@ const SubmittedPostPreview: React.FC = () => {
     ((status === 'pending' || status === 'rejected') && withinTwoWeeks);
 
   const submittedContent = post?.submitted_content ?? post?.content ?? '';
-  const displayContent = status === 'approved' ? post?.content ?? '' : submittedContent;
-  const hasRequestedEdit = !!post?.moderator_edit_request;
+  const displayContent = submittedContent;
+  const hasEdits =
+    (draftTitle.trim() !== '' && draftTitle.trim() !== (post?.title ?? '').trim())
+    || draftContent.trim() !== submittedContent.trim();
+  const requestedEdit = post?.moderator_edit_request ?? null;
+  const moderatorExplanation = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason ?? null;
+  const hasRequestedEdit = !!requestedEdit;
   const canEdit = status === 'needs_edit' && visible;
-  const rejectedReason = post?.moderator_edit_reason;
+  const rejectedReason = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason;
 
   const renderContent = (content: string) => {
     if (!content) {
@@ -176,8 +187,8 @@ const SubmittedPostPreview: React.FC = () => {
     return post?.markdown ? (
       <Markdown>{content}</Markdown>
     ) : (
-      <IonText color="dark">
-        <p>{content}</p>
+      <IonText color="dark" className="css-fix">
+        <p className="css-fix">{content}</p>
       </IonText>
     );
   };
@@ -189,17 +200,21 @@ const SubmittedPostPreview: React.FC = () => {
     }
     setSaving(true);
     try {
-      await apiClient.post(`/api/announcements/submitted/${post.id}/resubmit/`, {
+      const response = await apiClient.post(`/api/announcements/submitted/${post.id}/resubmit/`, {
         title: draftTitle.trim() || post?.title,
         content: draftContent.trim(),
       });
-      setPost((prev) => prev ? ({
-        ...prev,
-        title: draftTitle.trim() || prev.title,
-        submitted_content: draftContent.trim(),
-        approval_status: 'pending',
-        approved: false,
-      }) : prev);
+      if (response?.data) {
+        setPost(response.data);
+      } else {
+        setPost((prev) => prev ? ({
+          ...prev,
+          title: draftTitle.trim() || prev.title,
+          submitted_content: draftContent.trim(),
+          approval_status: 'pending',
+          approved: false,
+        }) : prev);
+      }
       setEditing(false);
       presentToast({ message: 'Resubmitted for review.', duration: 2500, color: 'success' });
     } catch (error) {
@@ -228,62 +243,94 @@ const SubmittedPostPreview: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar>
+        <IonToolbar className="modal-title">
           <IonButtons slot="start">
             <IonBackButton defaultHref="/community/submitted" />
           </IonButtons>
           <IonTitle>Post Preview</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
-        <IonText color="dark">
-          <h2>{post?.title}</h2>
-        </IonText>
-        <IonRow>
-          <IonBadge color={statusColor}>{statusLabel}</IonBadge>
-        </IonRow>
-        {submittedAt && (
-          <IonNote>Submitted {submittedAt}</IonNote>
-        )}
+      <IonContent className="ion-padding submitted-post-preview">
+        <IonCard className="preview-card">
+          <IonCardContent>
+            <IonText color="dark">
+              <h2>{post?.title}</h2>
+            </IonText>
+            <IonRow className="status-row">
+              <IonBadge color={statusColor}>{statusLabel}</IonBadge>
+              {submittedAt && (
+                <IonNote className="submitted-meta">Submitted {submittedAt}</IonNote>
+              )}
+            </IonRow>
+            {visible && (post?.byline || post?.location || post?.link || post?.sensitive) && (
+              <IonText color="medium" className="detail-block">
+                {post?.byline && <p><strong>Byline:</strong> {post.byline}</p>}
+                {post?.location && <p><strong>Location:</strong> {post.location}</p>}
+                {post?.link && <p><strong>Link:</strong> {post.link}</p>}
+                {post?.sensitive && (
+                  <p>
+                    <strong>Sensitive:</strong>{' '}
+                    {post.sensitive_description ? post.sensitive_description : 'Yes'}
+                  </p>
+                )}
+              </IonText>
+            )}
+            {visible && displayContent && renderContent(displayContent)}
+            {visible && status !== 'rejected' && !displayContent && (
+              <IonNote>No content available.</IonNote>
+            )}
+          </IonCardContent>
+        </IonCard>
 
         {!visible && (
           <IonNote>This submission is no longer available.</IonNote>
         )}
 
-        {visible && status === 'rejected' && rejectedReason && (
-          <IonText color="medium">
-            <p><strong>Rejected reason:</strong> {rejectedReason}</p>
-          </IonText>
-        )}
-
-        {visible && submittedContent && (
-          <>
-            <IonText color="dark">
-              <h3>Submitted content</h3>
-            </IonText>
-            {renderContent(submittedContent)}
-          </>
+        {visible && moderatorExplanation && (
+          <IonCard className="requested-edit">
+            <IonCardContent>
+              <IonText color="medium">
+                <p><strong>Moderator explanation:</strong> {moderatorExplanation}</p>
+              </IonText>
+            </IonCardContent>
+          </IonCard>
         )}
 
         {visible && hasRequestedEdit && (
-          <>
-            <IonText color="dark">
-              <h3>Requested edit</h3>
-            </IonText>
-            {renderContent(post?.moderator_edit_request ?? '')}
-          </>
+          <IonCard className="requested-edit">
+            <IonCardContent>
+              <IonText color="dark">
+                <h3>Requested edit</h3>
+              </IonText>
+              {renderContent(requestedEdit ?? '')}
+              <IonText color="medium">
+                <p>Approve to use this exact edit, or make changes in your own words and resubmit.</p>
+              </IonText>
+              {canEdit && !editing && (
+                <IonRow class="ion-justify-content-center" style={{ marginTop: '8px' }}>
+                  <IonButton size="small" onClick={() => {
+                    setDraftTitle(post?.title ?? '');
+                    setDraftContent(requestedEdit ?? submittedContent);
+                    setEditing(true);
+                  }}>
+                    Edit
+                  </IonButton>
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    onClick={handleApproveEdit}
+                    disabled={saving}
+                  >
+                    Approve edit
+                  </IonButton>
+                </IonRow>
+              )}
+            </IonCardContent>
+          </IonCard>
         )}
 
-        {visible && status === 'rejected' && rejectedReason && !hasRequestedEdit && (
-          <></>
-        )}
-
-        {visible && status !== 'rejected' && !submittedContent && displayContent && (
-          renderContent(displayContent)
-        )}
-
-        {canEdit && !editing && (
-          <IonRow class="ion-padding ion-justify-content-center">
+        {canEdit && !editing && !hasRequestedEdit && (
+          <IonRow class="ion-justify-content-center" style={{ marginBottom: '8px' }}>
             <IonButton
               onClick={() => {
                 setDraftTitle(post?.title ?? '');
@@ -293,23 +340,17 @@ const SubmittedPostPreview: React.FC = () => {
             >
               Edit & resubmit
             </IonButton>
-            {hasRequestedEdit && (
-              <IonButton
-                fill="outline"
-                onClick={handleApproveEdit}
-                disabled={saving}
-              >
-                Approve edit
-              </IonButton>
-            )}
           </IonRow>
         )}
 
         {canEdit && editing && (
-          <IonCard color="white">
+          <IonCard color="white" className="edit-card">
             <IonCardContent>
               <IonText color="dark">
                 <h3>Edit your submission</h3>
+              </IonText>
+              <IonText color="medium">
+                <p>Make the requested changes, then resubmit for review.</p>
               </IonText>
               <IonText color="medium">
                 <p>Title</p>
@@ -317,7 +358,7 @@ const SubmittedPostPreview: React.FC = () => {
               <IonInput
                 value={draftTitle}
                 placeholder="Title"
-                onIonChange={(e) => setDraftTitle(e.detail.value ?? '')}
+                onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
               />
               <IonText color="medium">
                 <p>Content</p>
@@ -325,11 +366,11 @@ const SubmittedPostPreview: React.FC = () => {
               <IonTextarea
                 value={draftContent}
                 autoGrow
-                onIonChange={(e) => setDraftContent(e.detail.value ?? '')}
+                onIonInput={(e) => setDraftContent(e.detail.value ?? '')}
               />
               <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
-                <IonButton onClick={handleResubmit} disabled={saving}>
-                  Resubmit
+                <IonButton onClick={handleResubmit} disabled={saving || !hasEdits}>
+                  Edit and resubmit
                 </IonButton>
                 <IonButton
                   fill="outline"
@@ -341,12 +382,6 @@ const SubmittedPostPreview: React.FC = () => {
               </IonRow>
             </IonCardContent>
           </IonCard>
-        )}
-
-        {visible && post?.link && (
-          <IonText color="dark">
-            <p><strong>Link:</strong> {post.link}</p>
-          </IonText>
         )}
 
         {visible && post?.coverPhoto && (

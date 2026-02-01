@@ -100,7 +100,11 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const isOwner = globalCurrentProfile?.user === comment?.user;
   const showOwnHidden = isOwner && (comment?.sidenoted || comment?.removed);
-  const canShowComment = comment?.approved && ((!comment?.sidenoted && !comment?.removed) || showSidenotes || showOwnHidden);
+  const reportedByMe = Array.isArray(currentProfileRefreshments?.reported_comments)
+    ? currentProfileRefreshments.reported_comments.includes(comment?.id)
+    : false;
+  const canShowComment = comment?.approved
+    && ((!comment?.sidenoted && !comment?.removed && !reportedByMe) || showSidenotes || showOwnHidden);
 
   const showSidenoteInfo = () => {
     presentSidenoteInfo({
@@ -526,7 +530,16 @@ const CommentItem: React.FC<Props> = (props) => {
                 </IonItemOptions>
                 {globalCurrentProfile?.user !== comment?.user ?
                   <IonItemOptions side="end">
-                    <IonItemOption color="danger" ><IonButton fill="clear" color="light" onClick={() => createReportPresent()}><IonIcon icon={alertIcon}></IonIcon></IonButton></IonItemOption>
+                    <IonItemOption color="danger">
+                      <IonButton
+                        fill="clear"
+                        color="light"
+                        onClick={() => createReportPresent()}
+                        disabled={reportedByMe}
+                      >
+                        <IonIcon icon={alertIcon}></IonIcon>
+                      </IonButton>
+                    </IonItemOption>
                     {comment?.sidenoted ? <></> :
                       <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
                     }

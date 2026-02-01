@@ -66,7 +66,7 @@ const CommunityOnboarding: React.FC = () => {
   const [communityBio, setCommunityBio] = useState('');
   const [showLocation, setShowLocation] = useState(false);
   const [showAgeTier, setShowAgeTier] = useState<AgeTier>('exact');
-  const [usePersonalPhoto, setUsePersonalPhoto] = useState(true);
+  const [usePersonalPhoto, setUsePersonalPhoto] = useState(false);
 
   const [image, setImage] = useState<any>(null);
   const [imageName, setImageName] = useState<string | null>(null);
@@ -80,16 +80,21 @@ const CommunityOnboarding: React.FC = () => {
   const personalPhoto = currentProfile?.pic1_main ?? null;
   const communityPhoto = (communityProfile as CommunityProfile | undefined)?.community_profile_pic ?? null;
 
-  const previewPhoto = usePersonalPhoto
+  const hasPersonalPhoto = Boolean(personalPhoto);
+  const previewPhoto = usePersonalPhoto && personalPhoto
     ? personalPhoto
-    : communityPhoto || personalPhoto;
+    : communityPhoto;
 
   useEffect(() => {
     if (!communityProfile) return;
     const profile = communityProfile as CommunityProfile;
     setCommunityBio(profile.community_bio ?? '');
     setShowLocation(Boolean(profile.show_location));
-    setUsePersonalPhoto(profile.use_personal_profile_picture ?? true);
+    setUsePersonalPhoto(
+      hasPersonalPhoto
+        ? (profile.use_personal_profile_picture ?? true)
+        : false
+    );
     setShowAgeTier((profile.show_age_tier as AgeTier) ?? 'exact');
   }, [communityProfile]);
 
@@ -139,7 +144,18 @@ const CommunityOnboarding: React.FC = () => {
     await queryClient.invalidateQueries({ queryKey: ['global-current'] });
   };
 
+  const handleFinishLater = async () => {
+    await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
+    await queryClient.invalidateQueries({ queryKey: ['current'] });
+    await queryClient.invalidateQueries({ queryKey: ['global-current'] });
+    router.push('/community', 'root', 'replace');
+  };
+
   const handleTogglePersonalPhoto = async (checked: boolean) => {
+    if (!hasPersonalPhoto) {
+      setUsePersonalPhoto(false);
+      return;
+    }
     setUsePersonalPhoto(checked);
     await updateCommunityProfile({ use_personal_profile_picture: checked });
   };
@@ -176,7 +192,7 @@ const CommunityOnboarding: React.FC = () => {
       community_bio: communityBio.trim(),
       show_location: showLocation,
       show_age_tier: showAgeTier,
-      use_personal_profile_picture: usePersonalPhoto,
+      use_personal_profile_picture: hasPersonalPhoto ? usePersonalPhoto : false,
     });
 
     router.push('/community', 'root', 'replace');
@@ -247,6 +263,43 @@ const CommunityOnboarding: React.FC = () => {
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
+                <IonCardContent className="onboarding-v2__card-body">
+                  <IonCardTitle>Welcome to your community profile</IonCardTitle>
+                  <p>
+                    This creates your community identity—your username for posts and comments, plus a photo
+                    and any extra details you want to share. Anyone can see this.
+                  </p>
+                  <p>
+                    {hasPersonalProfile
+                      ? 'Since you already have a personal profile, you can also connect 1:1 by turning on Connect from Refreshments.'
+                      : 'Later, if you create a personal profile, you can connect 1:1 by turning on Connect from Refreshments.'}
+                  </p>
+                </IonCardContent>
+                <div className="onboarding-v2__card-footer">
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton
+                      className="onboarding-v2__primary-action"
+                      onClick={() => swiperRef.current?.slideNext()}
+                    >
+                      Next
+                    </IonButton>
+                  </IonRow>
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton
+                      fill="clear"
+                      size="small"
+                      onClick={handleFinishLater}
+                    >
+                      Finish later
+                    </IonButton>
+                  </IonRow>
+                </div>
+              </IonCard>
+            </div>
+          </SwiperSlide>
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>Pick your community username</IonCardTitle>
                   <p>
@@ -284,41 +337,13 @@ const CommunityOnboarding: React.FC = () => {
                       {usernameBusy && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
                   </IonRow>
-                </div>
-              </IonCard>
-            </div>
-          </SwiperSlide>
-
-          <SwiperSlide>
-            <div className="onboarding-v2__slide">
-              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
-                <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Connect from Refreshments</IonCardTitle>
-                  <p>
-                    Turn this on to let people discover your personal profile from your community posts and comments.
-                  </p>
-                  {!hasPersonalProfile && (
-                    <IonText color="medium">
-                      Create a personal profile first to enable connections from Refreshments.
-                    </IonText>
-                  )}
-                  <IonItem lines="none">
-                    <IonLabel>Connect from Refreshments</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={Boolean(currentProfile?.settings_community_profile)}
-                      disabled={!hasPersonalProfile || currentProfile?.paused_profile || currentProfile?.deactivated_profile}
-                      onIonChange={(e) => handleToggleConnect(e.detail.checked)}
-                    />
-                  </IonItem>
-                </IonCardContent>
-                <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      Back
-                    </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()}>
-                      Next
+                    <IonButton
+                      fill="clear"
+                      size="small"
+                      onClick={handleFinishLater}
+                    >
+                      Finish later
                     </IonButton>
                   </IonRow>
                 </div>
@@ -326,20 +351,60 @@ const CommunityOnboarding: React.FC = () => {
             </div>
           </SwiperSlide>
 
+          {hasPersonalProfile && (
+            <SwiperSlide>
+              <div className="onboarding-v2__slide">
+                <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
+                  <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
+                    <IonCardTitle>Connect from Refreshments</IonCardTitle>
+                    <p>
+                      Turn this on to let people discover your personal profile from your community posts and comments.
+                    </p>
+                    <IonItem lines="none">
+                      <IonLabel>Connect from Refreshments</IonLabel>
+                      <IonToggle
+                        slot="end"
+                        checked={Boolean(currentProfile?.settings_community_profile)}
+                        disabled={currentProfile?.paused_profile || currentProfile?.deactivated_profile}
+                        onIonChange={(e) => handleToggleConnect(e.detail.checked)}
+                      />
+                    </IonItem>
+                  </IonCardContent>
+                  <div className="onboarding-v2__card-footer">
+                    <IonRow className="onboarding-v2__nav">
+                      <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                        Back
+                      </IonButton>
+                      <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()}>
+                        Next
+                      </IonButton>
+                    </IonRow>
+                  </div>
+                </IonCard>
+              </div>
+            </SwiperSlide>
+          )}
+
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>Choose your community photo</IonCardTitle>
-                  <p>Use your personal profile photo or upload a community-only photo.</p>
-                  <IonItem lines="none">
-                    <IonLabel>Use personal profile photo</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={usePersonalPhoto}
-                      onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
-                    />
-                  </IonItem>
+                  <p>
+                    {hasPersonalPhoto
+                      ? 'Use your personal profile photo or upload a community-only photo.'
+                      : 'Upload a community-only photo to represent you in the community.'}
+                  </p>
+                  {hasPersonalPhoto && (
+                    <IonItem lines="none">
+                      <IonLabel>Use personal profile photo</IonLabel>
+                      <IonToggle
+                        slot="end"
+                        checked={usePersonalPhoto}
+                        onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
+                      />
+                    </IonItem>
+                  )}
                   <IonList lines="none">
                     <IonItem lines="none">
                       {previewPhoto ? (

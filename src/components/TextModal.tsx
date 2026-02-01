@@ -763,35 +763,72 @@ const TextModal: React.FC<Props> = (props) => {
     const sendOutgoingTextMessageWithFileImage = async (user_pk: string, imageFile: File) => {
         console.log('send size/type:', imageFile.size, imageFile.type, imageFile.name);
 
-        const blobform = new FormData();
-        blobform.append('file', imageFile, imageFile.name); // key must be 'file'
-
-        setWaitBeforeSendingMore(true);
-        let uploadSucceeded = false;
-        try {
-            const uploadFile = await uploadFileForMessageNew(blobform); // ensure this does NOT set Content-Type
+        const attemptMultipartUpload = async (file: File) => {
+            const blobform = new FormData();
+            blobform.append('file', file, file.name); // key must be 'file'
+            const uploadFile = await uploadFileForMessageNew(blobform);
             if (uploadFile.status !== 200) {
                 throw new Error(`uploadFileForMessageNew status ${uploadFile.status}`);
             }
-            const file_id = uploadFile.data["id"];
+            return uploadFile.data["id"];
+        };
+
+        const buildSmallerFile = async (source: Blob, label: string) => {
+            const smallerBlob = await resizeToJpegBase64(source, 600, 600, 0.6);
+            const filename = `${label}_${Date.now()}.jpeg`;
+            return new File([smallerBlob], filename, { type: 'image/jpeg' });
+        };
+
+        setWaitBeforeSendingMore(true);
+        let uploadSucceeded = false;
+        let smallerFile: File | null = null;
+
+        try {
+            const file_id = await attemptMultipartUpload(imageFile);
             finalizeUploadedImage(file_id, user_pk);
             uploadSucceeded = true;
         } catch (error) {
-            console.error("uploadFileForMessageNew failed, attempting legacy path", error);
+            // Try a smaller multipart upload first.
             try {
-                const dataUrl = await fileToDataUrl(imageFile);
-                const legacyForm = new FormData();
-                legacyForm.append('file', dataUrl);
-                const fallbackUpload = await uploadFileForMessage(legacyForm);
-                if (fallbackUpload.status !== 200) {
-                    throw new Error(`legacy upload status ${fallbackUpload.status}`);
-                }
-                const file_id = fallbackUpload.data["id"];
+                smallerFile = await buildSmallerFile(imageFile, 'upload_small');
+                const file_id = await attemptMultipartUpload(smallerFile);
                 finalizeUploadedImage(file_id, user_pk);
                 uploadSucceeded = true;
-            } catch (legacyError) {
-                console.error("Legacy upload path failed", legacyError);
-                setAttachmentErrorToast(true);
+            } catch (smallMultipartError) {
+                // Fall back to base64 JSON path (original).
+                try {
+                    const dataUrl = await fileToDataUrl(imageFile);
+                    if (!dataUrl) {
+                        throw new Error('legacy dataUrl empty');
+                    }
+                    const fallbackUpload = await uploadFileForMessageNew({ file: dataUrl });
+                    if (fallbackUpload.status !== 200) {
+                        throw new Error(`legacy upload status ${fallbackUpload.status}`);
+                    }
+                    const file_id = fallbackUpload.data["id"];
+                    finalizeUploadedImage(file_id, user_pk);
+                    uploadSucceeded = true;
+                } catch (legacyError) {
+                    // Final fallback: base64 of the smaller file if we created one.
+                    try {
+                        if (!smallerFile) {
+                            throw legacyError;
+                        }
+                        const smallDataUrl = await fileToDataUrl(smallerFile);
+                        if (!smallDataUrl) {
+                            throw new Error('small dataUrl empty');
+                        }
+                        const fallbackUpload = await uploadFileForMessageNew({ file: smallDataUrl });
+                        if (fallbackUpload.status !== 200) {
+                            throw new Error(`small legacy upload status ${fallbackUpload.status}`);
+                        }
+                        const file_id = fallbackUpload.data["id"];
+                        finalizeUploadedImage(file_id, user_pk);
+                        uploadSucceeded = true;
+                    } catch (finalError) {
+                        setAttachmentErrorToast(true);
+                    }
+                }
             }
         }
         setWaitBeforeSendingMore(false);

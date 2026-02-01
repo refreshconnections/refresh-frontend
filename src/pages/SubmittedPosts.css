@@ -1,0 +1,65 @@
+.submitted-posts {
+  --padding-start: 4px;
+  --padding-end: 4px;
+}
+
+ion-toolbar.modal-title {
+  padding-top: 50px !important;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+.submitted-posts .submission-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.submitted-posts .submission-card-main h2 {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.submitted-posts .submission-card-main p {
+  margin: 0;
+}
+
+.submitted-posts .submission-card-badge {
+  display: flex;
+  justify-content: flex-end;
+  align-self: flex-end;
+}
+
+.submitted-posts ion-card {
+  background: var(--ion-color-white);
+}
+
+.submitted-posts ion-card ion-card-content {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.submitted-posts ion-row.segments {
+  padding: 12px 12px 4px 12px;
+  align-items: center;
+}
+
+.submitted-posts .preview-card {
+  margin-bottom: 12px;
+}
+
+.submitted-posts .preview-card ion-card-content {
+  padding-top: 4px;
+}
+
+.submitted-posts .status-row {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+  gap: 8px;
+}
+
+.submitted-posts .detail-block p {
+  margin: 4px 0 0;
+}
