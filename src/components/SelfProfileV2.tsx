@@ -582,8 +582,7 @@ const SelfProfileV2: React.FC = () => {
                                     size="small"
                                     color="success"
                                     onClick={() => {
-                                        const valueToSave = fieldKey
-                                        saveField(fieldKey, valueToSave);
+                                        saveField(fieldKey, editorValue);
                                     }}
                                 >
                                     Save
@@ -621,7 +620,7 @@ const SelfProfileV2: React.FC = () => {
                             )
                         ) : (
                         <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>
-                            {(value as string) || <i>Not provided</i>}
+                            {(value as string) || <span>-</span>}
                         </h2>
                     )}
                 </div>
@@ -707,7 +706,7 @@ const SelfProfileV2: React.FC = () => {
                             )}
                         </>
                     ) : (
-                        <h2 className="multi-line">{value || <i>Not provided</i>}</h2>
+                        <h2 className="multi-line">{value || '-'}</h2>
                     )}
                 </div>
             </IonItem>
