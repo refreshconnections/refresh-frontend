@@ -1,6 +1,6 @@
 import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
-import { arrowDown } from 'ionicons/icons';
+import { arrowDown, close } from 'ionicons/icons';
 
 import "./Page.css"
 import "./Community.css"
@@ -19,6 +19,8 @@ import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { faCircleEllipsis } from '@fortawesome/pro-solid-svg-icons/faCircleEllipsis';
 import { App } from '@capacitor/app';
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
+import { dismissNotification, useGetRecentNotifications } from "../hooks/api/profiles/recent-notifications";
+import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
 import { useQueryClient } from "@tanstack/react-query";
 
 
@@ -72,6 +74,20 @@ const Community: React.FC = () => {
   const queryClient = useQueryClient()
   const me = useGetCurrentProfile().data
   const data = useGetAllAnnouncementsTake1Fn().data
+  const refreshmentsAlerts = useGetRecentNotifications('refreshments_alert').data || []
+  const [dismissingAlertId, setDismissingAlertId] = useState<number | null>(null)
+  const activeRefreshmentsAlerts = refreshmentsAlerts.filter((item: any) => item?.show_refreshments === true)
+  const topRefreshmentsAlert = activeRefreshmentsAlerts[0]
+
+  const handleDismissRefreshmentsAlert = async (notificationId: number) => {
+    setDismissingAlertId(notificationId)
+    try {
+      await dismissNotification(notificationId, 'refreshments')
+      await queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications })
+    } finally {
+      setDismissingAlertId(null)
+    }
+  }
 
   function dismiss() {
     modal.current?.dismiss();
@@ -325,6 +341,33 @@ const Community: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+        {topRefreshmentsAlert ? (
+          <IonRow className="refreshments-alert-row">
+            <IonCol size="12">
+              <IonCard className="refreshments-alert-card">
+                <IonCardContent>
+                  <IonRow className="refreshments-alert-content">
+                    <IonCol className="refreshments-alert-text" size="11">
+                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                    </IonCol>
+                    <IonCol className="refreshments-alert-action" size="1">
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        disabled={dismissingAlertId === topRefreshmentsAlert.id}
+                        onClick={() => handleDismissRefreshmentsAlert(topRefreshmentsAlert.id)}
+                        aria-label="Dismiss alert"
+                        className="refreshments-alert-dismiss"
+                      >
+                        {dismissingAlertId === topRefreshmentsAlert.id ? <IonSpinner name="dots" /> : <IonIcon icon={close} />}
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+          </IonRow>
+        ) : null}
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">

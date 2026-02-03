@@ -305,11 +305,6 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
             <IonNote>Share your Location to turn on local posts.</IonNote>
             <IonButton onClick={() => locationPresent()}>Share location</IonButton>
           </IonRow>)}
-        <IonRow className="ion-padding ion-justify-content-center">
-          <IonButton color="navy" onClick={() => handleNavigate('/community/submitted')}>
-            My submitted posts
-          </IonButton>
-        </IonRow>
         {(localPosts && currentUserProfile?.location_point_lat && currentUserProfile?.location_point_long) &&
           // <IonGrid style={{paddingLeft: "40pt", paddingRight: "40pt"}}>
 

@@ -1125,8 +1125,6 @@ export async function addComment(data) {
     });
 
 
-    console.log("create comment:", response)
-
     return response
 }
 
@@ -1152,8 +1150,6 @@ export async function addCommentReply(data) {
         headers: headers
     });
 
-
-    console.log("create comment reply:", response)
 
     return response
 }
@@ -2670,6 +2666,7 @@ const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 // Use .match() with GLOBAL and then post-filter
 const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
 const URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
+const BARE_URL_RE = /\b([a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?/gi;
 const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 
@@ -2682,4 +2679,90 @@ export function containsPii(input) {
     const withoutUrls = text.replace(URL_RE, " ");
     const candidates = withoutUrls.match(PHONE_CANDIDATE_RE) ?? [];
     return candidates.some((c) => plausiblePhone(digits(c)));
+}
+
+const SHORTENER_HOSTS = new Set([
+    "bit.ly",
+    "bitly.com",
+    "tinyurl.com",
+    "goo.gl",
+    "ow.ly",
+    "buff.ly",
+    "rebrand.ly",
+    "is.gd",
+    "s.id",
+    "bit.do",
+    "cutt.ly",
+    "tiny.cc",
+    "lnkd.in",
+    "rb.gy",
+    "trib.al",
+    "shorturl.at",
+]);
+
+const SHORTENER_ALLOWLIST = new Set([
+    "discord.gg",
+    "youtu.be",
+    "t.co",
+    "fb.me",
+    "lnkd.in",
+    "instagr.am",
+    "redd.it",
+]);
+
+const GOOGLE_DOC_HOSTS = new Set([
+    "docs.google.com",
+    "drive.google.com",
+    "forms.gle",
+    "docs.googleusercontent.com",
+    "script.google.com",
+    "sites.google.com",
+    "slides.google.com",
+    "sheets.google.com",
+    "cryptpad.fr",
+    "cryptpad.org",
+    "cryptpad.eu",
+]);
+
+const normalizeHost = (rawUrl) => {
+    const trimmed = String(rawUrl ?? "").trim();
+    if (!trimmed) return null;
+    const cleaned = trimmed.replace(/^[([<{]+/, "").replace(/[)\],.!?;:]+$/, "");
+    const withScheme = cleaned.startsWith("http://") || cleaned.startsWith("https://")
+        ? cleaned
+        : `https://${cleaned}`;
+    try {
+        const host = new URL(withScheme).hostname.toLowerCase();
+        return host.startsWith("www.") ? host.slice(4) : host;
+    } catch {
+        return null;
+    }
+};
+
+const extractHosts = (input) => {
+    const text = typeof input === "string" ? input : String(input ?? "");
+    if (!text) return [];
+    const urls = text.match(URL_RE) ?? [];
+    const bareUrls = text.match(BARE_URL_RE) ?? [];
+    const combined = [...urls, ...bareUrls];
+    return combined
+        .map(normalizeHost)
+        .filter((host): host is string => Boolean(host));
+};
+
+export function containsLinkShortener(input) {
+    const hosts = extractHosts(input);
+    return hosts.some((host) => {
+        if (SHORTENER_ALLOWLIST.has(host)) return false;
+        if (SHORTENER_HOSTS.has(host)) return true;
+        return host.endsWith(".shorturl.at");
+    });
+}
+
+export function containsGoogleDocLink(input) {
+    const hosts = extractHosts(input);
+    return hosts.some((host) => {
+        if (GOOGLE_DOC_HOSTS.has(host)) return true;
+        return host.endsWith(".docs.google.com") || host.endsWith(".drive.google.com");
+    });
 }

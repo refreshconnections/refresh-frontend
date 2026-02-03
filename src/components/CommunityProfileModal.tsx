@@ -72,7 +72,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <IonButton fill="clear" onClick={handleDismiss}>Close</IonButton>
       </div>
-      <CommunityProfileSection />
+      <CommunityProfileSection useAccordion={false} />
     </IonContent>
   );
 
@@ -86,6 +86,12 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const chatLabel = existingChat ? 'Continue your chat' : 'Start your chat with them';
   const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile && !currentProfile?.paused_profile);
   const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile && !profileDetails.data?.paused_profile);
+  const hasOutgoingLike = Boolean(userId && currentProfile?.outgoing_connections?.includes(userId));
+  const isBlocked = Boolean(
+    userId &&
+      (currentProfile?.blocked_connections?.includes(userId) || currentProfile?.blocked_by?.includes(userId))
+  );
+  const isUnmatched = Boolean(userId && currentProfile?.unmatched_connections?.includes(userId));
 
   const handleChatDismiss = () => {
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
@@ -133,6 +139,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const fallbackLogo = showRestricted ? '../static/img/null.png' : '../static/img/refresh-flower-blue.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(data?.connect_enabled);
+  const canSendLikeFromCommunity = viewerConnect && otherConnect && !hasOutgoingLike && !isBlocked && !isUnmatched;
   const showCommunityDetails = Boolean(!showRestricted && (data?.community_bio || data?.location || data?.age_display));
   const personalPhoto = showRestricted ? undefined : (normalizeLocalMediaUrl(data?.personal_photo) || displayPhoto);
   const connectName = profileDetails.data?.name || username;
@@ -212,25 +219,19 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                   <div style={{ marginTop: '16px' }}>
                     <IonText>
                       <p>
-                        {!viewerConnect && 'Want to connect 1:1 with people you meet in the comments? Turn on your connect from refreshments in settings.'}
-                        {viewerConnect && otherConnect && 'You both have Connect from Refreshments turned on! Send '}
-                        {viewerConnect && otherConnect && (
+                        {!viewerConnect && 'Want to connect 1:1 with people you meet in the comments? Turn on your Connect from Refreshments in your Me tab > Settings.'}
+                        {canSendLikeFromCommunity && (
                           <>
-                            <IonButton
-                              fill="clear"
-                              size="small"
-                              className="community-profile-inline-button"
-                              onClick={() => profilePresent()}
-                            >
-                              {connectName}
-                            </IonButton>
-                            {' '}a Like!
+                            You both have Connect from Refreshments turned on! Send{' '}
+                            <span className="community-profile-inline-name">{connectName}</span>{' '}
+                            a Like!
                           </>
                         )}
+
                         {viewerConnect && !otherConnect && `${username} is keeping Refreshments community-only for now. Please reply to them in the thread.`}
                       </p>
                     </IonText>
-                    {viewerConnect && otherConnect && (
+                    {canSendLikeFromCommunity && (
                       <IonItem lines="none" button onClick={() => profilePresent()}>
                         {personalPhoto ? (
                           <img

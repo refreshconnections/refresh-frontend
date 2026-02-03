@@ -43,6 +43,11 @@ const Activity: React.FC = () => {
                 <IonRow className="page-title bigger">
                     <img className="color-invertible" src="../static/img/activity-navy.png" alt="activity" />
                 </IonRow>
+                <IonRow className="ion-justify-content-center ion-padding">
+                    <IonButton routerLink="/community/submitted" color="primary">
+                        My submissions
+                    </IonButton>
+                </IonRow>
 
                 {currentUserProfile?.settings_streak_tracker ?
                     <>

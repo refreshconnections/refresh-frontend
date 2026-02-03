@@ -56,7 +56,6 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const { comment, showSidenotes, setReplyTo, replyTo, isAReply, onLikeUnlike, forceShowReplies } = props;
 
-  console.log("comment", comment?.text, comment)
 
 
   const queryClient = useQueryClient()
@@ -403,7 +402,7 @@ const CommentItem: React.FC<Props> = (props) => {
                         comment?.removed ?
                           <>
                             <h4 style={{ color: "maroon" }}>
-                              {isOwner ? "Removed comments only visible to you." : "This comment has been removed."}
+                              {isOwner ? "Your removed comments are only visible to you." : "This comment has been removed."}
                             </h4>
                                 {isOwner && (
                                   <div className="name-avatar">

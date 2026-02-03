@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import moment from "moment";
 
 import './CreatePostModal.css'
-import { announcementUploadPhoto, containsPii, createAnnouncement, isCommunityPlus, isPro } from "../hooks/utilities";
+import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, isCommunityPlus, isPro } from "../hooks/utilities";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import CroppedPostImageModal from "./CroppedPostImageModal";
@@ -322,7 +322,6 @@ const CreatePostModal: React.FC<Props> = (props) => {
     };
 
     useEffect(() => {
-        console.log("hi content", content, containsPii(content ?? ''))
     }, [content])
 
     useEffect(() => {
@@ -689,9 +688,34 @@ const CreatePostModal: React.FC<Props> = (props) => {
         : undefined;
 
     const hasPii: boolean = useMemo(() => containsPii(content), [content]);
+    const linkFieldText = useMemo(
+        () => [link, ...recurrenceExternalLinks].filter(Boolean).join(" "),
+        [link, recurrenceExternalLinks]
+    );
+    const hasShortenedLinkInContent: boolean = useMemo(
+        () => containsLinkShortener(content),
+        [content]
+    );
+    const hasShortenedLinkInLinkField: boolean = useMemo(
+        () => containsLinkShortener(linkFieldText),
+        [linkFieldText]
+    );
+    const hasGoogleDocLinkInContent: boolean = useMemo(
+        () => containsGoogleDocLink(content),
+        [content]
+    );
+    const hasGoogleDocLinkInLinkField: boolean = useMemo(
+        () => containsGoogleDocLink(linkFieldText),
+        [linkFieldText]
+    );
+    const hasBlockedLinks = hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
     const mentionsPaymentHandle: boolean = useMemo(() => {
         if (!content) return false;
         return /(venmo|paypal|cashapp)/i.test(content);
+    }, [content]);
+    const mentionsOneToOne: boolean = useMemo(() => {
+        if (!content) return false;
+        return /(looking to connect|message me|let['’]s connect|to meet)/i.test(content);
     }, [content]);
 
 
@@ -817,10 +841,15 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     isOpen={showAlert}
                     onDidDismiss={postSubmitSuccessful}
                     header="Your post has been submitted and is now pending approval!"
-                    subHeader="Make sure to check your email for possible questions."
+                    subHeader="Check on your post submissions in your Me tab > Activity."
                     message={confirmationMessage}
                     buttons={['OK']}
                 />
+                <IonRow className="ion-justify-content-center ion-padding">
+                    <IonButton color="navy" onClick={() => router.push('/community/submitted')}>
+                        Submissions
+                    </IonButton>
+                </IonRow>
                 {siteSettings?.allow_free_users_to_submit_posts &&
                     <IonCard className="ion-padding limited ion-text-center">
                         <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
@@ -1493,7 +1522,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
                                 <IonItem color="white">
                                     <IonLabel class="ion-text-wrap">
-                                        Moderators may make small edits (spelling, capitalization) for clarity and accessibility. If further edits are necessary to meet guidelines or if there are questions, moderators will reach out at the email associated with your account.
+                                        Moderators may make small edits (spelling, capitalization) for clarity and accessibility. If further edits are necessary to meet guidelines or if there are questions, moderators will provide an explanation or edit for you to approve in your Submissions (Me tab &gt; Activity).
                                     </IonLabel>
                                 </IonItem>
                                 <IonItem color="white">
@@ -1506,7 +1535,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     </IonCheckbox>
                                 </IonItem>
 
-                                {(issues.length > 0 || hasPii || mentionsPaymentHandle) && (
+                                {(issues.length > 0 || hasPii || mentionsPaymentHandle || hasBlockedLinks || mentionsOneToOne) && (
                                     <IonRow className="ion-padding ion-text-center">
                                         <IonText color="danger">
                                             {issues.map((msg, i) => (
@@ -1524,6 +1553,21 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 Reminder: Requests for payment are only allowed for COVID conscientious events or verified charities on official platforms that provide receipts (personal Venmos, CashApp, etc. cannot be approved).
                                             </p>
                                         )}
+                                        {hasShortenedLinkInContent || hasShortenedLinkInLinkField ? (
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                                Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.
+                                            </p>
+                                        ) : null}
+                                        {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                                This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.
+                                            </p>
+                                        ) : null}
+                                        {mentionsOneToOne ? (
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-medium" }}>
+                                                Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Picks and filters!
+                                            </p>
+                                        ) : null}
                                     </IonRow>
                                 )}
 
@@ -1539,7 +1583,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 )}
 
 
-                                <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid || hasPii || !ackEmail}>
+                                <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid || hasPii || hasBlockedLinks || !ackEmail}>
                                     Submit Post
                                 </IonButton>
                             </>

@@ -78,7 +78,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [precautions, setPrecautions] = useState<string[]>([]);
   const [sensitive, setSensitive] = useState(false);
   const [sensitiveDescription, setSensitiveDescription] = useState('');
-  const [includeProfile, setIncludeProfile] = useState(true);
+  const [canAnswerQuestions, setCanAnswerQuestions] = useState(true);
   const [postingIdentity, setPostingIdentity] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [externalRegistrationRequired, setExternalRegistrationRequired] = useState(false);
@@ -132,7 +132,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   }, [globalProfile, postingIdentity]);
 
   useEffect(() => {
-    setIncludeProfile(postingIdentity !== 'anonymous');
+    setCanAnswerQuestions(postingIdentity !== 'anonymous');
   }, [postingIdentity]);
 
   const defaultStartDatetime = useMemo(() => (
@@ -429,7 +429,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         local_only: eventType !== 'virtual_only' ? 'true' : 'false',
         sensitive: sensitive ? 'true' : 'false',
         sensitive_description: sensitiveDescription,
-        include_profile: includeProfile ? 'true' : 'false',
+        can_answer_questions: canAnswerQuestions ? 'true' : 'false',
         anonymous: postingIdentity === 'anonymous' ? 'true' : 'false',
         event_type: eventType,
         in_person_precautions: precautions,

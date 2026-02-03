@@ -80,6 +80,25 @@
   background: var(--ion-color-step-100);
 }
 
+.refreshments-alert-content {
+  align-items: flex-start;
+}
+
+.refreshments-alert-text {
+  display: flex;
+  align-items: flex-start;
+}
+
+.refreshments-alert-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.refreshments-alert-dismiss {
+  min-width: auto;
+}
+
 .events-calendar-inline-button {
   margin-left: 8px;
   border: none;

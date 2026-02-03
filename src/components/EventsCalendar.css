@@ -116,6 +116,33 @@
   border-radius: 20px;
 }
 
+.calendar-event-byline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.calendar-event-byline ion-avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.calendar-event-host-button {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  margin-left: 4px;
+  min-height: auto;
+  height: auto;
+}
+
+.event-host-popover-content {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .refreshments-calendar-modal .calendar-event-description {
   display: block;
   margin-top: 8px;

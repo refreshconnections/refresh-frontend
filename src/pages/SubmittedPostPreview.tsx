@@ -24,6 +24,8 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useGetSubmittedAnnouncements } from '../hooks/api/announcements-take-1/submitted-anns';
 import Markdown from 'react-markdown';
 import { apiClient } from '../hooks/api/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { postQueryKeys } from '../hooks/api/refreshments';
 import './SubmittedPostPreview.css';
 
 type SubmittedPost = {
@@ -93,6 +95,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [presentToast] = useIonToast();
   const router = useIonRouter();
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -216,6 +219,10 @@ const SubmittedPostPreview: React.FC = () => {
         }) : prev);
       }
       setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['filteredposts'] });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
       presentToast({ message: 'Resubmitted for review.', duration: 2500, color: 'success' });
     } catch (error) {
       presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, color: 'danger' });
@@ -231,6 +238,10 @@ const SubmittedPostPreview: React.FC = () => {
     setSaving(true);
     try {
       await apiClient.post(`/api/announcements/submitted/${post.id}/approve_edit/`);
+      queryClient.invalidateQueries({ queryKey: ['filteredposts'] });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
       presentToast({ message: 'Approved the edit.', duration: 2500, color: 'success' });
       router.push(`/community/${post.id}`);
     } catch (error) {

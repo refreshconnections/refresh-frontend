@@ -45,16 +45,26 @@ ion-modal.community-profile-modal .ion-page {
 }
 
 .community-profile-inline-button {
+  display: inline-flex;
   --padding-start: 0;
   --padding-end: 0;
   --padding-top: 0;
   --padding-bottom: 0;
+  margin: 0;
+  min-height: auto;
+  height: auto;
   text-transform: none;
   vertical-align: baseline;
 }
 
 .community-profile-inline-button::part(native) {
+  display: inline;
   padding: 0;
   line-height: inherit;
   vertical-align: baseline;
+}
+
+.community-profile-inline-name {
+  color: var(--ion-color-primary);
+  font-weight: 500;
 }

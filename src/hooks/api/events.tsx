@@ -19,11 +19,14 @@ export type RefreshEvent = {
   location_point_long?: number | null
   sensitive?: boolean
   reported_by?: number[]
-  include_profile?: boolean
+  can_answer_questions?: boolean
   user?: number | null
   anonymous?: boolean
   status?: string
   uploadDateTime?: string
+  username?: string | null
+  profile_image?: string | null
+  settings_community_profile?: boolean
 }
 
 const fetchEvents = async () => {

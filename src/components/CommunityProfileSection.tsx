@@ -28,7 +28,11 @@ import { apiClient } from '../hooks/api/api-client';
 import { onImgError, uploadCommunityProfilePhoto } from '../hooks/utilities';
 import CroppedImageModal from './CroppedImageModal';
 
-const CommunityProfileSection: React.FC = () => {
+type CommunityProfileSectionProps = {
+  useAccordion?: boolean;
+};
+
+const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAccordion = true }) => {
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
   const { data: communityProfile, refetch: refetchCommunityProfile } = useGetCommunityProfile();
@@ -132,6 +136,104 @@ const CommunityProfileSection: React.FC = () => {
     onDismiss: handleCropDismiss,
   });
 
+  const innerContent = (
+    <IonRow>
+      <IonCol size="12">
+        <IonCard className="accordion-card" style={{boxShadow: "none"}}>
+          <IonCardContent className="card-grid">
+            <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                {previewPhoto ? (
+                  <img alt="Community profile" src={previewPhoto} onError={onImgError} />
+                ) : (
+                  <img alt="Community profile placeholder" src={"../static/img/null.png"} />
+                )}
+              </div>
+            </IonItem>
+            <IonItem lines="none">
+              <IonLabel>Use personal profile photo</IonLabel>
+              <IonToggle
+                slot="end"
+                checked={usePersonalPhoto}
+                onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
+              />
+            </IonItem>
+            {usePersonalPhoto && !personalPhoto && (
+              <IonText color="medium">Add a personal profile photo to use it here.</IonText>
+            )}
+            <IonButton expand="block" color="tertiary" onClick={updatePicture}>
+              {photoButtonLabel}
+            </IonButton>
+
+            <div className="field-header">
+              <p>Community bio</p>
+              <IonButton
+                size="small"
+                fill="outline"
+                color="primary"
+                onClick={() => setEditingBio((prev) => !prev)}
+              >
+                {editingBio ? 'Cancel' : 'Edit'}
+              </IonButton>
+            </div>
+            {editingBio ? (
+              <div className="choice-editor">
+                <IonList lines="none">
+                  <IonItem lines="none">
+                    <IonTextarea
+                      value={communityBio}
+                      autoGrow
+                      maxlength={180}
+                      counter
+                      onIonInput={(e) => setCommunityBio(e.detail.value ?? '')}
+                    />
+                  </IonItem>
+                  <IonButton expand="block" onClick={handleSaveBio}>Save bio</IonButton>
+                </IonList>
+              </div>
+            ) : (
+              <p className="placeholder">
+                {communityBio ? communityBio : 'Add a short community bio.'}
+              </p>
+            )}
+
+            <div className="field-header">
+              <p>Show location</p>
+              <IonToggle
+                slot="end"
+                checked={showLocation}
+                onIonChange={(e) => handleToggleLocation(e.detail.checked)}
+              />
+            </div>
+
+            <div className="field-header">
+              <p>Show age</p>
+            </div>
+            <IonItem lines="none">
+              <IonSelect
+                value={showAgeTier}
+                interface="popover"
+                onIonChange={(e) => handleAgeTierChange(e.detail.value)}
+              >
+                <IonSelectOption value="exact">{ageLabel}</IonSelectOption>
+                <IonSelectOption value="decade">{ageDecade}</IonSelectOption>
+                <IonSelectOption value="none">Don't show age</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+          </IonCardContent>
+        </IonCard>
+      </IonCol>
+    </IonRow>
+  );
+
+  if (!useAccordion) {
+    return (
+      <IonCardContent className="no-padding-cc accordion-body">
+        {innerContent}
+      </IonCardContent>
+    );
+  }
+
   return (
     <IonAccordionGroup>
       <IonAccordion value="communityProfile">
@@ -141,93 +243,7 @@ const CommunityProfileSection: React.FC = () => {
           </IonLabel>
         </IonItem>
         <IonCardContent slot="content" className="no-padding-cc accordion-body">
-          <IonRow>
-            <IonCol size="12">
-              <IonCard className="accordion-card">
-                <IonCardContent className="card-grid">
-                  <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                      {previewPhoto ? (
-                        <img alt="Community profile" src={previewPhoto} onError={onImgError} />
-                      ) : (
-                        <img alt="Community profile placeholder" src={"../static/img/null.png"} />
-                      )}
-                    </div>
-                  </IonItem>
-                  <IonItem lines="none">
-                    <IonLabel>Use personal profile photo</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={usePersonalPhoto}
-                      onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
-                    />
-                  </IonItem>
-                  {usePersonalPhoto && !personalPhoto && (
-                    <IonText color="medium">Add a personal profile photo to use it here.</IonText>
-                  )}
-                  <IonButton expand="block" color="tertiary" onClick={updatePicture}>
-                    {photoButtonLabel}
-                  </IonButton>
-
-                  <div className="field-header">
-                    <p>Community bio</p>
-                    <IonButton
-                      size="small"
-                      fill="outline"
-                      color="primary"
-                      onClick={() => setEditingBio((prev) => !prev)}
-                    >
-                      {editingBio ? 'Cancel' : 'Edit'}
-                    </IonButton>
-                  </div>
-                  {editingBio ? (
-                    <div className="choice-editor">
-                      <IonList lines="none">
-                        <IonItem lines="none">
-                          <IonTextarea
-                            value={communityBio}
-                            autoGrow
-                            maxlength={180}
-                            counter
-                            onIonInput={(e) => setCommunityBio(e.detail.value ?? '')}
-                          />
-                        </IonItem>
-                        <IonButton expand="block" onClick={handleSaveBio}>Save bio</IonButton>
-                      </IonList>
-                    </div>
-                  ) : (
-                    <p className="placeholder">
-                      {communityBio ? communityBio : 'Add a short community bio.'}
-                    </p>
-                  )}
-
-                  <div className="field-header">
-                    <p>Show location</p>
-                    <IonToggle
-                      slot="end"
-                      checked={showLocation}
-                      onIonChange={(e) => handleToggleLocation(e.detail.checked)}
-                    />
-                  </div>
-
-                  <div className="field-header">
-                    <p>Show age</p>
-                  </div>
-                  <IonItem lines="none">
-                    <IonSelect
-                      value={showAgeTier}
-                      interface="popover"
-                      onIonChange={(e) => handleAgeTierChange(e.detail.value)}
-                    >
-                      <IonSelectOption value="exact">{ageLabel}</IonSelectOption>
-                      <IonSelectOption value="decade">{ageDecade}</IonSelectOption>
-                      <IonSelectOption value="none">Don't show age</IonSelectOption>
-                    </IonSelect>
-                  </IonItem>
-                </IonCardContent>
-              </IonCard>
-            </IonCol>
-          </IonRow>
+          {innerContent}
         </IonCardContent>
       </IonAccordion>
     </IonAccordionGroup>

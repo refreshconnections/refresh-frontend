@@ -1,6 +1,7 @@
 import {
   IonButton,
   IonButtons,
+  IonAvatar,
   IonCard,
   IonCardContent,
   IonCardSubtitle,
@@ -18,20 +19,24 @@ import {
   IonTitle,
   IonHeader,
   IonChip,
+  useIonPopover,
   useIonModal,
   useIonRouter,
 } from '@ionic/react';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useState } from 'react';
 import { calendarNumber } from 'ionicons/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCommentDots } from '@fortawesome/pro-regular-svg-icons/faCommentDots';
 import moment, { type Moment } from 'moment';
 import type { RefreshEvent } from '../hooks/api/events';
 import { useGetEvents } from '../hooks/api/events';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
-import { isCommunityPlus } from '../hooks/utilities';
+import { getAvatarDisplay, isCommunityPlus, onImgError } from '../hooks/utilities';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 
 import CreateEventModal from './CreateEventModal';
+import CommunityProfileModal from './CommunityProfileModal';
 
 import './EventsCalendar.css';
 
@@ -116,6 +121,13 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
       dismissCreateEventModal();
     },
   });
+  const [hostPopoverText, setHostPopoverText] = useState<string | null>(null);
+  const HostPopover = () => (
+    <IonContent className="ion-padding event-host-popover-content">{hostPopoverText}</IonContent>
+  );
+  const [presentHostPopover, dismissHostPopover] = useIonPopover(HostPopover, {
+    onDismiss: () => dismissHostPopover(),
+  });
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, RefreshEvent[]>();
@@ -165,6 +177,19 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const selectedEvent = eventsForSelectedDate.find((event) => event.id === selectedEventId) ?? null;
   const selectedEventType = selectedEvent?.event_type ? formatEventType(selectedEvent.event_type) : null;
   const safeExternalLink: string | undefined = selectedEvent?.external_link ?? undefined;
+  const eventAnonymous = Boolean(selectedEvent?.anonymous);
+  const eventAvatarDisplay = getAvatarDisplay({
+    profileImage: selectedEvent?.profile_image,
+    viewerConnect: profile?.settings_community_profile,
+    authorConnect: selectedEvent?.settings_community_profile,
+  });
+
+  const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: selectedEvent?.user ?? null,
+    isAnonymous: eventAnonymous,
+    avatarUrl: eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined,
+    onDismiss: () => eventProfileDismiss(),
+  });
 
   const clampMonth = (candidate: Moment) => {
     const start = earliest.clone().startOf('month');
@@ -355,8 +380,8 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
               <IonText color="medium">No events scheduled for this day.</IonText>
             )}
           </div>
-          <IonRow className="calendar-add-event-row">
-            <IonButton expand="full" fill="outline" onClick={() => presentCreateEventModal()}>
+          <IonRow className="calendar-add-event-row ion-justify-content-center">
+            <IonButton color="navy" onClick={() => presentCreateEventModal()}>
               Add an event
             </IonButton>
           </IonRow>
@@ -364,6 +389,42 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             <IonCard className="calendar-event-detail">
               <IonCardContent>
                 <IonCardTitle>{selectedEvent.name}</IonCardTitle>
+                {!eventAnonymous && selectedEvent?.username && (
+                  <IonRow
+                    className="calendar-event-byline"
+                    onClick={() =>
+                      eventProfilePresent({
+                        showBackdrop: false,
+                        backdropDismiss: true,
+                        initialBreakpoint: 0.8,
+                        handleBehavior: 'none',
+                        expandToScroll: false,
+                        cssClass: 'community-profile-modal',
+                      })
+                    }
+                  >
+                    <IonAvatar className={eventAvatarDisplay.className}>
+                      <img src={eventAvatarDisplay.src} onError={(e) => onImgError(e)} />
+                    </IonAvatar>
+                    <IonText>shared by {selectedEvent.username}</IonText>
+                    {selectedEvent?.can_answer_questions && (
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        className="calendar-event-host-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setHostPopoverText(
+                            "I can answer questions about this event! (I'm the host or know the host)"
+                          );
+                          presentHostPopover({ event: event.nativeEvent as Event });
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faCommentDots} />
+                      </IonButton>
+                    )}
+                  </IonRow>
+                )}
                 {selectedEventType && <IonCardSubtitle>{selectedEventType}</IonCardSubtitle>}
                 <IonText color="medium">
                   {moment(selectedEvent.start_datetime).format('MMMM D, h:mm A')} –{' '}

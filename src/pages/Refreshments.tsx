@@ -14,6 +14,9 @@ import {
   IonNote,
   IonSpinner,
   IonList,
+  IonCard,
+  IonCardContent,
+  IonIcon,
   useIonAlert,
   useIonModal,
   useIonRouter,
@@ -47,10 +50,13 @@ import RefreshmentsFiltersModal from '../components/RefreshmentsFiltersModal';
 import { Preferences } from '@capacitor/preferences';
 import { isCommunityPlus } from '../hooks/utilities';
 import { useGetSiteSettings } from '../hooks/api/sitesettings';
+import { dismissNotification, useGetRecentNotifications } from '../hooks/api/profiles/recent-notifications';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { faLocationDot  } from '@fortawesome/pro-solid-svg-icons/faLocationDot';
 import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocationDotSlash';
 import { useHistory, useLocation } from 'react-router-dom';
+import { close } from 'ionicons/icons';
 
 
 const Refreshments: React.FC = () => {
@@ -115,12 +121,26 @@ const Refreshments: React.FC = () => {
 
   const statuses = useGetStatuses().data;
   const siteSettings = useGetSiteSettings().data;
+  const refreshmentsAlerts = useGetRecentNotifications('refreshments_alert').data || [];
+  const [dismissingAlertId, setDismissingAlertId] = useState<number | null>(null);
+  const activeRefreshmentsAlerts = refreshmentsAlerts.filter((item: any) => item?.show_refreshments === true);
+  const topRefreshmentsAlert = activeRefreshmentsAlerts[0];
 
   const currentStreak = useGetCurrentStreak().data;
 
 
   const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
+
+  const handleDismissRefreshmentsAlert = async (notificationId: number) => {
+    setDismissingAlertId(notificationId);
+    try {
+      await dismissNotification(notificationId, 'refreshments');
+      await queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications });
+    } finally {
+      setDismissingAlertId(null);
+    }
+  };
 
 
 
@@ -307,6 +327,33 @@ const Refreshments: React.FC = () => {
                 />
               </>}
         </IonRow>
+        {topRefreshmentsAlert ? (
+          <IonRow className="refreshments-alert-row">
+            <IonCol size="12">
+              <IonCard className="refreshments-alert-card">
+                <IonCardContent>
+                  <IonRow className="refreshments-alert-content">
+                    <IonCol className="refreshments-alert-text" size="11">
+                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                    </IonCol>
+                    <IonCol className="refreshments-alert-action" size="1">
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        disabled={dismissingAlertId === topRefreshmentsAlert.id}
+                        onClick={() => handleDismissRefreshmentsAlert(topRefreshmentsAlert.id)}
+                        aria-label="Dismiss alert"
+                        className="refreshments-alert-dismiss"
+                      >
+                        {dismissingAlertId === topRefreshmentsAlert.id ? <IonSpinner name="dots" /> : <IonIcon icon={close} />}
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+          </IonRow>
+        ) : null}
         {showFilterRow ?
           <RefreshmentsFilters search={search} setSearch={setSearch} /> : <></>}
         {(somePosts && !postsLoading && !globalIsLoading) ?

@@ -200,3 +200,28 @@ ion-avatar.connect-avatar {
   border: 2px solid var(--ion-color-primary);
   border-radius: 999px;
 }
+
+ion-card.opened-post-event {
+  margin: 12px 0 0;
+  box-shadow: none;
+  border-radius: 14px;
+  background: var(--ion-color-white);
+  border: 1px solid var(--ion-color-step-150, #e2e1f6);
+  cursor: pointer;
+}
+
+ion-card.opened-post-event ion-card-title {
+  font-size: calc(18px * var(--text-scale, 1));
+  padding: 0 0 6px 0;
+}
+
+.opened-post-event-line {
+  display: block;
+  margin-top: 6px;
+}
+
+.opened-post-event-name {
+  display: block;
+  font-weight: 600;
+  margin-top: 2px;
+}
