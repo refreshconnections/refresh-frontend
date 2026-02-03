@@ -192,7 +192,7 @@ ion-accordion-group .profile-card {
 
 .profile-card ion-card-content ion-label p,
 .profile-card ion-card-content ion-label h2 {
-  font-size: clamp(18px, calc(18px * var(--text-scale, 1.2)), 28px);
+  font-size: clamp(16px, calc(16px * var(--text-scale, 1.2)), 28px);
 }
 
 ion-button.looking-for-buttons {

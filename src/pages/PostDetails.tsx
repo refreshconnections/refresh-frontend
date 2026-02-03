@@ -7,7 +7,7 @@ import { alert as alertIcon } from 'ionicons/icons';
 import "./Page.css"
 import "./PostDetails.css"
 
-import { onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment, normalizeLocalMediaUrl } from '../hooks/utilities';
+import { getAvatarDisplay, onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons/faHeart';
 import { faCommentPlus } from '@fortawesome/pro-solid-svg-icons/faCommentPlus';
@@ -31,6 +31,7 @@ const PostDetails: React.FC<Props> = (props) => {
   const [data, setData] = useState<any>(props.comments);
   const [communityProfileUserId, setCommunityProfileUserId] = useState<number | null>(null);
   const [communityProfileAnonymous, setCommunityProfileAnonymous] = useState<boolean>(false);
+  const [communityProfileAvatar, setCommunityProfileAvatar] = useState<string | null>(null);
   console.log("props ", props.comments)
   const [myLikes, setMyLikes] = useState<any>(null);
   const [commentInput, setCommentInput] = useState<string | null>(null);
@@ -134,23 +135,36 @@ const PostDetails: React.FC<Props> = (props) => {
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
+    avatarUrl: communityProfileAvatar,
     onDismiss: () => {
       setCommunityProfileUserId(null);
       setCommunityProfileAnonymous(false);
+      setCommunityProfileAvatar(null);
       communityProfileDismiss();
     },
   });
 
-  const openModal = async (id: any, isAnonymous: boolean) => {
+  const openModal = async (id: any, isAnonymous: boolean, avatarUrl?: string | null) => {
     if (isAnonymous) return;
     setCommunityProfileUserId(id);
     setCommunityProfileAnonymous(isAnonymous);
+    setCommunityProfileAvatar(avatarUrl ?? null);
   }
 
   const onClickHandler = (item) => {
 
     if (item?.user) {
-      openModal(item.user, !item?.username || String(item?.username).toLowerCase() === 'anonymous');
+      openModal(
+        item.user,
+        !item?.username || String(item?.username).toLowerCase() === 'anonymous',
+        item.profile_image
+          ? getAvatarDisplay({
+              profileImage: item.profile_image,
+              viewerConnect: me?.settings_community_profile,
+              authorConnect: item.settings_community_profile,
+            }).src
+          : null
+      );
     }
 
   }
@@ -190,16 +204,21 @@ const PostDetails: React.FC<Props> = (props) => {
                   :
                   <>
                   <div className="name-avatar">
-                  {!item?.username || String(item?.username).toLowerCase() === 'anonymous' ? <></> : (
-                    <IonAvatar className={(me?.settings_community_profile && item.settings_community_profile && item.profile_image) ? "connect-avatar" : "refresh-avatar"}>
-                      <img
-                        src={(me?.settings_community_profile && item.settings_community_profile && item.profile_image)
-                          ? normalizeLocalMediaUrl(item.profile_image)
-                          : "../static/img/refresh-flower-blue.png"}
-                        onError={(e) => onImgError(e)}
-                      />
-                    </IonAvatar>
-                  )}
+                  {!item?.username || String(item?.username).toLowerCase() === 'anonymous' ? <></> : (() => {
+                    const avatarDisplay = getAvatarDisplay({
+                      profileImage: item.profile_image,
+                      viewerConnect: me?.settings_community_profile,
+                      authorConnect: item.settings_community_profile,
+                    });
+                    return (
+                      <IonAvatar className={avatarDisplay.className}>
+                        <img
+                          src={avatarDisplay.src}
+                          onError={(e) => onImgError(e)}
+                        />
+                      </IonAvatar>
+                    );
+                  })()}
                   <h3> {item.username ? item.username : "Anonymous"}</h3>
                   </div>
                   <h4>{item.text}</h4>

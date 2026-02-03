@@ -38,10 +38,11 @@ type CommunityProfileData = {
 type Props = {
   userId: number | null;
   isAnonymous?: boolean;
+  avatarUrl?: string | null;
   onDismiss: () => void;
 };
 
-const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, onDismiss }) => {
+const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl, onDismiss }) => {
   const { data: currentProfile } = useGetCurrentProfile();
   const [data, setData] = useState<CommunityProfileData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,7 +128,8 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, onDismiss
     : isSelf
       ? (currentProfile?.username || data?.username || 'You')
       : (otherDeactivated ? 'Refresh member' : (data?.username || 'Anonymous'));
-  const displayPhoto = showRestricted ? undefined : normalizeLocalMediaUrl(data?.display_photo);
+  const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
+  const displayPhoto = avatarOverride ?? (showRestricted ? undefined : normalizeLocalMediaUrl(data?.display_photo));
   const fallbackLogo = showRestricted ? '../static/img/null.png' : '../static/img/refresh-flower-blue.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(data?.connect_enabled);

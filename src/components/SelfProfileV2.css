@@ -42,6 +42,14 @@
   justify-content: space-between;
 }
 
+.info-section ion-item ion-label h2 {
+  font-size: 0.95rem;
+}
+
+.info-section ion-item ion-label p {
+  font-size: 0.85rem;
+}
+
 .info-section ion-item .tiny-edit {
   min-width: 58px;
   min-height: 34px;
@@ -100,7 +108,7 @@ ion-card-content .card-grid {
 }
 
 .card-field ion-label h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .card-field ion-text small {
@@ -279,13 +287,13 @@ ion-card-content .card-grid {
 }
 
 .choice-editor ion-item {
-  --background: var(--ion-color-light);
   border-radius: 10px;
   margin-bottom: 4px;
 }
 
 .choice-editor ion-list {
   margin: 0;
+  background: var(--ion-color-white)
 }
 
 .choice-group + .choice-group {

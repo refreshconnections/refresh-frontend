@@ -5,7 +5,7 @@ import { arrowDown } from 'ionicons/icons';
 import "./Page.css"
 import "./Community.css"
 
-import { getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus, normalizeLocalMediaUrl } from '../hooks/utilities';
+import { getAvatarDisplay, getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus } from '../hooks/utilities';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
@@ -61,6 +61,7 @@ const Community: React.FC = () => {
 
   const [communityProfileUserId, setCommunityProfileUserId] = useState<number | null>(null);
   const [communityProfileAnonymous, setCommunityProfileAnonymous] = useState<boolean>(false);
+  const [communityProfileAvatar, setCommunityProfileAvatar] = useState<string | null>(null);
 
   const [littleLoading, setLittleLoading] = useState<boolean>(false);
 
@@ -283,17 +284,20 @@ const Community: React.FC = () => {
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
+    avatarUrl: communityProfileAvatar,
     onDismiss: () => {
       setCommunityProfileUserId(null);
       setCommunityProfileAnonymous(false);
+      setCommunityProfileAvatar(null);
       communityProfileDismiss();
     },
   });
 
-  const openModal = (id: number, isAnonymous: boolean) => {
+  const openModal = (id: number, isAnonymous: boolean, avatarUrl?: string | null) => {
     if (isAnonymous) return;
     setCommunityProfileUserId(id);
     setCommunityProfileAnonymous(isAnonymous);
+    setCommunityProfileAvatar(avatarUrl ?? null);
   };
 
   useEffect(() => {
@@ -442,22 +446,29 @@ const Community: React.FC = () => {
                         item?.user
                           ? openModal(
                               item.user,
-                              !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous'
+                              !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous',
+                              item.profile_image ? getAvatarDisplay({ profileImage: item.profile_image, viewerConnect: me?.settings_community_profile, authorConnect: item.settings_community_profile }).src : null
                             )
                           : null
                       }
                     >
                       <div className="display-flex">
-                      {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous') ? <></> : (
-                        <IonAvatar className={(me?.settings_community_profile && item.settings_community_profile && item.profile_image) ? "byline-avatar connect-avatar" : "byline-avatar refresh-avatar"}>
-                          <img
-                            src={(me?.settings_community_profile && item.settings_community_profile && item.profile_image)
-                              ? normalizeLocalMediaUrl(item.profile_image)
-                              : "../static/img/refresh-flower-blue.png"}
-                            onError={(e) => onImgError(e)}
-                          />
-                        </IonAvatar>
-                      )}
+                      {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous') ? <></> : (() => {
+                        const avatarDisplay = getAvatarDisplay({
+                          profileImage: item.profile_image,
+                          viewerConnect: me?.settings_community_profile,
+                          authorConnect: item.settings_community_profile,
+                          includeBylineClass: true,
+                        });
+                        return (
+                          <IonAvatar className={avatarDisplay.className}>
+                            <img
+                              src={avatarDisplay.src}
+                              onError={(e) => onImgError(e)}
+                            />
+                          </IonAvatar>
+                        );
+                      })()}
                       <IonText>
                         By {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous')
                           ? "Anonymous"

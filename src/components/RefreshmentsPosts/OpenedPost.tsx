@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement, normalizeLocalMediaUrl } from "../../hooks/utilities";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
@@ -380,9 +380,17 @@ const OpenedPost: React.FC = () => {
     }
 
     const postAnonymous = !staticContentPost?.include_profile || !staticContentPost?.byline || String(staticContentPost?.byline).toLowerCase() === 'anonymous';
+    const postAvatarDisplay = getAvatarDisplay({
+        profileImage: staticContentPost?.profile_image,
+        viewerConnect: settingsCurrentProfile?.settings_community_profile,
+        authorConnect: staticContentPost?.settings_community_profile,
+        includeBylineClass: true,
+    });
+    const postAvatarOverride = postAvatarDisplay.hasImage ? postAvatarDisplay.src : undefined;
     const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
         userId: staticContentPost?.user ?? null,
         isAnonymous: postAnonymous,
+        avatarUrl: postAvatarOverride,
         onDismiss: () => communityProfileDismiss(),
     });
 
@@ -531,16 +539,16 @@ const OpenedPost: React.FC = () => {
                                           : null
                                       }
                                     >
-                                        {postAnonymous ? <></> : (
-                                          <IonAvatar className={(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.profile_image) ? "byline-avatar connect-avatar" : "byline-avatar refresh-avatar"}>
+                                        {postAnonymous ? <></> : (() => {
+                                          return (
+                                            <IonAvatar className={postAvatarDisplay.className}>
                                               <img
-                                                src={(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.profile_image)
-                                                  ? normalizeLocalMediaUrl(staticContentPost?.profile_image)
-                                                  : "../static/img/refresh-flower-blue.png"}
+                                                src={postAvatarDisplay.src}
                                                 onError={(e) => onImgError(e)}
                                               />
-                                          </IonAvatar>
-                                        )}
+                                            </IonAvatar>
+                                          );
+                                        })()}
                                         <IonText>
                                           by {postAnonymous ? "Anonymous" : (staticContentPost?.username || staticContentPost?.byline)}
                                         </IonText>

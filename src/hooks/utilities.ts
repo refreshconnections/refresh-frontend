@@ -2145,6 +2145,33 @@ export function normalizeLocalMediaUrl(url?: string | null) {
   return url;
 }
 
+type AvatarConfig = {
+  profileImage?: string | null;
+  viewerConnect?: boolean;
+  authorConnect?: boolean;
+  includeBylineClass?: boolean;
+  placeholderSrc?: string;
+};
+
+export function getAvatarDisplay({
+  profileImage,
+  viewerConnect,
+  authorConnect,
+  includeBylineClass = false,
+  placeholderSrc = '../static/img/refresh-flower-blue.png',
+}: AvatarConfig) {
+  const hasImage = Boolean(profileImage);
+  const showConnectBorder = Boolean(viewerConnect && authorConnect && hasImage);
+  const baseClass = includeBylineClass ? 'byline-avatar' : '';
+  const className = showConnectBorder
+    ? `${baseClass} connect-avatar`.trim()
+    : hasImage
+      ? `${baseClass} community-avatar`.trim()
+      : `${baseClass} refresh-avatar`.trim();
+  const src = hasImage ? normalizeLocalMediaUrl(profileImage) : placeholderSrc;
+  return { className, src, hasImage, showConnectBorder };
+}
+
 
 export async function setFontSizePref(fontsize) {
     await Preferences.set({

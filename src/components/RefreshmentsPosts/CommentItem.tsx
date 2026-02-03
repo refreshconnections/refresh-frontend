@@ -1,6 +1,6 @@
 import { IonAvatar, IonButton, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useEffect, useState } from "react";
-import { authorSidenoteComment, editComment, increaseStreak, likeComment, normalizeLocalMediaUrl, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
+import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
 
@@ -74,11 +74,12 @@ const CommentItem: React.FC<Props> = (props) => {
   // const commentReplies = useGetCommentReplies(comment_id).data
 
   const profileLoading = false;
-  const showConnectBorders = Boolean(settingsCurrentProfile?.settings_community_profile);
-  const showCommentConnectBorder = showConnectBorders && Boolean(comment?.settings_community_profile);
-  const communityImage = normalizeLocalMediaUrl(comment?.profile_image);
-  const showCommunityImage = showCommentConnectBorder && Boolean(communityImage);
-  const refreshLogoSrc = '../static/img/refresh-flower-blue.png';
+  const { className: avatarClassName, src: avatarSrc, hasImage: hasCommunityImage } = getAvatarDisplay({
+    profileImage: comment?.profile_image,
+    viewerConnect: settingsCurrentProfile?.settings_community_profile,
+    authorConnect: comment?.settings_community_profile,
+  });
+  const avatarOverride = hasCommunityImage ? avatarSrc : null;
 
 
 
@@ -351,6 +352,7 @@ const CommentItem: React.FC<Props> = (props) => {
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: comment?.user ?? null,
     isAnonymous: commentAnonymous,
+    avatarUrl: avatarOverride,
     onDismiss: () => communityProfileDismiss(),
   });
 
@@ -406,8 +408,8 @@ const CommentItem: React.FC<Props> = (props) => {
                                 {isOwner && (
                                   <div className="name-avatar">
                                 {commentAnonymous ? <></> : (
-                                  <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
-                                    <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                  <IonAvatar className={avatarClassName}>
+                                    <img src={avatarSrc} onError={(e) => onImgError(e)} />
                                   </IonAvatar>
                                 )}
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
@@ -433,8 +435,8 @@ const CommentItem: React.FC<Props> = (props) => {
                             </IonRow>
                             <div className="name-avatar">
                               {commentAnonymous ? <></> : (
-                                <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
-                                  <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                <IonAvatar className={avatarClassName}>
+                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
                                 </IonAvatar>
                               )}
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
@@ -450,8 +452,8 @@ const CommentItem: React.FC<Props> = (props) => {
                           <>
                             <div className="name-avatar" onClick={() => onClickProfileHandler()}>
                               {commentAnonymous ? <></> : (
-                                <IonAvatar className={showCommunityImage ? "connect-avatar" : "refresh-avatar"}>
-                                  <img src={showCommunityImage ? communityImage : refreshLogoSrc} onError={(e) => onImgError(e)} />
+                                <IonAvatar className={avatarClassName}>
+                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
                                 </IonAvatar>
                               )}
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
