@@ -12,11 +12,13 @@ import {
     IonCheckbox,
     IonList,
     IonNote,
+    IonContent,
     useIonModal,
     IonTextarea,
     IonText,
     IonToggle,
-    useIonAlert
+    useIonAlert,
+    useIonPopover
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import './SelfProfile.css';
@@ -25,7 +27,7 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { faFaceViewfinder, faX, faCheck, faEllipsis, faStar } from '@fortawesome/pro-solid-svg-icons';
+import { faFaceViewfinder, faX, faCheck, faEllipsis, faStar, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -228,6 +230,18 @@ const SelfProfile: React.FC = () => {
     const [profileCardData, setProfileCardData] = useState<any>(null);
 
     const [presentShowContactSupportAlert] = useIonAlert();
+
+    const showOnProfileInfoText =
+        "These choices are used when other members filter their Picks. You can also choose whether or not to show them on your profile.";
+
+    const ShowOnProfilePopover = () => (
+        <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
+    );
+
+    const [presentShowOnProfilePopover, dismissShowOnProfilePopover] = useIonPopover(
+        ShowOnProfilePopover,
+        { onDismiss: () => dismissShowOnProfilePopover() }
+    );
 
     // ---------------
     // Load -> Form
@@ -842,7 +856,22 @@ const SelfProfile: React.FC = () => {
                                                             <p> These choices are used when other members filter their Picks. You can choose whether or not to show them on your profile.</p>
                                                         </IonText>
                                                         <IonItem lines="none">
-                                                            <IonLabel color="black"><p>Show on profile? {form.settings_show_gender_sexuality ? 'Yes' : 'No'}</p></IonLabel>
+                                                            <IonLabel color="black">
+                                                                <div className="show-profile-row">
+                                                                    <p>Show on profile? {form.settings_show_gender_sexuality ? 'Yes' : 'No'}</p>
+                                                                    <IonButton
+                                                                        fill="clear"
+                                                                        size="small"
+                                                                        className="show-profile-info"
+                                                                        onClick={(event) => {
+                                                                            event.stopPropagation();
+                                                                            presentShowOnProfilePopover({ event: event.nativeEvent as Event });
+                                                                        }}
+                                                                    >
+                                                                        <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                                                    </IonButton>
+                                                                </div>
+                                                            </IonLabel>
                                                             <IonToggle
                                                                 slot="end"
                                                                 onIonChange={async e => {
@@ -1162,7 +1191,22 @@ const SelfProfile: React.FC = () => {
                                     </IonItem>
 
                                     <IonItem lines="none">
-                                        <IonLabel color="black"><p>Show on profile? {form.settings_show_long_covid ? 'Yes' : 'No'}</p></IonLabel>
+                                        <IonLabel color="black">
+                                            <div className="show-profile-row">
+                                                <p>Show on profile? {form.settings_show_long_covid ? 'Yes' : 'No'}</p>
+                                                <IonButton
+                                                    fill="clear"
+                                                    size="small"
+                                                    className="show-profile-info"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        presentShowOnProfilePopover({ event: event.nativeEvent as Event });
+                                                    }}
+                                                >
+                                                    <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                                                </IonButton>
+                                            </div>
+                                        </IonLabel>
                                         <IonToggle
                                             slot="end"
                                             onIonChange={async e => {

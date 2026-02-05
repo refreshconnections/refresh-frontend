@@ -17,6 +17,7 @@ import {
   IonTitle,
   IonToolbar,
   useIonModal,
+  useIonRouter,
   IonCard,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -58,6 +59,7 @@ type CreateEventModalProps = {
 };
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
+  const router = useIonRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startDatetime, setStartDatetime] = useState('');
@@ -73,6 +75,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     preferred_name: globalProfile?.preferred_name ?? '',
     username: globalProfile?.username ?? '',
     initialCategory: 'events',
+    onGoToSubmissions: () => router.push('/community/submitted'),
     onDismiss: () => dismissPostModal(),
   });
   const [precautions, setPrecautions] = useState<string[]>([]);

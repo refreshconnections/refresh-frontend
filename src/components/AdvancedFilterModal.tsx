@@ -1,5 +1,5 @@
 import React, { createRef, useEffect, useRef, useState } from "react";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge, IonSpinner } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge, IonSpinner, IonSelect, IonSelectOption } from '@ionic/react';
 import { clearDismissedConnections, isPersonalPlus, updateCurrentUserProfile } from "../hooks/utilities";
 
 
@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { faStar, faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { removeFromCapacitorLocalStorage } from "../hooks/capacitorPreferences/all";
+import { useGetSiteSettings } from "../hooks/api/sitesettings";
 
 type Props = {
   currentProfileData: any;
@@ -23,7 +24,9 @@ type Props = {
 interface Filters {
   filter_any_all: string,
   filter_keyword: string | null,
+  filter_keyword_exclude?: string | null,
   filter_gender_sexuality: string[],
+  filter_gender_sexuality_not: string | null,
   filter_lc: string[],
   filter_lived_experiences: string[],
   filter_looking_for_single_selection: string | null,
@@ -187,6 +190,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   // tanstack query
   const currentUserProfile = useGetCurrentProfile().data;
+  const siteSettings = useGetSiteSettings().data;
   const queryClient = useQueryClient()
 
   const [greaterThanFilter, setGreaterThanFilter] = useState<number | null>(currentProfileData?.filter_age_gt)
@@ -206,6 +210,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const [livedExperienceCount, setLivedExperienceCount] = useState<number>((currentProfileData?.filter_lived_experiences ?? []).length)
   const [limitCount, setLimitCount] = useState<number>(0)
   const [doneBusy, setDoneBusy] = useState(false);
+  const [genderSexualityNot, setGenderSexualityNot] = useState<string | null>(currentProfileData?.filter_gender_sexuality_not ?? null);
 
 
 
@@ -239,13 +244,54 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   // const [lcFilterChecked, setLcFilterChecked] =  useState<string []>(currentProfileData?.filter_lc ?? []);
   // const [genderSexualityFilterChecked, setGenderSexualityFilterChecked] =  useState<string []>(currentProfileData?.filter_gender_sexuality ?? []);
   const [keywordFilter, setKeywordFilter] = useState<string | null>(currentProfileData?.filter_keyword);
+  const [keywordExcludeFilter, setKeywordExcludeFilter] = useState<string | null>(currentProfileData?.filter_keyword_exclude);
+  const [keywordMode, setKeywordMode] = useState<'include' | 'exclude'>(
+    currentProfileData?.filter_keyword_exclude ? 'exclude' : 'include'
+  );
+  const [keywordInput, setKeywordInput] = useState<string>(
+    (currentProfileData?.filter_keyword_exclude ?? currentProfileData?.filter_keyword ?? '') as string
+  );
   const livedExperienceOptions = [
     { value: "poc", label: "POC" },
     { value: "spiritual", label: "Spiritual" },
     { value: "neurodivergent", label: "Neurodivergent" },
-    { value: "disability", label: "Disability" },
-    { value: "chronic_illness", label: "Chronic illness" },
     { value: "sober", label: "Sober" },
+  ];
+
+  const allowAllLivedExperienceFilters = !siteSettings;
+  const allowedLivedExperienceValues = new Set<string>([
+    ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_poc ? ["poc"] : []),
+    ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_spiritual ? ["spiritual"] : []),
+    ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_neurodivergent ? ["neurodivergent"] : []),
+    ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_sober ? ["sober"] : []),
+  ]);
+
+  const availableLivedExperienceOptions = livedExperienceOptions
+    .filter(option => livedExperiences.includes(option.value))
+    .filter(option => allowedLivedExperienceValues.has(option.value));
+  const hasEnabledLivedExperienceFilters = allowedLivedExperienceValues.size > 0;
+  const shouldShowLivedExperiencesAccordion =
+    hasEnabledLivedExperienceFilters && livedExperiences.length > 0;
+
+  const genderSexualityOptions = [
+    { value: "straight", label: "Straight" },
+    { value: "gay", label: "Gay" },
+    { value: "lesbian", label: "Lesbian" },
+    { value: "bi", label: "Bi" },
+    { value: "pan", label: "Pan" },
+    { value: "gray ace", label: "Gray ace" },
+    { value: "ace", label: "Ace" },
+    { value: "demi", label: "Demisexual" },
+    { value: "queer", label: "Queer" },
+    { value: "man", label: "Man" },
+    { value: "woman", label: "Woman" },
+    { value: "nb", label: "Nonbinary" },
+    { value: "genderfluid", label: "Gender fluid" },
+    { value: "cis", label: "Cis" },
+    { value: "trans", label: "Trans" },
+    { value: "intersex", label: "Intersex" },
+    { value: "mono", label: "Monogamous" },
+    { value: "poly", label: "Polyamorous" },
   ];
 
   const [showLCFilters, setShowLCFilters] = useState<boolean>(false)
@@ -258,7 +304,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const [presentAgeAlert] = useIonAlert();
   const [presentDistanceAlert] = useIonAlert();
   const [presentLookingForAlert] = useIonAlert();
-  const [presentKeywordAlert] = useIonAlert();
   const [presentClearFiltersAlert] = useIonAlert();
   const [presentShowIgnoredAlert] = useIonAlert();
   const [presentPrecautionsAlert] = useIonAlert();
@@ -617,40 +662,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     })
   }
 
-  const whatKeyword = async () => {
-    presentKeywordAlert({
-      header: 'What keyword should your Picks have somewhere in their profile?',
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-          handler: () => {
-            console.log('Cancel clicked');
-          }
-        },
-        {
-          text: 'Select',
-          handler: async (data: any) => {
-            console.log('OK clicked: ', data.keyword);
-            setKeywordFilter(data.keyword)
-            setSomethingChanged(true)
-            queryClient.invalidateQueries({ queryKey: ['current'] })
-            await updateCurrentUserProfile({ filter_keyword: data.keyword })
-
-          }
-        }
-      ],
-      inputs: [
-        {
-          name: 'keyword',
-          type: 'text',
-          placeholder: 'A word or phrase'
-
-        }
-      ],
-    })
-  }
-
   const clearFilterAlert = async () => {
     presentClearFiltersAlert({
       header: 'Are you sure you want to clear your filters?',
@@ -696,6 +707,47 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     })
   }
 
+  const applyKeywordFilter = async () => {
+    const nextKeyword = keywordInput.trim();
+    if (!nextKeyword) {
+      setKeywordFilter(null);
+      setKeywordExcludeFilter(null);
+      setSomethingChanged(true);
+      queryClient.invalidateQueries({ queryKey: ['current'] });
+      await updateCurrentUserProfile({
+        filter_keyword: null,
+        filter_keyword_exclude: null,
+      });
+      return;
+    }
+
+    if (keywordMode === 'exclude') {
+      setKeywordExcludeFilter(nextKeyword);
+      setKeywordFilter(null);
+    } else {
+      setKeywordFilter(nextKeyword);
+      setKeywordExcludeFilter(null);
+    }
+    setSomethingChanged(true);
+    queryClient.invalidateQueries({ queryKey: ['current'] });
+    await updateCurrentUserProfile({
+      filter_keyword: keywordMode === 'exclude' ? null : nextKeyword,
+      filter_keyword_exclude: keywordMode === 'exclude' ? nextKeyword : null,
+    });
+  };
+
+  const clearKeywordFilter = async () => {
+    setKeywordInput('');
+    setKeywordFilter(null);
+    setKeywordExcludeFilter(null);
+    setSomethingChanged(true);
+    queryClient.invalidateQueries({ queryKey: ['current'] });
+    await updateCurrentUserProfile({
+      filter_keyword: null,
+      filter_keyword_exclude: null,
+    });
+  };
+
 
 
   const yourAgeNotInRange = (minimum: number, maximum: number) => {
@@ -713,6 +765,9 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     setLessThanFilter(null)
     setDistanceFilter(null)
     setKeywordFilter(null)
+    setKeywordExcludeFilter(null)
+    setKeywordInput('')
+    setKeywordMode('include')
 
     setIsValid(null)
     setAgeValidError(null)
@@ -720,7 +775,9 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     const form_data: Filters = {
       filter_any_all: "any",
       filter_keyword: null,
+      filter_keyword_exclude: null,
       filter_gender_sexuality: [],
+      filter_gender_sexuality_not: null,
       filter_lc: [],
       filter_lived_experiences: [],
       filter_looking_for_single_selection: null,
@@ -876,10 +933,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       if (saveOnlyShow.length == 0) {
         saveOnlyShowAnyAll = "none"
       }
+      const saveLivedExperiences = livedExperienceFilterChecked.filter(value => allowedLivedExperienceValues.has(value));
       await updateCurrentUserProfile({
         filter_gender_sexuality: genderSexualityFilterChecked,
+        filter_gender_sexuality_not: genderSexualityNot ?? null,
         filter_lc: lcFilterChecked,
-        filter_lived_experiences: livedExperienceFilterChecked,
+        filter_lived_experiences: saveLivedExperiences,
         filter_any_all: anyOrAll,
         dontshow_gendersexuality: saveDontShow,
         dontshow_gendersexuality_any_all: saveDontShowAnyAll,
@@ -949,6 +1008,15 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
 
   }, [onlyshowSexualityFilterChecked, onlyShowAnyOrAll])
+
+  useEffect(() => {
+    const nextMode = currentProfileData?.filter_keyword_exclude ? 'exclude' : 'include';
+    const nextKeyword = currentProfileData?.filter_keyword_exclude ?? currentProfileData?.filter_keyword ?? '';
+    setKeywordMode(nextMode);
+    setKeywordInput(nextKeyword);
+    setKeywordFilter(currentProfileData?.filter_keyword ?? null);
+    setKeywordExcludeFilter(currentProfileData?.filter_keyword_exclude ?? null);
+  }, [currentProfileData?.filter_keyword, currentProfileData?.filter_keyword_exclude]);
 
   // Only show use effect
   useEffect(() => {
@@ -1038,14 +1106,56 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               : <p>Looking for {lookingForSS}</p>}
           </IonLabel>
         </IonItem>
-        <IonItem lines="none" button detail={true} onClick={whatKeyword} disabled={!isPersonalPlus(currentProfileData?.subscription_level)}>
-          <IonLabel className="side">
-            <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
-            {keywordFilter == null || keywordFilter == "" ?
-              <p>Talking about any topic</p>
-              : <p>Talking about "{keywordFilter}"</p>}
-          </IonLabel>
-        </IonItem>
+        <IonAccordionGroup>
+          <IonAccordion disabled={!isPersonalPlus(currentProfileData?.subscription_level)}>
+            <IonItem slot="header" lines="none">
+              <IonLabel className="side">
+                <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
+                {(keywordFilter == null || keywordFilter == "") && (keywordExcludeFilter == null || keywordExcludeFilter == "") ?
+                  <p>Talking about any topic</p>
+                  : keywordFilter && keywordFilter !== "" ?
+                    <p>Talking about "{keywordFilter}"</p>
+                    : <p>NOT talking about "{keywordExcludeFilter}"</p>}
+              </IonLabel>
+            </IonItem>
+            <IonGrid className="filter-grid" slot="content">
+              <IonRadioGroup value={keywordMode} onIonChange={(e) => setKeywordMode(e.detail.value)}>
+                <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('include')}>
+                  <IonRadio slot="start" value="include" />
+                  <IonLabel className="ion-text-wrap">Talking about this in their profile</IonLabel>
+                </IonItem>
+                <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('exclude')}>
+                  <IonRadio slot="start" value="exclude" />
+                  <IonLabel className="ion-text-wrap">Not talking about this in their profile</IonLabel>
+                </IonItem>
+              </IonRadioGroup>
+              <IonItem lines="none" className="keyword-input-item">
+                <IonInput
+                  value={keywordInput}
+                  placeholder="A word or phrase"
+                  onIonInput={(e) => setKeywordInput(e.detail.value ?? '')}
+                />
+              </IonItem>
+              <IonRow className="ion-justify-content-center" style={{ marginTop: '8px' }}>
+                <IonButton
+                  size="small"
+                  onClick={applyKeywordFilter}
+                  disabled={!isPersonalPlus(currentProfileData?.subscription_level)}
+                >
+                  Apply
+                </IonButton>
+                <IonButton
+                  size="small"
+                  fill="outline"
+                  onClick={clearKeywordFilter}
+                  disabled={!isPersonalPlus(currentProfileData?.subscription_level)}
+                >
+                  Clear
+                </IonButton>
+              </IonRow>
+            </IonGrid>
+          </IonAccordion>
+        </IonAccordionGroup>
         <IonAccordionGroup >
           <IonAccordion >
             <IonItem slot="header"><IonLabel className="ion-text-wrap">Covid Behaviors</IonLabel> {hasOrDoesNotHavePrecaution !== "none" ?
@@ -1131,26 +1241,25 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           </IonAccordionGroup >
           : <></>}
 
-        <IonAccordionGroup>
-          <IonAccordion>
-            <IonItem slot="header">
-              <IonLabel className="ion-text-wrap">Lived experiences</IonLabel>
-              {livedExperienceCount > 0 ? <IonBadge color="primary">{livedExperienceCount} filters</IonBadge> : <></>}
-            </IonItem>
-            <IonGrid className="filter-grid" slot="content">
-              <IonRow className="lr-pad">
-              </IonRow>
-              {livedExperiences.length === 0 ? (
+        {shouldShowLivedExperiencesAccordion && (
+          <IonAccordionGroup>
+            <IonAccordion>
+              <IonItem slot="header">
+                <IonLabel className="ion-text-wrap">Lived experiences</IonLabel>
+                {livedExperienceCount > 0 ? <IonBadge color="primary">{livedExperienceCount} filters</IonBadge> : <></>}
+              </IonItem>
+              <IonGrid className="filter-grid" slot="content">
                 <IonRow className="lr-pad">
-                  <IonText className="ion-text-wrap">(No lived experiences set on your profile.)</IonText>
                 </IonRow>
-              ) : (
-                <IonRow>
-                  <IonCol>
-                    <IonList>
-                      {livedExperienceOptions
-                        .filter(option => livedExperiences.includes(option.value))
-                        .map(option => (
+                {livedExperiences.length === 0 ? (
+                  <IonRow className="lr-pad">
+                    <IonText className="ion-text-wrap">(No lived experiences set on your profile.)</IonText>
+                  </IonRow>
+                ) : (
+                  <IonRow>
+                    <IonCol>
+                      <IonList>
+                        {availableLivedExperienceOptions.map(option => (
                           <IonItem key={option.value}>
                             <IonCheckbox
                               slot="start"
@@ -1161,13 +1270,14 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                             {option.label}
                           </IonItem>
                         ))}
-                    </IonList>
-                  </IonCol>
-                </IonRow>
-              )}
-            </IonGrid>
-          </IonAccordion>
-        </IonAccordionGroup>
+                      </IonList>
+                    </IonCol>
+                  </IonRow>
+                )}
+              </IonGrid>
+            </IonAccordion>
+          </IonAccordionGroup>
+        )}
 
         <IonAccordionGroup >
           <IonAccordion>
@@ -1175,6 +1285,28 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               {gsCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsCount} filters</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
+              <IonRow className="lr-pad">
+                <IonItem lines="none">
+                  <IonLabel className="ion-text-wrap">Don’t show</IonLabel>
+                  <IonSelect
+                    interface="action-sheet"
+                    placeholder="None"
+                    value={genderSexualityNot ?? ''}
+                    onIonChange={(event) => {
+                      setSomethingChanged(true);
+                      const value = event.detail.value || null;
+                      setGenderSexualityNot(value);
+                    }}
+                  >
+                    <IonSelectOption value="">None</IonSelectOption>
+                    {genderSexualityOptions.map((option) => (
+                      <IonSelectOption key={option.value} value={option.value}>
+                        {option.label}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              </IonRow>
 
               <IonRow className="any-all-row">
                 <IonSegment value={anyOrAll} style={{ width: "50%" }}>

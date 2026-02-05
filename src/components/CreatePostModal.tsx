@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../hooks/api/api-client";
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, useIonRouter, IonIcon, IonList, IonPopover } from '@ionic/react';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 import moment from "moment";
 
@@ -30,6 +30,7 @@ type Props = {
     username: string,
     initialCategory?: string,
     onDismiss: () => void;
+    onGoToSubmissions?: () => void;
 };
 
 interface Post {
@@ -63,8 +64,12 @@ function isMoreThanTwoWeeksOld(registrationDate: string): boolean {
 
 const CreatePostModal: React.FC<Props> = (props) => {
 
-    const { preferred_name, username, initialCategory, onDismiss } = props;
-    const router = useIonRouter();
+    const { preferred_name, username, initialCategory, onDismiss, onGoToSubmissions } = props;
+    const navigateTo = (path: string) => {
+        if (typeof window === 'undefined') return;
+        window.history.pushState({}, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+    };
 
     const modal = useRef<HTMLIonModalElement>(null);
 
@@ -119,6 +124,17 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     const [ackEmail, setAckEmail] = useState(false);
 
+    const handleGoToSubmissions = () => {
+        onDismiss();
+        setTimeout(() => {
+            if (onGoToSubmissions) {
+                onGoToSubmissions();
+                return;
+            }
+            navigateTo('/community/submitted');
+        }, 150);
+    };
+
 
 
     // const [poll, setPoll] = useState<boolean>(false);
@@ -138,6 +154,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [imageDataToUpload, setImageDataToUpload] = useState<any>(null);
 
     const [showAlert, setShowAlert] = useState(false)
+    const [lastAction, setLastAction] = useState<'submitted' | 'draft' | null>(null);
 
     useEffect(() => {
         if (byline == "Anonymous") {
@@ -376,7 +393,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
         onDismiss();
     }
 
-    function formData() {
+    function formData(isDraft = false) {
         const form_data: Post = {}
 
 
@@ -394,6 +411,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
         form_data.location = local ? (locationLabel ? locationLabel : location) : null;
         form_data.location_point_lat = local ? lat : null;
         form_data.location_point_long = local ? long : null;
+        if (isDraft) {
+            (form_data as any).draft = "true";
+        }
 
 
 
@@ -643,6 +663,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setRecurrenceCount(1);
             setRecurrenceCustomDates([]);
             setRecurrenceDescriptions([]);
+            setLastAction('submitted');
             setShowAlert(true)
         }
         catch (error: any) {
@@ -679,6 +700,24 @@ const CreatePostModal: React.FC<Props> = (props) => {
         setAfterSendWait(false)
 
     }
+
+    const handleSaveDraft = async () => {
+        setAfterSendWait(true);
+        setErrors([]);
+        try {
+            const ann_response = await createAnnouncement(formData(true));
+            if (ann_response?.data?.announcement_id && imageDataToUpload) {
+                const uploadData = new FormData();
+                uploadData.append("coverPhoto", imageDataToUpload);
+                await announcementUploadPhoto(uploadData, ann_response.data.announcement_id);
+            }
+            setLastAction('draft');
+            setShowAlert(true);
+        } catch (error: any) {
+            setErrors(["Could not save draft."]);
+        }
+        setAfterSendWait(false);
+    };
 
     const needsProfileSettingsNote =
         includeProfile && siteSettings?.settings_community_profile === false;
@@ -840,13 +879,21 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 <IonAlert
                     isOpen={showAlert}
                     onDidDismiss={postSubmitSuccessful}
-                    header="Your post has been submitted and is now pending approval!"
-                    subHeader="Check on your post submissions in your Me tab > Activity."
+                    header={
+                        lastAction === 'draft'
+                            ? 'Draft saved!'
+                            : 'Your post has been submitted and is now pending approval!'
+                    }
+                    subHeader={
+                        lastAction === 'draft'
+                            ? 'Find it in your Me tab > Activity.'
+                            : 'Check on your post submissions in your Me tab > Activity.'
+                    }
                     message={confirmationMessage}
                     buttons={['OK']}
                 />
                 <IonRow className="ion-justify-content-center ion-padding">
-                    <IonButton color="navy" onClick={() => router.push('/community/submitted')}>
+                    <IonButton color="navy" onClick={handleGoToSubmissions}>
                         Submissions
                     </IonButton>
                 </IonRow>
@@ -1583,6 +1630,18 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 )}
 
 
+                                {(isCommunityPlus(globalCurrentProfile?.subscription_level) || isPro(globalCurrentProfile?.subscription_level)) && (
+                                    <IonButton
+                                        expand="block"
+                                        fill="outline"
+                                        className="ion-margin-top"
+                                        disabled={afterSendWait || imageLoading}
+                                        onClick={handleSaveDraft}
+                                    >
+                                        <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                                        Save draft
+                                    </IonButton>
+                                )}
                                 <IonButton expand="block" style={{ marginBottom: "30pt" }} className="ion-margin-top" type="submit" disabled={afterSendWait || imageLoading || formInvalid || hasPii || hasBlockedLinks || !ackEmail}>
                                     Submit Post
                                 </IonButton>
@@ -1629,13 +1688,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             <IonText className="ion-text-center"><p>Your account needs to be at least 2 weeks old to submit a post. </p>
                                 <p>Or become a Community+ or Pro member to submit a post now.</p>
                             </IonText>
-                            <IonButton onClick={() => router.push("/store")}>Upgrade</IonButton>
+                            <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
                         </IonCard>
                         :
                         limits?.posts_submitted >= 2 ?
                             <IonCard color="white" className="ion-padding ion-text-center">
                                 <IonText className="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
-                                <IonButton onClick={() => router.push("/store")}>Upgrade</IonButton>
+                                <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
                             </IonCard>
                             :
                             <IonCard color="white" className="ion-padding ion-text-center">

@@ -22,12 +22,13 @@ import {
   IonToolbar,
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
-import { useGetSubmittedAnnouncements } from '../hooks/api/announcements-take-1/submitted-anns';
+import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
 import './SubmittedPosts.css';
 
 const statusLabelMap: Record<string, string> = {
+  draft: 'Unsubmitted draft',
   pending: 'Pending moderator review',
   approved: 'Approved',
   needs_edit: 'Needs your edit',
@@ -35,6 +36,7 @@ const statusLabelMap: Record<string, string> = {
 };
 
 const statusColorMap: Record<string, string> = {
+  draft: 'medium',
   pending: 'medium',
   approved: 'success',
   needs_edit: 'warning',

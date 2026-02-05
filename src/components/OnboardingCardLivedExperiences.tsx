@@ -11,6 +11,8 @@ import {
   IonRow,
   IonText,
   IonToggle,
+  IonContent,
+  useIonPopover,
 } from '@ionic/react';
 import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
@@ -23,16 +25,24 @@ const livedExperienceOptions: [string, string][] = [
   ['poc', 'POC'],
   ['spiritual', 'Spiritual'],
   ['neurodivergent', 'Neurodivergent'],
-  ['disability', 'Disability'],
-  ['chronic_illness', 'Chronic illness'],
   ['sober', 'Sober'],
 ];
+
+const livedExperiencePopoverText =
+  "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
 
 const OnboardingCardLivedExperiences: React.FC = () => {
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [selected, setSelected] = useState<string[]>([]);
   const [showOnProfile, setShowOnProfile] = useState<boolean>(false);
+  const Popover = () => (
+    <IonContent className="ion-padding no-scroll">{livedExperiencePopoverText}</IonContent>
+  );
+  const [presentPopover, dismissPopover] = useIonPopover(Popover, {
+    onDismiss: () => dismissPopover(),
+  });
+
 
   useEffect(() => {
     if (currentProfile?.lived_experiences) {
@@ -70,7 +80,20 @@ const OnboardingCardLivedExperiences: React.FC = () => {
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent className="w-checkboxes">
-        <IonCardTitle>Lived experiences</IonCardTitle>
+        <IonCardTitle className="onboarding-title-row">
+          <span>Lived experiences</span>
+          <IonButton
+            fill="clear"
+            size="small"
+            className="onboarding-asterisk"
+            onClick={(event) => {
+              event.stopPropagation();
+              presentPopover({ event: event.nativeEvent as Event });
+            }}
+          >
+            *
+          </IonButton>
+        </IonCardTitle>
         <IonText>Choose any that apply. These are used for filtering in picks.</IonText>
         <div className="onboarding-option-card">
           <IonList className="scrollable-list onboarding-checkbox-list">

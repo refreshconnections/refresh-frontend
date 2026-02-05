@@ -14,6 +14,7 @@ import {
   IonRow,
   IonCol,
   IonText,
+  IonContent,
   IonList,
   IonCheckbox,
   IonToggle,
@@ -26,6 +27,7 @@ import {
   useIonActionSheet,
   useIonModal,
   useIonAlert,
+  useIonPopover,
 } from '@ionic/react';
 import React, { useState, useEffect } from 'react';
 import './SelfProfileV2.css';
@@ -488,10 +490,23 @@ const SelfProfileV2: React.FC = () => {
     ['poc', 'POC'],
     ['spiritual', 'Spiritual'],
     ['neurodivergent', 'Neurodivergent'],
-    ['disability', 'Disability'],
-    ['chronic_illness', 'Chronic illness'],
     ['sober', 'Sober'],
   ];
+
+  const livedExperiencePopoverText =
+    "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
+
+  const showOnProfileInfoText =
+    "These choices are used when other members filter their Picks. You can also choose whether or not to show them on your profile.";
+
+  const ShowOnProfilePopover = () => (
+    <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
+  );
+
+  const [presentShowOnProfilePopover, dismissShowOnProfilePopover] = useIonPopover(
+    ShowOnProfilePopover,
+    { onDismiss: () => dismissShowOnProfilePopover() }
+  );
 
   const getLivedExperienceLabel = (value: string) => livedExperienceOptions.find(([val]) => val === value)?.[1];
 
@@ -1170,7 +1185,20 @@ const SelfProfileV2: React.FC = () => {
                   <IonCard className="accordion-card">
                     <IonCardContent className="card-grid">
                       <div className="field-header">
-                        <p>Show on profile?</p>
+                        <div className="selfprofile-info-row">
+                          <p>Show on profile?</p>
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            className="selfprofile-info-button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              presentShowOnProfilePopover({ event: event.nativeEvent as Event });
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                          </IonButton>
+                        </div>
                         <IonToggle slot="end" checked={form.settings_show_gender_sexuality} onIonChange={e => toggleGenderSexualityShow(e.detail.checked)} />
                       </div>
 
@@ -1219,7 +1247,9 @@ const SelfProfileV2: React.FC = () => {
           <IonAccordion value="livedExperiences">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
-                <h2>Lived Experiences</h2>
+                <h2 className="selfprofile-title-row">
+                  <span>Lived Experiences</span>
+                </h2>
               </IonLabel>
             </IonItem>
             <IonCardContent slot="content" className="no-padding-cc accordion-body">
@@ -1228,7 +1258,20 @@ const SelfProfileV2: React.FC = () => {
                   <IonCard className="accordion-card">
                     <IonCardContent className="card-grid">
                       <div className="field-header">
-                        <p>Show on profile?</p>
+                        <div className="selfprofile-info-row">
+                          <p>Show on profile?</p>
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            className="selfprofile-info-button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              presentShowOnProfilePopover({ event: event.nativeEvent as Event });
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faInfoCircle as IconProp} />
+                          </IonButton>
+                        </div>
                         <IonToggle slot="end" checked={form.settings_show_lived_experiences} onIonChange={e => toggleLivedExperiencesShow(e.detail.checked)} />
                       </div>
 
@@ -1261,6 +1304,10 @@ const SelfProfileV2: React.FC = () => {
                           </IonList>
                         </div>
                       )}
+                      <div className="selfprofile-footnote lived-footnote">
+                        <span className="selfprofile-footnote-star">*</span>
+                        <span>{livedExperiencePopoverText}</span>
+                      </div>
                     </IonCardContent>
                   </IonCard>
                 </IonCol>

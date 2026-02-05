@@ -176,6 +176,7 @@ const Refreshments: React.FC = () => {
   const [createPostPresent, createPostDismiss] = useIonModal(CreatePostModal, {
     preferred_name: globalCurrentProfile?.name,
     username: globalCurrentProfile?.username,
+    onGoToSubmissions: () => router.push('/community/submitted'),
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 

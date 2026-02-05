@@ -20,6 +20,8 @@ import { faStarShooting } from '@fortawesome/pro-regular-svg-icons/faStarShootin
 import { faHeart } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { useGetLimits } from '../hooks/api/profiles/current-limits';
 import { faStar } from '@fortawesome/pro-solid-svg-icons';
+import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
+import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 
 
 
@@ -30,6 +32,22 @@ const Activity: React.FC = () => {
     const recentNotifications = useGetRecentNotifications().data;
     const streak = useGetCurrentStreak().data;
     const limits = useGetLimits().data;
+    const submittedPostsQuery = useGetSubmittedAnnouncements();
+    const submittedEventsQuery = useGetSubmittedEvents();
+
+    const submittedPosts = (submittedPostsQuery.data?.pages ?? [])
+        .flatMap((page: any) => page?.results ?? []);
+    const approvedPosts = submittedPosts.filter((post: any) =>
+        post?.approval_status === 'approved' || post?.approved === true
+    );
+
+    const submittedEvents = (submittedEventsQuery.data?.pages ?? [])
+        .flatMap((page: any) => page?.results ?? []);
+    const approvedEvents = submittedEvents.filter((event: any) =>
+        event?.status === 'approved' || event?.approved === true
+    );
+
+    const hasApprovedSubmissions = approvedPosts.length > 0 || approvedEvents.length > 0;
 
     return (
         <IonPage>
@@ -156,6 +174,37 @@ const Activity: React.FC = () => {
                     </>
                     : <></>}
 
+                <IonNote className="header">My submissions</IonNote>
+                <IonRow className="ion-padding ion-justify-content-center">
+                    {hasApprovedSubmissions ? (
+                        <IonCard color="white" className="ion-padding" style={{ width: '100%' }}>
+                            {approvedPosts.slice(0, 2).map((post: any) => (
+                                <IonItem key={`approved-post-${post?.id}`} lines="none">
+                                    <IonLabel color="navy" className="ion-text-wrap">
+                                        <h3>{post?.title ?? 'Approved post'}</h3>
+                                    </IonLabel>
+                                </IonItem>
+                            ))}
+                            {approvedEvents.slice(0, 2).map((event: any) => (
+                                <IonItem key={`approved-event-${event?.id}`} lines="none">
+                                    <IonLabel color="navy" className="ion-text-wrap">
+                                        <h3>{event?.name ?? 'Approved event'}</h3>
+                                    </IonLabel>
+                                </IonItem>
+                            ))}
+                            <IonRow className="ion-justify-content-center ion-padding-top">
+                                <IonButton routerLink="/community/submitted" color="primary">
+                                    View submissions
+                                </IonButton>
+                            </IonRow>
+                        </IonCard>
+                    ) : (
+                        <IonText color="navy" className="ion-padding ion-text-center">
+                            You haven’t submitted a post or event yet.
+                        </IonText>
+                    )}
+                </IonRow>
+
                 {recentNotifications?.length > 0 ?
 
                     <IonNote className="header">Recent happenings</IonNote>
@@ -199,10 +248,10 @@ const Activity: React.FC = () => {
                 <IonNote style={{ padding: "20pt" }}>
 
                     <IonRow className="ion-justify-content-center">
-                        Comments removed this month: {limits?.comments_removed}/5
+                        Comments you removed this month: {limits?.comments_removed}/5
                     </IonRow>
                     <IonRow className="ion-justify-content-center">
-                        Chat messages unsent this month: {limits?.chats_removed}/5
+                        Chat messages you unsent this month: {limits?.chats_removed}/5
                     </IonRow>
                 </IonNote>
 

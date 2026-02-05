@@ -17,15 +17,23 @@ import {
   useIonToast,
   IonCard,
   IonCardContent,
+  IonItem,
+  IonLabel,
+  IonCheckbox,
+  IonSelect,
+  IonSelectOption,
   useIonRouter,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { useGetSubmittedAnnouncements } from '../hooks/api/announcements-take-1/submitted-anns';
+import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import Markdown from 'react-markdown';
 import { apiClient } from '../hooks/api/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { postQueryKeys } from '../hooks/api/refreshments';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 import './SubmittedPostPreview.css';
 
 type SubmittedPost = {
@@ -36,12 +44,18 @@ type SubmittedPost = {
   uploadDateTime?: string;
   link?: string;
   coverPhoto?: string;
+  coverPhoto_alt?: string;
   disclaimer?: string;
   comment_instructions?: string;
   byline?: string;
+  category?: string;
   location?: string;
+  local_only?: boolean;
+  location_point_lat?: number | string;
+  location_point_long?: number | string;
   sensitive?: boolean;
   sensitive_description?: string;
+  include_profile?: boolean;
   approvalDateTime?: string;
   last_edited?: string;
   last_edited_at?: string;
@@ -60,6 +74,7 @@ type RouteParams = {
 };
 
 const statusLabelMap: Record<string, string> = {
+  draft: 'Unsubmitted draft',
   pending: 'Pending moderator review',
   approved: 'Approved',
   needs_edit: 'Needs your edit',
@@ -67,6 +82,7 @@ const statusLabelMap: Record<string, string> = {
 };
 
 const statusColorMap: Record<string, string> = {
+  draft: 'medium',
   pending: 'medium',
   approved: 'success',
   needs_edit: 'warning',
@@ -92,10 +108,22 @@ const SubmittedPostPreview: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [draftContent, setDraftContent] = useState('');
   const [draftTitle, setDraftTitle] = useState('');
+  const [draftByline, setDraftByline] = useState<string>('Anonymous');
+  const [draftCategory, setDraftCategory] = useState<string>('');
+  const [draftLocalOnly, setDraftLocalOnly] = useState(false);
+  const [draftLocation, setDraftLocation] = useState('');
+  const [draftLat, setDraftLat] = useState<string>('');
+  const [draftLong, setDraftLong] = useState<string>('');
+  const [draftIncludeProfile, setDraftIncludeProfile] = useState(false);
+  const [draftSensitive, setDraftSensitive] = useState(false);
+  const [draftSensitiveDescription, setDraftSensitiveDescription] = useState('');
+  const [draftLink, setDraftLink] = useState('');
   const [saving, setSaving] = useState(false);
   const [presentToast] = useIonToast();
   const router = useIonRouter();
   const queryClient = useQueryClient();
+  const { data: currentProfile } = useGetCurrentProfile();
+  const userHandle = (currentProfile?.username ?? '').trim();
 
   const {
     data,
@@ -169,6 +197,7 @@ const SubmittedPostPreview: React.FC = () => {
   const withinTwoWeeks = daysSince <= 14;
   const visible =
     status === 'approved' ||
+    status === 'draft' ||
     (status === 'needs_edit' && daysSince <= 5) ||
     ((status === 'pending' || status === 'rejected') && withinTwoWeeks);
 
@@ -176,12 +205,42 @@ const SubmittedPostPreview: React.FC = () => {
   const displayContent = submittedContent;
   const hasEdits =
     (draftTitle.trim() !== '' && draftTitle.trim() !== (post?.title ?? '').trim())
-    || draftContent.trim() !== submittedContent.trim();
+    || draftContent.trim() !== submittedContent.trim()
+    || draftByline !== (post?.byline ?? 'Anonymous')
+    || draftCategory !== (post?.category ?? 'refreshments')
+    || draftLocalOnly !== !!post?.local_only
+    || draftLocation !== (post?.location ?? '')
+    || draftLat !== (post?.location_point_lat?.toString() ?? '')
+    || draftLong !== (post?.location_point_long?.toString() ?? '')
+    || draftIncludeProfile !== !!post?.include_profile
+    || draftSensitive !== !!post?.sensitive
+    || draftSensitiveDescription !== (post?.sensitive_description ?? '')
+    || draftLink !== (post?.link ?? '');
   const requestedEdit = post?.moderator_edit_request ?? null;
   const moderatorExplanation = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason ?? null;
   const hasRequestedEdit = !!requestedEdit;
-  const canEdit = status === 'needs_edit' && visible;
+  const canEdit = (status === 'needs_edit' || status === 'draft') && visible;
+  const isDraft = status === 'draft';
   const rejectedReason = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason;
+  const bylineOptions = Array.from(new Set([
+    ...(userHandle ? [userHandle] : []),
+    ...(post?.byline && post?.byline !== userHandle && post?.byline !== 'Anonymous' ? [post.byline] : []),
+    'Anonymous',
+  ]));
+  const applyDraftDefaults = () => {
+    setDraftTitle(post?.title ?? '');
+    setDraftContent(submittedContent);
+    setDraftByline(post?.byline ?? (userHandle || 'Anonymous'));
+    setDraftCategory(post?.category ?? 'refreshments');
+    setDraftLocalOnly(!!post?.local_only);
+    setDraftLocation(post?.location ?? '');
+    setDraftLat(post?.location_point_lat?.toString() ?? '');
+    setDraftLong(post?.location_point_long?.toString() ?? '');
+    setDraftIncludeProfile(!!post?.include_profile);
+    setDraftSensitive(!!post?.sensitive);
+    setDraftSensitiveDescription(post?.sensitive_description ?? '');
+    setDraftLink(post?.link ?? '');
+  };
 
   const renderContent = (content: string) => {
     if (!content) {
@@ -226,6 +285,79 @@ const SubmittedPostPreview: React.FC = () => {
       presentToast({ message: 'Resubmitted for review.', duration: 2500, color: 'success' });
     } catch (error) {
       presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, color: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!post?.id) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await apiClient.patch(`/api/announcements/submitted/${post.id}/save_draft/`, {
+        title: draftTitle.trim() || post?.title,
+        content: draftContent.trim() || post?.content,
+        byline: draftByline,
+        category: draftCategory,
+        include_profile: draftIncludeProfile ? "true" : "false",
+        sensitive: draftSensitive ? "true" : "false",
+        sensitive_description: draftSensitiveDescription || null,
+        link: draftLink || null,
+        local_only: draftLocalOnly ? "true" : "false",
+        location: draftLocation || null,
+        location_point_lat: draftLat || null,
+        location_point_long: draftLong || null,
+        coverPhoto_alt: post?.coverPhoto_alt ?? null,
+        comment_instructions: post?.comment_instructions ?? "",
+      });
+      if (response?.data) {
+        setPost(response.data);
+      }
+      setEditing(false);
+      presentToast({ message: 'Draft saved.', duration: 2500, color: 'success' });
+    } catch (error) {
+      presentToast({ message: 'Could not save draft. Try again.', duration: 2500, color: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmitDraft = async () => {
+    if (!post?.id || !draftContent.trim()) {
+      presentToast({ message: 'Please add your content before submitting.', duration: 2500, color: 'medium' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await apiClient.post(`/api/announcements/submitted/${post.id}/submit_draft/`, {
+        title: draftTitle.trim() || post?.title,
+        content: draftContent.trim(),
+        byline: draftByline,
+        category: draftCategory,
+        include_profile: draftIncludeProfile ? "true" : "false",
+        sensitive: draftSensitive ? "true" : "false",
+        sensitive_description: draftSensitiveDescription || null,
+        link: draftLink || null,
+        local_only: draftLocalOnly ? "true" : "false",
+        location: draftLocation || null,
+        location_point_lat: draftLat || null,
+        location_point_long: draftLong || null,
+        coverPhoto_alt: post?.coverPhoto_alt ?? null,
+        comment_instructions: post?.comment_instructions ?? "",
+      });
+      if (response?.data) {
+        setPost(response.data);
+      }
+      setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['filteredposts'] });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
+      presentToast({ message: 'Submitted for review.', duration: 2500, color: 'success' });
+    } catch (error) {
+      presentToast({ message: 'Could not submit draft. Try again.', duration: 2500, color: 'danger' });
     } finally {
       setSaving(false);
     }
@@ -320,7 +452,7 @@ const SubmittedPostPreview: React.FC = () => {
               {canEdit && !editing && (
                 <IonRow class="ion-justify-content-center" style={{ marginTop: '8px' }}>
                   <IonButton size="small" onClick={() => {
-                    setDraftTitle(post?.title ?? '');
+                    applyDraftDefaults();
                     setDraftContent(requestedEdit ?? submittedContent);
                     setEditing(true);
                   }}>
@@ -340,12 +472,11 @@ const SubmittedPostPreview: React.FC = () => {
           </IonCard>
         )}
 
-        {canEdit && !editing && !hasRequestedEdit && (
+        {canEdit && !editing && !hasRequestedEdit && !isDraft && (
           <IonRow class="ion-justify-content-center" style={{ marginBottom: '8px' }}>
             <IonButton
               onClick={() => {
-                setDraftTitle(post?.title ?? '');
-                setDraftContent(submittedContent);
+                applyDraftDefaults();
                 setEditing(true);
               }}
             >
@@ -354,35 +485,198 @@ const SubmittedPostPreview: React.FC = () => {
           </IonRow>
         )}
 
+        {isDraft && !editing && (
+          <IonRow class="ion-justify-content-center" style={{ marginBottom: '8px' }}>
+            <IonButton
+              onClick={() => {
+                applyDraftDefaults();
+                setEditing(true);
+              }}
+            >
+              Edit draft
+            </IonButton>
+          </IonRow>
+        )}
+
         {canEdit && editing && (
-          <IonCard color="white" className="edit-card">
-            <IonCardContent>
-              <IonText color="dark">
-                <h3>Edit your submission</h3>
-              </IonText>
-              <IonText color="medium">
-                <p>Make the requested changes, then resubmit for review.</p>
-              </IonText>
-              <IonText color="medium">
-                <p>Title</p>
-              </IonText>
-              <IonInput
-                value={draftTitle}
-                placeholder="Title"
-                onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
-              />
-              <IonText color="medium">
-                <p>Content</p>
-              </IonText>
-              <IonTextarea
-                value={draftContent}
-                autoGrow
-                onIonInput={(e) => setDraftContent(e.detail.value ?? '')}
-              />
+          <div className="draft-edit-wrapper">
+            <IonCard color="white" className="edit-card">
+              <IonCardContent>
+                <IonText color="dark">
+                  <h3>{isDraft ? 'Edit your draft' : 'Edit your submission'}</h3>
+                </IonText>
+                <IonText color="medium">
+                  <p>
+                    {isDraft
+                      ? 'Update your draft, then save or submit for review.'
+                      : 'Make the requested changes, then resubmit for review.'}
+                  </p>
+                </IonText>
+              </IonCardContent>
+            </IonCard>
+            <form className="draft-edit-form" onSubmit={(event) => event.preventDefault()}>
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">Title*</IonLabel>
+                  <IonInput
+                    value={draftTitle}
+                    placeholder="Required"
+                    onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
+                    type="text"
+                    autoCapitalize="words"
+                  />
+                </IonItem>
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">Byline*</IonLabel>
+                  <IonSelect value={draftByline} placeholder="(Who wrote the post)" onIonChange={(e) => setDraftByline(e.detail.value)}>
+                    {bylineOptions.map((option) => (
+                      <IonSelectOption value={option} key={`byline-${option}`}>
+                        {option}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              </IonCard>
+
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="none">
+                  <IonCheckbox
+                    checked={draftLocalOnly}
+                    onIonChange={(e) => setDraftLocalOnly(e.detail.checked)}
+                    labelPlacement="end"
+                    justify="space-between"
+                  >
+                    Local Post
+                  </IonCheckbox>
+                </IonItem>
+                {draftLocalOnly && (
+                  <>
+                    <IonItem color="white" lines="none">
+                      <IonLabel position="stacked">Location label</IonLabel>
+                      <IonInput
+                        value={draftLocation}
+                        placeholder="City, region, or label"
+                        onIonInput={(e) => setDraftLocation(e.detail.value ?? '')}
+                        type="text"
+                        autoCapitalize="words"
+                      />
+                    </IonItem>
+                    <IonItem color="white" lines="none">
+                      <IonLabel position="stacked">Latitude</IonLabel>
+                      <IonInput
+                        value={draftLat}
+                        placeholder="Optional"
+                        onIonInput={(e) => setDraftLat(e.detail.value ?? '')}
+                        type="text"
+                      />
+                    </IonItem>
+                    <IonItem color="white" lines="none">
+                      <IonLabel position="stacked">Longitude</IonLabel>
+                      <IonInput
+                        value={draftLong}
+                        placeholder="Optional"
+                        onIonInput={(e) => setDraftLong(e.detail.value ?? '')}
+                        type="text"
+                      />
+                    </IonItem>
+                  </>
+                )}
+              </IonCard>
+
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">Category*</IonLabel>
+                  <IonSelect value={draftCategory} placeholder="Select category" onIonChange={(e) => setDraftCategory(e.detail.value)}>
+                    <IonSelectOption value="refreshments">Refreshments</IonSelectOption>
+                    <IonSelectOption value="mingle">Mingle</IonSelectOption>
+                    <IonSelectOption value="change">Change</IonSelectOption>
+                    <IonSelectOption value="longcovid">Long Covid</IonSelectOption>
+                    <IonSelectOption value="families">Family</IonSelectOption>
+                    <IonSelectOption value="science">STEAM</IonSelectOption>
+                    <IonSelectOption value="pop">Pop</IonSelectOption>
+                    <IonSelectOption value="newcomers">Newcomers</IonSelectOption>
+                    <IonSelectOption value="book">Book</IonSelectOption>
+                    <IonSelectOption value="events">Event</IonSelectOption>
+                    <IonSelectOption value="housing" disabled={!draftLocalOnly && draftCategory !== 'housing'}>Housing</IonSelectOption>
+                    <IonSelectOption value="recommendations" disabled={!draftLocalOnly && draftCategory !== 'recommendations'}>Local Recommendations</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              </IonCard>
+
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">Post Content*</IonLabel>
+                  <IonTextarea
+                    value={draftContent}
+                    autoGrow
+                    maxlength={2000}
+                    style={{ minHeight: '120px' }}
+                    placeholder="Write your post here..."
+                    onIonInput={(e) => setDraftContent(e.detail.value ?? '')}
+                    counter={true}
+                  />
+                </IonItem>
+              </IonCard>
+
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="full">
+                  <IonCheckbox
+                    checked={draftIncludeProfile}
+                    onIonChange={(e) => setDraftIncludeProfile(e.detail.checked)}
+                    disabled={draftByline === 'Anonymous'}
+                    labelPlacement="end"
+                  >
+                    Show Profile
+                  </IonCheckbox>
+                </IonItem>
+                <IonItem color="white" lines="full">
+                  <IonCheckbox
+                    checked={draftSensitive}
+                    onIonChange={(e) => setDraftSensitive(e.detail.checked)}
+                    labelPlacement="end"
+                  >
+                    Sensitive Content
+                  </IonCheckbox>
+                </IonItem>
+                {draftSensitive && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Sensitivity description (optional)</IonLabel>
+                    <IonTextarea
+                      value={draftSensitiveDescription}
+                      placeholder="Add suggested content warnings here."
+                      onIonInput={(e) => setDraftSensitiveDescription(e.detail.value ?? '')}
+                    />
+                  </IonItem>
+                )}
+              </IonCard>
+
+              <IonCard className="draft-edit-card">
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">External link (optional)</IonLabel>
+                  <IonInput
+                    value={draftLink}
+                    placeholder="https://"
+                    onIonInput={(e) => setDraftLink(e.detail.value ?? '')}
+                    type="text"
+                  />
+                </IonItem>
+              </IonCard>
               <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
-                <IonButton onClick={handleResubmit} disabled={saving || !hasEdits}>
-                  Edit and resubmit
-                </IonButton>
+                {isDraft ? (
+                  <>
+                    <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
+                      <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                      Save draft
+                    </IonButton>
+                    <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>
+                      Submit for review
+                    </IonButton>
+                  </>
+                ) : (
+                  <IonButton onClick={handleResubmit} disabled={saving || !hasEdits}>
+                    Edit and resubmit
+                  </IonButton>
+                )}
                 <IonButton
                   fill="outline"
                   onClick={() => setEditing(false)}
@@ -391,8 +685,8 @@ const SubmittedPostPreview: React.FC = () => {
                   Cancel
                 </IonButton>
               </IonRow>
-            </IonCardContent>
-          </IonCard>
+            </form>
+          </div>
         )}
 
         {visible && post?.coverPhoto && (

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, useIonPopover, useIonRouter } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, IonCardContent, useIonPopover, useIonRouter } from '@ionic/react';
 import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
@@ -292,7 +292,7 @@ const TextModal: React.FC<Props> = (props) => {
     const limits = useGetLimits().data
     const overallUnread = useGetUnreadCount().data
     const currentUserProfile = useGetCurrentProfile().data;
-
+    const showEarlySupportNotice = textModalData?.other_user_id === "24";
 
     const [needContext, showNeedContext] = useState<boolean>(false)
 
@@ -1139,10 +1139,42 @@ const TextModal: React.FC<Props> = (props) => {
 
 
                 <IonList className="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
-
-
-
                     <PhotoProvider bannerVisible={false} >
+                        {showEarlySupportNotice && (
+                            <li style={{ listStyle: 'none' }}>
+                                <IonCard color="white" className="ion-padding">
+                                    <IonCardContent>
+                                        <IonText color="navy">
+                                            <p>As we’ve grown, these messages are no longer routinely monitored and are only used for specific ongoing Help requests.</p>
+                                            <br />
+                                            <p>
+                                                For feedback or support, please use the Help feature in the Me tab or reach out to{' '}
+                                                <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a>.
+                                            </p>
+                                            <br />
+                                            <p>Thanks for joining us early!</p>
+                                        </IonText>
+                                        <IonRow className="ion-justify-content-center">
+                                            <IonButton
+                                                size="small"
+                                                fill="outline"
+                                                onClick={() => {
+                                                    onDismiss();
+                                                    setTimeout(() => {
+                                                        if (typeof window !== 'undefined') {
+                                                            window.history.pushState({}, "", "/help");
+                                                            window.dispatchEvent(new PopStateEvent("popstate"));
+                                                        }
+                                                    }, 150);
+                                                }}
+                                            >
+                                                Get help
+                                            </IonButton>
+                                        </IonRow>
+                                    </IonCardContent>
+                                </IonCard>
+                            </li>
+                        )}
                         {messages?.pages?.map((page: any, pindex: any) => (
                             <div key={pindex} className="per-page">
                                 {page?.data?.map((item: any, index: number) => (

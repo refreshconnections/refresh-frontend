@@ -204,6 +204,7 @@ const Community: React.FC = () => {
   const [createPostPresent, createPostDismiss] = useIonModal(CreatePostModal, {
     preferred_name: me?.name,
     username: me?.username,
+    onGoToSubmissions: () => router.push('/community/submitted'),
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 
