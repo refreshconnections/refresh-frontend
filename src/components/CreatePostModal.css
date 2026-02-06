@@ -31,6 +31,115 @@ ion-row.moderator-submit {
     padding: 20pt
 }
 
+.post-suggestions-card {
+    margin-top: 6px;
+    background: var(--ion-color-white);
+}
+
+.post-suggestions-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.post-suggestions-icon {
+    color: var(--ion-color-navy);
+    font-size: 1rem;
+    margin-top: 2px;
+}
+
+.post-suggestions-title {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--ion-color-navy);
+    margin-bottom: 6px;
+}
+
+.post-suggestions-list {
+    padding-top: 0;
+}
+
+.post-suggestions-row {
+    row-gap: 8px;
+}
+
+.post-suggestion-mini {
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--ion-color-white);
+    border: 1px solid var(--ion-color-step-150, #e3e3ef);
+}
+
+.post-suggestion-banner {
+    height: 10px;
+    background: var(--ion-color-primary);
+}
+
+.post-suggestion-body {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.post-suggestion-banner.category-science {
+    background: var(--ion-color-tertiary);
+}
+
+.post-suggestion-banner.category-families {
+    background: var(--ion-color-families);
+}
+
+.post-suggestion-banner.category-pop,
+.post-suggestion-banner.category-book {
+    background: var(--ion-color-pop);
+}
+
+.post-suggestion-banner.category-mingle,
+.post-suggestion-banner.category-housing,
+.post-suggestion-banner.category-events,
+.post-suggestion-banner.category-recommendations {
+    background: var(--ion-color-secondary);
+}
+
+.post-suggestion-banner.category-change {
+    background: var(--ion-color-change);
+}
+
+.post-suggestion-banner.category-longcovid {
+    background: var(--ion-color-longcovid);
+}
+
+.post-suggestion-banner.category-newcomers {
+    background: var(--ion-color-newcomers);
+}
+
+.post-suggestion-title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ion-color-navy);
+    margin-bottom: 6px;
+}
+
+.post-suggestion-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.post-suggestion-meta-item {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.create-post-submissions-button {
+    margin-top: 6px;
+}
+
 .createpostcheckbox::part(label) {
     font-size: 0.875rem;     
     font-weight: 500;

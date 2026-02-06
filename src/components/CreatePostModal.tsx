@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../hooks/api/api-client";
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonIcon, IonList, IonPopover } from '@ionic/react';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonCardContent, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 import moment from "moment";
 
@@ -15,8 +15,9 @@ import { faImage } from "@fortawesome/pro-solid-svg-icons/faImage";
 import { faTrash } from "@fortawesome/pro-solid-svg-icons/faTrash";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
-import { faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
+import { faCommentDots, faHeart, faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
+import { useGetAnnouncementSuggestions } from "../hooks/api/refreshments/announcement-suggestions";
 import CitySelectorModal from "./CitySelectorModal";
 import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
 import { informationCircle } from "ionicons/icons";
@@ -95,6 +96,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [errors, setErrors] = useState<string[]>([]);
     const [afterSendWait, setAfterSendWait] = useState(false)
     const [requestSupportive, setRequestSupportive] = useState(false)
+    const [suggestionQuery, setSuggestionQuery] = useState<string>("");
 
 
     // const [data, setData] = useState<any>(null);
@@ -123,6 +125,25 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
 
     const [ackEmail, setAckEmail] = useState(false);
+
+    const { data: suggestionPosts, isLoading: suggestionLoading } = useGetAnnouncementSuggestions(suggestionQuery);
+    const suggestionItems = (suggestionPosts || []).slice(0, 3);
+    const suggestionColSize = suggestionItems.length === 3 ? "4" : suggestionItems.length === 2 ? "6" : "12";
+
+    const handleOpenSuggestion = (id: number) => {
+        onDismiss();
+        setTimeout(() => {
+            navigateTo(`/community/${id}`);
+        }, 150);
+    };
+
+    const [showSuggestionConfirm, setShowSuggestionConfirm] = useState(false);
+    const [pendingSuggestionId, setPendingSuggestionId] = useState<number | null>(null);
+
+    const handleSuggestionClick = (id: number) => {
+        setPendingSuggestionId(id);
+        setShowSuggestionConfirm(true);
+    };
 
     const handleGoToSubmissions = () => {
         onDismiss();
@@ -161,6 +182,18 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setIncludeProfile(false)
         }
     }, [byline])
+
+    useEffect(() => {
+        const trimmed = title.trim();
+        if (trimmed.length < 3) {
+            setSuggestionQuery("");
+            return;
+        }
+        const handle = window.setTimeout(() => {
+            setSuggestionQuery(trimmed);
+        }, 350);
+        return () => window.clearTimeout(handle);
+    }, [title]);
 
     useEffect(() => {
         if (initialCategory && !bar) {
@@ -726,22 +759,26 @@ const CreatePostModal: React.FC<Props> = (props) => {
         ? 'Note: You chose “Show Profile,” but your post won\'t show until you turn on Connect from Refreshments in your Me tab > Settings.'
         : undefined;
 
-    const hasPii: boolean = useMemo(() => containsPii(content), [content]);
+    const combinedPostText = useMemo(
+        () => [title, content].filter(Boolean).join(" "),
+        [title, content]
+    );
+    const hasPii: boolean = useMemo(() => containsPii(combinedPostText), [combinedPostText]);
     const linkFieldText = useMemo(
         () => [link, ...recurrenceExternalLinks].filter(Boolean).join(" "),
         [link, recurrenceExternalLinks]
     );
     const hasShortenedLinkInContent: boolean = useMemo(
-        () => containsLinkShortener(content),
-        [content]
+        () => containsLinkShortener(combinedPostText),
+        [combinedPostText]
     );
     const hasShortenedLinkInLinkField: boolean = useMemo(
         () => containsLinkShortener(linkFieldText),
         [linkFieldText]
     );
     const hasGoogleDocLinkInContent: boolean = useMemo(
-        () => containsGoogleDocLink(content),
-        [content]
+        () => containsGoogleDocLink(combinedPostText),
+        [combinedPostText]
     );
     const hasGoogleDocLinkInLinkField: boolean = useMemo(
         () => containsGoogleDocLink(linkFieldText),
@@ -749,13 +786,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
     );
     const hasBlockedLinks = hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
     const mentionsPaymentHandle: boolean = useMemo(() => {
-        if (!content) return false;
-        return /(venmo|paypal|cashapp)/i.test(content);
-    }, [content]);
+        if (!combinedPostText) return false;
+        return /(venmo|paypal|cashapp)/i.test(combinedPostText);
+    }, [combinedPostText]);
     const mentionsOneToOne: boolean = useMemo(() => {
-        if (!content) return false;
-        return /(looking to connect|message me|let['’]s connect|to meet)/i.test(content);
-    }, [content]);
+        if (!combinedPostText) return false;
+        return /(looking to connect|message me|let['’]s connect|to meet)/i.test(combinedPostText);
+    }, [combinedPostText]);
 
 
 
@@ -892,16 +929,42 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     message={confirmationMessage}
                     buttons={['OK']}
                 />
-                <IonRow className="ion-justify-content-center ion-padding">
-                    <IonButton color="navy" onClick={handleGoToSubmissions}>
-                        Submissions
-                    </IonButton>
-                </IonRow>
-                {siteSettings?.allow_free_users_to_submit_posts &&
-                    <IonCard className="ion-padding limited ion-text-center">
-                        <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
-                        <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
-                    </IonCard>}
+                <IonAlert
+                    isOpen={showSuggestionConfirm}
+                    onDidDismiss={() => {
+                        setShowSuggestionConfirm(false);
+                        setPendingSuggestionId(null);
+                    }}
+                    header="Open this post?"
+                    subHeader="Do you want to go to this post instead of continuing to create your own post?"
+                    buttons={[
+                        {
+                            text: "Keep editing",
+                            role: "cancel",
+                        },
+                        {
+                            text: "Go to post",
+                            handler: () => {
+                                if (pendingSuggestionId) {
+                                    handleOpenSuggestion(pendingSuggestionId);
+                                }
+                            },
+                        },
+                    ]}
+                />
+                {siteSettings?.allow_free_users_to_submit_posts && (
+                    <>
+                        <IonCard className="ion-padding limited ion-text-center">
+                            <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
+                            <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
+                        </IonCard>
+                        <IonRow className="ion-justify-content-center">
+                            <IonButton size="small" fill="outline" className="create-post-submissions-button" onClick={handleGoToSubmissions}>
+                                View my previous submissions
+                            </IonButton>
+                        </IonRow>
+                    </>
+                )}
                 {isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2 && isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)) ? (
                     <>
                         <form onSubmit={(e) => handlePostSubmit(e)}>
@@ -930,6 +993,41 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 </IonSelect>
                             </IonItem>
                         </IonCard>
+                        {suggestionItems.length > 0 ? (
+                            <IonCard className="post-suggestions-card">
+                                <IonCardContent>
+                                    <IonRow className="post-suggestions-header">
+                                        <FontAwesomeIcon icon={faLightbulb} className="post-suggestions-icon" />
+                                        <IonText className="post-suggestions-title">
+                                            People might already be talking about this! Add a comment to one of these existing posts instead?
+                                        </IonText>
+                                    </IonRow>
+                                    <IonRow className="post-suggestions-row">
+                                        {suggestionItems.map((post: any) => (
+                                            <IonCol key={post.id} size={suggestionColSize}>
+                                                <IonCard
+                                                    className="post-suggestion-mini"
+                                                    onClick={() => handleSuggestionClick(post.id)}
+                                                >
+                                                    <div className={`post-suggestion-banner category-${post.category || 'refreshments'}`} />
+                                                    <IonCardContent className="post-suggestion-body">
+                                                        <IonText className="post-suggestion-title">{post.title}</IonText>
+                                                        <IonRow className="post-suggestion-meta">
+                                                            <IonText className="post-suggestion-meta-item">
+                                                                <FontAwesomeIcon icon={faHeart} /> {post.like_count ?? 0}
+                                                            </IonText>
+                                                            <IonText className="post-suggestion-meta-item">
+                                                                <FontAwesomeIcon icon={faCommentDots} /> {post.comment_count ?? 0}
+                                                            </IonText>
+                                                        </IonRow>
+                                                    </IonCardContent>
+                                                </IonCard>
+                                            </IonCol>
+                                        ))}
+                                    </IonRow>
+                                </IonCardContent>
+                            </IonCard>
+                        ) : null}
 
                         {/* Local Post */}
                         <IonCard >

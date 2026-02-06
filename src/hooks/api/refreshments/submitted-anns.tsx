@@ -2,17 +2,17 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { annQueryKeys } from '../announcements-take-1/ann-query-keys';
 
-const getSubmittedAnnouncementsPage = async (page: number = 1) => {
+const getSubmittedAnnouncementsPage = async (page: number = 1, includeHidden?: boolean) => {
   const response = await apiClient.get('/api/announcements/submitted/', {
-    params: { page },
+    params: { page, include_hidden: includeHidden ? 1 : undefined },
   });
   return response.data;
 };
 
-export function useGetSubmittedAnnouncements() {
+export function useGetSubmittedAnnouncements(includeHidden?: boolean) {
   return useInfiniteQuery({
-    queryKey: annQueryKeys.submitted,
-    queryFn: ({ pageParam = 1 }) => getSubmittedAnnouncementsPage(pageParam),
+    queryKey: [...annQueryKeys.submitted, includeHidden ? 'include_hidden' : 'no_hidden'],
+    queryFn: ({ pageParam = 1 }) => getSubmittedAnnouncementsPage(pageParam, includeHidden),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.next ?? undefined,
   });

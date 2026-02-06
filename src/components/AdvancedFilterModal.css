@@ -134,6 +134,19 @@ ion-content.adv-filters ion-row.lr-pad {
   padding-right: 20pt;
 }
 
+ion-content.adv-filters ion-row.gender-not-row {
+  margin-top: 8px;
+}
+
+ion-content.adv-filters ion-item.gender-not-item {
+  --background: var(--ion-color-background);
+  --inner-border-width: 0;
+}
+
+ion-content.adv-filters ion-label.gender-not-label {
+  width: 100%;
+}
+
 ion-content.adv-filters ion-badge.small {
   font-size: 9pt
 }

@@ -31,6 +31,7 @@ import Markdown from 'react-markdown';
 import { apiClient } from '../hooks/api/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { postQueryKeys } from '../hooks/api/refreshments';
+import { annQueryKeys } from '../hooks/api/announcements-take-1/ann-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
@@ -67,6 +68,7 @@ type SubmittedPost = {
   moderator_edit_reason?: string;
   moderator_edit_or_rejection_reason?: string;
   markdown?: boolean;
+  hide_status_author?: string;
 };
 
 type RouteParams = {
@@ -119,6 +121,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [draftSensitiveDescription, setDraftSensitiveDescription] = useState('');
   const [draftLink, setDraftLink] = useState('');
   const [saving, setSaving] = useState(false);
+  const [hideUpdating, setHideUpdating] = useState(false);
   const [presentToast] = useIonToast();
   const router = useIonRouter();
   const queryClient = useQueryClient();
@@ -186,7 +189,7 @@ const SubmittedPostPreview: React.FC = () => {
     ? (Date.now() - submittedAtDate.getTime()) / (1000 * 60 * 60 * 24)
     : 0;
   const rawStatus = post?.approval_status ?? (post?.approved ? 'approved' : 'pending');
-  const status = rawStatus === 'needs_edit' && daysSince > 5
+  const status = rawStatus === 'needs_edit' && daysSince > 7
     ? 'rejected'
     : rawStatus;
   const statusLabel = statusLabelMap[status] ?? 'Pending moderator review';
@@ -194,12 +197,12 @@ const SubmittedPostPreview: React.FC = () => {
   const submittedAt = submittedAtDate
     ? submittedAtDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null;
-  const withinTwoWeeks = daysSince <= 14;
+  const withinSevenDays = daysSince <= 7;
   const visible =
     status === 'approved' ||
     status === 'draft' ||
-    (status === 'needs_edit' && daysSince <= 5) ||
-    ((status === 'pending' || status === 'rejected') && withinTwoWeeks);
+    (status === 'needs_edit' && daysSince <= 7) ||
+    ((status === 'pending' || status === 'rejected') && withinSevenDays);
 
   const submittedContent = post?.submitted_content ?? post?.content ?? '';
   const displayContent = submittedContent;
@@ -380,6 +383,33 @@ const SubmittedPostPreview: React.FC = () => {
       presentToast({ message: 'Could not approve. Try again.', duration: 2500, color: 'danger' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleHideToggle = async () => {
+    if (!post?.id) {
+      return;
+    }
+    const hidden = post?.hide_status_author === 'user';
+    setHideUpdating(true);
+    try {
+      if (hidden) {
+        await apiClient.post(`/api/announcements/submitted/${post.id}/unhide/`);
+        setPost((prev) => (prev ? { ...prev, hide_status_author: 'none' } : prev));
+      } else {
+        await apiClient.post(`/api/announcements/submitted/${post.id}/hide/`);
+        setPost((prev) => (prev ? { ...prev, hide_status_author: 'user' } : prev));
+      }
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({
+        message: hidden ? 'Post will show in your list view again.' : 'Post will be hidden from your submissions list.',
+        duration: 2000,
+        color: 'success',
+      });
+    } catch (error) {
+      presentToast({ message: 'Could not update visibility.', duration: 2500, color: 'danger' });
+    } finally {
+      setHideUpdating(false);
     }
   };
 
@@ -686,6 +716,22 @@ const SubmittedPostPreview: React.FC = () => {
                 </IonButton>
               </IonRow>
             </form>
+          </div>
+        )}
+
+        {visible && !editing && status !== 'approved' && (
+          <div className="hide-post-bar">
+            <IonButton
+              size="small"
+              fill="outline"
+              color="medium"
+              disabled={hideUpdating}
+              onClick={handleHideToggle}
+            >
+              {post?.hide_status_author === 'user'
+                ? 'Unhide post from list view'
+                : 'Hide post from list view'}
+            </IonButton>
           </div>
         )}
 

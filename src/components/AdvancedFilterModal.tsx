@@ -211,6 +211,8 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const [limitCount, setLimitCount] = useState<number>(0)
   const [doneBusy, setDoneBusy] = useState(false);
   const [genderSexualityNot, setGenderSexualityNot] = useState<string | null>(currentProfileData?.filter_gender_sexuality_not ?? null);
+  const [gsAnyGender, setGsAnyGender] = useState<boolean>((currentProfileData?.filter_gender_sexuality ?? []).length === 0);
+  const gsTotalCount = gsCount + (genderSexualityNot ? 1 : 0);
 
 
 
@@ -294,12 +296,24 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     { value: "poly", label: "Polyamorous" },
   ];
 
+  const formatGenderSexualityLabel = (value: string) => {
+    const label = genderSexualityOptions.find(option => option.value === value)?.label ?? value;
+    const normalized = label.toLowerCase();
+    const withArticle: Record<string, string> = {
+      man: "a man",
+      woman: "a woman",
+      lesbian: "a lesbian",
+    };
+    return withArticle[value] ?? normalized;
+  };
+
   const [showLCFilters, setShowLCFilters] = useState<boolean>(false)
 
   useEffect(() => {
     setGreaterThanFilter(currentProfileData?.filter_age_gt ?? null);
     setLessThanFilter(currentProfileData?.filter_age_lt ?? null);
   }, [currentProfileData?.filter_age_gt, currentProfileData?.filter_age_lt]);
+
 
   const [presentAgeAlert] = useIonAlert();
   const [presentDistanceAlert] = useIonAlert();
@@ -308,6 +322,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const [presentShowIgnoredAlert] = useIonAlert();
   const [presentPrecautionsAlert] = useIonAlert();
   const [presentActualPrecautionsAlert] = useIonAlert();
+  const [presentGenderSexualityNotAlert] = useIonAlert();
 
 
 
@@ -448,6 +463,49 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
       ],
     })
   }
+
+  const whatGenderSexualityNot = async () => {
+    presentGenderSexualityNotAlert({
+      header: "Anyone you don't want to see in your Picks?",
+      subHeader: 'Choose one',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Select',
+          handler: async (data: string) => {
+            setSomethingChanged(true);
+            if (!data || data === "none") {
+              setGenderSexualityNot(null);
+              queryClient.invalidateQueries({ queryKey: ['current'] });
+              await updateCurrentUserProfile({ filter_gender_sexuality_not: null });
+              return;
+            }
+            setGenderSexualityNot(data);
+            queryClient.invalidateQueries({ queryKey: ['current'] });
+            await updateCurrentUserProfile({ filter_gender_sexuality_not: data });
+          },
+        }
+      ],
+      inputs: [
+        {
+          label: 'None',
+          type: 'radio' as const,
+          value: 'none',
+          checked: !genderSexualityNot,
+        },
+        ...genderSexualityOptions.map((option) => ({
+          label: option.label,
+          type: 'radio' as const,
+          value: option.value,
+          checked: genderSexualityNot === option.value,
+          disabled: genderSexualityFilterChecked.includes(option.value),
+        })),
+      ],
+    });
+  };
 
   const whatPrecautions = async () => {
     presentActualPrecautionsAlert({
@@ -819,6 +877,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
     setSomethingChanged(true)
     if (event.detail.checked) {
+      if (gsAnyGender) {
+        setGsAnyGender(false);
+      }
+      if (genderSexualityNot === event.detail.value) {
+        setGenderSexualityNot(null);
+      }
       genderSexualityFilterChecked.push(event.detail.value);
       setGsCount(genderSexualityFilterChecked.length)
     } else {
@@ -1282,56 +1346,62 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
         <IonAccordionGroup >
           <IonAccordion>
             <IonItem slot="header"><IonLabel className="ion-text-wrap">Gender and Sexuality</IonLabel>
-              {gsCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsCount} filters</IonBadge> : <></>}
+              {gsTotalCount > 0 ? <IonBadge color={anyOrAll == "all" ? "danger" : "primary"}>{gsTotalCount} filters</IonBadge> : <></>}
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
-              <IonRow className="lr-pad">
-                <IonItem lines="none">
-                  <IonLabel className="ion-text-wrap">Don’t show</IonLabel>
-                  <IonSelect
-                    interface="action-sheet"
-                    placeholder="None"
-                    value={genderSexualityNot ?? ''}
-                    onIonChange={(event) => {
+              <IonRow className="any-all-row">
+                <IonSegment value={gsAnyGender ? "none" : anyOrAll} style={{ width: "100%" }}>
+                  <IonSegmentButton
+                    value="none"
+                    onClick={() => {
                       setSomethingChanged(true);
-                      const value = event.detail.value || null;
-                      setGenderSexualityNot(value);
+                      setGsAnyGender(true);
+                      genderSexualityFilterChecked.splice(0, genderSexualityFilterChecked.length);
+                      setGsCount(0);
                     }}
                   >
-                    <IonSelectOption value="">None</IonSelectOption>
-                    {genderSexualityOptions.map((option) => (
-                      <IonSelectOption key={option.value} value={option.value}>
-                        {option.label}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
-              </IonRow>
-
-              <IonRow className="any-all-row">
-                <IonSegment value={anyOrAll} style={{ width: "50%" }}>
-                  <IonSegmentButton value="any" onClick={() => { setAnyOrAll("any"); setSomethingChanged(true) }}>
+                    <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton
+                    value="any"
+                    onClick={() => {
+                      setSomethingChanged(true);
+                      setGsAnyGender(false);
+                      setAnyOrAll("any");
+                    }}
+                  >
                     <IonLabel>Any</IonLabel>
                   </IonSegmentButton>
-                  <IonSegmentButton value="all" onClick={() => { setAnyOrAll("all"); setSomethingChanged(true) }}>
+                  <IonSegmentButton
+                    value="all"
+                    onClick={() => {
+                      setSomethingChanged(true);
+                      setGsAnyGender(false);
+                      setAnyOrAll("all");
+                    }}
+                  >
                     <IonLabel color="danger">All</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
               </IonRow>
-              <IonRow className="lr-pad">
+              {!gsAnyGender && (
+                <>
+                  <IonRow className="lr-pad">
 
-                {anyOrAll == "all" ?
-                  <IonText color="danger" className="ion-text-wrap">
-                    <p>Remember: searching by "all" results in far fewer Picks!</p>
+                    {anyOrAll == "all" ?
+                      <IonText color="danger" className="ion-text-wrap">
+                        <p>Remember: searching by "all" results in far fewer Picks!</p>
 
-                  </IonText> : <></>}
-                <IonText className="ion-padding ion-text-wrap">
-                  I am looking for someone who is <i>{anyOrAll}</i> of the following:
-                </IonText>
-              </IonRow>
+                      </IonText> : <></>}
+                    <IonText className="ion-padding ion-text-wrap">
+                      I am looking for someone who is <i>{anyOrAll}</i> of the following:
+                    </IonText>
+                  </IonRow>
+                </>
+              )}
 
 
-
+              {!gsAnyGender && (
               <IonRow>
 
                 <IonCol>
@@ -1414,6 +1484,30 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                     Polyamorous
                   </IonItem>
                 </IonCol>
+              </IonRow>
+              )}
+
+              <IonRow className="lr-pad gender-not-row">
+                <IonItem
+                  button
+                  detail
+                  lines="none"
+                  onClick={whatGenderSexualityNot}
+                  className="gender-not-item"
+                >
+                  <IonLabel className="ion-text-wrap gender-not-label">
+                    <h3>
+                      {genderSexualityNot
+                        ? "I am not looking for anyone who identifies as:"
+                        : "Anyone you don’t want to see in your Picks?"}
+                    </h3>
+                    <p>
+                      {genderSexualityNot
+                        ? formatGenderSexualityLabel(genderSexualityNot)
+                        : "No"}
+                    </p>
+                  </IonLabel>
+                </IonItem>
               </IonRow>
             </IonGrid>
           </IonAccordion>

@@ -16,6 +16,7 @@ import {
   IonList,
   IonCard,
   IonCardContent,
+  IonItem,
   IonIcon,
   useIonAlert,
   useIonModal,
@@ -237,10 +238,12 @@ const Refreshments: React.FC = () => {
 
       const storedSort = await Preferences.get({ key: "sort" });
       if (storedSort.value) setSort(storedSort.value);
+
     };
 
     loadFilters();
   }, []);
+
 
 
   const localPostsOn = useMemo(() => (

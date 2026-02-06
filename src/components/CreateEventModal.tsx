@@ -24,7 +24,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { apiClient } from '../hooks/api/api-client';
 import CitySelectorModal from './CitySelectorModal';
-import { eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
+import { containsGoogleDocLink, containsLinkShortener, containsPii, eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
@@ -319,6 +319,34 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     }
   };
 
+  const combinedEventText = useMemo(
+    () => [name, description, ...recurrenceDescriptions].filter(Boolean).join(' '),
+    [name, description, recurrenceDescriptions]
+  );
+  const eventLinkText = useMemo(
+    () => [externalLink, ...recurrenceExternalLinks].filter(Boolean).join(' '),
+    [externalLink, recurrenceExternalLinks]
+  );
+  const hasPii = useMemo(() => containsPii(combinedEventText), [combinedEventText]);
+  const hasShortenedLinkInContent = useMemo(
+    () => containsLinkShortener(combinedEventText),
+    [combinedEventText]
+  );
+  const hasShortenedLinkInLinkField = useMemo(
+    () => containsLinkShortener(eventLinkText),
+    [eventLinkText]
+  );
+  const hasGoogleDocLinkInContent = useMemo(
+    () => containsGoogleDocLink(combinedEventText),
+    [combinedEventText]
+  );
+  const hasGoogleDocLinkInLinkField = useMemo(
+    () => containsGoogleDocLink(eventLinkText),
+    [eventLinkText]
+  );
+  const hasBlockedLinks =
+    hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
+
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim() || !eventType || !startDatetime || !endDatetime) {
       setError('Name, description, type, start, and end are required.');
@@ -340,6 +368,18 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     }
     if (!startMoment.isSame(endMoment, 'day')) {
       setError('Start and end must be on the same day.');
+      return;
+    }
+    if (hasPii) {
+      setError('Events cannot contain private personal contact information. Please remove phone numbers or emails.');
+      return;
+    }
+    if (hasShortenedLinkInContent || hasShortenedLinkInLinkField) {
+      setError("Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.");
+      return;
+    }
+    if (hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField) {
+      setError('This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.');
       return;
     }
 

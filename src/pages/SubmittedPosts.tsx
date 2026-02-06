@@ -20,11 +20,14 @@ import {
   IonSpinner,
   IonTitle,
   IonToolbar,
+  IonToggle,
+  IonIcon,
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
+import { eyeOffOutline } from 'ionicons/icons';
 import './SubmittedPosts.css';
 
 const statusLabelMap: Record<string, string> = {
@@ -92,16 +95,39 @@ const formatShortDate = (value: string | Date | null | undefined) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
+const getExpiresAt = (item: any) => (
+  item?.expires_at ||
+  item?.expiresAt ||
+  null
+);
+
+const formatEditableLabel = (value: string | Date | null | undefined) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  const msLeft = date.getTime() - now.getTime();
+  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  if (daysLeft === 1) {
+    return 'Editable for 1 day';
+  }
+  if (daysLeft > 1) {
+    return `Editable for ${daysLeft} days`;
+  }
+  return null;
+};
+
 const SubmittedPosts: React.FC = () => {
   const history = useHistory();
   const now = useMemo(() => new Date(), []);
+  const [showHidden, setShowHidden] = useState(false);
   const {
     data,
     isLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useGetSubmittedAnnouncements();
+  } = useGetSubmittedAnnouncements(showHidden);
   const {
     data: eventsData,
     isLoading: eventsLoading,
@@ -110,36 +136,54 @@ const SubmittedPosts: React.FC = () => {
     isFetchingNextPage: eventsIsFetchingNextPage,
   } = useGetSubmittedEvents();
 
+  const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [eventDetailOpen, setEventDetailOpen] = useState(false);
+
   const submissions = useMemo(() => {
     const raw = data?.pages?.flatMap((page) => page?.results ?? []) ?? [];
     return raw.filter((post) => {
+      const expiresAt = getExpiresAt(post);
+      if (expiresAt) {
+        const expiry = new Date(expiresAt);
+        if (!Number.isNaN(expiry.getTime()) && expiry.getTime() < now.getTime()) {
+          return false;
+        }
+      }
       const lastEditedAt = getLastEditedDate(post);
       if (!lastEditedAt || Number.isNaN(lastEditedAt.getTime())) {
         return true;
       }
       const daysSince = (now.getTime() - lastEditedAt.getTime()) / (1000 * 60 * 60 * 24);
       const rawStatus = post?.approval_status ?? (post?.approved ? 'approved' : 'pending');
-      const status = rawStatus === 'needs_edit' && daysSince > 5
+      const status = rawStatus === 'needs_edit' && daysSince > 7
         ? 'rejected'
         : rawStatus;
 
       if (status === 'pending' || status === 'rejected') {
-        return daysSince <= 14;
+        return daysSince <= 7;
       }
       if (status === 'needs_edit') {
-        return daysSince <= 5;
+        return daysSince <= 7;
       }
       return true;
     });
   }, [data, now]);
 
   const submittedEvents = useMemo(() => {
-    return eventsData?.pages?.flatMap((page) => page?.results ?? []) ?? [];
-  }, [eventsData]);
-
-  const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  const [eventDetailOpen, setEventDetailOpen] = useState(false);
+    const raw = eventsData?.pages?.flatMap((page) => page?.results ?? []) ?? [];
+    return raw.filter((event) => {
+      const expiresAt = getExpiresAt(event);
+      if (!expiresAt) {
+        return true;
+      }
+      const expiry = new Date(expiresAt);
+      if (Number.isNaN(expiry.getTime())) {
+        return true;
+      }
+      return expiry.getTime() >= now.getTime();
+    });
+  }, [eventsData, now]);
 
   const formatEventDateTime = (event: any) => {
     if (!event?.start_datetime) return null;
@@ -165,6 +209,7 @@ const SubmittedPosts: React.FC = () => {
     setSelectedEvent(event);
     setEventDetailOpen(true);
   };
+
 
   return (
     <IonPage>
@@ -209,7 +254,7 @@ const SubmittedPosts: React.FC = () => {
               const daysSince = lastEditedAtDate
                 ? (now.getTime() - lastEditedAtDate.getTime()) / (1000 * 60 * 60 * 24)
                 : 0;
-              const status = rawStatus === 'needs_edit' && daysSince > 5
+              const status = rawStatus === 'needs_edit' && daysSince > 7
                 ? 'rejected'
                 : rawStatus;
               const statusLabel = statusLabelMap[status] ?? 'Pending moderator review';
@@ -218,6 +263,10 @@ const SubmittedPosts: React.FC = () => {
                 ? getApprovedDate(post) ?? getLastEditedDate(post)
                 : getSubmittedDate(post) ?? getLastEditedDate(post);
               const dateLabel = formatShortDate(dateValue);
+              const editableLabel =
+                status === 'approved' || status === 'rejected'
+                  ? null
+                  : formatEditableLabel(getExpiresAt(post));
 
               return (
                 <IonCard
@@ -235,9 +284,15 @@ const SubmittedPosts: React.FC = () => {
                       <div className="submission-card-main">
                         <h2>{post?.title}</h2>
                         {dateLabel && <p>{dateLabel}</p>}
+                        {editableLabel && <IonNote>{editableLabel}</IonNote>}
                       </div>
                       <div className="submission-card-badge">
-                        <IonBadge color={statusColor}>{statusLabel}</IonBadge>
+                        <IonBadge color={statusColor}>
+                          {statusLabel}
+                          {post?.hide_status_author === 'user' && (
+                            <IonIcon icon={eyeOffOutline} className="submission-hidden-icon" />
+                          )}
+                        </IonBadge>
                       </div>
                     </div>
                   </IonCardContent>
@@ -256,6 +311,15 @@ const SubmittedPosts: React.FC = () => {
                 </IonButton>
               </IonRow>
             )}
+
+            <IonItem lines="none" className="submitted-toggle">
+              <IonLabel>Show hidden posts</IonLabel>
+              <IonToggle
+                slot="end"
+                checked={showHidden}
+                onIonChange={(event) => setShowHidden(event.detail.checked)}
+              />
+            </IonItem>
           </>
         )}
 
@@ -281,6 +345,10 @@ const SubmittedPosts: React.FC = () => {
                 ? getApprovedDate(event) ?? getLastEditedDate(event)
                 : getSubmittedDate(event) ?? getLastEditedDate(event);
               const dateLabel = formatShortDate(dateValue);
+              const editableLabel =
+                status === 'approved' || status === 'rejected'
+                  ? null
+                  : formatEditableLabel(getExpiresAt(event));
 
               return (
                 <IonCard key={`event-${event?.id}`} color="white">
@@ -289,6 +357,7 @@ const SubmittedPosts: React.FC = () => {
                       <div className="submission-card-main">
                         <h2>{event?.name}</h2>
                         {dateLabel && <p>{dateLabel}</p>}
+                        {editableLabel && <IonNote>{editableLabel}</IonNote>}
                       </div>
                       <div className="submission-card-badge">
                         <IonBadge color={statusColor}>{statusLabel}</IonBadge>
