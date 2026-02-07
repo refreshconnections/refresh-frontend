@@ -632,10 +632,15 @@ const SelfProfileV2: React.FC = () => {
             <div className="field-actions">
               {editing[fieldKey] ? (
                 <>
+                  {!!editorValue && (
+                    <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
+                      Clear
+                    </IonButton>
+                  )}
                   <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
                     Cancel
                   </IonButton>
-                  <IonButton size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
+                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
                     Save
                   </IonButton>
                 </>
@@ -696,10 +701,25 @@ const SelfProfileV2: React.FC = () => {
             <div className="field-actions">
               {editing.pronouns ? (
                 <>
+                  {!!editorValue && (
+                    <IonButton
+                      className="clear-button"
+                      size="small"
+                      fill="clear"
+                      color="danger"
+                      onClick={() => {
+                        setEditorChoice('custom');
+                        setEditorValue('');
+                      }}
+                      type="button"
+                    >
+                      Clear
+                    </IonButton>
+                  )}
                   <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
                     Cancel
                   </IonButton>
-                  <IonButton size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
+                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
                     Save
                   </IonButton>
                 </>
@@ -984,7 +1004,7 @@ const SelfProfileV2: React.FC = () => {
             </IonItem>
             <IonCardContent slot="content" className="accordion-body">
               <div className="info-section">
-                <IonItem>
+                <IonItem lines="none">
                   <IonLabel>
                     <p>Name:</p>
                     <h2>{currentUserProfile.name}</h2>
@@ -993,7 +1013,7 @@ const SelfProfileV2: React.FC = () => {
                     <FontAwesomeIcon icon={faInfoCircle as IconProp} />
                   </IonButton>
                 </IonItem>
-                <IonItem>
+                <IonItem lines="none">
                   <IonLabel>
                     <p>Age:</p>
                     <h2>{currentUserProfile.age}</h2>
@@ -1002,21 +1022,21 @@ const SelfProfileV2: React.FC = () => {
                     <FontAwesomeIcon icon={faInfoCircle as IconProp} />
                   </IonButton>
                 </IonItem>
-                <IonItem>
+                <IonItem lines="none">
                   <IonLabel>
                     <p>Location:</p>
                     <h2>{currentUserProfile.location}</h2>
                   </IonLabel>
-                  <IonButton size="small" color="primary" fill="outline" onClick={() => locationPresent()}>
+                  <IonButton size="small" color="primary" fill="outline" className="edit-button" onClick={() => locationPresent()}>
                     Edit
                   </IonButton>
                 </IonItem>
-                <IonItem>
+                <IonItem lines="none">
                   <IonLabel>
                     <p>Refreshments username:</p>
                     <h2>{currentUserProfile.username}</h2>
                   </IonLabel>
-                  <IonButton size="small" color="primary" fill="outline" onClick={() => usernamePresent()}>
+                  <IonButton size="small" color="primary" fill="outline" className="edit-button" onClick={() => usernamePresent()}>
                     Edit
                   </IonButton>
                 </IonItem>

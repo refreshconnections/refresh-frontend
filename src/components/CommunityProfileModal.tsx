@@ -5,8 +5,11 @@ import {
   IonContent,
   IonItem,
   IonLabel,
+  IonIcon,
   IonSpinner,
   IonText,
+  useIonActionSheet,
+  useIonAlert,
   useIonModal,
 } from '@ionic/react';
 import React, { useEffect, useState } from 'react';
@@ -14,13 +17,16 @@ import { apiClient } from '../hooks/api/api-client';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
-import { isPersonalPlus, normalizeLocalMediaUrl, onImgError } from '../hooks/utilities';
+import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections } from '../hooks/utilities';
 import './CommunityProfileModal.css';
 import TextModal from './TextModal';
 import { useGetCurrentUserChats } from '../hooks/api/chats/current-user-chats';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatQueryKeys } from '../hooks/api/chats/chat-query-keys';
 import CommunityProfileSection from './CommunityProfileSection';
+import ReportModal from './ReportModal';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
+import { ellipsisHorizontal } from 'ionicons/icons';
 
 
 type CommunityProfileData = {
@@ -145,6 +151,99 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const connectName = profileDetails.data?.name || username;
   const detailsLine = [data?.location, data?.age_display].filter(Boolean).join(' • ');
   const canShowChat = Boolean(isConnected && otherConnect && viewerActive && otherActive);
+  const showActionControls = Boolean(userId && !isSelf && !showRestricted);
+  const [presentAlert] = useIonAlert();
+  const [presentActionSheet] = useIonActionSheet();
+  const [reportAndBlock, setReportAndBlock] = useState(false);
+  const [reportRequiresDetails, setReportRequiresDetails] = useState(false);
+
+  const blockUser = async () => {
+    if (!userId) return;
+    await updateBlockedConnections(userId);
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
+    queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
+    queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
+    onDismiss();
+  };
+
+  const handleBlockConfirm = async () => {
+    if (!userId) return;
+    presentAlert({
+      header: 'Are you sure you want to block this person?!',
+      subHeader: 'Type "block" to confirm.',
+      inputs: [
+        {
+          name: 'confirmation',
+          type: 'text',
+          placeholder: 'Type "block" to confirm',
+        },
+      ],
+      buttons: [
+        { text: 'Nevermind', role: 'cancel' },
+        {
+          text: 'Block',
+          role: 'confirm',
+          handler: async (alertData) => {
+            if ((alertData?.confirmation || '').toLowerCase() !== 'block') {
+              presentAlert({
+                header: 'Block not confirmed.',
+                message: 'You must type "block" exactly to proceed.',
+                buttons: ['OK'],
+              });
+              return;
+            }
+            await blockUser();
+          },
+        },
+      ],
+    });
+  };
+
+  const [createReportPresent, createReportDismiss] = useIonModal(ReportModal, {
+    offender: "user",
+    text: connectName,
+    id: userId ?? undefined,
+    requireDetails: reportRequiresDetails,
+    onDismiss: (data: string, role: string) => {
+      createReportDismiss(data, role);
+      if (reportAndBlock) {
+        setReportAndBlock(false);
+        setReportRequiresDetails(false);
+        blockUser();
+      }
+    },
+  });
+  useEffect(() => {
+    if (!reportAndBlock) return;
+    setReportRequiresDetails(true);
+    createReportPresent();
+  }, [reportAndBlock, createReportPresent]);
+
+  const handleActionMenu = () => {
+    if (!showActionControls) {
+      return;
+    }
+    presentActionSheet({
+      header: "Don't want to see any more of this member?",
+      buttons: [
+        {
+          text: 'Block',
+          handler: () => handleBlockConfirm(),
+        },
+        {
+          text: 'Report and block',
+          role: 'destructive',
+          handler: () => {
+            setReportAndBlock(true);
+          },
+        },
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+      ],
+    });
+  };
 
   return (
     <IonContent style={{ '--background': 'transparent' } as React.CSSProperties}>
@@ -157,6 +256,16 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
           onClick={(event) => event.stopPropagation()}
         >
           <IonCardContent className="community-profile-card-content">
+            {showActionControls && (
+              <IonButton
+                fill="clear"
+                size="small"
+                className="community-profile-ellipsis community-profile-ellipsis--corner"
+                onClick={handleActionMenu}
+              >
+                <IonIcon icon={ellipsisHorizontal} />
+              </IonButton>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <IonButton fill="clear" onClick={onDismiss}>Close</IonButton>
             </div>
@@ -252,6 +361,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                     )}
                   </div>
                 )}
+
               </>
             )}
           </IonCardContent>

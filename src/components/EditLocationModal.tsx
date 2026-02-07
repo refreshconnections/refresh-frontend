@@ -30,7 +30,8 @@ type Props = {
 
 const EditLocationModal: React.FC<Props> = (props) => {
 
-  const [location, setLocation] = useState<string | null>(null);
+  const [location, setLocation] = useState<string>('');
+  const [locationTouched, setLocationTouched] = useState(false);
   const { onDismiss } = props;
 
   const [presentAlert] = useIonAlert();
@@ -64,6 +65,13 @@ const EditLocationModal: React.FC<Props> = (props) => {
       dismissCitySelector();
     }
   });
+
+  React.useEffect(() => {
+    if (locationTouched) return;
+    if (currentUserProfile?.location) {
+      setLocation(currentUserProfile.location);
+    }
+  }, [currentUserProfile?.location, locationTouched]);
 
 
 
@@ -413,7 +421,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
   const updateGivenInfo = async () => {
 
 
-    if (location !== null) {
+    if (location.trim() !== '') {
       setLoading(true)
       //" Only update the location shown on your profile." 
       const response = await updateCurrentUserProfile({ location: location })
@@ -442,7 +450,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
       <IonHeader>
         <IonToolbar className="modal-title">
           <IonTitle>Edit Your Location</IonTitle>
-          <IonButtons slot="start">
+          <IonButtons slot="end">
             <IonButton onClick={onDismiss}>Done</IonButton>
           </IonButtons>
         </IonToolbar>
@@ -471,12 +479,15 @@ const EditLocationModal: React.FC<Props> = (props) => {
             <IonItem>
               <IonInput value={location}
                 name="location"
-                placeholder={currentUserProfile?.location}
-                onIonInput={e => setLocation(e.detail.value!)}
+                placeholder="Location"
+                onIonInput={e => {
+                  setLocationTouched(true);
+                  setLocation(e.detail.value ?? '');
+                }}
                 maxlength={30}
                 type="text" />
             </IonItem>
-            <IonButton onClick={updateGivenInfo} disabled={location == null || currentUserProfile?.location == location}> {(location !== null || location !== currentUserProfile?.location) ? "Update" : "Nothing to update"}</IonButton>
+            <IonButton onClick={updateGivenInfo} disabled={location.trim() === '' || currentUserProfile?.location == location}> {(location.trim() !== '' && location !== currentUserProfile?.location) ? "Update" : "Nothing to update"}</IonButton>
 
             {(currentUserProfile?.location_point_long !== null && currentUserProfile?.location_point_lat !== null) ?
 

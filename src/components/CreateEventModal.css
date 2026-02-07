@@ -84,7 +84,22 @@
 }
 
 .create-event-actions {
+  display: flex;
+  justify-content: center;
   padding: 12px 16px 24px;
+}
+
+.create-event-validations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+.create-event-submit {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 .post-tip-card {

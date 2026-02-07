@@ -16,6 +16,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonIcon,
+  useIonPopover,
   useIonModal,
   useIonRouter,
   IonCard,
@@ -31,6 +33,7 @@ import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import CreatePostModal from './CreatePostModal';
+import { informationCircleOutline } from 'ionicons/icons';
 
 import './CreateEventModal.css';
 
@@ -81,7 +84,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [precautions, setPrecautions] = useState<string[]>([]);
   const [sensitive, setSensitive] = useState(false);
   const [sensitiveDescription, setSensitiveDescription] = useState('');
-  const [canAnswerQuestions, setCanAnswerQuestions] = useState(true);
+  const [allowedAsPostInFeed, setAllowedAsPostInFeed] = useState<boolean | null>(null);
+  const [allowedAsPostInFeedTouched, setAllowedAsPostInFeedTouched] = useState(false);
+  const [canAnswerQuestions, setCanAnswerQuestions] = useState<boolean | null>(null);
+  const [canAnswerQuestionsTouched, setCanAnswerQuestionsTouched] = useState(false);
   const [postingIdentity, setPostingIdentity] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [externalRegistrationRequired, setExternalRegistrationRequired] = useState(false);
@@ -105,6 +111,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const recurrenceTypeRef = useRef(recurrenceType);
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: (selectedCity?: City) => handleCityDismiss(selectedCity),
+  });
+  const feedHighlightPopoverText = 'If you say yes, we may share this event in the Refreshments Bar as a post or as part of a curated event post with the details you submitted.';
+  const FeedHighlightPopover = () => (
+    <IonContent className="ion-padding">{feedHighlightPopoverText}</IonContent>
+  );
+  const [presentFeedHighlightPopover, dismissFeedHighlightPopover] = useIonPopover(FeedHighlightPopover, {
+    onDismiss: () => dismissFeedHighlightPopover(),
   });
 
   const openCitySelector = () => {
@@ -135,8 +148,25 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   }, [globalProfile, postingIdentity]);
 
   useEffect(() => {
-    setCanAnswerQuestions(postingIdentity !== 'anonymous');
+    if (postingIdentity === 'anonymous') {
+      setCanAnswerQuestions(false);
+      setCanAnswerQuestionsTouched(false);
+      setAllowedAsPostInFeed(false);
+      setAllowedAsPostInFeedTouched(false);
+    }
   }, [postingIdentity]);
+
+  useEffect(() => {
+    if (postingIdentity !== 'anonymous' && !allowedAsPostInFeedTouched) {
+      setAllowedAsPostInFeed(null);
+    }
+  }, [postingIdentity, allowedAsPostInFeedTouched]);
+
+  useEffect(() => {
+    if (postingIdentity !== 'anonymous' && !canAnswerQuestionsTouched) {
+      setCanAnswerQuestions(null);
+    }
+  }, [postingIdentity, canAnswerQuestionsTouched]);
 
   const defaultStartDatetime = useMemo(() => (
     moment().add(7, 'days').hour(20).minute(0).second(0).format('YYYY-MM-DDTHH:mm')
@@ -327,7 +357,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     () => [externalLink, ...recurrenceExternalLinks].filter(Boolean).join(' '),
     [externalLink, recurrenceExternalLinks]
   );
-  const hasPii = useMemo(() => containsPii(combinedEventText), [combinedEventText]);
+  const combinedEventTextWithLinks = useMemo(
+    () => [combinedEventText, eventLinkText].filter(Boolean).join(' '),
+    [combinedEventText, eventLinkText]
+  );
+  const hasPii = useMemo(() => containsPii(combinedEventTextWithLinks), [combinedEventTextWithLinks]);
   const hasShortenedLinkInContent = useMemo(
     () => containsLinkShortener(combinedEventText),
     [combinedEventText]
@@ -346,6 +380,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   );
   const hasBlockedLinks =
     hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
+  const hasPreSubmitIssues = hasPii || hasBlockedLinks;
 
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim() || !eventType || !startDatetime || !endDatetime) {
@@ -380,6 +415,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     }
     if (hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField) {
       setError('This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.');
+      return;
+    }
+    if (postingIdentity !== 'anonymous' && canAnswerQuestions === null) {
+      setError('Please choose whether you can answer questions about this event.');
+      return;
+    }
+    if (postingIdentity !== 'anonymous' && allowedAsPostInFeed === null) {
+      setError('Please choose whether this event can be highlighted in the Refreshments feed.');
       return;
     }
 
@@ -472,6 +515,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         local_only: eventType !== 'virtual_only' ? 'true' : 'false',
         sensitive: sensitive ? 'true' : 'false',
         sensitive_description: sensitiveDescription,
+        allowed_as_post_in_feed: allowedAsPostInFeed ? 'true' : 'false',
         can_answer_questions: canAnswerQuestions ? 'true' : 'false',
         anonymous: postingIdentity === 'anonymous' ? 'true' : 'false',
         event_type: eventType,
@@ -590,7 +634,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   return (
     <>
       <IonHeader>
-        <IonToolbar>
+        <IonToolbar className="modal-title">
           <IonTitle>Add an event</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleCancel}>Cancel</IonButton>
@@ -598,45 +642,24 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="create-event-modal">
-        <IonCard className="post-tip-card">
-          <IonItem>
-            <IonLabel>Want this to create a post too?</IonLabel>
-            <IonButton slot="end" fill="outline" onClick={() => setShowPostTip((prev) => !prev)}>
-              {showPostTip ? 'Hide info' : 'Show info'}
-            </IonButton>
-          </IonItem>
-          {showPostTip && (
-            <>
-              <IonItem lines="none">
-                <IonLabel className="ion-text-wrap">
-                  Use the post submission form if you also want this event to appear in the Refreshments feed. Clicking the button below will take you to that form.
-                </IonLabel>
-              </IonItem>
-              <IonItem lines="none">
-                <IonButton expand="block" onClick={() => presentPostModal()}>
-                  Open the post form
-                </IonButton>
-              </IonItem>
-            </>
-          )}
-        </IonCard>
+       
         <IonList>
           <div className="create-event-section">
             <IonItem>
               <IonLabel position="stacked">
                 Event name<span className="required-star">*</span>
               </IonLabel>
-              <IonInput value={name} onIonChange={(event) => setName(event.detail.value ?? '')} />
+              <IonInput value={name} onIonInput={(event) => setName(event.detail.value ?? '')} />
             </IonItem>
             <IonItem>
               <IonLabel position="stacked">
                 Description<span className="required-star">*</span>
               </IonLabel>
             <IonTextarea
-                value={description}
-                onIonChange={(event) => setDescription(event.detail.value ?? '')}
-                rows={4}
-              />
+              value={description}
+              onIonInput={(event) => setDescription(event.detail.value ?? '')}
+              rows={4}
+            />
             </IonItem>
           </div>
           <div className="create-event-section">
@@ -677,11 +700,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                 }}
               />
             </IonItem>
-            {dateError && (
-              <IonItem lines="none">
-                <IonText color="danger">{dateError}</IonText>
-              </IonItem>
-            )}
           </div>
           <div className="create-event-section">
             <IonItem>
@@ -768,6 +786,49 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               </IonSelect>
             </IonItem>
             <IonItem>
+              <IonLabel position="stacked">
+                Are you the host or do you know the host? Can you answer questions?
+              </IonLabel>
+              <IonSelect
+                value={canAnswerQuestions === null ? undefined : canAnswerQuestions ? 'yes' : 'no'}
+                placeholder="Select yes or no"
+                disabled={postingIdentity === 'anonymous'}
+                onIonChange={(event) => {
+                  setCanAnswerQuestionsTouched(true);
+                  setCanAnswerQuestions(event.detail.value === 'yes');
+                }}
+              >
+                <IonSelectOption value="yes">Yes</IonSelectOption>
+                <IonSelectOption value="no">No</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+            {postingIdentity !== 'anonymous' && (
+              <IonItem>
+                <IonLabel position="stacked">
+                  Is it okay to highlight this event in the Refreshments Bar feed (posts or curated event lists)? We won’t share this off the app.
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    style={{ marginLeft: '4px', height: '18px' }}
+                    onClick={(event) => presentFeedHighlightPopover({ event: event.nativeEvent as Event })}
+                  >
+                    <IonIcon icon={informationCircleOutline} />
+                  </IonButton>
+                </IonLabel>
+                <IonSelect
+                  value={allowedAsPostInFeed === null ? undefined : allowedAsPostInFeed ? 'yes' : 'no'}
+                  placeholder="Select yes or no"
+                  onIonChange={(event) => {
+                    setAllowedAsPostInFeedTouched(true);
+                    setAllowedAsPostInFeed(event.detail.value === 'yes');
+                  }}
+                >
+                  <IonSelectOption value="yes">Yes</IonSelectOption>
+                  <IonSelectOption value="no">No</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+            )}
+            <IonItem>
               <IonLabel>Sensitive</IonLabel>
               <IonCheckbox slot="end" checked={sensitive} onIonChange={(event) => setSensitive(event.detail.checked)} />
             </IonItem>
@@ -793,7 +854,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
           <div className="create-event-section">
             <IonItem>
               <IonLabel position="stacked">External link</IonLabel>
-              <IonInput value={externalLink} onIonChange={(event) => setExternalLink(event.detail.value ?? '')} />
+              <IonInput value={externalLink} onIonInput={(event) => setExternalLink(event.detail.value ?? '')} />
             </IonItem>
             <IonItem color="white" lines="none">
               <IonLabel>Photo (optional)</IonLabel>
@@ -1226,17 +1287,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                 </IonItem>
               </>
             )}
-            {recurrenceError && (
-              <IonItem lines="none">
-                <IonText color="danger">{recurrenceError}</IonText>
-              </IonItem>
-            )}
           </div>
-          {showGlobalError && (
-            <IonItem>
-              <IonText color="danger">{error}</IonText>
-            </IonItem>
-          )}
           <IonAlert
             isOpen={showRecurringUpgrade}
             header="Recurring events"
@@ -1250,8 +1301,41 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             onDidDismiss={() => setShowRecurringUpgrade(false)}
           />
         </IonList>
+        {(dateError || recurrenceError || showGlobalError || hasPreSubmitIssues) && (
+          <div className="create-event-validations">
+            {dateError && (
+              <IonText color="danger">{dateError}</IonText>
+            )}
+            {recurrenceError && (
+              <IonText color="danger">{recurrenceError}</IonText>
+            )}
+            {showGlobalError && (
+              <IonText color="danger">{error}</IonText>
+            )}
+            {hasPii && (
+              <IonText color="danger">
+                Events cannot contain private personal contact information. Please remove phone numbers or emails.
+              </IonText>
+            )}
+            {hasShortenedLinkInContent || hasShortenedLinkInLinkField ? (
+              <IonText color="danger">
+                Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.
+              </IonText>
+            ) : null}
+            {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
+              <IonText color="danger">
+                This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.
+              </IonText>
+            ) : null}
+          </div>
+        )}
         <IonRow className="create-event-actions">
-          <IonButton expand="block" onClick={handleSubmit} disabled={submitting}>
+          <IonButton
+            className="create-event-submit"
+            expand="block"
+            onClick={handleSubmit}
+            disabled={submitting || hasPreSubmitIssues}
+          >
             {submitting ? 'Submitting...' : 'Submit event'}
           </IonButton>
         </IonRow>

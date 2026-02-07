@@ -282,7 +282,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
       <IonHeader>
         <IonToolbar className="modal-title">
           <IonTitle>Filters</IonTitle>
-          <IonButtons slot="start" color="secondary">
+          <IonButtons slot="end" color="secondary">
             <IonButton onClick={handleDone}>Done</IonButton>
           </IonButtons>
 
@@ -296,7 +296,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
             checked={localPosts}
             disabled={(!currentUserProfile?.location_point_lat || !currentUserProfile?.location_point_long)}
           >
-            Local posts
+            Local posts and events
           </IonToggle>
 
         </IonItem>
@@ -315,7 +315,9 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
                   onIonChange={async e => setLocalPostsEverywhereRaw(e.detail.checked)}
                   checked={localPostsEverywhere}
                 >
-                  Show local posts from everywhere
+                  <span style={{ whiteSpace: 'normal', lineHeight: 1.2 }}>
+                    Show local posts and events from everywhere
+                  </span>
                 </IonToggle>
               </IonItem>
             }

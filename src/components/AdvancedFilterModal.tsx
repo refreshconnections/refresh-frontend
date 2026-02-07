@@ -3,7 +3,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonIte
 import { clearDismissedConnections, isPersonalPlus, updateCurrentUserProfile } from "../hooks/utilities";
 
 
-import { eyeOff, closeCircle } from 'ionicons/icons';
 
 import './AdvancedFilterModal.css'
 import EditLocationModal from "./EditLocationModal";

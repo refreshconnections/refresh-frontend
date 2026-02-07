@@ -51,11 +51,31 @@
 }
 
 .info-section ion-item .tiny-edit {
-  min-width: 58px;
-  min-height: 34px;
-  border-radius: 16px;
+  min-width: 60px;
+  min-height: 32px;
+  border-radius: 10px;
   font-size: 0.9rem;
-  padding: 0 14px;
+  padding: 0 10px;
+}
+
+.info-section ion-item .tiny-edit::part(native) {
+  min-height: 32px;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+
+.edit-button {
+  min-width: 60px;
+  min-height: 32px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  padding: 0 10px;
+}
+
+.edit-button::part(native) {
+  min-height: 32px;
+  border-radius: 10px;
+  padding: 0 10px;
 }
 
 .info-button {
@@ -74,16 +94,23 @@ ion-card-content .card-grid {
 .card-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  --background: var(--ion-color-white)
+  gap: 4px;
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
 }
 
 .card-field.editing {
   align-items: stretch;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  border-radius: 12px;
 }
 
 .editing-section {
   width: 100%;
+  padding: 6px 16px;
 }
 
 .field-header {
@@ -92,6 +119,7 @@ ion-card-content .card-grid {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+  min-height: 34px;
 }
 
 .field-header p {
@@ -116,17 +144,37 @@ ion-card-content .card-grid {
   margin-top: 4px;
 }
 
+.card-field .editing-section h2 {
+  margin: 0;
+  padding: 6px 0;
+  line-height: 1.3;
+  min-height: 32px;
+}
+
 .card-field ion-input,
 .card-field ion-textarea {
-  margin-top: 8px;
+  margin-top: 0;
   width: 100%;
   display: block;
   --background: var(--ion-color-white);
   --border-radius: 12px;
-  --padding-start: 12px;
-  --padding-top: 10px;
-  --padding-bottom: 10px;
-  --padding-end: 12px;
+  --padding-start: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-end: 0;
+}
+
+.card-field ion-input {
+  min-height: 32px;
+}
+
+.card-field ion-input::part(native) {
+  min-height: 32px;
+  line-height: 32px;
+}
+
+.card-field:not(.editing) .field-actions {
+  margin-top: 0;
 }
 
 .card-edit {
@@ -158,6 +206,7 @@ ion-card-content .card-grid {
   gap: 6px;
   justify-content: flex-end;
   align-items: center;
+  min-height: 32px;
 }
 
 .gender-choices {
@@ -195,7 +244,28 @@ ion-card-content .card-grid {
 }
 
 .field-actions .cancel-button {
-  min-width: 50px;
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .clear-button {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .save-button {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .cancel-button::part(native),
+.field-actions .clear-button::part(native),
+.field-actions .save-button::part(native) {
+  min-width: 60px;
+  min-height: 32px;
   padding: 0 10px;
 }
 

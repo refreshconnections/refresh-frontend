@@ -42,6 +42,7 @@ ion-modal.community-profile-modal .ion-page {
 
 .community-profile-card-content {
   background: var(--ion-card-background, #ffffff);
+  position: relative;
 }
 
 .community-profile-inline-button {
@@ -67,4 +68,27 @@ ion-modal.community-profile-modal .ion-page {
 .community-profile-inline-name {
   color: var(--ion-color-primary);
   font-weight: 500;
+}
+
+.community-profile-ellipsis {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: auto;
+  height: auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f2f3fc;
+}
+
+.community-profile-ellipsis ion-icon {
+  font-size: 20px;
+}
+
+.community-profile-ellipsis--corner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
 }

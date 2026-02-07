@@ -313,7 +313,7 @@ const SubmittedPosts: React.FC = () => {
             )}
 
             <IonItem lines="none" className="submitted-toggle">
-              <IonLabel>Show hidden posts</IonLabel>
+              <IonLabel>Show hidden submissions</IonLabel>
               <IonToggle
                 slot="end"
                 checked={showHidden}

@@ -104,8 +104,8 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
     <IonHeader>
         <IonToolbar className="modal-title">
             <IonTitle>{currentUserProfile?.username? "Edit": "Create"} Your Username</IonTitle>
-            <IonButtons slot="start">
-                <IonButton onClick={onDismiss}>Cancel</IonButton>
+            <IonButtons slot="end">
+                <IonButton onClick={onDismiss}>Done</IonButton>
             </IonButtons>
         </IonToolbar>
     </IonHeader>
