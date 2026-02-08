@@ -37,6 +37,7 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 
 import CreateEventModal from './CreateEventModal';
 import CommunityProfileModal from './CommunityProfileModal';
+import EventReportModal from './EventReportModal';
 
 import './EventsCalendar.css';
 
@@ -184,6 +185,11 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     authorConnect: selectedEvent?.settings_community_profile,
   });
 
+  const [presentEventReport, dismissEventReport] = useIonModal(EventReportModal, {
+    eventId: selectedEvent?.id ?? 0,
+    eventTitle: selectedEvent?.name ?? 'Event',
+    onDismiss: () => dismissEventReport(),
+  });
   const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: selectedEvent?.user ?? null,
     isAnonymous: eventAnonymous,
@@ -462,6 +468,14 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                     View post
                   </IonButton>
                 )}
+                <IonButton
+                  fill="outline"
+                  size="small"
+                  color="medium"
+                  onClick={() => presentEventReport()}
+                >
+                  Report event
+                </IonButton>
                 {selectedEvent.image && (
                   <PhotoProvider bannerVisible={false}>
                     <PhotoView src={selectedEvent.image}>

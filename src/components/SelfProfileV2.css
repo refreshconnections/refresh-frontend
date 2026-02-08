@@ -415,7 +415,8 @@ ion-card-content .card-grid {
 
 .choice-editor ion-list {
   margin: 0;
-  background: var(--ion-color-white)
+  background: var(--ion-color-white);
+  border-radius: 10pt
 }
 
 .choice-group + .choice-group {
@@ -425,6 +426,70 @@ ion-card-content .card-grid {
 .placeholder {
   margin: 0;
   color: var(--ion-color-black);
+}
+
+.community-bio-placeholder {
+  font-size: 0.95rem;
+}
+
+.community-bio-placeholder.community-bio-empty {
+  color: var(--ion-color-navy);
+}
+
+.community-bio-placeholder.community-bio-text {
+  color: var(--ion-color-black);
+}
+
+.community-profile-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.community-toggle-item ion-label {
+  color: var(--ion-color-medium);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.community-age-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.community-age-item ion-label p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.community-age-item ion-select {
+  margin-left: auto;
+  min-width: 60%;
+  text-align: right;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.community-age-item ion-select::part(text) {
+  text-align: right;
+  width: 100%;
+}
+
+.community-subtitle {
+  font-size: 0.85rem;
+  color: var(--ion-color-navy)
+}
+
+.community-bio-item {
+  --background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.community-bio-item ion-textarea::part(native) {
+  border-radius: 12px;
 }
 
 .self-profile-v2 ion-card {

@@ -1,5 +1,5 @@
-import { IonAvatar, IonButton, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, useIonAlert, useIonModal } from "@ionic/react";
-import React, { useEffect, useState } from "react";
+import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal } from "@ionic/react";
+import React, { useEffect, useRef, useState } from "react";
 import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
@@ -90,21 +90,28 @@ const CommentItem: React.FC<Props> = (props) => {
   const [commentText, setCommentText] = useState<string>(comment?.text ?? "");
   const [originalTextState, setOriginalTextState] = useState<string>(comment?.original_text ?? "");
   const [editedAtState, setEditedAtState] = useState<string>(comment?.edited_at ?? "");
-  const [showEdited, setShowEdited] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState<string>(comment?.text ?? "");
+  const [editSaving, setEditSaving] = useState(false);
 
 
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
   const [presentSidenoteInfo] = useIonAlert();
   const [presentEditAlert] = useIonAlert();
+  const slidingRef = useRef<HTMLIonItemSlidingElement | null>(null);
 
   const isOwner = globalCurrentProfile?.user === comment?.user;
-  const showOwnHidden = isOwner && (comment?.sidenoted || comment?.removed);
+  const showOwnHidden = isOwner && (comment?.sidenoted || (comment?.removed && comment?.removed_reason));
   const reportedByMe = Array.isArray(currentProfileRefreshments?.reported_comments)
     ? currentProfileRefreshments.reported_comments.includes(comment?.id)
     : false;
   const canShowComment = comment?.approved
-    && ((!comment?.sidenoted && !comment?.removed && !reportedByMe) || showSidenotes || showOwnHidden);
+    && (
+      (!comment?.sidenoted && !comment?.removed && !reportedByMe)
+      || showSidenotes
+      || showOwnHidden
+    );
 
   const showSidenoteInfo = () => {
     presentSidenoteInfo({
@@ -119,48 +126,66 @@ const CommentItem: React.FC<Props> = (props) => {
     && !comment?.sidenoted
     && moment().diff(comment?.uploadDateTime, 'minutes') <= 5;
 
-  const editCommentAlert = () => {
-    presentEditAlert({
-      header: 'Edit comment',
-      inputs: [
-        {
-          name: 'text',
-          type: 'textarea',
-          value: commentText ?? '',
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Save',
-          handler: async (data) => {
-            const newText = (data?.text ?? '').trim();
-            if (!newText) {
-              return false;
-            }
-            try {
-              if (!originalTextState) {
-                setOriginalTextState(commentText);
-              }
-              await editComment(comment?.id, newText);
-              setCommentText(newText);
-              setEditedAtState(new Date().toISOString());
-              queryClient.invalidateQueries({ queryKey: postQueryKeys.comment(comment?.id) });
-              queryClient.invalidateQueries({ queryKey: postQueryKeys.staticcomment(comment?.id) });
-            } catch (e) {
-              return false;
-            }
-            return true;
-          }
-        }
-      ]
-    });
+  const handleStartEdit = async () => {
+    if (slidingRef.current) {
+      await slidingRef.current.closeOpened();
+      await slidingRef.current.close();
+    }
+    setEditDraft(commentText ?? "");
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditDraft(commentText ?? "");
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    const newText = (editDraft ?? "").trim();
+    if (!newText || editSaving) {
+      return;
+    }
+    try {
+      setEditSaving(true);
+      if (!originalTextState) {
+        setOriginalTextState(commentText);
+      }
+      await editComment(comment?.id, newText);
+      setCommentText(newText);
+      setEditedAtState(new Date().toISOString());
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.comment(comment?.id) });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.staticcomment(comment?.id) });
+      setIsEditing(false);
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const editedLabelVisible = !!((comment?.edited_at && comment?.original_text) || (editedAtState && originalTextState));
+
+  const OriginalCommentModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+    <IonContent className="ion-padding comment-original-modal-content" scrollY={true}>
+      <IonRow className="comment-original-header">
+        <IonCol size="8">
+          <h4 className="comment-original-title">Original comment</h4>
+          <h5 className="comment-original-time">({getTime(comment?.uploadDateTime)})</h5>
+        </IonCol>
+        <IonCol size="4" className="comment-original-close-col">
+          <IonButton fill="clear" onClick={onDismiss}>Close</IonButton>
+        </IonCol>
+      </IonRow>
+      <p className="css-fix">
+        {comment?.original_text || originalTextState}
+      </p>
+      <IonText className="comment-original-note">
+        Comments can be edited for 5 minutes after they are posted.
+      </IonText>
+    </IonContent>
+  );
+
+  const [presentOriginalComment, dismissOriginalComment] = useIonModal(OriginalCommentModal, {
+    onDismiss: () => dismissOriginalComment(),
+  });
 
   const heartComment = async () => {
 
@@ -191,7 +216,8 @@ const CommentItem: React.FC<Props> = (props) => {
     setCommentText(comment?.text ?? "");
     setOriginalTextState(comment?.original_text ?? "");
     setEditedAtState(comment?.edited_at ?? "");
-    setShowEdited(false);
+    setIsEditing(false);
+    setEditDraft(comment?.text ?? "");
   }, [comment?.text, comment?.original_text, comment?.edited_at]);
 
   useEffect(() => {
@@ -374,7 +400,7 @@ const CommentItem: React.FC<Props> = (props) => {
       {false ?
         <IonItem className="written">
           <div className="commentdiv">
-            <IonLabel>
+            <IonLabel className="comment-label">
               <>
                 <div className="name-avatar">
                   <IonAvatar><IonSkeletonText animated={true}></IonSkeletonText></IonAvatar>
@@ -392,10 +418,10 @@ const CommentItem: React.FC<Props> = (props) => {
         <>
           {canShowComment ?
             <>
-              <IonItemSliding key={comment?.id} >
+              <IonItemSliding ref={slidingRef} key={comment?.id} disabled={isEditing}>
                 <IonItem id={`comment-${comment?.id}`} className={replyTo?.id == comment.id ? "replyingto" : recentlyPosted(comment.uploadDateTime) && globalCurrentProfile?.user == comment.user ? "selfrecent" : recentlyPosted(comment.uploadDateTime) ? "writtenrecent" : globalCurrentProfile?.user == comment.user ? "selfwritten" : "written"}>
                   <div className="commentdiv">
-                    <IonLabel>
+                    <IonLabel className="comment-label">
                       {!comment?.approved ?
                         <></>
                         :
@@ -414,8 +440,12 @@ const CommentItem: React.FC<Props> = (props) => {
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                               </div>
                             )}
-                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
-                            {comment?.removed_reason ? <h4>Reason: {comment?.removed_reason}</h4> : <></>}
+                            {comment?.removed_reason ? (
+                              <>
+                                <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                                <h4>Reason: {comment?.removed_reason}</h4>
+                              </>
+                            ) : null}
                             <ModerationNote
                               moderationNote={comment.moderation_note}
                               moderationIconOnly={false}
@@ -449,7 +479,7 @@ const CommentItem: React.FC<Props> = (props) => {
                           </>
                           :
                           <>
-                            <div className="name-avatar" onClick={() => onClickProfileHandler()}>
+                            <div className="name-avatar comment-name-row" onClick={isEditing ? undefined : () => onClickProfileHandler()}>
                               {commentAnonymous ? <></> : (
                                 <IonAvatar className={avatarClassName}>
                                   <img src={avatarSrc} onError={(e) => onImgError(e)} />
@@ -458,15 +488,25 @@ const CommentItem: React.FC<Props> = (props) => {
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
                               {profileLoading && <IonSpinner name="bubbles"></IonSpinner>}
                             </div>
-                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
-                            {editedLabelVisible && showEdited && (
-                              <IonText color="medium">
-                                <p style={{ marginTop: "4px" }}>
-                                  Original ({getTime(comment?.uploadDateTime)}): {comment?.original_text || originalTextState}
-                                </p>
-                              </IonText>
+                            {isEditing ? (
+                              <div className="comment-edit-inline">
+                                <IonTextarea
+                                  value={editDraft}
+                                  rows={4}
+                                  onIonInput={(event) => setEditDraft(event.detail.value ?? "")}
+                                />
+                                <div className="comment-edit-actions">
+                                  <IonButton size="small" fill="clear" color="medium" onClick={handleCancelEdit}>
+                                    Cancel
+                                  </IonButton>
+                                  <IonButton size="small" color="primary" onClick={handleSaveEdit} disabled={editSaving}>
+                                    {editSaving ? "Saving..." : "Save"}
+                                  </IonButton>
+                                </div>
+                              </div>
+                            ) : (
+                              <h4 className="css-fix comment-body-text"><Linkify>{commentText}</Linkify></h4>
                             )}
-
                           </>
                       }
                     </IonLabel>
@@ -499,11 +539,21 @@ const CommentItem: React.FC<Props> = (props) => {
                           <IonButton
                             fill="clear"
                             size="small"
-                            onClick={() => setShowEdited((prev) => !prev)}
+                            onClick={() => {
+                              presentOriginalComment({
+                                showBackdrop: false,
+                                backdropDismiss: true,
+                                breakpoints: [0, 0.3, 0.9],
+                                initialBreakpoint: 0.3,
+                                handleBehavior: "none",
+                                expandToScroll: false,
+                                cssClass: "comment-original-modal",
+                              });
+                            }}
                             style={{ marginRight: "4px" }}
                           >
                             <IonText color="medium" style={{ fontSize: "10pt" }}>
-                              {showEdited ? "hide edited" : "edited"}
+                              edited
                             </IonText>
                           </IonButton>
                         )}
@@ -526,42 +576,46 @@ const CommentItem: React.FC<Props> = (props) => {
                     }
                   </div>
                 </IonItem>
-                <IonItemOptions side="start">
-                  <IonItemOption disabled={true} className="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
-                </IonItemOptions>
-                {globalCurrentProfile?.user !== comment?.user ?
-                  <IonItemOptions side="end">
-                    <IonItemOption color="danger">
-                      <IonButton
-                        fill="clear"
-                        color="light"
-                        onClick={() => createReportPresent()}
-                        disabled={reportedByMe}
-                      >
-                        <IonIcon icon={alertIcon}></IonIcon>
-                      </IonButton>
-                    </IonItemOption>
-                    {comment?.sidenoted ? <></> :
-                      <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
-                    }
-                    <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
-                  </IonItemOptions>
-                  :
-                  <IonItemOptions side="end">
-                    <>
-                      <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
-                      {canEdit && (
-                        <IonItemOption color="medium">
-                          <IonButton fill="clear" color="white" onClick={() => editCommentAlert()}>
-                            <FontAwesomeIcon icon={faPen} />
+                {!isEditing && (
+                  <>
+                    <IonItemOptions side="start">
+                      <IonItemOption disabled={true} className="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
+                    </IonItemOptions>
+                    {globalCurrentProfile?.user !== comment?.user ?
+                      <IonItemOptions side="end">
+                        <IonItemOption color="danger">
+                          <IonButton
+                            fill="clear"
+                            color="light"
+                            onClick={() => createReportPresent()}
+                            disabled={reportedByMe}
+                          >
+                            <IonIcon icon={alertIcon}></IonIcon>
                           </IonButton>
                         </IonItemOption>
-                      )}
-                      {(limits?.comments_removed < 5 && recentlyPosted(comment.uploadDateTime)) &&
-                        <IonItemOption color="black" ><IonButton fill="clear" color="white" onClick={() => removeCommentAlert()}><FontAwesomeIcon icon={faMessageXmark}></FontAwesomeIcon></IonButton></IonItemOption>
-                      }
-                    </>
-                  </IonItemOptions>}
+                        {comment?.sidenoted ? <></> :
+                          <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
+                        }
+                        <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                      </IonItemOptions>
+                      :
+                      <IonItemOptions side="end">
+                        <>
+                          <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                          {canEdit && (
+                            <IonItemOption color="medium">
+                              <IonButton fill="clear" color="white" onClick={handleStartEdit} disabled={isEditing}>
+                                <FontAwesomeIcon icon={faPen} />
+                              </IonButton>
+                            </IonItemOption>
+                          )}
+                          {(limits?.comments_removed < 5 && recentlyPosted(comment.uploadDateTime)) &&
+                            <IonItemOption color="black" ><IonButton fill="clear" color="white" onClick={() => removeCommentAlert()}><FontAwesomeIcon icon={faMessageXmark}></FontAwesomeIcon></IonButton></IonItemOption>
+                          }
+                        </>
+                      </IonItemOptions>}
+                  </>
+                )}
               </IonItemSliding>
               {(comment?.preview_reply || comment?.reply_count > 0 || forceShowReplies) && (
                 <CommentReplies

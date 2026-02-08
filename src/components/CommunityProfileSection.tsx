@@ -27,6 +27,8 @@ import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile'
 import { apiClient } from '../hooks/api/api-client';
 import { onImgError, uploadCommunityProfilePhoto } from '../hooks/utilities';
 import CroppedImageModal from './CroppedImageModal';
+import EditUsernameModal from './EditUsernameModal';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 
 type CommunityProfileSectionProps = {
   useAccordion?: boolean;
@@ -52,8 +54,12 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const previewPhoto = usePersonalPhoto ? personalPhoto : (communityPhoto || personalPhoto);
   const photoButtonLabel = communityPhoto ? 'Change community photo' : 'Upload community photo';
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
-  const ageDecade = ageNumber !== null ? `${Math.floor(ageNumber / 10) * 10}s` : 'Decade';
+  const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : 'Decade';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : 'Exact age';
+  const displayUsername = currentProfile?.username ?? communityProfile?.username ?? '';
+  const hasPersonalPhoto = Boolean(personalPhoto);
+  const hasLocation = Boolean(currentProfile?.location);
+  const showLocationChecked = hasLocation ? showLocation : false;
 
   useEffect(() => {
     if (!communityProfile) return;
@@ -136,6 +142,13 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
     onDismiss: handleCropDismiss,
   });
 
+  const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
+    onDismiss: () => {
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
+      usernameDismiss();
+    },
+  });
+
   const innerContent = (
     <IonRow>
       <IonCol size="12">
@@ -150,16 +163,29 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                 )}
               </div>
             </IonItem>
-            <IonItem lines="none">
-              <IonLabel>Use personal profile photo</IonLabel>
+            <IonItem lines="none" className="community-profile-item">
+              <IonLabel>
+                <p>Refreshments username:</p>
+                <h2>{displayUsername}</h2>
+              </IonLabel>
+              <IonButton size="small" color="primary" fill="outline" className="edit-button" onClick={() => usernamePresent()}>
+                Edit
+              </IonButton>
+            </IonItem>
+            
+            <div className="field-header">
+              <p>Use personal profile photo</p>
               <IonToggle
                 slot="end"
-                checked={usePersonalPhoto}
+                checked={hasPersonalPhoto ? usePersonalPhoto : false}
+                disabled={!hasPersonalPhoto}
                 onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
               />
-            </IonItem>
-            {usePersonalPhoto && !personalPhoto && (
-              <IonText color="medium">Add a personal profile photo to use it here.</IonText>
+            </div>
+            {!hasPersonalPhoto && (
+              <IonText color="medium" className="community-subtitle">
+                Once you've uploaded a profile pic, you can choose to use that as your community profile picture too.
+              </IonText>
             )}
             <IonButton expand="block" color="tertiary" onClick={updatePicture}>
               {photoButtonLabel}
@@ -179,7 +205,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             {editingBio ? (
               <div className="choice-editor">
                 <IonList lines="none">
-                  <IonItem lines="none">
+                  <IonItem lines="none" className="community-bio-item">
                     <IonTextarea
                       value={communityBio}
                       autoGrow
@@ -192,7 +218,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                 </IonList>
               </div>
             ) : (
-              <p className="placeholder">
+              <p className={`placeholder community-bio-placeholder ${communityBio ? 'community-bio-text' : 'community-bio-empty'}`}>
                 {communityBio ? communityBio : 'Add a short community bio.'}
               </p>
             )}
@@ -201,16 +227,23 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
               <p>Show location</p>
               <IonToggle
                 slot="end"
-                checked={showLocation}
+                checked={showLocationChecked}
+                disabled={!hasLocation}
                 onIonChange={(e) => handleToggleLocation(e.detail.checked)}
               />
             </div>
+            {!hasLocation && (
+              <IonText color="medium" className="community-subtitle">
+                Once you've added a location, you can choose to share that on your community profile.
+              </IonText>
+            )}
 
-            <div className="field-header">
-              <p>Show age</p>
-            </div>
-            <IonItem lines="none">
+            <IonItem lines="none" className="community-age-item">
+              <IonLabel>
+                <p>Show age</p>
+              </IonLabel>
               <IonSelect
+                slot="end"
                 value={showAgeTier}
                 interface="popover"
                 onIonChange={(e) => handleAgeTierChange(e.detail.value)}

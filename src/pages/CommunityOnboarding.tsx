@@ -35,6 +35,7 @@ import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile'
 import { apiClient } from '../hooks/api/api-client';
 import { updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
 import CroppedImageModal from '../components/CroppedImageModal';
+import EditLocationModal from '../components/EditLocationModal';
 
 import './OnboardingV2.css';
 
@@ -50,7 +51,11 @@ type CommunityProfile = {
   show_age_tier?: AgeTier;
 };
 
-const CommunityOnboarding: React.FC = () => {
+type CommunityOnboardingProps = {
+  onDismiss?: () => void;
+};
+
+const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) => {
   const router = useIonRouter();
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
@@ -77,6 +82,10 @@ const CommunityOnboarding: React.FC = () => {
   const [savingAge, setSavingAge] = useState(false);
 
   const hasPersonalProfile = Boolean(currentProfile?.created_profile);
+  const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
+  const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
+  const ageLabel = ageNumber !== null ? `${ageNumber}` : '-';
+  const locationLabel = (currentProfile?.location ?? '').trim();
   const personalPhoto = currentProfile?.pic1_main ?? null;
   const communityPhoto = (communityProfile as CommunityProfile | undefined)?.community_profile_pic ?? null;
 
@@ -148,6 +157,10 @@ const CommunityOnboarding: React.FC = () => {
     await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
     await queryClient.invalidateQueries({ queryKey: ['current'] });
     await queryClient.invalidateQueries({ queryKey: ['global-current'] });
+    if (onDismiss) {
+      onDismiss();
+      return;
+    }
     router.push('/community', 'root', 'replace');
   };
 
@@ -244,6 +257,9 @@ const CommunityOnboarding: React.FC = () => {
     imageName: imageName,
     uploadHandler: uploadCommunityProfilePhoto,
     onDismiss: handleCropDismiss,
+  });
+  const [presentLocationModal, dismissLocationModal] = useIonModal(EditLocationModal, {
+    onDismiss: () => dismissLocationModal(),
   });
 
   return (
@@ -440,8 +456,13 @@ const CommunityOnboarding: React.FC = () => {
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
                       Back
                     </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()}>
+                    <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()} disabled>
                       Next
+                    </IonButton>
+                  </IonRow>
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
+                      Skip
                     </IonButton>
                   </IonRow>
                 </div>
@@ -470,11 +491,16 @@ const CommunityOnboarding: React.FC = () => {
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
                       Back
                     </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={handleBioNext} disabled={savingBio}>
+                    <IonButton className="onboarding-v2__primary-action" onClick={handleBioNext} disabled>
                       <span className={`onboarding-v2__button-label ${savingBio ? 'loading' : ''}`}>
                         Next
                       </span>
                       {savingBio && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
+                    </IonButton>
+                  </IonRow>
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
+                      Skip
                     </IonButton>
                   </IonRow>
                 </div>
@@ -488,6 +514,14 @@ const CommunityOnboarding: React.FC = () => {
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>Show your location?</IonCardTitle>
                   <p>Share your general location on your community profile.</p>
+                  <IonText color="medium">
+                    <p style={{ marginTop: 0 }}>
+                      Location shown on your profile: {locationLabel || '-'}
+                    </p>
+                  </IonText>
+                  <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
+                    {locationLabel ? 'Edit location' : 'Add location'}
+                  </IonButton>
                   <IonItem lines="none">
                     <IonLabel>Show location</IonLabel>
                     <IonToggle
@@ -520,6 +554,12 @@ const CommunityOnboarding: React.FC = () => {
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>Show your age?</IonCardTitle>
                   <p>Choose how your age appears on your community profile.</p>
+                  <IonText color="medium">
+                    <p style={{ marginTop: 0 }}>
+                      Age shown on your profile:{' '}
+                      {showAgeTier === 'none' ? 'Don\u2019t show age' : showAgeTier === 'decade' ? ageDecade : ageLabel}
+                    </p>
+                  </IonText>
                   <IonRadioGroup value={showAgeTier} onIonChange={(e) => setShowAgeTier(e.detail.value)}>
                     <IonItem lines="none">
                       <IonLabel>Show exact age</IonLabel>

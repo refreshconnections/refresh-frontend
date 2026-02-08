@@ -32,6 +32,7 @@ import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
+import SubmissionAgeGateCard from './SubmissionAgeGateCard';
 import CreatePostModal from './CreatePostModal';
 import { informationCircleOutline } from 'ionicons/icons';
 
@@ -61,6 +62,15 @@ type CreateEventModalProps = {
   onDismiss: (data?: { submitted?: boolean }) => void;
 };
 
+function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
+  if (!registrationDate) return false;
+  const now = new Date();
+  const registered = new Date(registrationDate);
+  const diffInMs = now.getTime() - registered.getTime();
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+  return diffInDays > 14;
+}
+
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const router = useIonRouter();
   const [name, setName] = useState('');
@@ -74,6 +84,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const [eventType, setEventType] = useState('');
   const [showPostTip, setShowPostTip] = useState(false);
   const { data: globalProfile } = useGetGlobalAppCurrentProfile();
+  const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate);
   const [presentPostModal, dismissPostModal] = useIonModal(CreatePostModal, {
     preferred_name: globalProfile?.preferred_name ?? '',
     username: globalProfile?.username ?? '',
@@ -381,8 +392,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
   const hasBlockedLinks =
     hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
   const hasPreSubmitIssues = hasPii || hasBlockedLinks;
+  const accountAgeError = isOldEnoughForEvents ? null : 'Events can be submitted once your account is at least two weeks old.';
 
   const handleSubmit = async () => {
+    if (!isOldEnoughForEvents) {
+      setError('Events can be submitted once your account is at least two weeks old.');
+      return;
+    }
     if (!name.trim() || !description.trim() || !eventType || !startDatetime || !endDatetime) {
       setError('Name, description, type, start, and end are required.');
       return;
@@ -642,7 +658,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="create-event-modal">
-       
+        {!isOldEnoughForEvents ? (
+          <SubmissionAgeGateCard noun="event" onUpgrade={() => router.push('/store')} />
+        ) : (
+          <>
         <IonList>
           <div className="create-event-section">
             <IonItem>
@@ -900,6 +919,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
               </IonLabel>
               <IonSelect
                 value={recurrenceType}
+                disabled={!canUseRecurring}
                 onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'none')}
               >
                 <IonSelectOption value="none">Does not repeat</IonSelectOption>
@@ -908,12 +928,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                 <IonSelectOption value="monthly">Monthly</IonSelectOption>
                 <IonSelectOption value="custom">Custom dates</IonSelectOption>
               </IonSelect>
+              {!canUseRecurring && (
+                <IonText color="medium" className="recurring-note">
+                  Recurring events are available for Community+ and Pro members.
+                </IonText>
+              )}
             </IonItem>
-            {!canUseRecurring && (
-              <IonItem lines="none">
-                <IonText color="medium">Recurring events are available for Community+ and Pro members.</IonText>
-              </IonItem>
-            )}
             {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && (
               <IonItem>
                 <IonLabel position="stacked">How many recurring dates?</IonLabel>
@@ -1301,8 +1321,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             onDidDismiss={() => setShowRecurringUpgrade(false)}
           />
         </IonList>
-        {(dateError || recurrenceError || showGlobalError || hasPreSubmitIssues) && (
+        {(dateError || recurrenceError || showGlobalError || hasPreSubmitIssues || accountAgeError) && (
           <div className="create-event-validations">
+            {accountAgeError && (
+              <IonText color="danger">{accountAgeError}</IonText>
+            )}
             {dateError && (
               <IonText color="danger">{dateError}</IonText>
             )}
@@ -1334,11 +1357,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
             className="create-event-submit"
             expand="block"
             onClick={handleSubmit}
-            disabled={submitting || hasPreSubmitIssues}
+            disabled={submitting || hasPreSubmitIssues || !isOldEnoughForEvents}
           >
             {submitting ? 'Submitting...' : 'Submit event'}
           </IonButton>
         </IonRow>
+          </>
+        )}
       </IonContent>
     </>
   );

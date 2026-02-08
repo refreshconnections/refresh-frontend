@@ -95,6 +95,9 @@ const OnboardingCardLivedExperiences: React.FC = () => {
           </IonButton>
         </IonCardTitle>
         <IonText>Choose any that apply. These are used for filtering in picks.</IonText>
+        <IonText className="onboarding-future-filters">
+          {livedExperiencePopoverText}
+        </IonText>
         <div className="onboarding-option-card">
           <IonList className="scrollable-list onboarding-checkbox-list">
             {livedExperienceOptions.map(([value, label]) => (

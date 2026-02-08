@@ -17,11 +17,13 @@ import { useGetLimits } from "../hooks/api/profiles/current-limits";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
 import { faCommentDots, faHeart, faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
+import { useGetSubmissionSummary } from "../hooks/api/refreshments/submission-summary";
 import { useGetAnnouncementSuggestions } from "../hooks/api/refreshments/announcement-suggestions";
 import CitySelectorModal from "./CitySelectorModal";
 import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
 import { informationCircle } from "ionicons/icons";
 import ContactDetailsPopover from "./ContactDetailsPopover";
+import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
 
 
 
@@ -79,6 +81,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const currentStreak = useGetCurrentStreak().data;
 
     const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
+    const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate);
+    const submissionSummary = useGetSubmissionSummary().data;
+    const totalSubmissions =
+        (submissionSummary?.totals?.approved ?? 0)
+        + (submissionSummary?.totals?.pending ?? 0)
+        + (submissionSummary?.totals?.needs_edit ?? 0);
+    const hasPreviousSubmissions = totalSubmissions > 0;
 
 
     const [title, setTitle] = useState("");
@@ -955,19 +964,25 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 {siteSettings?.allow_free_users_to_submit_posts && (
                     <>
                         <IonCard className="ion-padding limited ion-text-center">
-                            <p>All users can submit 2 posts a month{!isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ? " once your account is at least two weeks old" : ""}.</p>
+                            <p>All users can submit 2 posts a month.</p>
                             <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
                         </IonCard>
-                        <IonRow className="ion-justify-content-center">
-                            <IonButton size="small" fill="outline" className="create-post-submissions-button" onClick={handleGoToSubmissions}>
-                                View my previous submissions
-                            </IonButton>
-                        </IonRow>
+                        {hasPreviousSubmissions && (
+                            <IonRow className="ion-justify-content-center">
+                                <IonButton size="small" fill="outline" className="create-post-submissions-button" onClick={handleGoToSubmissions}>
+                                    View my previous submissions
+                                </IonButton>
+                            </IonRow>
+                        )}
                     </>
                 )}
-                {isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2 && isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)) ? (
+                {!isOldEnoughForPosts ? (
+                    <SubmissionAgeGateCard noun="post" onUpgrade={() => navigateTo("/store")} />
+                ) : (
                     <>
-                        <form onSubmit={(e) => handlePostSubmit(e)}>
+                        {(isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2)) ? (
+                            <>
+                                <form onSubmit={(e) => handlePostSubmit(e)}>
 
                         {/* Title */}
                         <IonCard>
@@ -1767,38 +1782,32 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             }
                         ]}
                         />
-                        <IonAlert
-                            isOpen={showRecurringUpgrade}
-                            header="Recurring events"
-                            message="Join Community+ or Pro to post recurring events."
-                            buttons={[
-                                {
-                                    text: "OK",
-                                    handler: () => setShowRecurringUpgrade(false)
-                                }
-                            ]}
-                            onDidDismiss={() => setShowRecurringUpgrade(false)}
-                        />
+                                <IonAlert
+                                    isOpen={showRecurringUpgrade}
+                                    header="Recurring events"
+                                    message="Join Community+ or Pro to post recurring events."
+                                    buttons={[
+                                        {
+                                            text: "OK",
+                                            handler: () => setShowRecurringUpgrade(false)
+                                        }
+                                    ]}
+                                    onDidDismiss={() => setShowRecurringUpgrade(false)}
+                                />
+                            </>
+                        ) :
+                            limits?.posts_submitted >= 2 ?
+                                    <IonCard color="white" className="ion-padding ion-text-center">
+                                        <IonText className="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
+                                        <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
+                                    </IonCard>
+                                    :
+                                    <IonCard color="white" className="ion-padding ion-text-center">
+                                        <IonText className="ion-text-center">Something went wrong and you can't submit a post right now.</IonText>
+                                    </IonCard>
+                        }
                     </>
-                ) :
-                    !isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate) ?
-                        <IonCard color="white" className="ion-padding ion-text-center">
-                            <IonText className="ion-text-center"><p>Your account needs to be at least 2 weeks old to submit a post. </p>
-                                <p>Or become a Community+ or Pro member to submit a post now.</p>
-                            </IonText>
-                            <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
-                        </IonCard>
-                        :
-                        limits?.posts_submitted >= 2 ?
-                            <IonCard color="white" className="ion-padding ion-text-center">
-                                <IonText className="ion-text-center"><p>You've already submitted 2 posts this month.</p> <p>Increase your streak or get Community+ or Refresh Pro to submit more posts now.</p></IonText>
-                                <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
-                            </IonCard>
-                            :
-                            <IonCard color="white" className="ion-padding ion-text-center">
-                                <IonText className="ion-text-center">Something went wrong and you can't submit a post right now.</IonText>
-                            </IonCard>
-                }
+                )}
             </IonContent>
 
         </IonPage>

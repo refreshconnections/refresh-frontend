@@ -34,9 +34,9 @@ import './SelfProfileV2.css';
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import ProfileModal from './ProfileModal';
 import EditLocationModal from './EditLocationModal';
-import EditUsernameModal from './EditUsernameModal';
 import CroppedImageModal from './CroppedImageModal';
 import CommunityProfileSection from './CommunityProfileSection';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -128,6 +128,7 @@ const initialForm: SimpleFormState = {
 
 const SelfProfileV2: React.FC = () => {
   const currentUserProfile: any = useGetCurrentProfile().data;
+  const { data: communityProfile } = useGetCommunityProfile();
   const [form, setForm] = useState<SimpleFormState>(initialForm);
   const [originalForm, setOriginalForm] = useState<SimpleFormState>(initialForm);
   const [photoOrder, setPhotoOrder] = useState<string[]>([]);
@@ -338,13 +339,6 @@ const SelfProfileV2: React.FC = () => {
     onDismiss: () => {
       refreshProfile();
       locationDismiss();
-    },
-  });
-
-  const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
-    onDismiss: () => {
-      refreshProfile();
-      usernameDismiss();
     },
   });
 
@@ -1031,15 +1025,6 @@ const SelfProfileV2: React.FC = () => {
                     Edit
                   </IonButton>
                 </IonItem>
-                <IonItem lines="none">
-                  <IonLabel>
-                    <p>Refreshments username:</p>
-                    <h2>{currentUserProfile.username}</h2>
-                  </IonLabel>
-                  <IonButton size="small" color="primary" fill="outline" className="edit-button" onClick={() => usernamePresent()}>
-                    Edit
-                  </IonButton>
-                </IonItem>
               </div>
 
               {summaryKeys.map(key => (key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />))}
@@ -1425,7 +1410,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <CommunityProfileSection />
+        {(currentUserProfile?.username ?? communityProfile?.username) ? <CommunityProfileSection /> : null}
       </IonGrid>
     </div>
   );

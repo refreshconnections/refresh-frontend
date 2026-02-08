@@ -269,7 +269,7 @@ const PostDetails: React.FC<Props> = (props) => {
         :
         <IonRow className="ion-justify-content-center comment-username">
           <IonButton routerLink="/community-onboarding" color="tertiary">
-            Set a public username to post a comment!
+            Create a community profile to post a comment
           </IonButton>
         </IonRow>}
     </IonList>

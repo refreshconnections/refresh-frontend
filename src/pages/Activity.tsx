@@ -216,9 +216,11 @@ const Activity: React.FC = () => {
                             </ul>
                         ) : (
                             <>
+                                <IonRow className="ion-text-center ion-justify-content-center">
                                 <IonText color="navy" className="ion-text-center ion-padding-bottom">
                                     Feel like submitting a post?
                                 </IonText>
+                                </IonRow>
                                 <IonRow className="ion-justify-content-center ion-padding-bottom">
                                     <IonButton color="primary" onClick={() => createPostPresent()}>
                                         Create a post

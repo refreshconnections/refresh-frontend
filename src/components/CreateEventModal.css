@@ -102,6 +102,12 @@
   margin: 0 auto;
 }
 
+.recurring-note {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
 .post-tip-card {
   --border-radius: 18px;
   margin: 0 12px;

@@ -327,8 +327,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   adultSlideIndex,
   underAgeSlideIndex
 }) => {
-  const defaultBirthday = '1990-01-01';
-  const [birthday, setBirthday] = useState<string | null>(defaultBirthday);
+  const [birthday, setBirthday] = useState<string | null>(null);
   const [age, setAge] = useState<number | null>(null);
   const [hasBirthday, setHasBirthday] = useState(false);
   const [isAdult, setIsAdult] = useState<boolean | null>(null);
@@ -355,11 +354,12 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
     setIsAdult(computedAge >= 18);
   };
 
+  const normalizedProfileBirthDate =
+    profileBirthDate && profileBirthDate !== '1001-01-01' ? profileBirthDate : null;
+
   useEffect(() => {
-    const initialValue =
-      profileBirthDate && profileBirthDate !== '1001-01-01' ? profileBirthDate : defaultBirthday;
-    handleChange(initialValue);
-  }, [profileBirthDate]);
+    handleChange(normalizedProfileBirthDate);
+  }, [normalizedProfileBirthDate]);
 
   const saveBirthday = async () => {
     if (!birthday) return;
@@ -411,7 +411,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
           <IonModal keepContentsMounted>
             <IonDatetime
               id="birthdayPicker"
-              value={birthday ?? profileBirthDate ?? '2000-01-01'}
+              value={birthday ?? normalizedProfileBirthDate ?? '1990-01-01'}
               presentation="date"
               preferWheel
               max={maxBirthday()}

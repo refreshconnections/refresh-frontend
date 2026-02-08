@@ -128,6 +128,7 @@ const SubmittedPosts: React.FC = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useGetSubmittedAnnouncements(showHidden);
+  const submissionsWithHiddenQuery = useGetSubmittedAnnouncements(true, { enabled: !showHidden });
   const {
     data: eventsData,
     isLoading: eventsLoading,
@@ -184,6 +185,15 @@ const SubmittedPosts: React.FC = () => {
       return expiry.getTime() >= now.getTime();
     });
   }, [eventsData, now]);
+  const submissionsCountSource = showHidden ? data : submissionsWithHiddenQuery.data;
+  const postSubmissionsCount =
+    submissionsCountSource?.pages?.[0]?.count ??
+    submissionsCountSource?.pages?.[0]?.results?.length ??
+    submissions.length;
+  const eventSubmissionsCount =
+    eventsData?.pages?.[0]?.count ??
+    submittedEvents.length;
+  const hasAnySubmissions = postSubmissionsCount > 0 || eventSubmissionsCount > 0;
 
   const formatEventDateTime = (event: any) => {
     if (!event?.start_datetime) return null;
@@ -312,14 +322,16 @@ const SubmittedPosts: React.FC = () => {
               </IonRow>
             )}
 
-            <IonItem lines="none" className="submitted-toggle">
-              <IonLabel>Show hidden submissions</IonLabel>
-              <IonToggle
-                slot="end"
-                checked={showHidden}
-                onIonChange={(event) => setShowHidden(event.detail.checked)}
-              />
-            </IonItem>
+            {hasAnySubmissions && (
+              <IonItem lines="none" className="submitted-toggle">
+                <IonLabel>Show hidden submissions</IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={showHidden}
+                  onIonChange={(event) => setShowHidden(event.detail.checked)}
+                />
+              </IonItem>
+            )}
           </>
         )}
 
@@ -378,6 +390,16 @@ const SubmittedPosts: React.FC = () => {
                   {eventsIsFetchingNextPage ? 'Loading...' : 'Show more'}
                 </IonButton>
               </IonRow>
+            )}
+            {hasAnySubmissions && (
+              <IonItem lines="none" className="submitted-toggle">
+                <IonLabel>Show hidden submissions</IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={showHidden}
+                  onIonChange={(event) => setShowHidden(event.detail.checked)}
+                />
+              </IonItem>
             )}
           </>
         )}

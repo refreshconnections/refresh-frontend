@@ -9,11 +9,15 @@ const getSubmittedAnnouncementsPage = async (page: number = 1, includeHidden?: b
   return response.data;
 };
 
-export function useGetSubmittedAnnouncements(includeHidden?: boolean) {
+export function useGetSubmittedAnnouncements(
+  includeHidden?: boolean,
+  options?: { enabled?: boolean }
+) {
   return useInfiniteQuery({
     queryKey: [...annQueryKeys.submitted, includeHidden ? 'include_hidden' : 'no_hidden'],
     queryFn: ({ pageParam = 1 }) => getSubmittedAnnouncementsPage(pageParam, includeHidden),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.next ?? undefined,
+    enabled: options?.enabled,
   });
 }

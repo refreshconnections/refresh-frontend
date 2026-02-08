@@ -126,9 +126,9 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
         {showConnectToggle && (
           <IonItem>
             <IonLabel>
-              <p>Connect from Refreshments</p>
+              <p className="connect-refreshments-title">Connect from Refreshments</p>
               <IonText color="medium">
-                Let people tap your profile from posts/comments so they can reach out directly.
+                Turn this on to let people discover your personal profile from your community posts and comments.
               </IonText>
             </IonLabel>
             <IonToggle

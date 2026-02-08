@@ -266,9 +266,14 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                 <IonIcon icon={ellipsisHorizontal} />
               </IonButton>
             )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <IonButton fill="clear" onClick={onDismiss}>Close</IonButton>
-            </div>
+            <IonButton
+              fill="clear"
+              size="small"
+              className="community-profile-close community-profile-close--corner"
+              onClick={onDismiss}
+            >
+              Close
+            </IonButton>
             {loading ? (
               <IonSpinner name="dots" />
             ) : (
@@ -300,7 +305,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
 
                 {isSelf && !showRestricted && (
                   <div style={{ marginTop: '16px' }}>
-                    <IonText>
+                    <IonText className="community-profile-info-box community-profile-info-center">
                       <p>This is you!</p>
                     </IonText>
                     <IonButton expand="block" onClick={() => editPresent()}>
@@ -326,9 +331,10 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
 
                 {!isSelf && !showRestricted && !canShowChat && (
                   <div style={{ marginTop: '16px' }}>
-                    <IonText>
+                    <IonText className="community-profile-info-box">
                       <p>
-                        {!viewerConnect && 'Want to connect 1:1 with people you meet in the comments? Turn on your Connect from Refreshments in your Me tab > Settings.'}
+                        {!viewerConnect &&
+                          `Want to connect 1:1 with people you meet in the comments?${currentProfile?.created_profile ? '' : ' Create an active personal profile and'} turn on your Connect from Refreshments in your Me tab > Settings.`}
                         {canSendLikeFromCommunity && (
                           <>
                             You both have Connect from Refreshments turned on! Send{' '}
