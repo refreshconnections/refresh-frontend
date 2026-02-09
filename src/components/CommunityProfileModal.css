@@ -125,3 +125,7 @@ ion-modal.community-profile-modal .ion-page {
 .community-profile-info-center {
   text-align: center;
 }
+
+.community-profile-profile-item {
+  margin-top: 12px;
+}

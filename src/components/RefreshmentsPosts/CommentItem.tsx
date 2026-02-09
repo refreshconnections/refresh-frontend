@@ -73,8 +73,9 @@ const CommentItem: React.FC<Props> = (props) => {
   // const commentReplies = useGetCommentReplies(comment_id).data
 
   const profileLoading = false;
+  const commentAnonymous = !comment?.username || String(comment?.username).toLowerCase() === 'anonymous';
   const { className: avatarClassName, src: avatarSrc, hasImage: hasCommunityImage } = getAvatarDisplay({
-    profileImage: comment?.profile_image,
+    profileImage: commentAnonymous ? null : comment?.profile_image,
     viewerConnect: settingsCurrentProfile?.settings_community_profile,
     authorConnect: comment?.settings_community_profile,
   });
@@ -373,7 +374,6 @@ const CommentItem: React.FC<Props> = (props) => {
     })
   }
 
-  const commentAnonymous = !comment?.username || String(comment?.username).toLowerCase() === 'anonymous';
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: comment?.user ?? null,
     isAnonymous: commentAnonymous,
@@ -432,11 +432,9 @@ const CommentItem: React.FC<Props> = (props) => {
                             </h4>
                                 {isOwner && (
                                   <div className="name-avatar">
-                                {commentAnonymous ? <></> : (
-                                  <IonAvatar className={avatarClassName}>
-                                    <img src={avatarSrc} onError={(e) => onImgError(e)} />
-                                  </IonAvatar>
-                                )}
+                                <IonAvatar className={avatarClassName}>
+                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                                </IonAvatar>
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                               </div>
                             )}
@@ -463,11 +461,9 @@ const CommentItem: React.FC<Props> = (props) => {
                               )}
                             </IonRow>
                             <div className="name-avatar">
-                              {commentAnonymous ? <></> : (
-                                <IonAvatar className={avatarClassName}>
-                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
-                                </IonAvatar>
-                              )}
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
                             <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
@@ -480,11 +476,9 @@ const CommentItem: React.FC<Props> = (props) => {
                           :
                           <>
                             <div className="name-avatar comment-name-row" onClick={isEditing ? undefined : () => onClickProfileHandler()}>
-                              {commentAnonymous ? <></> : (
-                                <IonAvatar className={avatarClassName}>
-                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
-                                </IonAvatar>
-                              )}
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
                               {profileLoading && <IonSpinner name="bubbles"></IonSpinner>}
                             </div>

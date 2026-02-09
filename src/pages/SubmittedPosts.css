@@ -50,6 +50,42 @@ ion-toolbar.modal-title {
   background: var(--ion-color-white);
 }
 
+.submitted-posts .section-card {
+  margin-bottom: 12px;
+}
+
+.submitted-posts .section-card ion-card-content {
+  padding: 14px 16px 16px;
+}
+
+.submitted-posts .section-heading h3 {
+  font-size: calc(16px * var(--text-scale, 1));
+  margin: 0 0 6px;
+}
+
+.submitted-posts .section-header {
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.submitted-posts .info-button {
+  --padding-start: 0;
+  --padding-end: 0;
+  height: 24px;
+}
+
+.submitted-posts .status-info-popover::part(content) {
+  border-radius: 12px;
+  padding: 0;
+}
+
+.submitted-posts .status-info-content {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--ion-color-dark);
+}
+
 .submitted-posts ion-card ion-card-content {
   padding-left: 12px;
   padding-right: 12px;
@@ -66,6 +102,25 @@ ion-toolbar.modal-title {
 
 .submitted-posts .preview-card ion-card-content {
   padding-top: 4px;
+}
+
+.submitted-posts .preview-form ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.submitted-posts .preview-form ion-label {
+  color: var(--ion-color-medium);
+}
+
+.submitted-posts .preview-value {
+  display: block;
+  color: var(--ion-color-dark);
+  font-size: 1rem;
+}
+
+.submitted-posts .submitted-meta {
+  margin-top: 4px;
 }
 
 .submitted-posts .status-row {

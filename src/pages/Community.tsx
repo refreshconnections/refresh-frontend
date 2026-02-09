@@ -497,9 +497,10 @@ const Community: React.FC = () => {
                       }
                     >
                       <div className="display-flex">
-                      {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous') ? <></> : (() => {
+                      {(() => {
+                        const isAnonymous = !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous';
                         const avatarDisplay = getAvatarDisplay({
-                          profileImage: item.profile_image,
+                          profileImage: isAnonymous ? null : item.profile_image,
                           viewerConnect: me?.settings_community_profile,
                           authorConnect: item.settings_community_profile,
                           includeBylineClass: true,

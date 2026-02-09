@@ -590,7 +590,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
             </div>
             <div className="onboarding-v2__option">
               <h2>Check things out first</h2>
-              <p>Take a look around first. You can always add a personal profile later.</p>
+              <p>Take a look around first. You can always add a community and personal profile later.</p>
               <IonButton
                 expand="block"
                 fill="outline"

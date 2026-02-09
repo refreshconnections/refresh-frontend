@@ -25,7 +25,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { apiClient } from '../hooks/api/api-client';
-import { onImgError, uploadCommunityProfilePhoto } from '../hooks/utilities';
+import { onImgError, updateCurrentUserProfile, uploadCommunityProfilePhoto } from '../hooks/utilities';
 import CroppedImageModal from './CroppedImageModal';
 import EditUsernameModal from './EditUsernameModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
@@ -44,6 +44,9 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const [showLocation, setShowLocation] = useState(false);
   const [showAgeTier, setShowAgeTier] = useState('exact');
   const [usePersonalPhoto, setUsePersonalPhoto] = useState(true);
+  const [connectFromRefreshments, setConnectFromRefreshments] = useState(
+    Boolean(currentProfile?.settings_community_profile)
+  );
 
   const [image, setImage] = useState<any>(null);
   const [imageName, setImageName] = useState<string | null>(null);
@@ -60,6 +63,9 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const hasPersonalPhoto = Boolean(personalPhoto);
   const hasLocation = Boolean(currentProfile?.location);
   const showLocationChecked = hasLocation ? showLocation : false;
+  const forcePersonalPhoto = Boolean(connectFromRefreshments && !communityPhoto);
+  const personalPhotoToggleChecked = hasPersonalPhoto ? (forcePersonalPhoto ? true : usePersonalPhoto) : false;
+  const personalPhotoToggleDisabled = !hasPersonalPhoto || forcePersonalPhoto;
 
   useEffect(() => {
     if (!communityProfile) return;
@@ -68,6 +74,10 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
     setShowAgeTier(communityProfile.show_age_tier ?? 'exact');
     setUsePersonalPhoto(communityProfile.use_personal_profile_picture ?? true);
   }, [communityProfile]);
+
+  useEffect(() => {
+    setConnectFromRefreshments(Boolean(currentProfile?.settings_community_profile));
+  }, [currentProfile?.settings_community_profile]);
 
   const updateCommunityProfile = async (payload: Record<string, any>) => {
     await apiClient.patch('/api/profiles/community_profile/', payload);
@@ -87,6 +97,12 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const handleAgeTierChange = async (value: string) => {
     setShowAgeTier(value);
     await updateCommunityProfile({ show_age_tier: value });
+  };
+
+  const handleToggleConnectFromRefreshments = async (checked: boolean) => {
+    setConnectFromRefreshments(checked);
+    await updateCurrentUserProfile({ settings_community_profile: checked });
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
   };
 
   const handleSaveBio = async () => {
@@ -177,8 +193,8 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
               <p>Use personal profile photo</p>
               <IonToggle
                 slot="end"
-                checked={hasPersonalPhoto ? usePersonalPhoto : false}
-                disabled={!hasPersonalPhoto}
+                checked={personalPhotoToggleChecked}
+                disabled={personalPhotoToggleDisabled}
                 onIonChange={(e) => handleTogglePersonalPhoto(e.detail.checked)}
               />
             </div>
@@ -237,6 +253,20 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                 Once you've added a location, you can choose to share that on your community profile.
               </IonText>
             )}
+
+            <div className="field-header">
+              <p>Connect from Refreshments</p>
+              <IonToggle
+                slot="end"
+                checked={connectFromRefreshments}
+                disabled={currentProfile?.paused_profile || currentProfile?.deactivated_profile}
+                onIonChange={(e) => handleToggleConnectFromRefreshments(e.detail.checked)}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <IonText color="medium" className="community-subtitle">
+              Turn this on to let people discover your personal profile from your community posts and comments.
+            </IonText>
 
             <IonItem lines="none" className="community-age-item">
               <IonLabel>

@@ -388,7 +388,7 @@ const OpenedPost: React.FC = () => {
 
     const postAnonymous = !staticContentPost?.include_profile || !staticContentPost?.byline || String(staticContentPost?.byline).toLowerCase() === 'anonymous';
     const postAvatarDisplay = getAvatarDisplay({
-        profileImage: staticContentPost?.profile_image,
+        profileImage: postAnonymous ? null : staticContentPost?.profile_image,
         viewerConnect: settingsCurrentProfile?.settings_community_profile,
         authorConnect: staticContentPost?.settings_community_profile,
         includeBylineClass: true,
@@ -402,7 +402,7 @@ const OpenedPost: React.FC = () => {
     });
     const eventAnonymous = Boolean(approvedEventForPost?.anonymous);
     const eventAvatarDisplay = getAvatarDisplay({
-        profileImage: approvedEventForPost?.profile_image,
+        profileImage: eventAnonymous ? null : approvedEventForPost?.profile_image,
         viewerConnect: settingsCurrentProfile?.settings_community_profile,
         authorConnect: approvedEventForPost?.settings_community_profile,
         includeBylineClass: true,
@@ -560,16 +560,12 @@ const OpenedPost: React.FC = () => {
                                           : null
                                       }
                                     >
-                                        {postAnonymous ? <></> : (() => {
-                                          return (
-                                            <IonAvatar className={postAvatarDisplay.className}>
-                                              <img
-                                                src={postAvatarDisplay.src}
-                                                onError={(e) => onImgError(e)}
-                                              />
-                                            </IonAvatar>
-                                          );
-                                        })()}
+                                        <IonAvatar className={postAvatarDisplay.className}>
+                                          <img
+                                            src={postAvatarDisplay.src}
+                                            onError={(e) => onImgError(e)}
+                                          />
+                                        </IonAvatar>
                                         <IonText>
                                           by {postAnonymous ? "Anonymous" : (staticContentPost?.username || staticContentPost?.byline)}
                                         </IonText>

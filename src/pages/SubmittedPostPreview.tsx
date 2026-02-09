@@ -13,6 +13,7 @@ import {
   IonText,
   IonTitle,
   IonButton,
+  IonIcon,
   IonToolbar,
   useIonToast,
   IonCard,
@@ -23,6 +24,7 @@ import {
   IonSelect,
   IonSelectOption,
   useIonRouter,
+  IonPopover,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -35,6 +37,7 @@ import { annQueryKeys } from '../hooks/api/announcements-take-1/ann-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPostPreview.css';
 
 type SubmittedPost = {
@@ -91,6 +94,18 @@ const statusColorMap: Record<string, string> = {
   rejected: 'danger',
 };
 
+const categoryLabelMap: Record<string, string> = {
+  mingle: 'Mingle',
+  change: 'Change',
+  longcovid: 'Long Covid',
+  families: 'Family',
+  science: 'STEAM',
+  pop: 'Pop',
+  events: 'Event',
+  housing: 'Housing',
+  recommendations: 'Local Recommendations',
+};
+
 const getLastEditedDate = (post: SubmittedPost | undefined) => {
   const candidate =
     post?.last_edited ||
@@ -127,6 +142,7 @@ const SubmittedPostPreview: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
   const userHandle = (currentProfile?.username ?? '').trim();
+  const [showStatusInfo, setShowStatusInfo] = useState(false);
 
   const {
     data,
@@ -198,6 +214,8 @@ const SubmittedPostPreview: React.FC = () => {
     ? submittedAtDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null;
   const withinSevenDays = daysSince <= 7;
+  const daysLeft = Math.max(0, Math.ceil(7 - daysSince));
+  const daysLeftLabel = daysLeft === 1 ? 'day' : 'days';
   const visible =
     status === 'approved' ||
     status === 'draft' ||
@@ -230,6 +248,7 @@ const SubmittedPostPreview: React.FC = () => {
     ...(post?.byline && post?.byline !== userHandle && post?.byline !== 'Anonymous' ? [post.byline] : []),
     'Anonymous',
   ]));
+  const allowInlineEdit = editing && isDraft;
   const applyDraftDefaults = () => {
     setDraftTitle(post?.title ?? '');
     setDraftContent(submittedContent);
@@ -424,53 +443,213 @@ const SubmittedPostPreview: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding submitted-post-preview">
-        <IonCard className="preview-card">
+        <IonCard className="section-card">
           <IonCardContent>
-            <IonText color="dark">
-              <h2>{post?.title}</h2>
-            </IonText>
+            <IonRow className="section-header">
+              <IonText color="dark" className="section-heading">
+                <h3>Status</h3>
+              </IonText>
+              {status === 'pending' && (
+                <IonButton
+                  fill="clear"
+                  size="small"
+                  className="info-button"
+                  onClick={() => setShowStatusInfo(true)}
+                >
+                  <IonIcon icon={informationCircleOutline} />
+                </IonButton>
+              )}
+            </IonRow>
+            <IonPopover
+              isOpen={showStatusInfo}
+              onDidDismiss={() => setShowStatusInfo(false)}
+              className="status-info-popover"
+            >
+              <div className="status-info-content">
+                Moderation can take up to 3 business days, but is often faster!
+              </div>
+            </IonPopover>
             <IonRow className="status-row">
               <IonBadge color={statusColor}>{statusLabel}</IonBadge>
               {submittedAt && (
                 <IonNote className="submitted-meta">Submitted {submittedAt}</IonNote>
               )}
             </IonRow>
-            {visible && (post?.byline || post?.location || post?.link || post?.sensitive) && (
-              <IonText color="medium" className="detail-block">
-                {post?.byline && <p><strong>Byline:</strong> {post.byline}</p>}
-                {post?.location && <p><strong>Location:</strong> {post.location}</p>}
-                {post?.link && <p><strong>Link:</strong> {post.link}</p>}
-                {post?.sensitive && (
-                  <p>
-                    <strong>Sensitive:</strong>{' '}
-                    {post.sensitive_description ? post.sensitive_description : 'Yes'}
-                  </p>
-                )}
+            {status === 'needs_edit' && (
+              <IonText color="medium">
+                <p>You have {daysLeft} {daysLeftLabel} left to review and resubmit.</p>
               </IonText>
             )}
-            {visible && displayContent && renderContent(displayContent)}
-            {visible && status !== 'rejected' && !displayContent && (
-              <IonNote>No content available.</IonNote>
+            {status === 'rejected' && (
+              <IonText color="medium">
+                <p>
+                  This will disappear from your list view in {daysLeft} {daysLeftLabel}.
+                  You can hide it now.
+                </p>
+              </IonText>
+            )}
+            {!visible && (
+              <IonNote>This submission is no longer available.</IonNote>
             )}
           </IonCardContent>
         </IonCard>
 
-        {!visible && (
-          <IonNote>This submission is no longer available.</IonNote>
+        <IonCard className="preview-card section-card">
+          <IonCardContent className="preview-form">
+            <IonItem color="white" lines="none">
+              <IonLabel position="stacked">Title*</IonLabel>
+              {allowInlineEdit ? (
+                <IonInput
+                  value={draftTitle}
+                  placeholder="Required"
+                  onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
+                  type="text"
+                  autoCapitalize="words"
+                />
+              ) : (
+                <IonText className="preview-value">{post?.title || '-'}</IonText>
+              )}
+            </IonItem>
+            <IonItem color="white" lines="none">
+              <IonLabel position="stacked">Byline*</IonLabel>
+              {allowInlineEdit ? (
+                <IonSelect
+                  value={draftByline}
+                  placeholder="(Who wrote the post)"
+                  onIonChange={(e) => setDraftByline(e.detail.value)}
+                >
+                  {bylineOptions.map((option) => (
+                    <IonSelectOption value={option} key={`byline-${option}`}>
+                      {option}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              ) : (
+                <IonText className="preview-value">{post?.byline || '-'}</IonText>
+              )}
+            </IonItem>
+            {post?.local_only && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Local Post</IonLabel>
+                <IonText className="preview-value">Yes</IonText>
+              </IonItem>
+            )}
+            {post?.local_only && post?.location && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Location label</IonLabel>
+                <IonText className="preview-value">{post.location}</IonText>
+              </IonItem>
+            )}
+            {allowInlineEdit && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Category*</IonLabel>
+                <IonSelect
+                  value={draftCategory}
+                  placeholder="Select category"
+                  onIonChange={(e) => setDraftCategory(e.detail.value)}
+                >
+                  <IonSelectOption value="refreshments">Refreshments</IonSelectOption>
+                  <IonSelectOption value="mingle">Mingle</IonSelectOption>
+                  <IonSelectOption value="change">Change</IonSelectOption>
+                  <IonSelectOption value="longcovid">Long Covid</IonSelectOption>
+                  <IonSelectOption value="families">Family</IonSelectOption>
+                  <IonSelectOption value="science">STEAM</IonSelectOption>
+                  <IonSelectOption value="pop">Pop</IonSelectOption>
+                  <IonSelectOption value="newcomers">Newcomers</IonSelectOption>
+                  <IonSelectOption value="book">Book</IonSelectOption>
+                  <IonSelectOption value="events">Event</IonSelectOption>
+                  <IonSelectOption value="housing" disabled={!draftLocalOnly && draftCategory !== 'housing'}>
+                    Housing
+                  </IonSelectOption>
+                  <IonSelectOption value="recommendations" disabled={!draftLocalOnly && draftCategory !== 'recommendations'}>
+                    Local Recommendations
+                  </IonSelectOption>
+                </IonSelect>
+              </IonItem>
+            )}
+            {(allowInlineEdit || post?.link) && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Link (optional)</IonLabel>
+                {allowInlineEdit ? (
+                  <IonInput
+                    value={draftLink}
+                    placeholder="https://"
+                    onIonInput={(e) => setDraftLink(e.detail.value ?? '')}
+                    type="text"
+                  />
+                ) : (
+                  <IonText className="preview-value">{post?.link}</IonText>
+                )}
+              </IonItem>
+            )}
+            {post?.sensitive && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Sensitive Content</IonLabel>
+                <IonText className="preview-value">
+                  {post.sensitive_description ? post.sensitive_description : 'Yes'}
+                </IonText>
+              </IonItem>
+            )}
+            <IonItem color="white" lines="none" className="preview-content-item">
+              <IonLabel position="stacked">Post content*</IonLabel>
+              <div className="preview-content">
+                {allowInlineEdit ? (
+                  <IonTextarea
+                    value={draftContent}
+                    autoGrow
+                    maxlength={2000}
+                    style={{ minHeight: '120px' }}
+                    placeholder="Write your post here..."
+                    onIonInput={(e) => setDraftContent(e.detail.value ?? '')}
+                    counter={true}
+                  />
+                ) : (
+                  <>
+                    {visible && displayContent && renderContent(displayContent)}
+                    {visible && status !== 'rejected' && !displayContent && (
+                      <IonNote>No content available.</IonNote>
+                    )}
+                  </>
+                )}
+              </div>
+            </IonItem>
+          </IonCardContent>
+        </IonCard>
+
+        {allowInlineEdit && isDraft && (
+          <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
+            <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
+              <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+              Save draft
+            </IonButton>
+            <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>
+              Submit for review
+            </IonButton>
+            <IonButton
+              fill="outline"
+              onClick={() => setEditing(false)}
+              disabled={saving}
+            >
+              Cancel
+            </IonButton>
+          </IonRow>
         )}
 
         {visible && moderatorExplanation && (
-          <IonCard className="requested-edit">
+          <IonCard className="requested-edit section-card">
             <IonCardContent>
+              <IonText color="dark" className="section-heading">
+                <h3>Moderator explanation</h3>
+              </IonText>
               <IonText color="medium">
-                <p><strong>Moderator explanation:</strong> {moderatorExplanation}</p>
+                <p>{moderatorExplanation}</p>
               </IonText>
             </IonCardContent>
           </IonCard>
         )}
 
         {visible && hasRequestedEdit && (
-          <IonCard className="requested-edit">
+          <IonCard className="requested-edit section-card">
             <IonCardContent>
               <IonText color="dark">
                 <h3>Requested edit</h3>
@@ -528,7 +707,7 @@ const SubmittedPostPreview: React.FC = () => {
           </IonRow>
         )}
 
-        {canEdit && editing && (
+        {canEdit && editing && !allowInlineEdit && (
           <div className="draft-edit-wrapper">
             <IonCard color="white" className="edit-card">
               <IonCardContent>

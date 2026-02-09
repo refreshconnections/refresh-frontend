@@ -10,6 +10,7 @@ import {
   IonLabel,
   IonList,
   IonModal,
+  IonPopover,
   IonButton,
   IonNote,
   IonPage,
@@ -27,7 +28,7 @@ import React, { useMemo, useState } from 'react';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
-import { eyeOffOutline } from 'ionicons/icons';
+import { eyeOffOutline, informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPosts.css';
 
 const statusLabelMap: Record<string, string> = {
@@ -140,6 +141,7 @@ const SubmittedPosts: React.FC = () => {
   const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
+  const [showEventStatusInfo, setShowEventStatusInfo] = useState(false);
 
   const submissions = useMemo(() => {
     const raw = data?.pages?.flatMap((page) => page?.results ?? []) ?? [];
@@ -274,9 +276,9 @@ const SubmittedPosts: React.FC = () => {
                 : getSubmittedDate(post) ?? getLastEditedDate(post);
               const dateLabel = formatShortDate(dateValue);
               const editableLabel =
-                status === 'approved' || status === 'rejected'
-                  ? null
-                  : formatEditableLabel(getExpiresAt(post));
+                status === 'needs_edit' || status === 'draft'
+                  ? formatEditableLabel(getExpiresAt(post))
+                  : null;
 
               return (
                 <IonCard
@@ -357,10 +359,6 @@ const SubmittedPosts: React.FC = () => {
                 ? getApprovedDate(event) ?? getLastEditedDate(event)
                 : getSubmittedDate(event) ?? getLastEditedDate(event);
               const dateLabel = formatShortDate(dateValue);
-              const editableLabel =
-                status === 'approved' || status === 'rejected'
-                  ? null
-                  : formatEditableLabel(getExpiresAt(event));
 
               return (
                 <IonCard key={`event-${event?.id}`} color="white">
@@ -369,7 +367,6 @@ const SubmittedPosts: React.FC = () => {
                       <div className="submission-card-main">
                         <h2>{event?.name}</h2>
                         {dateLabel && <p>{dateLabel}</p>}
-                        {editableLabel && <IonNote>{editableLabel}</IonNote>}
                       </div>
                       <div className="submission-card-badge">
                         <IonBadge color={statusColor}>{statusLabel}</IonBadge>
@@ -413,35 +410,91 @@ const SubmittedPosts: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <IonContent className="ion-padding submitted-posts">
-            <IonCard color="white" className="preview-card">
+            <IonCard className="section-card">
               <IonCardContent>
-                <IonText color="dark">
-                  <h2>{selectedEvent?.name}</h2>
-                </IonText>
+                <IonRow className="section-header">
+                  <IonText color="dark" className="section-heading">
+                    <h3>Status</h3>
+                  </IonText>
+                  {(selectedEvent?.status ?? 'pending').toLowerCase() === 'pending' && (
+                    <IonButton
+                      fill="clear"
+                      size="small"
+                      className="info-button"
+                      onClick={() => setShowEventStatusInfo(true)}
+                    >
+                      <IonIcon icon={informationCircleOutline} />
+                    </IonButton>
+                  )}
+                </IonRow>
+                <IonPopover
+                  isOpen={showEventStatusInfo}
+                  onDidDismiss={() => setShowEventStatusInfo(false)}
+                  className="status-info-popover"
+                >
+                  <div className="status-info-content">
+                    Moderation can take up to 3 business days, but is often faster!
+                  </div>
+                </IonPopover>
                 <IonRow className="status-row">
                   <IonBadge color={eventStatusColorMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'medium'}>
                     {eventStatusLabelMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'Pending moderator review'}
                   </IonBadge>
+                  {formatShortDate(
+                    (selectedEvent?.status ?? 'pending').toLowerCase() === 'approved'
+                      ? getApprovedDate(selectedEvent) ?? getLastEditedDate(selectedEvent)
+                      : getSubmittedDate(selectedEvent) ?? getLastEditedDate(selectedEvent)
+                  ) && (
+                    <IonNote className="submitted-meta">
+                      Submitted {formatShortDate(
+                        (selectedEvent?.status ?? 'pending').toLowerCase() === 'approved'
+                          ? getApprovedDate(selectedEvent) ?? getLastEditedDate(selectedEvent)
+                          : getSubmittedDate(selectedEvent) ?? getLastEditedDate(selectedEvent)
+                      )}
+                    </IonNote>
+                  )}
                 </IonRow>
-                <IonText color="medium" className="detail-block">
-                  {formatEventDateTime(selectedEvent) && (
-                    <p><strong>Date:</strong> {formatEventDateTime(selectedEvent)}</p>
-                  )}
-                  {selectedEvent?.location && (
-                    <p><strong>Location:</strong> {selectedEvent.location}</p>
-                  )}
-                  {selectedEvent?.external_link && (
-                    <p><strong>Link:</strong> {selectedEvent.external_link}</p>
-                  )}
-                </IonText>
+              </IonCardContent>
+            </IonCard>
+            <IonCard className="preview-card section-card">
+              <IonCardContent className="preview-form">
+                <IonItem color="white" lines="none">
+                  <IonLabel position="stacked">Title*</IonLabel>
+                  <IonText className="preview-value">{selectedEvent?.name || '-'}</IonText>
+                </IonItem>
+                {formatEventDateTime(selectedEvent) && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Date*</IonLabel>
+                    <IonText className="preview-value">{formatEventDateTime(selectedEvent)}</IonText>
+                  </IonItem>
+                )}
+                {selectedEvent?.local_only && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Local Event</IonLabel>
+                    <IonText className="preview-value">Yes</IonText>
+                  </IonItem>
+                )}
+                {selectedEvent?.location && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Location</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.location}</IonText>
+                  </IonItem>
+                )}
+                {selectedEvent?.external_link && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Link</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.external_link}</IonText>
+                  </IonItem>
+                )}
                 {selectedEvent?.description && (
-                  <IonText color="dark">
-                    <p>{selectedEvent.description}</p>
-                  </IonText>
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Description</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.description}</IonText>
+                  </IonItem>
                 )}
               </IonCardContent>
             </IonCard>
-            <IonRow class="ion-justify-content-center">
+            <IonRow className="ion-justify-content-center">
               <IonButton onClick={() => setEventDetailOpen(false)}>
                 Close
               </IonButton>

@@ -204,9 +204,10 @@ const PostDetails: React.FC<Props> = (props) => {
                   :
                   <>
                   <div className="name-avatar">
-                  {!item?.username || String(item?.username).toLowerCase() === 'anonymous' ? <></> : (() => {
+                  {(() => {
+                    const isAnonymous = !item?.username || String(item?.username).toLowerCase() === 'anonymous';
                     const avatarDisplay = getAvatarDisplay({
-                      profileImage: item.profile_image,
+                      profileImage: isAnonymous ? null : item.profile_image,
                       viewerConnect: me?.settings_community_profile,
                       authorConnect: item.settings_community_profile,
                     });

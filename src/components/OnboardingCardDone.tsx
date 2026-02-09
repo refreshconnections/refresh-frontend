@@ -106,7 +106,13 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
         value: 'true',
       });
 
-      const response = await updateCurrentUserProfile({ created_profile: true, location_last_updated: null, romance_gender_last_updated: null, gender_last_updated: null  })
+      const response = await updateCurrentUserProfile({
+        created_profile: true,
+        paused_profile: moderation?.paused_on_creation ? true : false,
+        location_last_updated: null,
+        romance_gender_last_updated: null,
+        gender_last_updated: null,
+      })
       queryClient.invalidateQueries({ queryKey: ['current'] })
       
       await delay(1000)

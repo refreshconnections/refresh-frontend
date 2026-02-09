@@ -10,6 +10,7 @@ export const userQueryKeys = {
     searched: (searched_name: string) => ['mutuals', searched_name ],
     incoming: ['incoming'],
     incoming_paginated: ['incoming-paginated'],
+    incoming_status: (userId?: string | number) => ['incoming-status', userId],
     outgoing: ['outgoing'],
     notifications: ['notifications'],
     current: ['current'],

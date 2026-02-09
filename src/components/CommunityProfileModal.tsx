@@ -15,6 +15,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../hooks/api/api-client';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetIncomingConnectionStatus } from '../hooks/api/profiles/incoming-connection-status';
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
 import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections } from '../hooks/utilities';
@@ -55,13 +56,11 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
 
   const profileDetails = useProfileDetails(Number(userId), Boolean(userId));
   const chatsList = useGetCurrentUserChats().data || [];
+  const incomingStatus = useGetIncomingConnectionStatus(userId ?? undefined).data;
   const queryClient = useQueryClient();
 
-  const isConnected = Boolean(
-    userId &&
-    (currentProfile?.mutual_connections?.includes(userId) || currentProfile?.outgoing_connections?.includes(userId))
-  );
-  const isSelf = Boolean(userId && currentProfile?.user === userId);
+  const isConnected = Boolean(userId && currentProfile?.mutual_connections?.includes(userId));
+  const isSelf = Boolean(userId && currentProfile?.user && String(currentProfile.user) === String(userId));
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
     cardData: profileDetails.data,
     profiletype: isConnected ? 'connected-nodismiss' : 'unconnected-nodismiss',
@@ -69,6 +68,21 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     settingsAlt: currentProfile?.settings_alt_text || true,
     yourName: currentProfile?.name || '',
     onDismiss: () => profileDismiss(),
+  });
+
+  const [likeBackPresent, likeBackDismiss] = useIonModal(ProfileModal, {
+    cardData: profileDetails.data,
+    profiletype: 'unconnected',
+    pro: isPersonalPlus(currentProfile?.subscription_level),
+    settingsAlt: currentProfile?.settings_alt_text || true,
+    yourName: currentProfile?.name || '',
+    onDismiss: () => likeBackDismiss(),
+    onActionDismiss: () => {
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming_status(userId ?? undefined) });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming_paginated });
+      likeBackDismiss();
+    },
   });
 
   const isAnonymousAuthor = Boolean(isAnonymous);
@@ -93,6 +107,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile && !currentProfile?.paused_profile);
   const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile && !profileDetails.data?.paused_profile);
   const hasOutgoingLike = Boolean(userId && currentProfile?.outgoing_connections?.includes(userId));
+  const hasIncomingLike = Boolean(userId && (incomingStatus?.is_incoming ?? false));
   const isBlocked = Boolean(
     userId &&
       (currentProfile?.blocked_connections?.includes(userId) || currentProfile?.blocked_by?.includes(userId))
@@ -142,10 +157,14 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       : (otherDeactivated ? 'Refresh member' : (data?.username || 'Anonymous'));
   const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
   const displayPhoto = avatarOverride ?? (showRestricted ? undefined : normalizeLocalMediaUrl(data?.display_photo));
+  const fallbackPersonalPhoto =
+    showRestricted || !data?.connect_enabled ? undefined : normalizeLocalMediaUrl(data?.personal_photo);
+  const resolvedDisplayPhoto = displayPhoto || fallbackPersonalPhoto;
   const fallbackLogo = showRestricted ? '../static/img/null.png' : '../static/img/refresh-flower-blue.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(data?.connect_enabled);
-  const canSendLikeFromCommunity = viewerConnect && otherConnect && !hasOutgoingLike && !isBlocked && !isUnmatched;
+  const canSendLikeFromCommunity = viewerConnect && otherConnect && !isConnected && !isBlocked && !isUnmatched && (hasIncomingLike || !hasOutgoingLike);
+  const canLikeBack = viewerConnect && otherConnect && hasIncomingLike && !isConnected && !isBlocked && !isUnmatched;
   const showCommunityDetails = Boolean(!showRestricted && (data?.community_bio || data?.location || data?.age_display));
   const personalPhoto = showRestricted ? undefined : (normalizeLocalMediaUrl(data?.personal_photo) || displayPhoto);
   const connectName = profileDetails.data?.name || username;
@@ -281,7 +300,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <img
                     alt="Community profile"
-                    src={!showRestricted && data?.has_community_profile ? (displayPhoto || fallbackLogo) : fallbackLogo}
+                    src={!showRestricted && data?.has_community_profile ? (resolvedDisplayPhoto || fallbackLogo) : fallbackLogo}
                     onError={(e) => onImgError(e)}
                     style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover' }}
                   />
@@ -335,7 +354,12 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                       <p>
                         {!viewerConnect &&
                           `Want to connect 1:1 with people you meet in the comments?${currentProfile?.created_profile ? '' : ' Create an active personal profile and'} turn on your Connect from Refreshments in your Me tab > Settings.`}
-                        {canSendLikeFromCommunity && (
+                        {canLikeBack && (
+                          <>
+                            {username} has already sent you a Like.
+                          </>
+                        )}
+                        {!canLikeBack && canSendLikeFromCommunity && (
                           <>
                             You both have Connect from Refreshments turned on! Send{' '}
                             <span className="community-profile-inline-name">{connectName}</span>{' '}
@@ -343,11 +367,16 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                           </>
                         )}
 
-                        {viewerConnect && !otherConnect && `${username} is keeping Refreshments community-only for now. Please reply to them in the thread.`}
+                        {((hasOutgoingLike && !hasIncomingLike) || !otherConnect || isUnmatched) && `Please reply to ${username} in the thread.`}
                       </p>
                     </IonText>
-                    {canSendLikeFromCommunity && (
-                      <IonItem lines="none" button onClick={() => profilePresent()}>
+                    {canLikeBack && (
+                      <IonItem className="community-profile-profile-item" lines="none" button onClick={() => likeBackPresent()}>
+                        <IonLabel>Like {connectName} back</IonLabel>
+                      </IonItem>
+                    )}
+                    {!canLikeBack && canSendLikeFromCommunity && (
+                      <IonItem className="community-profile-profile-item" lines="none" button onClick={() => profilePresent()}>
                         {personalPhoto ? (
                           <img
                             alt="Profile"

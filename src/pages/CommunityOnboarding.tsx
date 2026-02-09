@@ -63,6 +63,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
   const swiperRef = useRef<any>(null);
   const [swiperReady, setSwiperReady] = useState(false);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   const [username, setUsername] = useState('');
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -82,6 +83,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [savingAge, setSavingAge] = useState(false);
 
   const hasPersonalProfile = Boolean(currentProfile?.created_profile);
+  const totalSlides = 7 + (hasPersonalProfile ? 1 : 0);
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : '-';
@@ -271,9 +273,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
           className="onboarding-v2__swiper"
           centeredSlides
           allowTouchMove={false}
+          onSlideChange={(swiperInstance) => setActiveSlideIndex(swiperInstance.activeIndex)}
           onSwiper={(swiperInstance) => {
             swiperRef.current = swiperInstance;
             setSwiperReady(true);
+            setActiveSlideIndex(swiperInstance.activeIndex);
           }}
         >
           <SwiperSlide>
@@ -298,15 +302,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       onClick={() => swiperRef.current?.slideNext()}
                     >
                       Next
-                    </IonButton>
-                  </IonRow>
-                  <IonRow className="onboarding-v2__nav">
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={handleFinishLater}
-                    >
-                      Finish later
                     </IonButton>
                   </IonRow>
                 </div>
@@ -351,15 +346,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                         Next
                       </span>
                       {usernameBusy && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
-                    </IonButton>
-                  </IonRow>
-                  <IonRow className="onboarding-v2__nav">
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={handleFinishLater}
-                    >
-                      Finish later
                     </IonButton>
                   </IonRow>
                 </div>
@@ -610,6 +596,23 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             </div>
           </SwiperSlide>
         </Swiper>
+        {activeSlideIndex < totalSlides - 1 && (
+          <IonButton
+            size="small"
+            fill="clear"
+            style={{
+              position: 'fixed',
+              bottom: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '90%',
+              zIndex: 5,
+            }}
+            onClick={handleFinishLater}
+          >
+            Finish later
+          </IonButton>
+        )}
       </IonContent>
     </IonPage>
   );
