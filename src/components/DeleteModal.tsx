@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 
-import { IonContent, IonButton, IonPage, IonRow, IonText, IonCard, IonCardTitle, IonCardContent, useIonAlert } from '@ionic/react';
+import { IonContent, IonButton, IonPage, IonRow, IonText, IonCard, IonCardTitle, IonCardContent, useIonAlert, useIonModal } from '@ionic/react';
+import FAQs from '../pages/FAQs';
 import { Preferences } from "@capacitor/preferences";
 import { deleteAccount, isMobile, logoutCurrent, updateCurrentUserProfile } from "../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,9 @@ const DeleteModal: React.FC<Props> = (props) => {
     const { onDismiss } = props;
 
     const [appLoading, setAppLoading] = useState(false);
+    const [presentFaqs, dismissFaqs] = useIonModal(FAQs, {
+        onDismiss: () => dismissFaqs(),
+    });
     const [presentConfirmAlert] = useIonAlert();
     const queryClient = useQueryClient()
 
@@ -146,7 +150,20 @@ const DeleteModal: React.FC<Props> = (props) => {
                             <br /><br />
                             If you need a break, consider pausing your profile or deactivating your account.
                             <br /><br />
-                            You can read more about the difference between pausing, deactivating, and deleting in our <a href="/faqs">FAQs</a>.
+                            You can read more about the difference between pausing, deactivating, and deleting in our{' '}
+                            <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => presentFaqs()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        presentFaqs();
+                                    }
+                                }}
+                                style={{ color: 'var(--ion-color-primary)', textDecoration: 'underline', cursor: 'pointer' }}
+                            >
+                                FAQs
+                            </span>.
 
                         </IonText>
                     </IonCardContent>
@@ -173,4 +190,3 @@ const DeleteModal: React.FC<Props> = (props) => {
 };
 
 export default DeleteModal;
-

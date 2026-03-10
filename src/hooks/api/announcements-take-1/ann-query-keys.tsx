@@ -4,4 +4,5 @@
 
 export const annQueryKeys = {
     all: ['ann'],
+    submitted: ['ann', 'submitted'],
   };

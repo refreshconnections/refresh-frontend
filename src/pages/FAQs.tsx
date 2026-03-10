@@ -7,14 +7,23 @@ import { chevronBackOutline } from 'ionicons/icons';
 
 
 
-const FAQs: React.FC = () => {
+type FAQsProps = {
+    onDismiss?: () => void;
+};
+
+const FAQs: React.FC<FAQsProps> = ({ onDismiss }) => {
 
 
     return (
         <IonPage>
             <IonContent>
             <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
-                <IonFabButton routerLink="/me" routerDirection="back" color="light">
+                <IonFabButton
+                    onClick={onDismiss}
+                    routerLink={!onDismiss ? "/me" : undefined}
+                    routerDirection={onDismiss ? undefined : "back"}
+                    color="light"
+                >
                     <IonIcon icon={chevronBackOutline}></IonIcon>
                 </IonFabButton>
             </IonFab>

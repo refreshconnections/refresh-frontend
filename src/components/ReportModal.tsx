@@ -10,6 +10,7 @@ type Props = {
     offender: "user" | "announcement" | "comment",
     text: string,
     id: number,
+    requireDetails?: boolean;
     onDismiss: () => void;
 };
 
@@ -21,13 +22,14 @@ interface ReportDetails {
 }
 const ReportModal: React.FC<Props> = (props) => {
 
-    const { offender, text, id, onDismiss } = props;
+    const { offender, text, id, onDismiss, requireDetails } = props;
 
 
     const [reason, setReason] = useState("");
     const [details, setDetails] = useState("");
     const [inProfile, setInProfile] = useState(false);
     const [inMessages, setInMessages] = useState(false);
+    const [inComment, setInComment] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [afterSendWait, setAfterSendWait] = useState(false)
 
@@ -51,6 +53,9 @@ const ReportModal: React.FC<Props> = (props) => {
         }
         if (inMessages){
             form_data.details = form_data.details + "---In messages"
+        }
+        if (inComment){
+            form_data.details = form_data.details + "---In comment"
         }
         return form_data;
     }
@@ -119,14 +124,25 @@ const ReportModal: React.FC<Props> = (props) => {
                         <IonLabel position="stacked">Where was this violation?</IonLabel>
                         
                     
-                    <IonItem lines="none">
-                    <IonCheckbox slot="start" onIonChange={e => setInProfile(e.detail.checked)}></IonCheckbox>
+                    <IonItem lines="none" button onClick={() => setInProfile((prev) => !prev)}>
+                    <IonCheckbox slot="start" checked={inProfile} />
                     <IonText>In their profile</IonText>
                     </IonItem>
-                    <IonItem lines="none">
-                    <IonCheckbox slot="start" onIonChange={e => setInMessages(e.detail.checked)}></IonCheckbox>
+                    <IonItem lines="none" button onClick={() => setInMessages((prev) => !prev)}>
+                    <IonCheckbox slot="start" checked={inMessages} />
                     <IonText>In our private messages</IonText>
                     </IonItem>
+                    <IonItem lines="none" button onClick={() => setInComment((prev) => !prev)}>
+                    <IonCheckbox slot="start" checked={inComment} />
+                    <IonText>In a comment</IonText>
+                    </IonItem>
+                    {inComment && (
+                        <IonItem lines="none">
+                            <IonText color="medium">
+                                If it was in a comment and you only want to report that comment, please use the comment report option instead.
+                            </IonText>
+                        </IonItem>
+                    )}
                     </IonItem>
                     </>
                     : <></>
@@ -143,7 +159,12 @@ const ReportModal: React.FC<Props> = (props) => {
                         />
                     </IonItem>
                     
-                    <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!reason || afterSendWait}>
+                    <IonButton
+                        className="ion-margin-top"
+                        type="submit"
+                        expand="block"
+                        disabled={!reason || afterSendWait || (requireDetails && !details.trim())}
+                    >
                         Submit
                     </IonButton>
                     {errors && errors.length > 0 ? <IonNote color="danger">Errors:</IonNote> : null}

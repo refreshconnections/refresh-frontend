@@ -4,6 +4,8 @@
 
 export const chatQueryKeys = {
     all: ['chats'],
+    paginated: ['chats', 'paginated'],
+    hidden: ['chats', 'hidden'],
     details: (id: number) => ['chats', 'details', id],
     file: (file_id: string) => ['chats', 'file', file_id],
     messages: (id: number) => ['chats', 'messages', id],

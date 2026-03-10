@@ -1,7 +1,6 @@
-import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal } from "@ionic/react";
+import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, increaseStreak, isPersonalPlus, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
-import { useProfileDetails } from "../../hooks/api/profiles/details";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
@@ -20,8 +19,7 @@ import { faComments } from '@fortawesome/pro-regular-svg-icons/faComments';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import Comments from "./Comments";
 import { useGetCommentsNotShownCount } from "../../hooks/api/refreshments/comments-not-shown";
-import ProfileModal from "../ProfileModal";
-import EditUsernameModal from "../EditUsernameModal";
+import CommunityProfileModal from "../CommunityProfileModal";
 import { faCommentPlus } from "@fortawesome/pro-solid-svg-icons/faCommentPlus";
 
 import Markdown from 'react-markdown'
@@ -41,6 +39,7 @@ import debounce from "lodash.debounce";
 import { useGetCurrentModeration } from "../../hooks/api/profiles/current-moderation";
 import Poll from "./Polls/Poll";
 import ContactDetailsPopover from "../ContactDetailsPopover";
+import moment from "moment";
 
 type Comment = {
     id: number;
@@ -74,7 +73,6 @@ type PostDetail = {
 }
 
 const scrollToComment = (id) => {
-    console.log("id comment", id)
     const element = document.getElementById(id);
     if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: "center" });
@@ -110,6 +108,7 @@ const OpenedPost: React.FC = () => {
     const comments = useGetComments(parseInt(id))
 
     const [altShow, setAltShow] = useState<boolean>(false);
+    const router = useIonRouter();
     const [postActionsOpen, setPostActionsOpen] = useState<boolean>(false);
 
     const [liked, setLiked] = useState<boolean>(false)
@@ -134,6 +133,12 @@ const OpenedPost: React.FC = () => {
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
 
     const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
+    const approvedEventForPost = staticContentPost?.event ?? null;
+    const handleOpenEventCalendar = () => {
+        if (!approvedEventForPost?.start_datetime) return;
+        const dateParam = moment(approvedEventForPost.start_datetime).format('YYYY-MM-DD');
+        router.push(`/community?calendarDate=${dateParam}`);
+    };
 
 
 
@@ -370,7 +375,7 @@ const OpenedPost: React.FC = () => {
 
     const hiddenCommentsInfo = () => {
         presentWhyHiddenAlert({
-            header: 'Some comments have been hidden.',
+            header: 'Some comments have been hidden to keep this thread on topic.',
             subHeader: "You can show sidenoted comments using the ellipsis button at the top of the post.",
             buttons: [
                 {
@@ -381,28 +386,33 @@ const OpenedPost: React.FC = () => {
         })
     }
 
-    const handleProfileDismiss = async () => {
-        queryClient.invalidateQueries({ queryKey: ['current'] })
-        queryClient.invalidateQueries({ queryKey: ['mutuals'] })
-        queryClient.invalidateQueries({ queryKey: ['outgoing'] })
-        profileDismiss()
-    }
-
-    const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-        cardData: useProfileDetails(staticContentPost?.user).data,
-        profiletype: (mutualConnections?.includes(staticContentPost?.user) || outgoingConnections?.includes(staticContentPost?.user)) ? "connected-nodismiss" : "unconnected-nodismiss",
-        pro: isPersonalPlus(globalCurrentProfile?.subscription_level),
-        settingsAlt: settingsCurrentProfile?.settings_alt_text || true,
-        yourName: globalCurrentProfile?.name || '',
-        onDismiss: () => handleProfileDismiss(),
+    const postAnonymous = !staticContentPost?.include_profile || !staticContentPost?.byline || String(staticContentPost?.byline).toLowerCase() === 'anonymous';
+    const postAvatarDisplay = getAvatarDisplay({
+        profileImage: postAnonymous ? null : staticContentPost?.profile_image,
+        viewerConnect: settingsCurrentProfile?.settings_community_profile,
+        authorConnect: staticContentPost?.settings_community_profile,
+        includeBylineClass: true,
     });
-
-    const handleUsernameDismiss = async () => {
-        usernameDismiss();
-    }
-
-    const [usernamePresent, usernameDismiss] = useIonModal(EditUsernameModal, {
-        onDismiss: handleUsernameDismiss
+    const postAvatarOverride = postAvatarDisplay.hasImage ? postAvatarDisplay.src : undefined;
+    const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+        userId: staticContentPost?.user ?? null,
+        isAnonymous: postAnonymous,
+        avatarUrl: postAvatarOverride,
+        onDismiss: () => communityProfileDismiss(),
+    });
+    const eventAnonymous = Boolean(approvedEventForPost?.anonymous);
+    const eventAvatarDisplay = getAvatarDisplay({
+        profileImage: eventAnonymous ? null : approvedEventForPost?.profile_image,
+        viewerConnect: settingsCurrentProfile?.settings_community_profile,
+        authorConnect: approvedEventForPost?.settings_community_profile,
+        includeBylineClass: true,
+    });
+    const eventAvatarOverride = eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined;
+    const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
+        userId: approvedEventForPost?.user ?? null,
+        isAnonymous: eventAnonymous,
+        avatarUrl: eventAvatarOverride,
+        onDismiss: () => eventProfileDismiss(),
     });
 
     const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
@@ -534,9 +544,31 @@ const OpenedPost: React.FC = () => {
                                 <IonRow className="ion-align-items-center">
                                     {/* <IonCol size="7"> */}
 
-                                    <IonCol className="byline-col" size="7" onClick={settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile && !(globalCurrentProfile?.user == staticContentPost?.user) ? () => profilePresent() : () => { }}>
-                                        {(settingsCurrentProfile?.settings_community_profile && staticContentPost?.settings_community_profile && staticContentPost?.include_profile) ? <IonAvatar className="byline-avatar"><img src={staticContentPost?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
-                                        <IonText>by {staticContentPost?.byline || "Anonymous"}</IonText>
+                                    <IonCol
+                                      className="byline-col"
+                                      size="7"
+                                      onClick={() =>
+                                        !postAnonymous && staticContentPost?.user
+                                          ? communityProfilePresent({
+                                              showBackdrop: false,
+                                              backdropDismiss: true,
+                                              initialBreakpoint: 0.8,
+                                              handleBehavior: 'none',
+                                              expandToScroll: false,
+                                              cssClass: 'community-profile-modal',
+                                            })
+                                          : null
+                                      }
+                                    >
+                                        <IonAvatar className={postAvatarDisplay.className}>
+                                          <img
+                                            src={postAvatarDisplay.src}
+                                            onError={(e) => onImgError(e)}
+                                          />
+                                        </IonAvatar>
+                                        <IonText>
+                                          by {postAnonymous ? "Anonymous" : (staticContentPost?.username || staticContentPost?.byline)}
+                                        </IonText>
                                     </IonCol>
 
                                     <IonCol size="5" >
@@ -594,6 +626,54 @@ const OpenedPost: React.FC = () => {
                                     : staticContentPost?.content
                                 }
                             </IonCardContent>
+                            {approvedEventForPost && (
+                                <IonCard
+                                    className="opened-post-event"
+                                    onClick={handleOpenEventCalendar}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            handleOpenEventCalendar();
+                                        }
+                                    }}
+                                >
+                                    <IonCardContent>
+                                        <IonCardTitle>Event details</IonCardTitle>
+                                        {approvedEventForPost.name && (
+                                            <IonText className="opened-post-event-name">
+                                                {approvedEventForPost.name}
+                                            </IonText>
+                                        )}
+                                        <IonText color="medium">
+                                            {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
+                                            {moment(approvedEventForPost.end_datetime).format('h:mm A')}
+                                        </IonText>
+                                        {approvedEventForPost.location && (
+                                            <IonText className="opened-post-event-line">
+                                                <strong>Location:</strong> {approvedEventForPost.location}
+                                            </IonText>
+                                        )}
+                                        {approvedEventForPost.description && (
+                                            <IonText className="opened-post-event-line">
+                                                {approvedEventForPost.description}
+                                            </IonText>
+                                        )}
+                                        {approvedEventForPost.external_link && (
+                                            <IonButton
+                                                fill="outline"
+                                                size="small"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                href={approvedEventForPost.external_link}
+                                            >
+                                                Learn more
+                                            </IonButton>
+                                        )}
+                                    </IonCardContent>
+                                </IonCard>
+                            )}
                             <IonRow className="post-likes" id="comments-top">
                                 <IonCol>
                                     <IonRow onClick={liked ? () => { } : () => likePost()}>
@@ -744,8 +824,8 @@ const OpenedPost: React.FC = () => {
                                 </>
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">
-                                    <IonButton onClick={() => usernamePresent()} color="tertiary">
-                                        Set a public username to post a comment!
+                                    <IonButton routerLink="/community-onboarding" color="tertiary">
+                                        Create a community profile to post a comment
                                     </IonButton>
                                 </IonRow>}
                         </IonFooter>
@@ -786,5 +866,3 @@ const OpenedPost: React.FC = () => {
 };
 
 export default OpenedPost;
-
-

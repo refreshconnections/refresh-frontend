@@ -1,11 +1,11 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
-import { arrowDown } from 'ionicons/icons';
+import { arrowDown, close } from 'ionicons/icons';
 
 import "./Page.css"
 import "./Community.css"
 
-import { getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getProfileCardInfo, getAllAnnouncementsAtOnce, isCommunityPlus, isPersonalPlus } from '../hooks/utilities';
+import { getAvatarDisplay, getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus } from '../hooks/utilities';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
@@ -19,19 +19,22 @@ import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { faCircleEllipsis } from '@fortawesome/pro-solid-svg-icons/faCircleEllipsis';
 import { App } from '@capacitor/app';
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
+import { dismissNotification, useGetRecentNotifications } from "../hooks/api/profiles/recent-notifications";
+import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
 import { useQueryClient } from "@tanstack/react-query";
 
 
 import CreatePostModal from '../components/CreatePostModal';
 import PostDetails from './PostDetails';
 import ReportModal from '../components/ReportModal';
-import ProfileModal from '../components/ProfileModal';
+import CommunityProfileModal from '../components/CommunityProfileModal';
 import { faSubtitles } from '@fortawesome/pro-regular-svg-icons/faSubtitles';
 import { useGetAllAnnouncementsTake1Fn } from '../hooks/api/announcements-take-1/all-anns';
 
 
 const Community: React.FC = () => {
 
+  const router = useIonRouter();
   const [myLikes, setMyLikes] = useState<any>(null);
 
   const [pageUrl, setPageUrl] = useState<string>("");
@@ -57,9 +60,10 @@ const Community: React.FC = () => {
   const commentInputRef = useRef<null | HTMLDivElement>(null)
   const postRefs = useRef<any[]>([])
 
-  const [connected, setConnected] = useState<string | null>(null);
 
-  const [profileData, setProfileData] = useState<any>(null);
+  const [communityProfileUserId, setCommunityProfileUserId] = useState<number | null>(null);
+  const [communityProfileAnonymous, setCommunityProfileAnonymous] = useState<boolean>(false);
+  const [communityProfileAvatar, setCommunityProfileAvatar] = useState<string | null>(null);
 
   const [littleLoading, setLittleLoading] = useState<boolean>(false);
 
@@ -70,6 +74,20 @@ const Community: React.FC = () => {
   const queryClient = useQueryClient()
   const me = useGetCurrentProfile().data
   const data = useGetAllAnnouncementsTake1Fn().data
+  const refreshmentsAlerts = useGetRecentNotifications('refreshments_alert').data || []
+  const [dismissingAlertId, setDismissingAlertId] = useState<number | null>(null)
+  const activeRefreshmentsAlerts = refreshmentsAlerts.filter((item: any) => item?.show_refreshments === true)
+  const topRefreshmentsAlert = activeRefreshmentsAlerts[0]
+
+  const handleDismissRefreshmentsAlert = async (notificationId: number) => {
+    setDismissingAlertId(notificationId)
+    try {
+      await dismissNotification(notificationId, 'refreshments')
+      await queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications })
+    } finally {
+      setDismissingAlertId(null)
+    }
+  }
 
   function dismiss() {
     modal.current?.dismiss();
@@ -186,6 +204,7 @@ const Community: React.FC = () => {
   const [createPostPresent, createPostDismiss] = useIonModal(CreatePostModal, {
     preferred_name: me?.name,
     username: me?.username,
+    onGoToSubmissions: () => router.push('/community/submitted'),
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 
@@ -279,34 +298,37 @@ const Community: React.FC = () => {
     setOffendingTitle(title)
   }
 
-  const handleProfileDismiss = async () =>{
-    queryClient.invalidateQueries({ queryKey: ['current'] })
-    profileDismiss()
-  }
-
-  const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: profileData,
-    profiletype: connected,
-    pro: isPersonalPlus(me?.subscription_level),
-    settingsAlt: me?.settings_alt_text || true,
-    yourName: me?.name || '',
-    onDismiss: () => handleProfileDismiss(),
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: communityProfileUserId,
+    isAnonymous: communityProfileAnonymous,
+    avatarUrl: communityProfileAvatar,
+    onDismiss: () => {
+      setCommunityProfileUserId(null);
+      setCommunityProfileAnonymous(false);
+      setCommunityProfileAvatar(null);
+      communityProfileDismiss();
+    },
   });
 
+  const openModal = (id: number, isAnonymous: boolean, avatarUrl?: string | null) => {
+    if (isAnonymous) return;
+    setCommunityProfileUserId(id);
+    setCommunityProfileAnonymous(isAnonymous);
+    setCommunityProfileAvatar(avatarUrl ?? null);
+  };
 
-  const openModal = async (id: any) => {
-    setProfileData(await getProfileCardInfo(id))
-    console.log("id, ", id)
-    console.log("mut, ", me?.mutual_connections)
-    console.log("outgoing, ", me?.outgoing_connections)
-    if (me?.mutual_connections.includes(id) || me?.outgoing_connections.includes(id)) {
-      setConnected("connected-nodismiss")
+  useEffect(() => {
+    if (communityProfileUserId !== null) {
+      communityProfilePresent({
+        showBackdrop: false,
+        backdropDismiss: true,
+        initialBreakpoint: 0.8,
+        handleBehavior: 'none',
+        expandToScroll: false,
+        cssClass: 'community-profile-modal',
+      });
     }
-    else {
-      setConnected("unconnected-nodismiss")
-    }
-    profilePresent();
-  }
+  }, [communityProfileUserId, communityProfilePresent]);
 
   return (
     <IonPage>
@@ -320,6 +342,33 @@ const Community: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+        {topRefreshmentsAlert ? (
+          <IonRow className="refreshments-alert-row">
+            <IonCol size="12">
+              <IonCard className="refreshments-alert-card">
+                <IonCardContent>
+                  <IonRow className="refreshments-alert-content">
+                    <IonCol className="refreshments-alert-text" size="11">
+                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                    </IonCol>
+                    <IonCol className="refreshments-alert-action" size="1">
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        disabled={dismissingAlertId === topRefreshmentsAlert.id}
+                        onClick={() => handleDismissRefreshmentsAlert(topRefreshmentsAlert.id)}
+                        aria-label="Dismiss alert"
+                        className="refreshments-alert-dismiss"
+                      >
+                        {dismissingAlertId === topRefreshmentsAlert.id ? <IonSpinner name="dots" /> : <IonIcon icon={close} />}
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+          </IonRow>
+        ) : null}
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">
@@ -361,13 +410,13 @@ const Community: React.FC = () => {
                 {
                   text: 'What is my streak?',
                   handler: async () => {
-                      window.location.pathname = "/activity"
+                      router.push("/activity")
                   }
                 },
                 {
                   text: 'Get Pro!',
                   handler: async () => {
-                    window.location.pathname = "/store"
+                    router.push("/store")
                   }
                 }]}
               />
@@ -396,7 +445,7 @@ const Community: React.FC = () => {
                 
                 <IonRow className="ion-justify-content-center">
                 <IonButton size="small" onClick={()=>setShowPostOverride(showPostOverride => [...showPostOverride,item.id] )}>Show anyway</IonButton>
-                <IonButton size="small" fill="outline" href="/settings">Update sensitivity settings</IonButton>
+                <IonButton size="small" fill="outline" routerLink="/settings">Update sensitivity settings</IonButton>
                 </IonRow>
                 </>
                 :
@@ -435,10 +484,41 @@ const Community: React.FC = () => {
                 : <></>}
                 <IonCardSubtitle>
                   <IonRow className="ion-align-items-center">
-                    <IonCol size="5" onClick={me?.settings_community_profile && item.settings_community_profile && !item.removed && !(me?.user == item.user) ? ()=>openModal(item.user) : ()=>setProfileData(null)}>
+                    <IonCol
+                      size="5"
+                      onClick={() =>
+                        item?.user
+                          ? openModal(
+                              item.user,
+                              !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous',
+                              item.profile_image ? getAvatarDisplay({ profileImage: item.profile_image, viewerConnect: me?.settings_community_profile, authorConnect: item.settings_community_profile }).src : null
+                            )
+                          : null
+                      }
+                    >
                       <div className="display-flex">
-                      {(me?.settings_community_profile && item.settings_community_profile && !item.removed && item.include_profile) ? <IonAvatar className="byline-avatar"><img src={item.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
-                      <IonText>By {item.byline == "" || item.byline == null ? "Anonymous" : item.byline}</IonText>
+                      {(() => {
+                        const isAnonymous = !item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous';
+                        const avatarDisplay = getAvatarDisplay({
+                          profileImage: isAnonymous ? null : item.profile_image,
+                          viewerConnect: me?.settings_community_profile,
+                          authorConnect: item.settings_community_profile,
+                          includeBylineClass: true,
+                        });
+                        return (
+                          <IonAvatar className={avatarDisplay.className}>
+                            <img
+                              src={avatarDisplay.src}
+                              onError={(e) => onImgError(e)}
+                            />
+                          </IonAvatar>
+                        );
+                      })()}
+                      <IonText>
+                        By {(!item.include_profile || !item.byline || String(item.byline).toLowerCase() === 'anonymous')
+                          ? "Anonymous"
+                          : (item.username || item.byline)}
+                      </IonText>
                       </div>
                     </IonCol>
                     <IonCol size="3" className="justify-center">

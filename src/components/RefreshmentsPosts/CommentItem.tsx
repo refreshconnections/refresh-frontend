@@ -1,7 +1,6 @@
-import { IonAvatar, IonButton, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, useIonAlert, useIonModal } from "@ionic/react";
-import React, { useEffect, useState } from "react";
-import { authorSidenoteComment, increaseStreak, isPersonalPlus, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
-import { useProfileDetails } from "../../hooks/api/profiles/details";
+import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal } from "@ionic/react";
+import React, { useEffect, useRef, useState } from "react";
+import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
 
@@ -16,11 +15,11 @@ import { faComments } from '@fortawesome/pro-regular-svg-icons/faComments';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { useGetIndividualComment } from "../../hooks/api/refreshments/individual-comment";
 
-import { alert as alertIcon, removeCircleOutline, chatbubble } from 'ionicons/icons';
+import { alert as alertIcon, removeCircleOutline, chatbubble, informationCircleOutline } from 'ionicons/icons';
 import CommentReplies from "./CommentReplies";
-import ProfileModal from "../ProfileModal";
+import CommunityProfileModal from "../CommunityProfileModal";
 import moment from "moment";
-import { faMessageXmark } from "@fortawesome/pro-solid-svg-icons";
+import { faMessageXmark, faPen } from "@fortawesome/pro-solid-svg-icons";
 import { useGetLimits } from "../../hooks/api/profiles/current-limits";
 import { useGetDynamicIndividualComment } from "../../hooks/api/refreshments/individual-comment-dynamic";
 import { useGetStaticIndividualComment } from "../../hooks/api/refreshments/individual-comment-static";
@@ -57,7 +56,6 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const { comment, showSidenotes, setReplyTo, replyTo, isAReply, onLikeUnlike, forceShowReplies } = props;
 
-  console.log("comment", comment?.text, comment)
 
 
   const queryClient = useQueryClient()
@@ -74,21 +72,14 @@ const CommentItem: React.FC<Props> = (props) => {
 
   // const commentReplies = useGetCommentReplies(comment_id).data
 
-  // const profileDetails = useProfileDetails(comment?.user).data
-  const [profileOpen, setProfileOpen] = useState<boolean>(false)
-  const [enabled, setEnabled] = useState<boolean>(false)
-
-  const { data, isFetching: profileLoading, error, refetch } = useProfileDetails(comment?.user, enabled);
-
-
-  useEffect(() => {
-
-    if (profileOpen && data) {
-      profilePresent()
-      setEnabled(false)
-    }
-
-  }, [data, profileOpen])
+  const profileLoading = false;
+  const commentAnonymous = !comment?.username || String(comment?.username).toLowerCase() === 'anonymous';
+  const { className: avatarClassName, src: avatarSrc, hasImage: hasCommunityImage } = getAvatarDisplay({
+    profileImage: commentAnonymous ? null : comment?.profile_image,
+    viewerConnect: settingsCurrentProfile?.settings_community_profile,
+    authorConnect: comment?.settings_community_profile,
+  });
+  const avatarOverride = hasCommunityImage ? avatarSrc : null;
 
 
 
@@ -97,10 +88,105 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const [liked, setLiked] = useState<boolean>(false)
   const [likedLength, setLikedLength] = useState(0)
+  const [commentText, setCommentText] = useState<string>(comment?.text ?? "");
+  const [originalTextState, setOriginalTextState] = useState<string>(comment?.original_text ?? "");
+  const [editedAtState, setEditedAtState] = useState<string>(comment?.edited_at ?? "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState<string>(comment?.text ?? "");
+  const [editSaving, setEditSaving] = useState(false);
 
 
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
+  const [presentSidenoteInfo] = useIonAlert();
+  const [presentEditAlert] = useIonAlert();
+  const slidingRef = useRef<HTMLIonItemSlidingElement | null>(null);
+
+  const isOwner = globalCurrentProfile?.user === comment?.user;
+  const showOwnHidden = isOwner && (comment?.sidenoted || (comment?.removed && comment?.removed_reason));
+  const reportedByMe = Array.isArray(currentProfileRefreshments?.reported_comments)
+    ? currentProfileRefreshments.reported_comments.includes(comment?.id)
+    : false;
+  const canShowComment = comment?.approved
+    && (
+      (!comment?.sidenoted && !comment?.removed && !reportedByMe)
+      || showSidenotes
+      || showOwnHidden
+    );
+
+  const showSidenoteInfo = () => {
+    presentSidenoteInfo({
+      header: 'Comment has been sidenoted',
+      message: "Sidenoted comments don't show up for most members by default to keep threads on topic.",
+      buttons: ['OK'],
+    });
+  };
+
+  const canEdit = isOwner
+    && !comment?.removed
+    && !comment?.sidenoted
+    && moment().diff(comment?.uploadDateTime, 'minutes') <= 5;
+
+  const handleStartEdit = async () => {
+    if (slidingRef.current) {
+      await slidingRef.current.closeOpened();
+      await slidingRef.current.close();
+    }
+    setEditDraft(commentText ?? "");
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditDraft(commentText ?? "");
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    const newText = (editDraft ?? "").trim();
+    if (!newText || editSaving) {
+      return;
+    }
+    try {
+      setEditSaving(true);
+      if (!originalTextState) {
+        setOriginalTextState(commentText);
+      }
+      await editComment(comment?.id, newText);
+      setCommentText(newText);
+      setEditedAtState(new Date().toISOString());
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.comment(comment?.id) });
+      queryClient.invalidateQueries({ queryKey: postQueryKeys.staticcomment(comment?.id) });
+      setIsEditing(false);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const editedLabelVisible = !!((comment?.edited_at && comment?.original_text) || (editedAtState && originalTextState));
+
+  const OriginalCommentModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+    <IonContent className="ion-padding comment-original-modal-content" scrollY={true}>
+      <IonRow className="comment-original-header">
+        <IonCol size="8">
+          <h4 className="comment-original-title">Original comment</h4>
+          <h5 className="comment-original-time">({getTime(comment?.uploadDateTime)})</h5>
+        </IonCol>
+        <IonCol size="4" className="comment-original-close-col">
+          <IonButton fill="clear" onClick={onDismiss}>Close</IonButton>
+        </IonCol>
+      </IonRow>
+      <p className="css-fix">
+        {comment?.original_text || originalTextState}
+      </p>
+      <IonText className="comment-original-note">
+        Comments can be edited for 5 minutes after they are posted.
+      </IonText>
+    </IonContent>
+  );
+
+  const [presentOriginalComment, dismissOriginalComment] = useIonModal(OriginalCommentModal, {
+    onDismiss: () => dismissOriginalComment(),
+  });
 
   const heartComment = async () => {
 
@@ -126,6 +212,14 @@ const CommentItem: React.FC<Props> = (props) => {
     }
 
   }, [comment?.like_count])
+
+  useEffect(() => {
+    setCommentText(comment?.text ?? "");
+    setOriginalTextState(comment?.original_text ?? "");
+    setEditedAtState(comment?.edited_at ?? "");
+    setIsEditing(false);
+    setEditDraft(comment?.text ?? "");
+  }, [comment?.text, comment?.original_text, comment?.edited_at]);
 
   useEffect(() => {
 
@@ -280,29 +374,24 @@ const CommentItem: React.FC<Props> = (props) => {
     })
   }
 
-  const handleProfileDismiss = async () => {
-    queryClient.invalidateQueries({ queryKey: ['current'] })
-    setProfileOpen(false)
-    profileDismiss()
-  }
-
-  const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: data,
-    profiletype: (mutualConnections?.includes(comment?.user) || outgoingConnections?.includes(comment?.user) || data?.initiate_mode) ? "connected-nodismiss" : "unconnected-nodismiss",
-    pro: isPersonalPlus(globalCurrentProfile?.subscription_level),
-    settingsAlt: settingsCurrentProfile?.settings_alt_text || true,
-    yourName: globalCurrentProfile?.name || '',
-    onDismiss: () => handleProfileDismiss(),
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: comment?.user ?? null,
+    isAnonymous: commentAnonymous,
+    avatarUrl: avatarOverride,
+    onDismiss: () => communityProfileDismiss(),
   });
 
   const onClickProfileHandler = () => {
-
-
-    if (settingsCurrentProfile?.settings_community_profile && comment?.settings_community_profile && !comment?.removed && !(globalCurrentProfile?.user === comment?.user)) {
-      setEnabled(true)
-      setProfileOpen(true)
-    }
-
+    if (commentAnonymous) return;
+    if (!comment?.user) return;
+    communityProfilePresent({
+      showBackdrop: false,
+      backdropDismiss: true,
+      initialBreakpoint: 0.8,
+      handleBehavior: 'none',
+      expandToScroll: false,
+      cssClass: 'community-profile-modal',
+    });
   }
 
 
@@ -311,7 +400,7 @@ const CommentItem: React.FC<Props> = (props) => {
       {false ?
         <IonItem className="written">
           <div className="commentdiv">
-            <IonLabel>
+            <IonLabel className="comment-label">
               <>
                 <div className="name-avatar">
                   <IonAvatar><IonSkeletonText animated={true}></IonSkeletonText></IonAvatar>
@@ -327,29 +416,91 @@ const CommentItem: React.FC<Props> = (props) => {
         </IonItem>
         :
         <>
-          {comment?.approved && ((!comment?.sidenoted && !comment?.removed) || showSidenotes) ?
+          {canShowComment ?
             <>
-              <IonItemSliding key={comment?.id} >
+              <IonItemSliding ref={slidingRef} key={comment?.id} disabled={isEditing}>
                 <IonItem id={`comment-${comment?.id}`} className={replyTo?.id == comment.id ? "replyingto" : recentlyPosted(comment.uploadDateTime) && globalCurrentProfile?.user == comment.user ? "selfrecent" : recentlyPosted(comment.uploadDateTime) ? "writtenrecent" : globalCurrentProfile?.user == comment.user ? "selfwritten" : "written"}>
                   <div className="commentdiv">
-                    <IonLabel>
+                    <IonLabel className="comment-label">
                       {!comment?.approved ?
                         <></>
                         :
                         comment?.removed ?
                           <>
-                            <h4 style={{ color: "maroon" }}>This comment has been removed.</h4>
-                            {comment?.removed_reason ? <h4>Reason: {comment?.removed_reason}</h4> : <></>}
+                            <h4 style={{ color: "maroon" }}>
+                              {isOwner ? "Your removed comments are only visible to you." : "This comment has been removed."}
+                            </h4>
+                                {isOwner && (
+                                  <div className="name-avatar">
+                                <IonAvatar className={avatarClassName}>
+                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                                </IonAvatar>
+                                <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                              </div>
+                            )}
+                            {comment?.removed_reason ? (
+                              <>
+                                <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                                <h4>Reason: {comment?.removed_reason}</h4>
+                              </>
+                            ) : null}
+                            <ModerationNote
+                              moderationNote={comment.moderation_note}
+                              moderationIconOnly={false}
+                              moderationNoteLonger={comment.moderation_note_longer}
+                            />
+                          </>
+                          : comment?.sidenoted ?
+                          <>
+                            <IonRow className="ion-align-items-center">
+                              <h4 style={{ color: "maroon", marginRight: "6px" }}>This comment has been sidenoted.</h4>
+                              {isOwner && (
+                                <IonButton fill="clear" size="small" onClick={showSidenoteInfo}>
+                                  <IonIcon icon={informationCircleOutline}></IonIcon>
+                                </IonButton>
+                              )}
+                            </IonRow>
+                            <div className="name-avatar">
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
+                              <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                            </div>
+                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                            <ModerationNote
+                              moderationNote={comment.moderation_note}
+                              moderationIconOnly={false}
+                              moderationNoteLonger={comment.moderation_note_longer}
+                            />
                           </>
                           :
                           <>
-                            <div className="name-avatar" onClick={() => onClickProfileHandler()}>
-                              {(comment?.settings_community_profile && settingsCurrentProfile?.settings_community_profile && !comment?.removed) ? <IonAvatar><img src={comment?.profile_image} onError={(e) => onImgError(e)} /></IonAvatar> : <></>}
+                            <div className="name-avatar comment-name-row" onClick={isEditing ? undefined : () => onClickProfileHandler()}>
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
                               <h3> {comment?.username ? comment?.username : "Anonymous"}</h3>
                               {profileLoading && <IonSpinner name="bubbles"></IonSpinner>}
                             </div>
-                            <h4 className="css-fix"><Linkify>{comment?.text}</Linkify></h4>
-
+                            {isEditing ? (
+                              <div className="comment-edit-inline">
+                                <IonTextarea
+                                  value={editDraft}
+                                  rows={4}
+                                  onIonInput={(event) => setEditDraft(event.detail.value ?? "")}
+                                />
+                                <div className="comment-edit-actions">
+                                  <IonButton size="small" fill="clear" color="medium" onClick={handleCancelEdit}>
+                                    Cancel
+                                  </IonButton>
+                                  <IonButton size="small" color="primary" onClick={handleSaveEdit} disabled={editSaving}>
+                                    {editSaving ? "Saving..." : "Save"}
+                                  </IonButton>
+                                </div>
+                              </div>
+                            ) : (
+                              <h4 className="css-fix comment-body-text"><Linkify>{commentText}</Linkify></h4>
+                            )}
                           </>
                       }
                     </IonLabel>
@@ -378,6 +529,28 @@ const CommentItem: React.FC<Props> = (props) => {
                             moderationNoteLonger={comment.moderation_note_longer}
                           />
                         </div>
+                        {editedLabelVisible && (
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            onClick={() => {
+                              presentOriginalComment({
+                                showBackdrop: false,
+                                backdropDismiss: true,
+                                breakpoints: [0, 0.3, 0.9],
+                                initialBreakpoint: 0.3,
+                                handleBehavior: "none",
+                                expandToScroll: false,
+                                cssClass: "comment-original-modal",
+                              });
+                            }}
+                            style={{ marginRight: "4px" }}
+                          >
+                            <IonText color="medium" style={{ fontSize: "10pt" }}>
+                              edited
+                            </IonText>
+                          </IonButton>
+                        )}
                         <div style={{ alignItems: "center", display: "inline-flex", paddingTop: "5pt" }} >
                           <IonButton fill="clear" color="primary" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton>
                           {comment?.reply_count > 0 ?
@@ -397,26 +570,46 @@ const CommentItem: React.FC<Props> = (props) => {
                     }
                   </div>
                 </IonItem>
-                <IonItemOptions side="start">
-                  <IonItemOption disabled={true} className="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
-                </IonItemOptions>
-                {globalCurrentProfile?.user !== comment?.user ?
-                  <IonItemOptions side="end">
-                    <IonItemOption color="danger" ><IonButton fill="clear" color="light" onClick={() => createReportPresent()}><IonIcon icon={alertIcon}></IonIcon></IonButton></IonItemOption>
-                    {comment?.sidenoted ? <></> :
-                      <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
-                    }
-                    <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
-                  </IonItemOptions>
-                  :
-                  <IonItemOptions side="end">
-                    <>
-                      <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
-                      {(limits?.comments_removed < 5 && recentlyPosted(comment.uploadDateTime)) &&
-                        <IonItemOption color="black" ><IonButton fill="clear" color="white" onClick={() => removeCommentAlert()}><FontAwesomeIcon icon={faMessageXmark}></FontAwesomeIcon></IonButton></IonItemOption>
-                      }
-                    </>
-                  </IonItemOptions>}
+                {!isEditing && (
+                  <>
+                    <IonItemOptions side="start">
+                      <IonItemOption disabled={true} className="message-timestamp">{getTime(comment?.uploadDateTime)}</IonItemOption>
+                    </IonItemOptions>
+                    {globalCurrentProfile?.user !== comment?.user ?
+                      <IonItemOptions side="end">
+                        <IonItemOption color="danger">
+                          <IonButton
+                            fill="clear"
+                            color="light"
+                            onClick={() => createReportPresent()}
+                            disabled={reportedByMe}
+                          >
+                            <IonIcon icon={alertIcon}></IonIcon>
+                          </IonButton>
+                        </IonItemOption>
+                        {comment?.sidenoted ? <></> :
+                          <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
+                        }
+                        <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                      </IonItemOptions>
+                      :
+                      <IonItemOptions side="end">
+                        <>
+                          <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                          {canEdit && (
+                            <IonItemOption color="medium">
+                              <IonButton fill="clear" color="white" onClick={handleStartEdit} disabled={isEditing}>
+                                <FontAwesomeIcon icon={faPen} />
+                              </IonButton>
+                            </IonItemOption>
+                          )}
+                          {(limits?.comments_removed < 5 && recentlyPosted(comment.uploadDateTime)) &&
+                            <IonItemOption color="black" ><IonButton fill="clear" color="white" onClick={() => removeCommentAlert()}><FontAwesomeIcon icon={faMessageXmark}></FontAwesomeIcon></IonButton></IonItemOption>
+                          }
+                        </>
+                      </IonItemOptions>}
+                  </>
+                )}
               </IonItemSliding>
               {(comment?.preview_reply || comment?.reply_count > 0 || forceShowReplies) && (
                 <CommentReplies

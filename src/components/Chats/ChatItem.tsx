@@ -1,10 +1,10 @@
-import { IonAvatar, IonBadge, IonItem, IonList, IonRow, IonText, useIonModal } from "@ionic/react";
-import React, { useEffect, useState } from "react";
-import { getProfileCardInfo, isPersonalPlus, onImgError } from "../../hooks/utilities";
+import { IonAvatar, IonBadge, IonItem, IonText, useIonModal } from "@ionic/react";
+import React, { useState } from "react";
+import { isPersonalPlus, onImgError } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 import { useQueryClient } from "@tanstack/react-query";
 import TextModal from "../TextModal";
-import { useGetChatDetails } from "../../hooks/api/chats/chat-details";
+import { chatQueryKeys } from "../../hooks/api/chats/chat-query-keys";
 
 
 
@@ -22,8 +22,8 @@ const ChatItem: React.FC<Props> = (props) => {
 
     const queryClient = useQueryClient()
 
-    const profileDetails = useProfileDetails(user, true).data;
-    const chatDetails = useGetChatDetails(chat?.id).data;
+    const [profileDetailsEnabled, setProfileDetailsEnabled] = useState(false);
+    const profileDetails = useProfileDetails(user, profileDetailsEnabled).data;
     
 
     const [handlingDismiss, setHandlingDismiss] = useState(false)
@@ -32,7 +32,10 @@ const ChatItem: React.FC<Props> = (props) => {
     const handleDismiss = () => {
         setHandlingDismiss(true)
         queryClient.invalidateQueries({
-            queryKey: ['chats'],
+            queryKey: chatQueryKeys.all,
+        })
+        queryClient.invalidateQueries({
+            queryKey: chatQueryKeys.paginated,
         })
         queryClient.invalidateQueries({
             queryKey: ['unread'],
@@ -46,7 +49,7 @@ const ChatItem: React.FC<Props> = (props) => {
 
     const [present, dismiss] = useIonModal(TextModal, {
         textModalData: chat,
-        unreadCount: chatDetails?.unread_count ?? 0,
+        unreadCount: chat?.unread_count ?? 0,
         profileDetails: profileDetails,
         pro: isPersonalPlus(currentUserProfile?.subscription_level),
         settingsAlt: currentUserProfile?.settings_alt_text,
@@ -55,29 +58,30 @@ const ChatItem: React.FC<Props> = (props) => {
       });
     
       const openModal = () => {
+        setProfileDetailsEnabled(true);
         present();
       }
 
     return (
         <>
             {(!(currentUserProfile?.hidden_dialogs.includes(user)) && !(currentUserProfile?.blocked_connections.includes(user))) ?
-                <IonItem className="chat-item" button disabled={!profileDetails} detail={true} 
+                <IonItem className="chat-item" button disabled={false} detail={true} 
                 onClick={() => 
                 { openModal() }}>
                     <IonAvatar>
                     {profileDetails?.deactivated_profile?
                         <img alt="chat avatar" src={"../static/img/null.png"} onError={(e) => onImgError(e)} />
                         :
-                        <img alt="chat avatar" src={profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
+                        <img alt="chat avatar" src={chat?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
                     }
                     </IonAvatar>
-                    <IonText className="name">{profileDetails?.name || "User"}</IonText>
-                    {handlingDismiss? <></> : chatDetails?.unread_count > 0 ? <IonBadge className="unread-badge" slot="end">
+                    <IonText className="name">{chat?.name || "User"}</IonText>
+                    {handlingDismiss? <></> : chat?.unread_count > 0 ? <IonBadge className="unread-badge" slot="end">
                                 {currentUserProfile?.subscription_level !== "none" && currentUserProfile?.settings_new_message_count == true ?
-                                  chatDetails?.unread_count + " new"
+                                  chat?.unread_count + " new"
                                   : "New message"}
                       </IonBadge>
-                        : chatDetails?.last_message?.out == false && chatDetails?.last_message?.heart == false && currentUserProfile?.settings_chats_next_reminder? <IonBadge className="ion-text-wrap" color="gray" slot="end" style={{maxWidth: "30%"}}>Keep it going!</IonBadge>
+                        : chat?.keep_it_going && currentUserProfile?.settings_chats_next_reminder ? <IonBadge className="ion-text-wrap" color="gray" slot="end" style={{maxWidth: "30%"}}>Keep it going!</IonBadge>
                       : <></>}
 
                 </IonItem>

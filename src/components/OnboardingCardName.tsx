@@ -47,11 +47,22 @@ const OnboardingCardZipcode: React.FC = () => {
     fetchData();
 }, []);
 
+  useEffect(() => {
+    if (nickname !== null) return;
+    const existing = data?.nickname ?? data?.name ?? null;
+    if (existing) {
+      setNickname(existing);
+    }
+  }, [data, nickname]);
+
 
   const updateProfile = async (e: any) => {
 
     if (nickname !== null) {
-      const response = await updateCurrentUserProfile({ nickname: nickname })
+      const existing = data?.nickname ?? data?.name ?? null;
+      if (nickname !== existing) {
+        await updateCurrentUserProfile({ nickname: nickname })
+      }
     }
 
     swiper.slideNext()

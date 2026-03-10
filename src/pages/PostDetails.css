@@ -181,3 +181,12 @@ ion-row.comment-username ion-button{
   --padding-top: 15pt;
   --padding-bottom: 15pt;
 }
+
+ion-avatar.connect-avatar {
+  border: 2px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+ion-avatar.refresh-avatar img {
+  filter: grayscale(1);
+}

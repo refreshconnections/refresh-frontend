@@ -16,9 +16,12 @@ import StatusToast from '../components/StatusToast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/pro-solid-svg-icons/faArrowsRotate';
 import PersonalProfile from './PersonalProfile';
+import CommunityOnboarding from './CommunityOnboarding';
 import EditLocationModal from '../components/EditLocationModal';
 import EditUsernameModal from '../components/EditUsernameModal';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
+import SelfProfileV2 from '../components/SelfProfileV2';
+import CommunityProfileSection from '../components/CommunityProfileSection';
 
 const Profile: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,6 +37,9 @@ const Profile: React.FC = () => {
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
     onDismiss: () => dismissPersonalProfile(),
+  });
+  const [presentCommunityOnboarding, dismissCommunityOnboarding] = useIonModal(CommunityOnboarding, {
+    onDismiss: () => dismissCommunityOnboarding(),
   });
   const [presentLocationModal, dismissLocationModal] = useIonModal(EditLocationModal, {
     onDismiss: () => dismissLocationModal(),
@@ -253,7 +259,7 @@ const Profile: React.FC = () => {
                 <IonButton color="tertiary" onClick={async () => reactivateProfileHandler()}>Reactivate profile</IonButton>
                 </>}
               </IonRow> :
-              data?.paused_profile ?
+              data?.paused_profile && data?.created_profile ?
               <IonRow className="unpause-profile">
                 <IonNote>Your profile is currently paused.</IonNote>
                 {moderation?.moderator_email_sent ?
@@ -264,7 +270,7 @@ const Profile: React.FC = () => {
               :
               <></>}
           {data?.created_profile ? (
-            <SelfProfile />
+                        <SelfProfileV2 />
           ) : (
             <IonCard className="created-no-shadow ">
               <IonCardContent className="ion-justify-content-center" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -275,12 +281,19 @@ const Profile: React.FC = () => {
                 <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
                   Create personal profile
                 </IonButton>
-                <IonButton onClick={() => presentUsernameModal()} expand="block" fill="outline" color="medium">
-                  Update username
-                </IonButton>
+                {!data?.username ? (
+                  <IonButton onClick={() => presentCommunityOnboarding()} expand="block" color="navy">
+                    Create community profile
+                  </IonButton>
+                ) : null}
                 <IonButton onClick={() => presentLocationModal()} expand="block" fill="outline" color="medium">
                   Update location
                 </IonButton>
+                {data?.username ? (
+                  <div style={{ marginTop: '12px' }}>
+                    <CommunityProfileSection />
+                  </div>
+                ) : null}
               </IonCardContent>
             </IonCard>
           )}

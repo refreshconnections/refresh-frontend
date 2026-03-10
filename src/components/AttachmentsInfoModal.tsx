@@ -15,11 +15,12 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
 type Props = {
   onDismiss: () => void;
+  onNavigate: (path: string) => void;
 };
 
 
 const AttachmentsInfoModal: React.FC<Props> =  (props) => {
- const { onDismiss } = props
+ const { onDismiss, onNavigate } = props
  const currentUserProfile = useGetCurrentProfile().data;
 
   return (
@@ -52,7 +53,15 @@ const AttachmentsInfoModal: React.FC<Props> =  (props) => {
           <h2>For Pro users, audio messages will be available for 2 weeks.</h2>
         </IonText>
         {!(currentUserProfile?.subscription_level === "pro") &&
-        <IonButton style={{width: "50%", alignSelf: "center"}} href="/store">Upgrade/subscribe</IonButton>
+        <IonButton
+          style={{width: "50%", alignSelf: "center"}}
+          onClick={() => {
+            onDismiss();
+            onNavigate('/store');
+          }}
+        >
+          Upgrade/subscribe
+        </IonButton>
         }
         <IonCardTitle className="ion-justify-content-start ion-text-left ion-padding" style={{paddingTop: "40pt"}}>
           Why can't I add attachments to my messages with this person?

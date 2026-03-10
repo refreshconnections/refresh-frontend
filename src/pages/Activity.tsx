@@ -1,4 +1,4 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonGrid, IonSelect, IonSelectOption, IonTextarea, IonAlert } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonGrid, IonSelect, IonSelectOption, IonTextarea, IonAlert, useIonRouter } from '@ionic/react';
 import React from 'react'
 import { chevronBackOutline } from 'ionicons/icons';
 
@@ -20,6 +20,10 @@ import { faStarShooting } from '@fortawesome/pro-regular-svg-icons/faStarShootin
 import { faHeart } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { useGetLimits } from '../hooks/api/profiles/current-limits';
 import { faStar } from '@fortawesome/pro-solid-svg-icons';
+import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
+import { useGetSubmissionSummary } from '../hooks/api/refreshments/submission-summary';
+import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
+import CreatePostModal from '../components/CreatePostModal';
 
 
 
@@ -30,6 +34,43 @@ const Activity: React.FC = () => {
     const recentNotifications = useGetRecentNotifications().data;
     const streak = useGetCurrentStreak().data;
     const limits = useGetLimits().data;
+    const submittedPostsQuery = useGetSubmittedAnnouncements();
+    const submittedEventsQuery = useGetSubmittedEvents();
+    const submissionSummary = useGetSubmissionSummary().data;
+    const router = useIonRouter();
+
+    const submittedPosts = (submittedPostsQuery.data?.pages ?? [])
+        .flatMap((page: any) => page?.results ?? []);
+    const postStatuses = submittedPosts.map((post: any) => {
+        if (post?.approval_status) return post.approval_status;
+        return post?.approved ? 'approved' : 'pending';
+    });
+
+    const submittedEvents = (submittedEventsQuery.data?.pages ?? [])
+        .flatMap((page: any) => page?.results ?? []);
+    const eventStatuses = submittedEvents.map((event: any) => {
+        if (event?.status) return event.status;
+        return event?.approved ? 'approved' : 'pending';
+    });
+
+    const fallbackApprovedCount = postStatuses.filter((status: string) => status === 'approved').length
+        + eventStatuses.filter((status: string) => status === 'approved').length;
+    const fallbackPendingCount = postStatuses.filter((status: string) => status === 'pending').length
+        + eventStatuses.filter((status: string) => status === 'pending').length;
+    const fallbackNeedsEditCount = postStatuses.filter((status: string) => status === 'needs_edit').length
+        + eventStatuses.filter((status: string) => status === 'needs_edit').length;
+
+    const approvedCount = submissionSummary?.totals?.approved ?? fallbackApprovedCount;
+    const pendingCount = submissionSummary?.totals?.pending ?? fallbackPendingCount;
+    const needsEditCount = submissionSummary?.totals?.needs_edit ?? fallbackNeedsEditCount;
+    const hasSummaryCounts = approvedCount + pendingCount + needsEditCount > 0;
+
+    const [createPostPresent, createPostDismiss] = useIonModal(CreatePostModal, {
+        preferred_name: currentUserProfile?.name,
+        username: currentUserProfile?.username,
+        onGoToSubmissions: () => router.push('/community/submitted'),
+        onDismiss: (data: string, role: string) => createPostDismiss(data, role),
+    });
 
     return (
         <IonPage>
@@ -151,6 +192,51 @@ const Activity: React.FC = () => {
                     </>
                     : <></>}
 
+                <IonNote className="header">My post and event submissions</IonNote>
+                <IonRow className="ion-padding ion-justify-content-center">
+                    <IonCard color="white" className="ion-padding" style={{ width: '100%' }}>
+                        {hasSummaryCounts ? (
+                            <ul className="submission-summary">
+                                <li className="submission-summary-label">This month</li>
+                                {approvedCount > 0 && (
+                                    <li>
+                                        <strong>{approvedCount}</strong> approved
+                                    </li>
+                                )}
+                                {pendingCount > 0 && (
+                                    <li>
+                                        <strong>{pendingCount}</strong> pending moderator review
+                                    </li>
+                                )}
+                                {needsEditCount > 0 && (
+                                    <li>
+                                        <strong>{needsEditCount}</strong> needs edit
+                                    </li>
+                                )}
+                            </ul>
+                        ) : (
+                            <>
+                                <IonRow className="ion-text-center ion-justify-content-center">
+                                <IonText color="navy" className="ion-text-center ion-padding-bottom">
+                                    Feel like submitting a post?
+                                </IonText>
+                                </IonRow>
+                                <IonRow className="ion-justify-content-center ion-padding-bottom">
+                                    <IonButton color="primary" onClick={() => createPostPresent()}>
+                                        Create a post
+                                    </IonButton>
+                                </IonRow>
+                            </>
+                        )}
+
+                        <IonRow className="ion-justify-content-center ion-padding-top">
+                            <IonButton routerLink="/community/submitted" color="primary">
+                                My submissions
+                            </IonButton>
+                        </IonRow>
+                    </IonCard>
+                </IonRow>
+
                 {recentNotifications?.length > 0 ?
 
                     <IonNote className="header">Recent happenings</IonNote>
@@ -194,10 +280,10 @@ const Activity: React.FC = () => {
                 <IonNote style={{ padding: "20pt" }}>
 
                     <IonRow className="ion-justify-content-center">
-                        Comments removed this month: {limits?.comments_removed}/5
+                        Comments you removed this month: {limits?.comments_removed}/5
                     </IonRow>
                     <IonRow className="ion-justify-content-center">
-                        Chat messages unsent this month: {limits?.chats_removed}/5
+                        Chat messages you unsent this month: {limits?.chats_removed}/5
                     </IonRow>
                 </IonNote>
 

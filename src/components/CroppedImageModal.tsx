@@ -15,6 +15,7 @@ type Props = {
   image: any,
   picDb: string,
   imageName: string | null
+  uploadHandler?: (data: FormData) => Promise<any>;
   onDismiss: () => void;
 };
 
@@ -27,7 +28,7 @@ const CroppedImageModal: React.FC<Props> =  (props) => {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
     const [croppedImage, setCroppedImage] = useState<any>(null)
 
-    const { image, picDb, imageName, onDismiss } = props;
+    const { image, picDb, imageName, uploadHandler, onDismiss } = props;
 
     const onCancel = () => {
       onDismiss();
@@ -62,7 +63,7 @@ const CroppedImageModal: React.FC<Props> =  (props) => {
       data.append(picDb, uri);
       const size = (uri.length * 3 / 4) - (uri.indexOf('base64,') > -1 ? 8 : 0);
       console.log("Base64 size in bytes:", size);
-      const response = await uploadPhoto(data)
+      const response = uploadHandler ? await uploadHandler(data) : await uploadPhoto(data)
       console.log("response", response)
   };
 

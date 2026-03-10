@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonButton, IonFab, IonFabButton, IonIcon, IonRow, IonFabList, useIonAlert, useIonModal, IonCard, IonCardTitle, IonCardContent } from '@ionic/react';
+import { IonContent, IonPage, IonButton, IonFab, IonFabButton, IonIcon, IonRow, IonFabList, useIonAlert, useIonModal, IonCard, IonCardTitle, IonCardContent, useIonRouter, IonText } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { heartOutline as heartIcon, bugOutline as bugIcon, hourglass as hourglassIcon, square as squareIcon, alert as alertIcon, filter as filterIcon } from 'ionicons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetStatuses } from '../hooks/api/status';
 import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener } from '../hooks/utilities';
+import { Preferences } from '@capacitor/preferences';
 import { getWithExpiry, removeFromCapacitorLocalStorage, setWithExpiry } from '../hooks/capacitorPreferences/all';
 import ProfileCard from '../components/ProfileCard';
 import LoadingCard from '../components/LoadingCard';
@@ -17,14 +18,34 @@ import ReportModal from '../components/ReportModal';
 import { LikeMessageAlertModal } from './LikeMessageAlertModal';
 import StatusToast from '../components/StatusToast';
 import { IconPop } from '../components/IconPop';
+import Tips from './Tips';
 import './Page.css';
 import './Picks.css';
 import { getPicksAndProfilesWithFiltersFn, usePicksAndProfilesWithFilters } from '../hooks/api/profiles/picks-and-profiles';
 import { userQueryKeys } from '../hooks/api';
 import PersonalProfile from './PersonalProfile';
 
+const getActiveFilterCount = (profile: any) => {
+  if (!profile) return 0;
+  let count = 0;
+  count += profile.filter_lc?.length ?? 0;
+  count += profile.filter_gender_sexuality?.length ?? 0;
+  if (profile.filter_gender_sexuality_not) count += 1;
+  count += profile.filter_lived_experiences?.length ?? 0;
+  if (profile.filter_age_gt !== null && profile.filter_age_gt !== undefined) count += 1;
+  if (profile.filter_age_lt !== null && profile.filter_age_lt !== undefined) count += 1;
+  if (profile.filter_distance !== null && profile.filter_distance !== undefined) count += 1;
+  if (profile.filter_keyword) count += 1;
+  if (profile.filter_looking_for_single_selection) count += 1;
+  if (profile.filter_precautions_single_selection !== null && profile.filter_precautions_single_selection !== undefined) count += 1;
+  if (profile.filter_precautions_include_or_not && profile.filter_precautions_include_or_not !== 'none') count += 1;
+  return count;
+};
+
 const Picksv2: React.FC = () => {
+  const router = useIonRouter();
   const queryClient = useQueryClient();
+  const FILTERS_TIP_KEY = 'picks_filters_tip_seen';
 
   const { data: filterData, isLoading: filterDataIsLoading } = useGetCurrentProfile();
 
@@ -47,6 +68,7 @@ const Picksv2: React.FC = () => {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [sortedPicks, setSortedPicks] = useState<typeof picksData>(null);
+  const [showFiltersDialog, setShowFiltersDialog] = useState(false);
   const [isHydratedFromCache, setIsHydratedFromCache] = useState(false);
   const [shouldScrollToTop, setShouldScrollToTop] = useState(false);
   const skipCachedLastShownRef = useRef(false);
@@ -65,6 +87,27 @@ const Picksv2: React.FC = () => {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
   const [presentAlert] = useIonAlert();
   const [presentfirstFiltersAlert] = useIonAlert();
+
+  const markFiltersTipSeen = async () => {
+    await Preferences.set({ key: FILTERS_TIP_KEY, value: 'true' });
+    setShowFiltersDialog(false);
+  };
+
+  useEffect(() => {
+    const maybeShowFiltersTip = async () => {
+      if (!filterData) return;
+      const { value } = await Preferences.get({ key: FILTERS_TIP_KEY });
+      if (value === 'true') return;
+      const count = getActiveFilterCount(filterData);
+      if (count >= 2) {
+        setShowFiltersDialog(false);
+        return;
+      }
+      setShowFiltersDialog(true);
+    };
+
+    maybeShowFiltersTip();
+  }, [filterData]);
 
   const [offendingId, setOffendingId] = useState<number | null>(null);
   const [offendingName, setOffendingName] = useState<string | null>(null);
@@ -286,9 +329,14 @@ const Picksv2: React.FC = () => {
     setButtonLoading(false);
   };
 
+  const [tipsPresent, tipsDismiss] = useIonModal(Tips, {
+    onDismiss: () => tipsDismiss(),
+  });
+
   const [filterPresent, filterDismiss] = useIonModal(AdvancedFilterModal, {
     currentProfileData: filterData,
     pro: filterData?.subscription_level,
+    onOpenTips: () => tipsPresent(),
     onDismiss: async (changes: boolean) => {
       // Close the modal first
       filterDismiss();
@@ -322,7 +370,12 @@ const Picksv2: React.FC = () => {
     },
   });
 
-  const openAdvancedFilterModal = () => filterPresent();
+  const openAdvancedFilterModal = async () => {
+    if (showFiltersDialog) {
+      await markFiltersTipSeen();
+    }
+    filterPresent();
+  };
 
   const handleReportOpen = async (name: string, id: number) => {
     setOffendingName(name);
@@ -478,6 +531,36 @@ const Picksv2: React.FC = () => {
             &nbsp;Filters
           </IonButton>
         </IonRow>
+        {showFiltersDialog && (
+          <div className="picks-filters-overlay">
+            <div className="picks-filters-dialog-center">
+              <IonCard className="picks-filters-dialog-card">
+                <IonCardContent>
+                  <div className="picks-filters-dialog-title">
+                    Filter anytime.
+                  </div>
+                  <IonText>
+                    Filters are always available at the top or bottom of this page.
+                  </IonText>
+                  <IonRow className="picks-filters-dialog-actions">
+                    <IonButton
+                      color="primary"
+                      onClick={openAdvancedFilterModal}
+                    >
+                      Add filters now
+                    </IonButton>
+                    <IonButton
+                      fill="clear"
+                      onClick={markFiltersTipSeen}
+                    >
+                      Maybe later
+                    </IonButton>
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            </div>
+          </div>
+        )}
 
         <div ref={picksTopRef}></div>
 

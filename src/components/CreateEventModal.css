@@ -1,0 +1,117 @@
+.create-event-modal {
+  --background: var(--ion-color-step-100, #f3f2ff);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-event-modal ion-list {
+  padding-top: 0;
+}
+
+.create-event-modal ion-item {
+  --border-radius: 22px;
+  margin: 4px 12px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --background: var(--ion-color-white);
+  color: var(--ion-color-step-800);
+}
+
+.create-event-modal ion-input,
+.create-event-modal ion-textarea,
+.create-event-modal ion-select {
+  width: 100%;
+  --padding-start: 0;
+  --background: transparent;
+}
+
+.create-event-modal ion-item:first-of-type {
+  margin-top: 12px;
+}
+
+.create-event-section {
+  margin-top: 8px;
+  border-top: 1px solid transparent;
+  padding-top: 12px;
+}
+
+.create-event-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.upload-photo-section .upload-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-photo-section input[type='file'] {
+  border: 1px dashed var(--ion-color-primary);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  background: var(--ion-color-step-10);
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
+
+.required-star {
+  color: var(--ion-color-danger, #dc3545);
+  margin-left: 4px;
+}
+
+.optional-text {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  margin-left: 0;
+}
+
+.create-event-modal input[type='file'] {
+  width: 100%;
+  border: none;
+}
+
+.image-preview-item img {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.create-event-actions {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px 24px;
+}
+
+.create-event-validations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+.create-event-submit {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.recurring-note {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.post-tip-card {
+  --border-radius: 18px;
+  margin: 0 12px;
+  background: var(--ion-color-white);
+  box-shadow: none;
+  border: 1px solid var(--ion-color-step-200);
+}

@@ -224,5 +224,3 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
 };
 
 export default RefreshmentsPost;
-
-

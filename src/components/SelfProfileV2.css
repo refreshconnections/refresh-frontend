@@ -1,0 +1,506 @@
+.self-profile-v2 {
+  padding: 8px 0;
+}
+
+.self-profile-v2 ion-accordion ion-item{
+  --background: var(--ion-color-white)
+}
+.self-profile-v2 ion-accordion {
+  margin-bottom: 16px;
+  background: var(--ion-color-white);
+  border-radius: 10pt
+}
+
+.accordion-body {
+  margin-bottom: 8px;
+  padding-top: 0px
+}
+
+.preview-row {
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.info-card ion-item {
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+.info-section {
+  display: flex;
+  flex-direction: column;
+  padding-left: 0;
+}
+.info-section ion-item {
+  --background: transparent;
+  --padding-start: 16px;
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-section ion-item ion-label h2 {
+  font-size: 0.95rem;
+}
+
+.info-section ion-item ion-label p {
+  font-size: 0.85rem;
+}
+
+.info-section ion-item .tiny-edit {
+  min-width: 60px;
+  min-height: 32px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  padding: 0 10px;
+}
+
+.info-section ion-item .tiny-edit::part(native) {
+  min-height: 32px;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+
+.edit-button {
+  min-width: 60px;
+  min-height: 32px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  padding: 0 10px;
+}
+
+.edit-button::part(native) {
+  min-height: 32px;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+
+.info-button {
+  --padding-inline: 0;
+  width: 32px;
+  height: 32px;
+}
+
+ion-card-content .card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.card-field.editing {
+  align-items: stretch;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  border-radius: 12px;
+}
+
+.editing-section {
+  width: 100%;
+  padding: 6px 16px;
+}
+
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 34px;
+}
+
+.field-header p {
+  font-weight: 600;
+  margin: 0;
+  color: var(--ion-color-medium);
+}
+
+.edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.card-field ion-label h2 {
+  font-size: 0.95rem;
+}
+
+.card-field ion-text small {
+  display: block;
+  margin-top: 4px;
+}
+
+.card-field .editing-section h2 {
+  margin: 0;
+  padding: 6px 0;
+  line-height: 1.3;
+  min-height: 32px;
+}
+
+.card-field ion-input,
+.card-field ion-textarea {
+  margin-top: 0;
+  width: 100%;
+  display: block;
+  --background: var(--ion-color-white);
+  --border-radius: 12px;
+  --padding-start: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-end: 0;
+}
+
+.card-field ion-input {
+  min-height: 32px;
+}
+
+.card-field ion-input::part(native) {
+  min-height: 32px;
+  line-height: 32px;
+}
+
+.card-field:not(.editing) .field-actions {
+  margin-top: 0;
+}
+
+.card-edit {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --background: var(--ion-color-light);
+  border-radius: 12px;
+}
+
+.card-edit ion-input,
+.card-edit ion-textarea {
+  width: 100%;
+}
+
+.card-field.editing ion-input::part(native),
+.card-field.editing ion-textarea::part(native) {
+  background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.choice-editor ion-input::part(native),
+.choice-editor ion-textarea::part(native) {
+  background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.field-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 32px;
+}
+
+.gender-choices {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gender-choices .field-header {
+  flex-direction: row;
+  width: 100%;
+}
+
+.talk-section-header {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.talk-section-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.talk-section-header ion-text {
+  font-size: 0.85rem;
+}
+
+.edit-button.blank-edit {
+  --border-color: var(--ion-color-navy, #0b1c44);
+  color: var(--ion-color-navy, #0b1c44);
+}
+
+.edit-button.blank-edit::part(native) {
+  border-color: var(--ion-color-navy, #0b1c44);
+  color: var(--ion-color-navy, #0b1c44);
+}
+
+.field-actions .cancel-button {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .clear-button {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .save-button {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions .cancel-button::part(native),
+.field-actions .clear-button::part(native),
+.field-actions .save-button::part(native) {
+  min-width: 60px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.field-actions.display-only {
+  margin-top: 4px;
+}
+
+.multi-line {
+  white-space: pre-line;
+}
+
+.save-row {
+  margin-top: 8px;
+}
+
+.list-edit ion-item {
+  --background: var(--ion-color-light);
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.covid-list ion-text {
+  display: block;
+  margin: 8px 0 4px;
+}
+
+
+.card-field.editing .field-header {
+  margin-bottom: 0;
+}
+
+.accordion-content {
+  padding: 0;
+}
+
+.accordion-header {
+  --background: var(--ion-color-white);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.accordion-header.open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.accordion-header.open + .accordion-content {
+  padding-top: 0;
+  background: var(--ion-color-white);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  margin-top: -1px;
+}
+
+.accordion-header.open + .accordion-content ion-card {
+  margin-top: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.accordion-header ion-label {
+  padding: 8px;
+}
+
+.selfprofile-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 20px;
+}
+
+.selfprofile-asterisk {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: auto;
+  height: auto;
+  font-size: 16px;
+}
+
+.selfprofile-info-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selfprofile-info-button {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  height: auto;
+  min-height: auto;
+  font-size: 14px;
+}
+
+.selfprofile-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--ion-color-primary);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  padding: 12px 20px 24px;
+}
+
+.selfprofile-footnote-star {
+  font-weight: 700;
+}
+
+.selfprofile-footnote.lived-footnote {
+  padding: 6px 8px 0;
+}
+
+.accordion-header .accordion-toggle {
+  pointer-events: auto;
+  margin-right: 8px;
+}
+
+.accordion-toggle ion-icon {
+  transition: transform 0.2s ease;
+}
+
+.accordion-toggle.expanded ion-icon {
+  transform: rotate(180deg);
+}
+
+.choice-summary {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 0;
+  color: var(--ion-color-dark);
+}
+
+.choice-editor {
+  margin-top: 8px;
+}
+
+.choice-editor ion-item {
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.choice-editor ion-list {
+  margin: 0;
+  background: var(--ion-color-white);
+  border-radius: 10pt
+}
+
+.choice-group + .choice-group {
+  margin-top: 12px;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--ion-color-black);
+}
+
+.community-bio-placeholder {
+  font-size: 0.95rem;
+}
+
+.community-bio-placeholder.community-bio-empty {
+  color: var(--ion-color-navy);
+}
+
+.community-bio-placeholder.community-bio-text {
+  color: var(--ion-color-black);
+}
+
+.community-profile-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.community-toggle-item ion-label {
+  color: var(--ion-color-medium);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.community-age-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.community-age-item ion-label p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.community-age-item ion-label {
+  flex: 1 1 auto;
+}
+
+.community-age-item ion-select {
+  margin-left: auto;
+  width: auto;
+  max-width: 60%;
+  min-width: 0;
+  text-align: right;
+  justify-content: flex-end;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.community-age-item ion-select::part(text) {
+  text-align: right;
+  width: 100%;
+}
+
+.community-subtitle {
+  font-size: 0.85rem;
+  color: var(--ion-color-navy)
+}
+
+.community-bio-item {
+  --background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.community-bio-item ion-textarea::part(native) {
+  border-radius: 12px;
+}
+
+.self-profile-v2 ion-card {
+  box-shadow: none;
+  margin: 0 0 0 8px;
+  --background: var(--ion-color-white);
+}

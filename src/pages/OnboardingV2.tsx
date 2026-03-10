@@ -327,8 +327,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   adultSlideIndex,
   underAgeSlideIndex
 }) => {
-  const defaultBirthday = '1990-01-01';
-  const [birthday, setBirthday] = useState<string | null>(defaultBirthday);
+  const [birthday, setBirthday] = useState<string | null>(null);
   const [age, setAge] = useState<number | null>(null);
   const [hasBirthday, setHasBirthday] = useState(false);
   const [isAdult, setIsAdult] = useState<boolean | null>(null);
@@ -355,11 +354,12 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
     setIsAdult(computedAge >= 18);
   };
 
+  const normalizedProfileBirthDate =
+    profileBirthDate && profileBirthDate !== '1001-01-01' ? profileBirthDate : null;
+
   useEffect(() => {
-    const initialValue =
-      profileBirthDate && profileBirthDate !== '1001-01-01' ? profileBirthDate : defaultBirthday;
-    handleChange(initialValue);
-  }, [profileBirthDate]);
+    handleChange(normalizedProfileBirthDate);
+  }, [normalizedProfileBirthDate]);
 
   const saveBirthday = async () => {
     if (!birthday) return;
@@ -411,7 +411,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
           <IonModal keepContentsMounted>
             <IonDatetime
               id="birthdayPicker"
-              value={birthday ?? profileBirthDate ?? '2000-01-01'}
+              value={birthday ?? normalizedProfileBirthDate ?? '1990-01-01'}
               presentation="date"
               preferWheel
               max={maxBirthday()}
@@ -559,8 +559,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
         <IonCardContent>
           <IonCardTitle>You're ready to get started!</IonCardTitle>
           <div className="onboarding-v2__ready-options">
-            {/* Hide community flow for now */}
-            {/* <div className="onboarding-v2__option">
+            <div className="onboarding-v2__option">
               <h2>Set up a community profile</h2>
               <p>Join in on conversations at the Refreshments Bar and other shared spaces.</p>
               <IonButton
@@ -568,12 +567,12 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
                 disabled={isCompleting}
                 onClick={(event) => {
                   onMarkOnboarded?.();
-                  onFinish('/community', event);
+                  onFinish('/community-onboarding', event);
                 }}
               >
-                {isCompleting ? <IonSpinner name="dots" /> : 'Go to community'}
+                {isCompleting ? <IonSpinner name="dots" /> : 'Start community profile'}
               </IonButton>
-            </div> */}
+            </div>
     
             <div className="onboarding-v2__option">
               <h2>Set up a personal profile</h2>
@@ -591,7 +590,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
             </div>
             <div className="onboarding-v2__option">
               <h2>Check things out first</h2>
-              <p>Take a look around first. You can always add a personal profile later.</p>
+              <p>Take a look around first. You can always add a community and personal profile later.</p>
               <IonButton
                 expand="block"
                 fill="outline"

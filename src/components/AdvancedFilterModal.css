@@ -65,6 +65,22 @@ ion-content.adv-filters ion-accordion ion-item{
   --background: var(--ion-color-background);
 }
 
+ion-content.adv-filters ion-item.keyword-input-item {
+  --inner-border-width: 0;
+  --border-radius: 14px;
+  margin-top: 8px;
+}
+
+ion-content.adv-filters ion-item.keyword-input-item ion-input {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  border-radius: 14px;
+  background: var(--ion-color-white);
+
+}
+
 ion-content.adv-filters ion-accordion-group.blue-bg ion-item{
   --background: var(--ion-color-midblue); 
 }
@@ -116,6 +132,19 @@ ion-content.adv-filters ion-row.any-all-row {
 ion-content.adv-filters ion-row.lr-pad {
   padding-left: 20pt;
   padding-right: 20pt;
+}
+
+ion-content.adv-filters ion-row.gender-not-row {
+  margin-top: 8px;
+}
+
+ion-content.adv-filters ion-item.gender-not-item {
+  --background: var(--ion-color-background);
+  --inner-border-width: 0;
+}
+
+ion-content.adv-filters ion-label.gender-not-label {
+  width: 100%;
 }
 
 ion-content.adv-filters ion-badge.small {

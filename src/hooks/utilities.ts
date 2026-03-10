@@ -558,6 +558,34 @@ export async function uploadPhoto(photo) {
     return response.data
 }
 
+export async function uploadCommunityProfilePhoto(photo) {
+    const url = `${BASE_URL}/api/profiles/community_profile/upload_img/`
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json; charset=UTF-8',
+    }
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: photo,
+        headers: {
+            'Authorization': "Token " + localStorage.getItem("token"),
+            'X-CSRFToken': Cookies.get('csrftoken'),
+            'accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Access-Control-Allow-Origin': '*',
+            'enctype': 'multipart/form-data',
+        }
+    });
+
+    return response.data
+}
+
 export async function getChats() {
     const url = `${BASE_URL}/api/profiles/chats/dialogs/`;
 
@@ -714,6 +742,30 @@ export async function removeComment(comment_id) {
 
 
     console.log("removed:", response)
+
+    return response.data
+}
+
+export async function editComment(comment_id, text) {
+    const url = `${BASE_URL}/api/refreshments/comment/edit/`;
+
+    const data = {
+        "comment_id": comment_id,
+        "text": text
+    }
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken
+    }
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: data,
+        headers: headers
+    });
 
     return response.data
 }
@@ -1073,8 +1125,6 @@ export async function addComment(data) {
     });
 
 
-    console.log("create comment:", response)
-
     return response
 }
 
@@ -1100,8 +1150,6 @@ export async function addCommentReply(data) {
         headers: headers
     });
 
-
-    console.log("create comment reply:", response)
 
     return response
 }
@@ -1129,6 +1177,31 @@ export async function announcementUploadPhoto(data, announcement_id) {
     });
 
     console.log("ann upload response", response)
+
+    return response.data
+}
+
+export async function eventUploadPhoto(data, event_id) {
+    const url = `${BASE_URL}/api/event/upload_img/` + event_id
+
+    const token = localStorage.getItem("token")
+
+    const response = await axios({
+        method: 'patch',
+        url: url,
+        data: data,
+        headers: {
+            'Authorization': "Token " + token,
+            'X-CSRFToken': Cookies.get('csrftoken'),
+            'accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Access-Control-Allow-Origin': '*',
+            'enctype': 'multipart/form-data',
+        }
+    });
+
+    console.log("event upload response", response)
 
     return response.data
 }
@@ -1402,7 +1475,7 @@ export async function sendAnEmail(to_email, subject, message) {
 }
 
 export function onImgError(e) {
-    const img = e.currentTarget;
+  const img = e.currentTarget;
 
     // Prevent infinite fallback loop
     if (img.dataset.fallback !== 'true') {
@@ -2047,6 +2120,54 @@ async function paintSystemBars(isDark: boolean, bg: string) {
   }
 }
 
+export function normalizeLocalMediaUrl(url?: string | null) {
+  if (!url) return undefined;
+  const baseUrl = BASE_URL || '';
+
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  if (!baseUrl) return url;
+
+  if (url.startsWith('/media') || url.startsWith('/static')) {
+    return `${baseUrl}${url}`;
+  }
+
+  if (url.startsWith('media/') || url.startsWith('static/')) {
+    return `${baseUrl}/${url}`;
+  }
+
+  return url;
+}
+
+type AvatarConfig = {
+  profileImage?: string | null;
+  viewerConnect?: boolean;
+  authorConnect?: boolean;
+  includeBylineClass?: boolean;
+  placeholderSrc?: string;
+};
+
+export function getAvatarDisplay({
+  profileImage,
+  viewerConnect,
+  authorConnect,
+  includeBylineClass = false,
+  placeholderSrc = '../static/img/refresh-flower-blue.png',
+}: AvatarConfig) {
+  const hasImage = Boolean(profileImage);
+  const showConnectBorder = Boolean(viewerConnect && authorConnect && hasImage);
+  const baseClass = includeBylineClass ? 'byline-avatar' : '';
+  const className = showConnectBorder
+    ? `${baseClass} connect-avatar`.trim()
+    : hasImage
+      ? `${baseClass} community-avatar`.trim()
+      : `${baseClass} refresh-avatar`.trim();
+  const src = hasImage ? normalizeLocalMediaUrl(profileImage) : placeholderSrc;
+  return { className, src, hasImage, showConnectBorder };
+}
+
 
 export async function setFontSizePref(fontsize) {
     await Preferences.set({
@@ -2545,6 +2666,7 @@ const EMAIL_TEST = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 // Use .match() with GLOBAL and then post-filter
 const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{6,}\d/g;
 const URL_RE = /(?:https?:\/\/|www\.)\S+/gi;
+const BARE_URL_RE = /\b([a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?/gi;
 const digits = (s) => s.replace(/\D+/g, "");
 const plausiblePhone = (d) => d.length >= 7 && d.length <= 15;
 
@@ -2557,4 +2679,90 @@ export function containsPii(input) {
     const withoutUrls = text.replace(URL_RE, " ");
     const candidates = withoutUrls.match(PHONE_CANDIDATE_RE) ?? [];
     return candidates.some((c) => plausiblePhone(digits(c)));
+}
+
+const SHORTENER_HOSTS = new Set([
+    "bit.ly",
+    "bitly.com",
+    "tinyurl.com",
+    "goo.gl",
+    "ow.ly",
+    "buff.ly",
+    "rebrand.ly",
+    "is.gd",
+    "s.id",
+    "bit.do",
+    "cutt.ly",
+    "tiny.cc",
+    "lnkd.in",
+    "rb.gy",
+    "trib.al",
+    "shorturl.at",
+]);
+
+const SHORTENER_ALLOWLIST = new Set([
+    "discord.gg",
+    "youtu.be",
+    "t.co",
+    "fb.me",
+    "lnkd.in",
+    "instagr.am",
+    "redd.it",
+]);
+
+const GOOGLE_DOC_HOSTS = new Set([
+    "docs.google.com",
+    "drive.google.com",
+    "forms.gle",
+    "docs.googleusercontent.com",
+    "script.google.com",
+    "sites.google.com",
+    "slides.google.com",
+    "sheets.google.com",
+    "cryptpad.fr",
+    "cryptpad.org",
+    "cryptpad.eu",
+]);
+
+const normalizeHost = (rawUrl) => {
+    const trimmed = String(rawUrl ?? "").trim();
+    if (!trimmed) return null;
+    const cleaned = trimmed.replace(/^[([<{]+/, "").replace(/[)\],.!?;:]+$/, "");
+    const withScheme = cleaned.startsWith("http://") || cleaned.startsWith("https://")
+        ? cleaned
+        : `https://${cleaned}`;
+    try {
+        const host = new URL(withScheme).hostname.toLowerCase();
+        return host.startsWith("www.") ? host.slice(4) : host;
+    } catch {
+        return null;
+    }
+};
+
+const extractHosts = (input) => {
+    const text = typeof input === "string" ? input : String(input ?? "");
+    if (!text) return [];
+    const urls = text.match(URL_RE) ?? [];
+    const bareUrls = text.match(BARE_URL_RE) ?? [];
+    const combined = [...urls, ...bareUrls];
+    return combined
+        .map(normalizeHost)
+        .filter((host): host is string => Boolean(host));
+};
+
+export function containsLinkShortener(input) {
+    const hosts = extractHosts(input);
+    return hosts.some((host) => {
+        if (SHORTENER_ALLOWLIST.has(host)) return false;
+        if (SHORTENER_HOSTS.has(host)) return true;
+        return host.endsWith(".shorturl.at");
+    });
+}
+
+export function containsGoogleDocLink(input) {
+    const hosts = extractHosts(input);
+    return hosts.some((host) => {
+        if (GOOGLE_DOC_HOSTS.has(host)) return true;
+        return host.endsWith(".docs.google.com") || host.endsWith(".drive.google.com");
+    });
 }

@@ -1,0 +1,131 @@
+ion-modal.community-profile-modal {
+  --background: transparent;
+  --backdrop-opacity: 0;
+  --ion-background-color: transparent;
+}
+
+ion-modal.community-profile-modal::part(content) {
+  background: transparent;
+  box-shadow: none;
+}
+
+ion-modal.community-profile-modal::part(backdrop) {
+  background: transparent;
+}
+
+ion-modal.community-profile-modal ion-content {
+  --background: transparent;
+  --ion-background-color: transparent;
+}
+
+ion-modal.community-profile-modal .ion-page {
+  background: transparent;
+}
+
+.community-profile-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  background: transparent;
+}
+
+.community-profile-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--ion-card-background, #ffffff);
+}
+
+.community-profile-card-content {
+  background: var(--ion-card-background, #ffffff);
+  position: relative;
+}
+
+.community-profile-inline-button {
+  display: inline-flex;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  margin: 0;
+  min-height: auto;
+  height: auto;
+  text-transform: none;
+  vertical-align: baseline;
+}
+
+.community-profile-inline-button::part(native) {
+  display: inline;
+  padding: 0;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+.community-profile-inline-name {
+  color: var(--ion-color-primary);
+  font-weight: 500;
+}
+
+.community-profile-ellipsis {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: auto;
+  height: auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f2f3fc;
+}
+
+.community-profile-ellipsis ion-icon {
+  font-size: 20px;
+}
+
+.community-profile-ellipsis--corner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.community-profile-close {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: auto;
+  height: 34px;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 12px;
+}
+
+.community-profile-close--corner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.community-profile-info-box {
+  display: block;
+  background: #e6efff;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.community-profile-info-box p {
+  margin: 0;
+}
+
+.community-profile-info-center {
+  text-align: center;
+}
+
+.community-profile-profile-item {
+  margin-top: 12px;
+}

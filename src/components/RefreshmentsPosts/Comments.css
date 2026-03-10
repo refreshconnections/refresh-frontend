@@ -90,6 +90,45 @@ ion-item .commentdiv {
   padding-top: 5pt;
 }
 
+.comment-label {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.comment-name-row {
+  order: 1;
+}
+
+.comment-edit-inline {
+  order: 2;
+}
+
+.comment-body-text {
+  order: 2;
+}
+
+.comment-edit-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-edit-inline ion-textarea {
+  --background: white;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+  border-radius: 10px;
+  border: 1px solid #d8d8e6;
+}
+
+.comment-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .borderwtail ul{
   padding-left: 10pt;
 }
@@ -132,4 +171,50 @@ ion-item .commentdiv {
   transform: translateY(-50%);
   margin-inline-start: 0;  /* remove Ionic’s extra gap */
   pointer-events: none;
+}
+
+ion-avatar.connect-avatar {
+  border: 2px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+ion-avatar.refresh-avatar img {
+  filter: grayscale(1);
+}
+
+.comment-original-modal .ion-page {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.comment-original-modal-content {
+  padding-bottom: 96px;
+}
+
+.comment-original-header {
+  align-items: center;
+}
+
+.comment-original-close-col {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.comment-original-title {
+  font-size: 14px;
+  color: var(--ion-color-primary);
+  margin: 0;
+}
+
+.comment-original-time {
+  font-size: 12px;
+  color: var(--ion-color-primary);
+  margin: 4px 0 0;
+}
+
+.comment-original-note {
+  display: block;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin-top: 12px;
 }

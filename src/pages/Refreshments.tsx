@@ -1,17 +1,38 @@
 import {
-  IonContent, IonInfiniteScroll,
-  IonInfiniteScrollContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner
+  IonContent,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  RefresherEventDetail,
+  IonPage,
+  IonButton,
+  IonText,
+  IonRow,
+  IonRefresher,
+  IonRefresherContent,
+  IonCol,
+  IonAlert,
+  IonNote,
+  IonSpinner,
+  IonList,
+  IonCard,
+  IonCardContent,
+  IonItem,
+  IonIcon,
+  useIonAlert,
+  useIonModal,
+  useIonRouter,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { arrowDown } from 'ionicons/icons';
-
 import "./Page.css"
 import "./Community.css"
+import "./Refreshments.css"
 import { useGetPosts } from '../hooks/api/refreshments/posts';
+import EventsCalendar from '../components/EventsCalendar';
 import RefreshmentsPost from '../components/RefreshmentsPosts/RefreshmentsPost';
 import { faMagnifyingGlass } from '@fortawesome/pro-solid-svg-icons/faMagnifyingGlass';
 import { faMegaphone } from '@fortawesome/pro-solid-svg-icons/faMegaphone';
 import { faFrown } from '@fortawesome/pro-regular-svg-icons/faFrown';
+import { faCalendar } from '@fortawesome/pro-solid-svg-icons/faCalendar';
 
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -30,14 +51,49 @@ import RefreshmentsFiltersModal from '../components/RefreshmentsFiltersModal';
 import { Preferences } from '@capacitor/preferences';
 import { isCommunityPlus } from '../hooks/utilities';
 import { useGetSiteSettings } from '../hooks/api/sitesettings';
+import { dismissNotification, useGetRecentNotifications } from '../hooks/api/profiles/recent-notifications';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { faLocationDot  } from '@fortawesome/pro-solid-svg-icons/faLocationDot';
 import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocationDotSlash';
+import { useHistory, useLocation } from 'react-router-dom';
+import { close } from 'ionicons/icons';
 
 
 const Refreshments: React.FC = () => {
 
   const queryClient = useQueryClient()
+  const router = useIonRouter();
+  const history = useHistory();
+  const location = useLocation();
+  const renderCalendarTrigger = (open: () => void) => (
+    <IonButton color="light" fill="solid" className="events-calendar-inline-button refreshments-control-button" onClick={open}>
+      <FontAwesomeIcon icon={faCalendar} />
+    </IonButton>
+  )
+
+  const [calendarDateParam, setCalendarDateParam] = useState<string | null>(null);
+  const [calendarAutoOpen, setCalendarAutoOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const dateParam = params.get('calendarDate');
+    if (dateParam) {
+      setCalendarDateParam(dateParam);
+      setCalendarAutoOpen(true);
+    } else {
+      setCalendarDateParam(null);
+      setCalendarAutoOpen(false);
+    }
+  }, [location.search]);
+
+  const handleCalendarAutoOpenHandled = () => {
+    if (!calendarDateParam) return;
+    const params = new URLSearchParams(location.search);
+    params.delete('calendarDate');
+    history.replace({ pathname: location.pathname, search: params.toString() });
+    setCalendarAutoOpen(false);
+  };
 
 
   const [bar, setBar] = useState<string>("")
@@ -66,12 +122,26 @@ const Refreshments: React.FC = () => {
 
   const statuses = useGetStatuses().data;
   const siteSettings = useGetSiteSettings().data;
+  const refreshmentsAlerts = useGetRecentNotifications('refreshments_alert').data || [];
+  const [dismissingAlertId, setDismissingAlertId] = useState<number | null>(null);
+  const activeRefreshmentsAlerts = refreshmentsAlerts.filter((item: any) => item?.show_refreshments === true);
+  const topRefreshmentsAlert = activeRefreshmentsAlerts[0];
 
   const currentStreak = useGetCurrentStreak().data;
 
 
   const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
+
+  const handleDismissRefreshmentsAlert = async (notificationId: number) => {
+    setDismissingAlertId(notificationId);
+    try {
+      await dismissNotification(notificationId, 'refreshments');
+      await queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications });
+    } finally {
+      setDismissingAlertId(null);
+    }
+  };
 
 
 
@@ -97,7 +167,6 @@ const Refreshments: React.FC = () => {
     })
   }
 
-
   useEffect(() => {
 
     setSomePosts(posts?.slice(0, length))
@@ -108,6 +177,7 @@ const Refreshments: React.FC = () => {
   const [createPostPresent, createPostDismiss] = useIonModal(CreatePostModal, {
     preferred_name: globalCurrentProfile?.name,
     username: globalCurrentProfile?.username,
+    onGoToSubmissions: () => router.push('/community/submitted'),
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 
@@ -125,6 +195,7 @@ const Refreshments: React.FC = () => {
     radiusProp: radius,
     localProp: local,
     sortProp: sort,
+    onNavigate: (path: string) => router.push(path),
     onDismiss: (bars: string, local: boolean, radius: number | null, sortSelected: string) => handleFilterDismiss(bars, local, radius, sortSelected),
   });
 
@@ -137,6 +208,9 @@ const Refreshments: React.FC = () => {
     setTimeout(async () => {
       queryClient.invalidateQueries({
         queryKey: ['filteredposts'], exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['events'],
       });
       event.detail.complete();
       setLittleLoading(false)
@@ -164,10 +238,12 @@ const Refreshments: React.FC = () => {
 
       const storedSort = await Preferences.get({ key: "sort" });
       if (storedSort.value) setSort(storedSort.value);
+
     };
 
     loadFilters();
   }, []);
+
 
 
   const localPostsOn = useMemo(() => (
@@ -191,7 +267,7 @@ const Refreshments: React.FC = () => {
         </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         <IonRow className="filter-buttons">
-          <IonButton onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
+          <IonButton className="refreshments-control-button" onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
             {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
@@ -214,15 +290,21 @@ const Refreshments: React.FC = () => {
             </IonButton>
           </IonCol>
 
+          <EventsCalendar
+            renderTrigger={renderCalendarTrigger}
+            initialDate={calendarDateParam ?? undefined}
+            openOnLoad={calendarAutoOpen}
+            onAutoOpenHandled={handleCalendarAutoOpenHandled}
+          />
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
-            <IonButton color="tertiary" onClick={() => createPostPresent()}>
+            <IonButton className="refreshments-control-button" color="tertiary" onClick={() => createPostPresent()}>
               <FontAwesomeIcon icon={faMegaphone} />
             </IonButton>
             : isCommunityPlus(globalCurrentProfile?.subscription_level) && !settingsCurrentProfile?.settings_create_posts ?
               <></>
               :
               <>
-                <IonButton color="gray" onClick={() => setShowStoreAlert(true)}>
+                <IonButton className="refreshments-control-button" color="gray" onClick={() => setShowStoreAlert(true)}>
                   <FontAwesomeIcon icon={faMegaphone} />
                 </IonButton>
                 <IonAlert
@@ -249,6 +331,33 @@ const Refreshments: React.FC = () => {
                 />
               </>}
         </IonRow>
+        {topRefreshmentsAlert ? (
+          <IonRow className="refreshments-alert-row">
+            <IonCol size="12">
+              <IonCard className="refreshments-alert-card">
+                <IonCardContent>
+                  <IonRow className="refreshments-alert-content">
+                    <IonCol className="refreshments-alert-text" size="11">
+                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                    </IonCol>
+                    <IonCol className="refreshments-alert-action" size="1">
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        disabled={dismissingAlertId === topRefreshmentsAlert.id}
+                        onClick={() => handleDismissRefreshmentsAlert(topRefreshmentsAlert.id)}
+                        aria-label="Dismiss alert"
+                        className="refreshments-alert-dismiss"
+                      >
+                        {dismissingAlertId === topRefreshmentsAlert.id ? <IonSpinner name="dots" /> : <IonIcon icon={close} />}
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+          </IonRow>
+        ) : null}
         {showFilterRow ?
           <RefreshmentsFilters search={search} setSearch={setSearch} /> : <></>}
         {(somePosts && !postsLoading && !globalIsLoading) ?

@@ -15,12 +15,15 @@ type Props = {
     mutualConnectionsList: number[],
     chats: any,
     currentUserProfile: any,
-    showSearch: boolean
+    showSearch: boolean,
+    chatsHasNextPage: boolean,
+    chatsIsFetchingNextPage: boolean,
+    onLoadMoreChats: () => void,
 };
 
 
 const ChatsSegment: React.FC<Props> = (props) => {
-    const { mutualConnectionsList, currentUserProfile, chats, showSearch } = props;
+    const { mutualConnectionsList, currentUserProfile, chats, showSearch, chatsHasNextPage, chatsIsFetchingNextPage, onLoadMoreChats } = props;
 
     const [search, setSearch] = useState<string>("")
 
@@ -64,9 +67,15 @@ const ChatsSegment: React.FC<Props> = (props) => {
                         : <></>}
                     {!showSearch && searchedChats?.length > 0 ?
                     <>
-                    <OngoingChats mutualConnectionsList={mutualConnectionsList} currentUserProfile={currentUserProfile} chatsList={chats} />
+                    <OngoingChats
+                        currentUserProfile={currentUserProfile}
+                        chatsList={chats}
+                        hasNextPage={chatsHasNextPage}
+                        isFetchingNextPage={chatsIsFetchingNextPage}
+                        onLoadMore={onLoadMoreChats}
+                    />
                     <NewChats mutualConnectionsList={mutualConnectionsList} currentUserProfile={currentUserProfile} chatsList={chats} />
-                    <HiddenChats currentUserProfile={currentUserProfile} chatsList={chats} />
+                    <HiddenChats currentUserProfile={currentUserProfile} />
                     </>
                     : <></>}
                 </>

@@ -90,6 +90,17 @@ ion-grid.picture-grid img{
   height: 100px;
 }
 
+.edit-mode-row {
+  margin: 8px 0;
+}
+
+.edit-mode-note {
+  padding: 0 16px 12px;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
 input[type="file"] {
   display: none;
 }
@@ -105,6 +116,22 @@ ion-list ion-item.looking-for-list-title {
   --inner-padding-end: 0;
   --padding-start: 0px;
   --padding-end: 0px;
+}
+
+.show-profile-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.show-profile-info {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  min-height: auto;
+  height: auto;
+  font-size: 14px;
 }
 
 ion-list.looking-for-list {

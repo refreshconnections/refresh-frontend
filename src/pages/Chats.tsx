@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import ChatsSegment from '../components/Chats/ChatsSegment';
 import { useGetCurrentUserChats } from '../hooks/api/chats/current-user-chats';
+import { useGetCurrentUserChatsPaginated } from '../hooks/api/chats/current-user-chats-paginated';
 import GroupChatsSegment from '../components/GroupChats/GroupChatsSegment';
 import { useGetMutualConnections } from '../hooks/api/profiles/mutual-connections';
 import { useGetStatuses } from '../hooks/api/status';
@@ -49,6 +50,13 @@ const Chats: React.FC = () => {
   const currentUserProfileLoading = useGetCurrentProfile().isLoading;
   const allChats = useGetCurrentUserChats().data
   const chatsLoading = useGetCurrentUserChats().isLoading
+  const {
+    data: paginatedChatsData,
+    hasNextPage: chatsHasNextPage,
+    isFetchingNextPage: chatsIsFetchingNextPage,
+    fetchNextPage: fetchNextChatsPage,
+  } = useGetCurrentUserChatsPaginated();
+  const paginatedChats = paginatedChatsData?.pages.flatMap(page => page?.results ?? []) ?? [];
   const dataFlat = useGetMutualConnections().data
   const queryClient = useQueryClient()
 
@@ -87,6 +95,7 @@ const Chats: React.FC = () => {
 
           // Invalidate and wait for fresh chat list
           await queryClient.invalidateQueries({ queryKey: ['chats'] });
+          await queryClient.invalidateQueries({ queryKey: ['chats', 'paginated'] });
           await queryClient.ensureQueryData({ queryKey: ['chats'] });
 
           // Safely fetch fresh chat data
@@ -126,6 +135,7 @@ const Chats: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: ['chats', 'details', dialog.id] });
         }
         queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['chats', 'paginated'] });
         queryClient.invalidateQueries({ queryKey: ['unread'] });
       }
     });
@@ -212,7 +222,15 @@ const Chats: React.FC = () => {
           {currSegment == "chats" ?
             <>
               {dataFlat ?
-                <ChatsSegment mutualConnectionsList={dataFlat} chats={allChats} currentUserProfile={currentUserProfile} showSearch={showSearch} />
+                <ChatsSegment
+                  mutualConnectionsList={dataFlat}
+                  chats={paginatedChats}
+                  currentUserProfile={currentUserProfile}
+                  showSearch={showSearch}
+                  chatsHasNextPage={!!chatsHasNextPage}
+                  chatsIsFetchingNextPage={!!chatsIsFetchingNextPage}
+                  onLoadMoreChats={() => fetchNextChatsPage()}
+                />
                 :
                 <LoadingCard />
               }
