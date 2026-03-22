@@ -9,10 +9,11 @@ const getRecentNotificationsFn = async (type?: string) => {
   return response.data;
 };
 
-export function useGetRecentNotifications(type?: string) {
+export function useGetRecentNotifications(type?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...userQueryKeys.notifications, type ?? 'all'],
     queryFn: () => getRecentNotificationsFn(type),
+    enabled: options?.enabled,
   });
 }
 

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../hooks/api/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { annQueryKeys } from "../hooks/api/announcements-take-1/ann-query-keys";
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonCardContent, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 import moment from "moment";
@@ -68,6 +70,7 @@ function isMoreThanTwoWeeksOld(registrationDate: string): boolean {
 const CreatePostModal: React.FC<Props> = (props) => {
 
     const { preferred_name, username, initialCategory, onDismiss, onGoToSubmissions } = props;
+    const queryClient = useQueryClient();
     const navigateTo = (path: string) => {
         if (typeof window === 'undefined') return;
         window.history.pushState({}, "", path);
@@ -705,6 +708,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setRecurrenceCount(1);
             setRecurrenceCustomDates([]);
             setRecurrenceDescriptions([]);
+            queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
             setLastAction('submitted');
             setShowAlert(true)
         }

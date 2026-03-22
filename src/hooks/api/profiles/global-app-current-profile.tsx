@@ -8,11 +8,11 @@ const getGlobalAppCurrentProfileFn = async () => {
   return response.data;
 };
 
-export function useGetGlobalAppCurrentProfile() {
+export function useGetGlobalAppCurrentProfile(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: userQueryKeys.global_current,
     queryFn: getGlobalAppCurrentProfileFn,
     retry: 3,
-    enabled: !!localStorage.getItem('token')
+    enabled: !!localStorage.getItem('token') && (options?.enabled ?? true),
   });
 }

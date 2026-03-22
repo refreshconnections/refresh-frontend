@@ -63,6 +63,7 @@ const HiddenChats: React.FC<Props> = (props) => {
                             <IonButton
                               size="small"
                               fill="outline"
+                              color="navy"
                               onClick={() => fetchNextPage()}
                               disabled={isFetchingNextPage}
                             >

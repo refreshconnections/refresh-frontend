@@ -30,11 +30,15 @@
 .moderation-accordion {
   margin: 8px 0 12px;
   background: transparent;
+  box-shadow: none !important;
+  border: none !important;
 }
 .moderation-accordion ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --background: transparent;
+  --box-shadow: none;
+  --border-width: 0;
   font-weight: 600;
   color: var(--ion-color-primary);
 }
@@ -46,11 +50,16 @@
   padding: 0
 }
 
-/* tighter row + arrow right next to words */
+/* tighter row + arrow at end of row */
 .moderation-accordion .acc-header-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --background: transparent;
+}
+
+.moderation-accordion .ion-accordion-toggle-icon {
+  margin-inline-start: auto;
+  order: 1;
 }
 
 ion-modal.moderation-modal .moderation-accordion {

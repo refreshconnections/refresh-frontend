@@ -351,6 +351,24 @@ ion-avatar img {
 }
 
 :root {
+	--ion-color-maroon: #800000;
+	--ion-color-maroon-rgb: 128,0,0;
+	--ion-color-maroon-contrast: #ffffff;
+	--ion-color-maroon-contrast-rgb: 255,255,255;
+	--ion-color-maroon-shade: #700000;
+	--ion-color-maroon-tint: #8d1a1a;
+}
+
+.ion-color-maroon {
+	--ion-color-base: var(--ion-color-maroon);
+	--ion-color-base-rgb: var(--ion-color-maroon-rgb);
+	--ion-color-contrast: var(--ion-color-maroon-contrast);
+	--ion-color-contrast-rgb: var(--ion-color-maroon-contrast-rgb);
+	--ion-color-shade: var(--ion-color-maroon-shade);
+	--ion-color-tint: var(--ion-color-maroon-tint);
+}
+
+:root {
 	--ion-color-darkposttext: #2f2f2f;
 	--ion-color-darkposttext-rgb: 47,47,47;
 	--ion-color-darkposttext-contrast: #ffffff;

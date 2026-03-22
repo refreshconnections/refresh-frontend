@@ -42,3 +42,7 @@ static/frontend/
 templates/frontend/js/
 # templates/frontend/local_js/
 # templates/frontend/staging_js/
+
+# Claude Code
+CLAUDE.md
+.DS_Store

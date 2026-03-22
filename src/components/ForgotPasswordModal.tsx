@@ -129,7 +129,7 @@ const ForgotPasswordModal: React.FC = () => {
                 />
 
                 <div className="ion-padding">
-                    <IonSegment value={identifierType} onIonChange={(e) => setIdentifierType(e.detail.value as 'email' | 'phone')}>
+                    <IonSegment value={identifierType} onIonChange={(e) => setIdentifierType(e.detail.value as 'email' | 'phone')} mode="ios">
                         <IonSegmentButton value="phone">
                             <IonLabel>Forgot email</IonLabel>
                         </IonSegmentButton>

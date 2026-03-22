@@ -195,7 +195,7 @@ const Chats: React.FC = () => {
               </IonButton>
             </IonCol>
             <IonCol size="8" style={{ alignContent: "center" }}>
-              <IonSegment value={currSegment}>
+              <IonSegment value={currSegment} mode="ios">
                 <IonSegmentButton value="chats" onClick={() => setCurrSegment("chats")}>
                   <IonLabel>Chats</IonLabel>
                 </IonSegmentButton>

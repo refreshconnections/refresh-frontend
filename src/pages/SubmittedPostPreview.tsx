@@ -24,7 +24,7 @@ import {
   IonSelect,
   IonSelectOption,
   useIonRouter,
-  IonPopover,
+  useIonPopover,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -117,6 +117,12 @@ const getLastEditedDate = (post: SubmittedPost | undefined) => {
   return candidate ? new Date(candidate) : null;
 };
 
+const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <IonContent className="ion-padding">
+    Moderation can take up to 3 business days, but is often faster!
+  </IonContent>
+);
+
 const SubmittedPostPreview: React.FC = () => {
   const { id } = useParams<RouteParams>();
   const location = useLocation<{ post?: SubmittedPost }>();
@@ -142,7 +148,9 @@ const SubmittedPostPreview: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
   const userHandle = (currentProfile?.username ?? '').trim();
-  const [showStatusInfo, setShowStatusInfo] = useState(false);
+  const [presentStatusPopover, dismissStatusPopover] = useIonPopover(StatusInfoPopover, {
+    onDismiss: () => dismissStatusPopover(),
+  });
 
   const {
     data,
@@ -279,7 +287,7 @@ const SubmittedPostPreview: React.FC = () => {
 
   const handleResubmit = async () => {
     if (!post?.id || !draftContent.trim()) {
-      presentToast({ message: 'Please add your edited content.', duration: 2500, color: 'medium' });
+      presentToast({ message: 'Please add your edited content.', duration: 2500, cssClass: 'status-toast' });
       return;
     }
     setSaving(true);
@@ -304,9 +312,10 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Resubmitted for review.', duration: 2500, color: 'success' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Resubmitted for review.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -338,9 +347,9 @@ const SubmittedPostPreview: React.FC = () => {
         setPost(response.data);
       }
       setEditing(false);
-      presentToast({ message: 'Draft saved.', duration: 2500, color: 'success' });
+      presentToast({ message: 'Draft saved.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not save draft. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not save draft. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -348,7 +357,7 @@ const SubmittedPostPreview: React.FC = () => {
 
   const handleSubmitDraft = async () => {
     if (!post?.id || !draftContent.trim()) {
-      presentToast({ message: 'Please add your content before submitting.', duration: 2500, color: 'medium' });
+      presentToast({ message: 'Please add your content before submitting.', duration: 2500, cssClass: 'status-toast' });
       return;
     }
     setSaving(true);
@@ -377,9 +386,10 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Submitted for review.', duration: 2500, color: 'success' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Submitted for review.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not submit draft. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not submit draft. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -396,10 +406,10 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Approved the edit.', duration: 2500, color: 'success' });
+      presentToast({ message: 'Approved the edit.', duration: 2500, cssClass: 'status-toast' });
       router.push(`/community/${post.id}`);
     } catch (error) {
-      presentToast({ message: 'Could not approve. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not approve. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -423,10 +433,10 @@ const SubmittedPostPreview: React.FC = () => {
       presentToast({
         message: hidden ? 'Post will show in your list view again.' : 'Post will be hidden from your submissions list.',
         duration: 2000,
-        color: 'success',
+        cssClass: 'status-toast',
       });
     } catch (error) {
-      presentToast({ message: 'Could not update visibility.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not update visibility.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setHideUpdating(false);
     }
@@ -454,21 +464,12 @@ const SubmittedPostPreview: React.FC = () => {
                   fill="clear"
                   size="small"
                   className="info-button"
-                  onClick={() => setShowStatusInfo(true)}
+                  onClick={(e) => presentStatusPopover({ event: e.nativeEvent })}
                 >
                   <IonIcon icon={informationCircleOutline} />
                 </IonButton>
               )}
             </IonRow>
-            <IonPopover
-              isOpen={showStatusInfo}
-              onDidDismiss={() => setShowStatusInfo(false)}
-              className="status-info-popover"
-            >
-              <div className="status-info-content">
-                Moderation can take up to 3 business days, but is often faster!
-              </div>
-            </IonPopover>
             <IonRow className="status-row">
               <IonBadge color={statusColor}>{statusLabel}</IonBadge>
               {submittedAt && (
@@ -480,7 +481,7 @@ const SubmittedPostPreview: React.FC = () => {
                 <p>You have {daysLeft} {daysLeftLabel} left to review and resubmit.</p>
               </IonText>
             )}
-            {status === 'rejected' && (
+            {status === 'rejected' && post?.hide_status_author !== 'user' && (
               <IonText color="medium">
                 <p>
                   This will disappear from your list view in {daysLeft} {daysLeftLabel}.
@@ -898,22 +899,6 @@ const SubmittedPostPreview: React.FC = () => {
           </div>
         )}
 
-        {visible && !editing && status !== 'approved' && (
-          <div className="hide-post-bar">
-            <IonButton
-              size="small"
-              fill="outline"
-              color="medium"
-              disabled={hideUpdating}
-              onClick={handleHideToggle}
-            >
-              {post?.hide_status_author === 'user'
-                ? 'Unhide post from list view'
-                : 'Hide post from list view'}
-            </IonButton>
-          </div>
-        )}
-
         {visible && post?.coverPhoto && (
           <IonRow class="ion-justify-content-center">
             <img src={post.coverPhoto} alt="post cover" style={{ maxWidth: '100%', borderRadius: '12px' }} />
@@ -930,6 +915,22 @@ const SubmittedPostPreview: React.FC = () => {
           <IonText color="medium">
             <p><strong>Comment instructions:</strong> {post.comment_instructions}</p>
           </IonText>
+        )}
+
+        {visible && !editing && status !== 'approved' && (
+          <IonRow className="ion-justify-content-center ion-padding-top ion-padding-bottom">
+            <IonButton
+              size="small"
+              fill="outline"
+              color="medium"
+              disabled={hideUpdating}
+              onClick={handleHideToggle}
+            >
+              {post?.hide_status_author === 'user'
+                ? 'Unhide post from list view'
+                : 'Hide post from list view'}
+            </IonButton>
+          </IonRow>
         )}
       </IonContent>
     </IonPage>

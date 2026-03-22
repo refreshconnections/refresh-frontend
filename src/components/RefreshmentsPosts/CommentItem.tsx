@@ -427,9 +427,12 @@ const CommentItem: React.FC<Props> = (props) => {
                         :
                         comment?.removed ?
                           <>
-                            <h4 style={{ color: "maroon" }}>
+                            <h4 style={{ color: "var(--ion-color-maroon)" }}>
                               {isOwner ? "Your removed comments are only visible to you." : "This comment has been removed."}
                             </h4>
+                            {comment?.removed_reason && (
+                              <h4 style={{ color: "var(--ion-color-maroon)" }}>Removal reason: {comment?.removed_reason}</h4>
+                            )}
                                 {isOwner && (
                                   <div className="name-avatar">
                                 <IonAvatar className={avatarClassName}>
@@ -441,7 +444,6 @@ const CommentItem: React.FC<Props> = (props) => {
                             {comment?.removed_reason ? (
                               <>
                                 <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
-                                <h4>Reason: {comment?.removed_reason}</h4>
                               </>
                             ) : null}
                             <ModerationNote
@@ -453,7 +455,7 @@ const CommentItem: React.FC<Props> = (props) => {
                           : comment?.sidenoted ?
                           <>
                             <IonRow className="ion-align-items-center">
-                              <h4 style={{ color: "maroon", marginRight: "6px" }}>This comment has been sidenoted.</h4>
+                              <h4 style={{ color: "var(--ion-color-maroon)", marginRight: "6px" }}>This comment has been sidenoted.</h4>
                               {isOwner && (
                                 <IonButton fill="clear" size="small" onClick={showSidenoteInfo}>
                                   <IonIcon icon={informationCircleOutline}></IonIcon>

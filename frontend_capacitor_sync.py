@@ -5,17 +5,20 @@ import subprocess
 
 print("🛠️  After building frontend in docker, copying static images, and syncing Capacitor...")
 
-ROOT = os.getcwd()
+# Dynamic project root (works regardless of where you run the script from)
+ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = os.path.join(ROOT, "static", "frontend")
 IMG_SRC = os.path.join(BUILD_DIR, "img")
 STATIC_TARGET_PARENT = os.path.join(BUILD_DIR, "static")
 STATIC_TARGET = os.path.join(STATIC_TARGET_PARENT, "img")
 
+
 def run(cmd):
     print(f"\n👉 {cmd}")
-    result = subprocess.run(cmd, shell=True)
+    result = subprocess.run(cmd, shell=True, cwd=ROOT)
     if result.returncode != 0:
         raise SystemExit(f"❌ Command failed: {cmd}")
+
 
 # 1️⃣ Build frontend
 # run("npm run build")

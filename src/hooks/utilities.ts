@@ -2369,6 +2369,26 @@ export async function clearStreak() {
 
 }
 
+export async function recoverStreak() {
+
+    const url = `${BASE_URL}/api/profiles/recover_streak/`
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken
+    }
+
+    const response = await axios({
+        method: 'post',
+        url: url,
+        headers: headers
+    });
+
+    return response
+
+}
+
 export async function uploadFileForMessage(data) {
 
 

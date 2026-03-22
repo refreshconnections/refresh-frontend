@@ -425,13 +425,13 @@ const TextModal: React.FC<Props> = (props) => {
             if (msg.msg_type === 8) {
                 console.log("the message was sent thank goodness")
                 resetMessages();
-                newMessagePush(
-                    [textModalData?.other_user_id.toString()],
-                    `${from_name ?? 'Someone'} sent you a message`,
-                    'View it in the app!',
-                    'message'
-                );
                 if (msg.sender === textModalData?.other_user_id) {
+                    newMessagePush(
+                        [textModalData?.other_user_id.toString()],
+                        `${from_name ?? 'Someone'} sent you a message`,
+                        'View it in the app!',
+                        'message'
+                    );
                     send({
                         msg_type: 6,
                         user_pk: textModalData.other_user_id,
@@ -713,6 +713,8 @@ const TextModal: React.FC<Props> = (props) => {
             };
 
             setImage(null);
+            setBlob(null);
+            setImageName(null);
             setRecording({ recording: false, playing: false, audio: null });
             setAudioRef(null);
             addMessageToFrontOfTheArray(displayMessage);
@@ -754,6 +756,8 @@ const TextModal: React.FC<Props> = (props) => {
         };
 
         setImage(null);
+        setBlob(null);
+        setImageName(null);
         setRecording({ recording: false, playing: false, audio: null });
         setAudioRef(null);
         addMessageToFrontOfTheArray(displayMessage);

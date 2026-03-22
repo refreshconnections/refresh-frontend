@@ -99,7 +99,7 @@ const Picksv2: React.FC = () => {
       const { value } = await Preferences.get({ key: FILTERS_TIP_KEY });
       if (value === 'true') return;
       const count = getActiveFilterCount(filterData);
-      if (count >= 2) {
+      if (count >= 1) {
         setShowFiltersDialog(false);
         return;
       }

@@ -235,7 +235,7 @@ const SubmittedPosts: React.FC = () => {
       </IonHeader>
       <IonContent className="ion-padding submitted-posts">
         <IonRow className="segments">
-          <IonSegment value={activeSegment}>
+          <IonSegment value={activeSegment} mode="ios">
             <IonSegmentButton value="posts" onClick={() => setActiveSegment('posts')}>
               <IonLabel>Posts</IonLabel>
             </IonSegmentButton>

@@ -85,7 +85,7 @@ const Likes: React.FC = () => {
     isPersonalPlus(currentUserProfile?.subscription_level) || currentStreak?.streak_count >= 7;
 
   const mutuals = useMemo(
-    () => mutualsData?.pages.flatMap(page => page?.results ?? []) ?? [],
+    () => mutualsData?.pages?.flatMap(page => page?.results ?? []) ?? [],
     [mutualsData]
   );
 

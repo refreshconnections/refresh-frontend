@@ -1349,7 +1349,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
               <IonRow className="any-all-row">
-                <IonSegment value={gsAnyGender ? "none" : anyOrAll} style={{ width: "100%" }}>
+                <IonSegment value={gsAnyGender ? "none" : anyOrAll} style={{ width: "100%" }} mode="ios">
                   <IonSegmentButton
                     value="none"
                     onClick={() => {
@@ -1552,7 +1552,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   </IonItem>
                   <div slot="content">
                     <IonRow className="any-all-row">
-                      <IonSegment value={onlyShowAnyOrAll} style={{ width: "100%" }}>
+                      <IonSegment value={onlyShowAnyOrAll} style={{ width: "100%" }} mode="ios">
                         <IonSegmentButton value="none" onClick={() => { setOnlyShowAnyOrAll("none"); setSomethingChanged(true) }}>
                           <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
                         </IonSegmentButton>
@@ -1682,7 +1682,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   </IonItem>
                   <div slot="content">
                     <IonRow className="any-all-row">
-                      <IonSegment value={dontShowAnyOrAll} style={{ width: "100%" }}>
+                      <IonSegment value={dontShowAnyOrAll} style={{ width: "100%" }} mode="ios">
                         <IonSegmentButton value="none" onClick={() => { setDontShowAnyOrAll("none"); setSomethingChanged(true) }}>
                           <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
                         </IonSegmentButton>

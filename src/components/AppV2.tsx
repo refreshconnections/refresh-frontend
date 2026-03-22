@@ -60,7 +60,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 
 /* Theme variables */
 import '../theme/variables.css';
-import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -188,6 +188,7 @@ const AppV2: React.FC = () => {
   const [inAppPurchasesReady, setInAppPurchasesReady] = useState(false);
 
   const [showIssueAlert, setShowIssueAlert] = useState(false);
+  const [streakSaverAlert, setStreakSaverAlert] = useState<{ preBreak: number; savers: number } | null>(null);
   const [showOnboard, setShowOnboard] = useState(false);
   const [showRequireVersionUpdate, setShowRequireVersionUpdate] = useState(false);
   const [multipleAccountsDetected, setShowMultipleAccountsDetected] = useState(false);
@@ -299,7 +300,10 @@ const AppV2: React.FC = () => {
           await applyThemeFromPref();
           await setTextZoom();
           if (settingsCurrentProfile?.settings_streak_tracker) {
-            await checkForBrokenStreak();
+            const result = await checkForBrokenStreak();
+            if (result?.data?.broken === 'true' && result?.data?.savers > 0 && result?.data?.streak_pre_break) {
+              setStreakSaverAlert({ preBreak: result.data.streak_pre_break, savers: result.data.savers });
+            }
           }
           console.log("resume")
           if (lastYotiSessionId) {
@@ -453,7 +457,10 @@ const AppV2: React.FC = () => {
           }
           else {
             setLoggedin(true)
-            await checkForBrokenStreak()
+            const brokenResult = await checkForBrokenStreak();
+            if (brokenResult?.data?.broken === 'true' && brokenResult?.data?.savers > 0 && brokenResult?.data?.streak_pre_break) {
+              setStreakSaverAlert({ preBreak: brokenResult.data.streak_pre_break, savers: brokenResult.data.savers });
+            }
 
           }
 
@@ -915,6 +922,26 @@ const AppV2: React.FC = () => {
         header="Oops! Something happened. Try again later."
         onDidDismiss={() => handleLogoutCommon()}
         buttons={['Ok']}
+      />
+      <IonAlert
+        isOpen={!!streakSaverAlert}
+        header="Your streak broke!"
+        message={streakSaverAlert ? `Your ${streakSaverAlert.preBreak}-day streak broke. You have ${streakSaverAlert.savers} streak saver${streakSaverAlert.savers === 1 ? '' : 's'} — restore it now?` : ''}
+        onDidDismiss={() => setStreakSaverAlert(null)}
+        buttons={[
+          { text: 'Maybe later', role: 'cancel' },
+          {
+            text: 'Restore streak',
+            handler: async () => {
+              try {
+                await recoverStreak();
+                queryClient.invalidateQueries({ queryKey: ['streak'] });
+              } catch (e) {
+                console.log('streak recovery failed', e);
+              }
+            },
+          },
+        ]}
       />
       <IonToast
         isOpen={streakOpen}

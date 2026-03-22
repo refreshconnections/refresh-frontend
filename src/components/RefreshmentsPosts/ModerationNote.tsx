@@ -19,6 +19,7 @@ import Linkify from 'react-linkify';
 import './ModerationNote.css'
 import { faMemoCircleInfo } from '@fortawesome/pro-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import GuidelinesButton from '../GuidelinesButton';
 
 interface ModerationNoteModalProps {
     moderationNote: string | null;
@@ -45,9 +46,9 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
             </IonRow>
             <p className="moderation-note-main"><Linkify>{moderationNote}</Linkify></p>
             <p className="moderation-note-longer css-fix"><Linkify>{moderationNoteLonger}</Linkify></p>
-            <IonAccordionGroup className="moderation-accordion" expand="inset">
+            <IonAccordionGroup className="moderation-accordion" expand="compact">
                 <IonAccordion value="how" >
-                    <IonItem slot="header" lines="none" button detail className="acc-header">
+                    <IonItem slot="header" lines="none" className="acc-header">
                         <IonLabel className="acc-label">How we moderate</IonLabel>
                     </IonItem>
                     <div slot="content" className="ion-padding moderation-disclaimer">
@@ -57,6 +58,7 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                             that's inclusive, kind, and COVID Conscientious. Thanks for being part
                             of that effort. We're always open to thoughtful feedback.
                         </p>
+                        <GuidelinesButton label="Our guidelines" fill="outline" />
                     </div>
                 </IonAccordion>
             </IonAccordionGroup>

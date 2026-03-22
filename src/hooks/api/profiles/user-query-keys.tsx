@@ -28,6 +28,7 @@ export const userQueryKeys = {
     push_notification_settings: (id: number) => ['current', 'push_notification_settings'],
     saved_locations: () => ['saved-locations'],
     multiple_accounts: () => ['multiple-accounts'],
+    my_comments: ['my-comments'],
     // pagination: (page: number) => [...userQueryKeys.all, 'pagination', page],
     // infinite: () => [...userQueryKeys.all, 'infinite'],
   };

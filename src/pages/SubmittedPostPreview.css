@@ -136,12 +136,3 @@ ion-toolbar.modal-title {
   margin-top: 0;
 }
 
-.submitted-post-preview .hide-post-bar {
-  position: sticky;
-  bottom: 12px;
-  display: flex;
-  justify-content: center;
-  padding: 10px 0 16px;
-  background: linear-gradient(180deg, rgba(242, 243, 252, 0) 0%, rgba(242, 243, 252, 0.95) 60%);
-  z-index: 2;
-}

@@ -8,10 +8,10 @@ export const getLimitsFn = async () => {
   return response.data;
 };
 
-export function useGetLimits() {
+export function useGetLimits(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: userQueryKeys.limits(),
     queryFn: getLimitsFn,
-    enabled: !!localStorage.getItem('token')
+    enabled: !!localStorage.getItem('token') && (options?.enabled ?? true),
   });
 }
