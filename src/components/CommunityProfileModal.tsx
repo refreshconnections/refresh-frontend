@@ -18,16 +18,18 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetIncomingConnectionStatus } from '../hooks/api/profiles/incoming-connection-status';
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
-import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections } from '../hooks/utilities';
+import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked, removeCommunityBlocked } from '../hooks/utilities';
 import './CommunityProfileModal.css';
 import TextModal from './TextModal';
 import { useGetCurrentUserChats } from '../hooks/api/chats/current-user-chats';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatQueryKeys } from '../hooks/api/chats/chat-query-keys';
+import { postQueryKeys } from '../hooks/api/refreshments/post-query-keys';
 import CommunityProfileSection from './CommunityProfileSection';
 import ReportModal from './ReportModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import { ellipsisHorizontal } from 'ionicons/icons';
+import BlockTypesExplainedModal from './BlockTypesExplainedModal';
 
 
 type CommunityProfileData = {
@@ -87,6 +89,10 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
 
   const isAnonymousAuthor = Boolean(isAnonymous);
 
+  const [blockTypesPresent, blockTypesDismiss] = useIonModal(BlockTypesExplainedModal, {
+    onDismiss: () => blockTypesDismiss(),
+  });
+
   const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss: handleDismiss }) => (
     <IonContent className="ion-padding">
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -112,6 +118,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     userId &&
       (currentProfile?.blocked_connections?.includes(userId) || currentProfile?.blocked_by?.includes(userId))
   );
+  const isCommunityBlocked = Boolean(userId && currentProfile?.community_blocked?.includes(userId));
   const isUnmatched = Boolean(userId && currentProfile?.unmatched_connections?.includes(userId));
 
   const handleChatDismiss = () => {
@@ -176,20 +183,35 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const [reportAndBlock, setReportAndBlock] = useState(false);
   const [reportRequiresDetails, setReportRequiresDetails] = useState(false);
 
-  const blockUser = async () => {
+  const blockUser = async (alsoCommunity = false) => {
     if (!userId) return;
     await updateBlockedConnections(userId);
+    if (alsoCommunity) await updateCommunityBlocked(userId);
     queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
+    queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
+    onDismiss();
+  };
+
+  const communityBlockUser = async (alsoPersonal = false) => {
+    if (!userId) return;
+    await updateCommunityBlocked(userId);
+    if (alsoPersonal && !currentProfile?.blocked_connections?.includes(userId)) {
+      await updateBlockedConnections(userId);
+      queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
+    }
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
+    queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
     onDismiss();
   };
 
   const handleBlockConfirm = async () => {
     if (!userId) return;
     presentAlert({
-      header: 'Are you sure you want to block this person?!',
-      subHeader: 'Type "block" to confirm.',
+      header: 'Are you sure you want to personally block this person?',
+      subHeader: 'Personal blocks are permanent. Type "block" to confirm.',
       inputs: [
         {
           name: 'confirmation',
@@ -211,7 +233,48 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
               });
               return;
             }
-            await blockUser();
+            await blockUser(false);
+            presentAlert({
+              header: 'Also add a full community block?',
+              message: 'A full community block hides their posts and comments from you in the Refreshments Bar, and yours from them.',
+              buttons: [
+                { text: 'No', role: 'cancel' },
+                { text: 'Yes', handler: async () => { if (userId) await updateCommunityBlocked(userId); queryClient.invalidateQueries({ queryKey: userQueryKeys.current }); queryClient.invalidateQueries({ queryKey: postQueryKeys.all }); } },
+              ],
+            });
+          },
+        },
+      ],
+    });
+  };
+
+  const handleCommunityBlockConfirm = async () => {
+    if (!userId) return;
+    presentAlert({
+      header: 'Full community block?',
+      subHeader: 'The personal block is permanent. Type "block" to confirm.',
+      message: "Their posts and comments will be hidden from you in the Refreshments Bar, and yours from them. They'll also be personally blocked.",
+      inputs: [
+        {
+          name: 'confirmation',
+          type: 'text',
+          placeholder: 'Type "block" to confirm',
+        },
+      ],
+      buttons: [
+        { text: 'Nevermind', role: 'cancel' },
+        {
+          text: 'Full community block',
+          handler: async (alertData) => {
+            if ((alertData?.confirmation || '').toLowerCase() !== 'block') {
+              presentAlert({
+                header: 'Block not confirmed.',
+                message: 'You must type "block" exactly to proceed.',
+                buttons: ['OK'],
+              });
+              return;
+            }
+            await communityBlockUser(true);
           },
         },
       ],
@@ -228,7 +291,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       if (reportAndBlock) {
         setReportAndBlock(false);
         setReportRequiresDetails(false);
-        blockUser();
+        blockUser(true);
       }
     },
   });
@@ -242,25 +305,36 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     if (!showActionControls) {
       return;
     }
+    const buttons: any[] = [];
+
+    if (!isBlocked) {
+      buttons.push({
+        text: 'Personal block',
+        handler: () => handleBlockConfirm(),
+      });
+    }
+    if (!isCommunityBlocked) {
+      buttons.push({
+        text: isCommunityBlocked ? 'Remove full community block' : 'Full community block',
+        handler: () => isCommunityBlocked
+          ? (removeCommunityBlocked(userId!).then(() => queryClient.invalidateQueries({ queryKey: userQueryKeys.current })))
+          : handleCommunityBlockConfirm(),
+      });
+    }
+    buttons.push({
+      text: 'Report and block',
+      role: 'destructive',
+      handler: () => { setReportAndBlock(true); },
+    });
+    buttons.push({
+      text: "What's the difference?",
+      handler: () => { blockTypesPresent(); },
+    });
+    buttons.push({ text: 'Cancel', role: 'cancel' });
+
     presentActionSheet({
       header: "Don't want to see any more of this member?",
-      buttons: [
-        {
-          text: 'Block',
-          handler: () => handleBlockConfirm(),
-        },
-        {
-          text: 'Report and block',
-          role: 'destructive',
-          handler: () => {
-            setReportAndBlock(true);
-          },
-        },
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-      ],
+      buttons,
     });
   };
 

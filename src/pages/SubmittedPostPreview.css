@@ -65,9 +65,6 @@ ion-toolbar.modal-title {
   font-size: calc(22px * var(--text-scale, 1));
 }
 
-.submitted-post-preview .preview-card ion-card-content {
-  padding-top: 4px;
-}
 
 .submitted-post-preview .detail-block p {
   margin: 4px 0 0;

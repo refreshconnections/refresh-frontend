@@ -25,6 +25,8 @@ import {
   IonSelectOption,
   useIonRouter,
   useIonPopover,
+  useIonModal,
+  useIonAlert,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -39,6 +41,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPostPreview.css';
+import GuidelinesButton from '../components/GuidelinesButton';
+import CitySelectorModal from '../components/CitySelectorModal';
 
 type SubmittedPost = {
   id: number;
@@ -135,6 +139,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [draftCategory, setDraftCategory] = useState<string>('');
   const [draftLocalOnly, setDraftLocalOnly] = useState(false);
   const [draftLocation, setDraftLocation] = useState('');
+  const [draftLocationLabel, setDraftLocationLabel] = useState('');
   const [draftLat, setDraftLat] = useState<string>('');
   const [draftLong, setDraftLong] = useState<string>('');
   const [draftIncludeProfile, setDraftIncludeProfile] = useState(false);
@@ -144,6 +149,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [hideUpdating, setHideUpdating] = useState(false);
   const [presentToast] = useIonToast();
+  const [presentAlert] = useIonAlert();
   const router = useIonRouter();
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
@@ -151,6 +157,27 @@ const SubmittedPostPreview: React.FC = () => {
   const [presentStatusPopover, dismissStatusPopover] = useIonPopover(StatusInfoPopover, {
     onDismiss: () => dismissStatusPopover(),
   });
+
+  type City = { name: string; lat: number; lng: number };
+  const citySelectorOpeningRef = React.useRef(false);
+  const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
+    onDismiss: (selectedCity?: City) => {
+      if (selectedCity) {
+        setDraftLocation(selectedCity.name);
+        setDraftLocationLabel(selectedCity.name);
+        setDraftLat(selectedCity.lat.toString());
+        setDraftLong(selectedCity.lng.toString());
+      }
+      dismissCitySelector();
+    },
+  });
+  const openCitySelector = () => {
+    if (citySelectorOpeningRef.current) return;
+    citySelectorOpeningRef.current = true;
+    presentCitySelector({
+      onDidDismiss: () => { citySelectorOpeningRef.current = false; },
+    });
+  };
 
   const {
     data,
@@ -264,6 +291,7 @@ const SubmittedPostPreview: React.FC = () => {
     setDraftCategory(post?.category ?? 'refreshments');
     setDraftLocalOnly(!!post?.local_only);
     setDraftLocation(post?.location ?? '');
+    setDraftLocationLabel(post?.location ?? '');
     setDraftLat(post?.location_point_lat?.toString() ?? '');
     setDraftLong(post?.location_point_long?.toString() ?? '');
     setDraftIncludeProfile(!!post?.include_profile);
@@ -337,7 +365,7 @@ const SubmittedPostPreview: React.FC = () => {
         sensitive_description: draftSensitiveDescription || null,
         link: draftLink || null,
         local_only: draftLocalOnly ? "true" : "false",
-        location: draftLocation || null,
+        location: draftLocalOnly ? (draftLocationLabel || draftLocation || null) : null,
         location_point_lat: draftLat || null,
         location_point_long: draftLong || null,
         coverPhoto_alt: post?.coverPhoto_alt ?? null,
@@ -372,7 +400,7 @@ const SubmittedPostPreview: React.FC = () => {
         sensitive_description: draftSensitiveDescription || null,
         link: draftLink || null,
         local_only: draftLocalOnly ? "true" : "false",
-        location: draftLocation || null,
+        location: draftLocalOnly ? (draftLocationLabel || draftLocation || null) : null,
         location_point_lat: draftLat || null,
         location_point_long: draftLong || null,
         coverPhoto_alt: post?.coverPhoto_alt ?? null,
@@ -395,10 +423,8 @@ const SubmittedPostPreview: React.FC = () => {
     }
   };
 
-  const handleApproveEdit = async () => {
-    if (!post?.id) {
-      return;
-    }
+  const doApproveEdit = async () => {
+    if (!post?.id) return;
     setSaving(true);
     try {
       await apiClient.post(`/api/announcements/submitted/${post.id}/approve_edit/`);
@@ -406,13 +432,52 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Approved the edit.', duration: 2500, cssClass: 'status-toast' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Post approved!', duration: 2500, cssClass: 'status-toast' });
       router.push(`/community/${post.id}`);
     } catch (error) {
       presentToast({ message: 'Could not approve. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleApproveEdit = () => {
+    presentAlert({
+      header: 'Approve this edit?',
+      message: 'Your post will be approved and you can see it immediately in the Refreshments tab.',
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Approve', handler: () => doApproveEdit() },
+      ],
+    });
+  };
+
+  const handleRejectEdit = async () => {
+    if (!post?.id) return;
+    presentAlert({
+      header: 'Reject this edit?',
+      message: "This won't be posted. If you'd rather edit in your own words, choose Edit and resubmit. You could also submit a new post. Thanks!",
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Reject',
+          handler: async () => {
+            setSaving(true);
+            try {
+              await apiClient.post(`/api/announcements/submitted/${post.id}/reject_edit/`);
+              queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+              presentToast({ message: 'Edit rejected.', duration: 2500, cssClass: 'status-toast' });
+              router.push('/community/submitted');
+            } catch (error) {
+              presentToast({ message: 'Could not reject. Try again.', duration: 2500, cssClass: 'status-toast' });
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    });
   };
 
   const handleHideToggle = async () => {
@@ -497,6 +562,11 @@ const SubmittedPostPreview: React.FC = () => {
 
         <IonCard className="preview-card section-card">
           <IonCardContent className="preview-form">
+            <IonRow className="section-header">
+            <IonText color="dark" className="section-heading">
+                <h3>Your Submission</h3>
+              </IonText>
+            </IonRow>
             <IonItem color="white" lines="none">
               <IonLabel position="stacked">Title*</IonLabel>
               {allowInlineEdit ? (
@@ -642,9 +712,12 @@ const SubmittedPostPreview: React.FC = () => {
               <IonText color="dark" className="section-heading">
                 <h3>Moderator explanation</h3>
               </IonText>
-              <IonText color="medium">
+              <IonText color="navy">
                 <p>{moderatorExplanation}</p>
               </IonText>
+              <IonRow className="ion-justify-content-center">
+                <GuidelinesButton label="Guidelines" fill="outline" color="primary" includeMechanics />
+              </IonRow>
             </IonCardContent>
           </IonCard>
         )}
@@ -652,16 +725,26 @@ const SubmittedPostPreview: React.FC = () => {
         {visible && hasRequestedEdit && (
           <IonCard className="requested-edit section-card">
             <IonCardContent>
-              <IonText color="dark">
-                <h3>Requested edit</h3>
+              <IonText color="dark" className="section-heading">
+                <h3>Requested content edit</h3>
               </IonText>
               {renderContent(requestedEdit ?? '')}
               <IonText color="medium">
-                <p>Approve to use this exact edit, or make changes in your own words and resubmit.</p>
+                <br/>
+                <p>Approve to use this exact edit and get it posted now, or make changes in your own words and resubmit.</p>
               </IonText>
               {canEdit && !editing && (
                 <IonRow class="ion-justify-content-center" style={{ marginTop: '8px' }}>
-                  <IonButton size="small" onClick={() => {
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    color="danger"
+                    onClick={handleRejectEdit}
+                    disabled={saving}
+                  >
+                    Reject edit
+                  </IonButton>
+                  <IonButton size="small" fill="outline" onClick={() => {
                     applyDraftDefaults();
                     setDraftContent(requestedEdit ?? submittedContent);
                     setEditing(true);
@@ -670,7 +753,6 @@ const SubmittedPostPreview: React.FC = () => {
                   </IonButton>
                   <IonButton
                     size="small"
-                    fill="outline"
                     onClick={handleApproveEdit}
                     disabled={saving}
                   >
@@ -754,42 +836,25 @@ const SubmittedPostPreview: React.FC = () => {
                     checked={draftLocalOnly}
                     onIonChange={(e) => setDraftLocalOnly(e.detail.checked)}
                     labelPlacement="end"
-                    justify="space-between"
+                    justify="start"
                   >
                     Local Post
                   </IonCheckbox>
                 </IonItem>
                 {draftLocalOnly && (
-                  <>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Location label</IonLabel>
-                      <IonInput
-                        value={draftLocation}
-                        placeholder="City, region, or label"
-                        onIonInput={(e) => setDraftLocation(e.detail.value ?? '')}
-                        type="text"
-                        autoCapitalize="words"
-                      />
-                    </IonItem>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Latitude</IonLabel>
-                      <IonInput
-                        value={draftLat}
-                        placeholder="Optional"
-                        onIonInput={(e) => setDraftLat(e.detail.value ?? '')}
-                        type="text"
-                      />
-                    </IonItem>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Longitude</IonLabel>
-                      <IonInput
-                        value={draftLong}
-                        placeholder="Optional"
-                        onIonInput={(e) => setDraftLong(e.detail.value ?? '')}
-                        type="text"
-                      />
-                    </IonItem>
-                  </>
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Nearby City</IonLabel>
+                    <IonInput
+                      value={draftLocationLabel || draftLocation}
+                      placeholder="Click to select"
+                      readonly
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openCitySelector();
+                      }}
+                    />
+                  </IonItem>
                 )}
               </IonCard>
 

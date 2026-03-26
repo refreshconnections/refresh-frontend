@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
@@ -607,7 +607,7 @@ const OpenedPost: React.FC = () => {
 
                                 {hasDisclaimer && (
                                 <IonCol size="12">
-                                    <Linkify>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>
                                     <IonText color="medium" className="ion-text-center">
                                         <FontAwesomeIcon icon={faCircleExclamation} /> &nbsp;
                                         {staticContentPost!.disclaimer}
@@ -622,7 +622,7 @@ const OpenedPost: React.FC = () => {
                                 {staticContentPost?.poll && 
                                 <Poll id={staticContentPost?.poll}/>}
                                 {staticContentPost?.markdown ?
-                                    <Markdown>{staticContentPost?.content}</Markdown>
+                                    <Markdown components={{ a: ({ href, children }) => <a onClick={(e) => { e.preventDefault(); openExternalUrl(href ?? ''); }} style={{ cursor: 'pointer' }}>{children}</a> }}>{staticContentPost?.content}</Markdown>
                                     : staticContentPost?.content
                                 }
                             </IonCardContent>
@@ -664,9 +664,7 @@ const OpenedPost: React.FC = () => {
                                             <IonButton
                                                 fill="outline"
                                                 size="small"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                href={approvedEventForPost.external_link}
+                                                onClick={() => openExternalUrl(approvedEventForPost.external_link)}
                                             >
                                                 Learn more
                                             </IonButton>
@@ -696,7 +694,7 @@ const OpenedPost: React.FC = () => {
                             </IonRow>
                             {staticContentPost?.comment_instructions ?
                                 <IonRow className="comment-instructions-note">
-                                    <Linkify><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
                                 </IonRow>
                                 : <></>}
                             {!staticContentPost?.comments_deactivated &&

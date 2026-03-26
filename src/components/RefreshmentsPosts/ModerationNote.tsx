@@ -14,6 +14,7 @@ import {
     IonLabel
 } from '@ionic/react';
 import Linkify from 'react-linkify';
+import { openExternalUrl } from '../../hooks/utilities';
 
 
 import './ModerationNote.css'
@@ -44,8 +45,8 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                     </div>
                 </IonCol>
             </IonRow>
-            <p className="moderation-note-main"><Linkify>{moderationNote}</Linkify></p>
-            <p className="moderation-note-longer css-fix"><Linkify>{moderationNoteLonger}</Linkify></p>
+            <p className="moderation-note-main"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNote}</Linkify></p>
+            <p className="moderation-note-longer css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNoteLonger}</Linkify></p>
             <IonAccordionGroup className="moderation-accordion" expand="compact">
                 <IonAccordion value="how" >
                     <IonItem slot="header" lines="none" className="acc-header">

@@ -70,6 +70,8 @@ ion-item.streak ion-label h2{
 .submission-callout--edit {
     background: var(--ion-color-lightyellow);
     color: var(--ion-color-navy);
+    justify-content: center;
+    gap: 6px;
 }
 
 .submission-callout--pending {

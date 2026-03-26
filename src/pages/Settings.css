@@ -17,3 +17,17 @@ ion-content.settings ion-label {
   font-weight: normal;
   display: block;
 }
+
+.settings__field-label {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  font-weight: normal;
+  display: block;
+}
+
+.settings__field-value {
+  font-size: calc(17px * var(--text-scale, 1));
+  color: var(--ion-color-dark);
+  font-weight: normal;
+  display: block;
+}

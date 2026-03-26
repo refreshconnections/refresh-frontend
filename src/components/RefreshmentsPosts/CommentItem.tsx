@@ -1,6 +1,6 @@
 import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useEffect, useRef, useState } from "react";
-import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
+import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, openExternalUrl, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
 
@@ -107,9 +107,12 @@ const CommentItem: React.FC<Props> = (props) => {
   const reportedByMe = Array.isArray(currentProfileRefreshments?.reported_comments)
     ? currentProfileRefreshments.reported_comments.includes(comment?.id)
     : false;
+  const sidenotedByMe = Array.isArray(currentProfileRefreshments?.comment_sidenotes)
+    ? currentProfileRefreshments.comment_sidenotes.includes(comment?.id)
+    : false;
   const canShowComment = comment?.approved
     && (
-      (!comment?.sidenoted && !comment?.removed && !reportedByMe)
+      (!comment?.sidenoted && !comment?.removed && !reportedByMe && !sidenotedByMe)
       || showSidenotes
       || showOwnHidden
     );
@@ -443,7 +446,7 @@ const CommentItem: React.FC<Props> = (props) => {
                             )}
                             {comment?.removed_reason ? (
                               <>
-                                <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                                <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                               </>
                             ) : null}
                             <ModerationNote
@@ -468,12 +471,32 @@ const CommentItem: React.FC<Props> = (props) => {
                               </IonAvatar>
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
-                            <h4 className="css-fix"><Linkify>{commentText}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                             <ModerationNote
                               moderationNote={comment.moderation_note}
                               moderationIconOnly={false}
                               moderationNoteLonger={comment.moderation_note_longer}
                             />
+                          </>
+                          : reportedByMe ?
+                          <>
+                            <div className="name-avatar">
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
+                              <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                            </div>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                          </>
+                          : sidenotedByMe ?
+                          <>
+                            <div className="name-avatar">
+                              <IonAvatar className={avatarClassName}>
+                                <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
+                              <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                            </div>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                           </>
                           :
                           <>
@@ -501,7 +524,7 @@ const CommentItem: React.FC<Props> = (props) => {
                                 </div>
                               </div>
                             ) : (
-                              <h4 className="css-fix comment-body-text"><Linkify>{commentText}</Linkify></h4>
+                              <h4 className="css-fix comment-body-text"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                             )}
                           </>
                       }

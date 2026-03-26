@@ -54,12 +54,9 @@ const RefreshmentsSegment: React.FC<Props> = ({
 
                     {/* Pending action callouts */}
                     {needsEditCount > 0 && (
-                        <div className="submission-callout submission-callout--edit">
-                            <div>
-                                <FontAwesomeIcon icon={faPenToSquare} />
-                                &nbsp; {needsEditCount} post{needsEditCount !== 1 ? 's' : ''} need{needsEditCount === 1 ? 's' : ''} your edit
-                            </div>
-                            <GuidelinesButton label="Guidelines" includeMechanics fill="outline" color="medium" />
+                        <div className="submission-callout submission-callout--edit" onClick={() => router.push('/community/submitted')} style={{ cursor: 'pointer' }}>
+                            <FontAwesomeIcon icon={faPenToSquare} />
+                            &nbsp; {needsEditCount} post{needsEditCount !== 1 ? 's' : ''} need{needsEditCount === 1 ? 's' : ''} your edit
                         </div>
                     )}
                     {pendingCount > 0 && (

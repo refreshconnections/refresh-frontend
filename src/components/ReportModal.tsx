@@ -148,7 +148,7 @@ const ReportModal: React.FC<Props> = (props) => {
                     : <></>
                     }
                     <IonItem>
-                        <IonLabel position="stacked">Details</IonLabel>
+                        <IonLabel position="stacked">Details (required)</IonLabel>
                         <IonTextarea value={details}
                             style={{ minHeight: "63pt" }}
                             name="details"
@@ -163,7 +163,7 @@ const ReportModal: React.FC<Props> = (props) => {
                         className="ion-margin-top"
                         type="submit"
                         expand="block"
-                        disabled={!reason || afterSendWait || (requireDetails && !details.trim())}
+                        disabled={!reason || afterSendWait || !details.trim()}
                     >
                         Submit
                     </IonButton>

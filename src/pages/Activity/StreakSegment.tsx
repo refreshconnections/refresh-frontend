@@ -104,9 +104,7 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                     return (
                         <IonNote color="navy" className="ion-padding ion-text-center">
                             Last updated {lastUpdated.fromNow()}.
-                            {canUpdateNow
-                                ? ' You can increase your streak now!'
-                                : ` Next update available ${nextUpdateAvailable.fromNow()}.`}
+                            {canUpdateNow ? ' Send a message or a like to increase your streak now!' : ''}
                         </IonNote>
                     );
                 })()}

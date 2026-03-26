@@ -3,6 +3,7 @@ import axios from "axios";
 import { Preferences } from '@capacitor/preferences';
 import { TextZoom } from "@capacitor/text-zoom"
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 
 
@@ -384,6 +385,27 @@ export async function removeBlockedConnection(connection_id) {
 
     return response.data
 
+}
+
+export async function updateCommunityBlocked(connection_id) {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/community_blocked/`, headers, data: { id: connection_id } });
+    return response.data
+}
+
+export async function removeCommunityBlocked(connection_id) {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/remove_community_blocked/`, headers, data: { id: connection_id } });
+    return response.data
+}
+
+export async function communityBlockMigration() {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/community_block_migration/`, headers });
+    return response.data
 }
 
 export async function getIncomingConnections() {
@@ -2785,4 +2807,8 @@ export function containsGoogleDocLink(input) {
         if (GOOGLE_DOC_HOSTS.has(host)) return true;
         return host.endsWith(".docs.google.com") || host.endsWith(".drive.google.com");
     });
+}
+
+export async function openExternalUrl(url: string) {
+    await Browser.open({ url });
 }

@@ -18,6 +18,7 @@ import { faMegaphone } from '@fortawesome/pro-solid-svg-icons/faMegaphone';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { faCircleEllipsis } from '@fortawesome/pro-solid-svg-icons/faCircleEllipsis';
 import { App } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 import { dismissNotification, useGetRecentNotifications } from "../hooks/api/profiles/recent-notifications";
 import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
@@ -25,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 
 import CreatePostModal from '../components/CreatePostModal';
+import CommunityBlockMigrationModal from '../components/CommunityBlockMigrationModal';
 import PostDetails from './PostDetails';
 import ReportModal from '../components/ReportModal';
 import CommunityProfileModal from '../components/CommunityProfileModal';
@@ -69,6 +71,8 @@ const Community: React.FC = () => {
 
   const [more, setMore] = useState<number | null>(null);
 
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
+
   const modal = useRef<HTMLIonModalElement>(null);
 
   const queryClient = useQueryClient()
@@ -88,6 +92,17 @@ const Community: React.FC = () => {
       setDismissingAlertId(null)
     }
   }
+
+  useEffect(() => {
+    if (!me) return;
+    const hasBlocks = (me.blocked_connections?.length ?? 0) > 0;
+    const hasCommunityBlocks = (me.community_blocked?.length ?? 0) > 0;
+    if (!hasBlocks || hasCommunityBlocks) return;
+
+    Preferences.get({ key: 'community_block_migration_shown' }).then(({ value }) => {
+      if (!value) setShowMigrationModal(true);
+    });
+  }, [me]);
 
   function dismiss() {
     modal.current?.dismiss();
@@ -332,8 +347,15 @@ const Community: React.FC = () => {
 
   return (
     <IonPage>
+      <CommunityBlockMigrationModal
+        isOpen={showMigrationModal}
+        onDismiss={() => {
+          setShowMigrationModal(false);
+          Preferences.set({ key: 'community_block_migration_shown', value: 'true' });
+        }}
+      />
       <IonContent>
-        
+
         <IonRow className="page-title">
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show"/>
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show"/>

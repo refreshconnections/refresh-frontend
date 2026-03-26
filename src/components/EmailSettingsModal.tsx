@@ -34,6 +34,7 @@ import {
 import { checkmarkCircle, closeCircle, refreshOutline } from "ionicons/icons";
 import "./StatusToast.css";
 import "./EditModal.css";
+import "../pages/Settings.css";
 
 type Props = { onDismiss: () => void };
 
@@ -250,18 +251,18 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
             </IonButtons>
           </IonToolbar>
         </IonHeader>
-        <IonContent className="edit-modal" fullscreen>
+        <IonContent fullscreen>
           <div style={{ padding: 16 }}>
             <IonItem lines="full">
               <IonLabel className="ion-text-wrap">
-                <div style={{ fontSize: 17, fontWeight: 600 }}>Primary email</div>
+                <span className="settings__field-label">Primary email</span>
                 <IonSkeletonText animated style={{ width: "60%", height: 14 }} />
               </IonLabel>
             </IonItem>
 
             <IonItem lines="none">
               <IonLabel className="ion-text-wrap">
-                <div style={{ fontSize: 17, fontWeight: 600 }}>Backup email</div>
+                <span className="settings__field-label">Backup email</span>
                 <IonSkeletonText animated style={{ width: "50%", height: 14 }} />
               </IonLabel>
             </IonItem>
@@ -304,19 +305,19 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="edit-modal">
+      <IonContent>
         {/* Current status */}
         <IonItem lines="full">
           <IonLabel className="ion-text-wrap">
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Primary email</div>
-            <div>{status?.primary_email}</div>
+            <span className="settings__field-label">Primary email</span>
+            <span className="settings__field-value">{status?.primary_email}</span>
           </IonLabel>
         </IonItem>
 
         <IonItem lines="none">
           <IonLabel className="ion-text-wrap">
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Backup email</div>
-            <div>
+            <span className="settings__field-label">Backup email</span>
+            <span className="settings__field-value">
               {status?.secondary_email ? (
                 <>
                   <span>{status?.secondary_email}</span>&nbsp;
@@ -325,7 +326,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
               ) : (
                 <em>None</em>
               )}
-            </div>
+            </span>
           </IonLabel>
 
           {status?.secondary_email && (
