@@ -19,6 +19,7 @@ import { useGetIncomingConnectionStatus } from '../hooks/api/profiles/incoming-c
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
 import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked, removeCommunityBlocked } from '../hooks/utilities';
+import { useBlockProfile } from '../hooks/useBlockProfile';
 import './CommunityProfileModal.css';
 import TextModal from './TextModal';
 import { useGetCurrentUserChats } from '../hooks/api/chats/current-user-chats';
@@ -180,6 +181,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const showActionControls = Boolean(userId && !isSelf && !showRestricted);
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
+  const blockProfile = useBlockProfile();
   const [reportAndBlock, setReportAndBlock] = useState(false);
   const [reportRequiresDetails, setReportRequiresDetails] = useState(false);
 
@@ -207,45 +209,9 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     onDismiss();
   };
 
-  const handleBlockConfirm = async () => {
+  const handleBlockConfirm = () => {
     if (!userId) return;
-    presentAlert({
-      header: 'Are you sure you want to personally block this person?',
-      subHeader: 'Personal blocks are permanent. Type "block" to confirm.',
-      inputs: [
-        {
-          name: 'confirmation',
-          type: 'text',
-          placeholder: 'Type "block" to confirm',
-        },
-      ],
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Block',
-          role: 'confirm',
-          handler: async (alertData) => {
-            if ((alertData?.confirmation || '').toLowerCase() !== 'block') {
-              presentAlert({
-                header: 'Block not confirmed.',
-                message: 'You must type "block" exactly to proceed.',
-                buttons: ['OK'],
-              });
-              return;
-            }
-            await blockUser(false);
-            presentAlert({
-              header: 'Also add a full community block?',
-              message: 'A full community block hides their posts and comments from you in the Refreshments Bar, and yours from them.',
-              buttons: [
-                { text: 'No', role: 'cancel' },
-                { text: 'Yes', handler: async () => { if (userId) await updateCommunityBlocked(userId); queryClient.invalidateQueries({ queryKey: userQueryKeys.current }); queryClient.invalidateQueries({ queryKey: postQueryKeys.all }); } },
-              ],
-            });
-          },
-        },
-      ],
-    });
+    blockProfile(userId, () => blockUser(false));
   };
 
   const handleCommunityBlockConfirm = async () => {

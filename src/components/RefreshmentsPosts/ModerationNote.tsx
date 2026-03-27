@@ -3,7 +3,6 @@ import {
     IonContent,
     IonButton,
     IonIcon,
-    useIonModal,
     IonCard,
     IonRow,
     IonText,
@@ -17,7 +16,8 @@ import Linkify from 'react-linkify';
 import { openExternalUrl } from '../../hooks/utilities';
 
 
-import './ModerationNote.css'
+import './ModerationNote.css';
+import { useSheetModal } from '../../hooks/useSheetModal';
 import { faMemoCircleInfo } from '@fortawesome/pro-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import GuidelinesButton from '../GuidelinesButton';
@@ -72,21 +72,14 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
         dismissModal();
     };
 
-    const [present, dismissModal] = useIonModal(ModalContent, {
+    const [present, dismissModal] = useSheetModal(ModalContent, {
         onDismiss: handleDismiss,
     });
 
     if (!moderationNote) return null;
 
     const openModal = () => {
-        present({
-            showBackdrop: false,
-            backdropDismiss: true,
-            initialBreakpoint: 0.6,
-            handleBehavior: 'none',
-            expandToScroll: false,
-            cssClass: 'moderation-modal'
-        });
+        present({ initialBreakpoint: 0.6, cssClass: 'moderation-modal' });
     };
 
     return (

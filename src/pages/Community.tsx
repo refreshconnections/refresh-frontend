@@ -6,6 +6,7 @@ import "./Page.css"
 import "./Community.css"
 
 import { getAvatarDisplay, getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus } from '../hooks/utilities';
+import { useSheetModal } from '../hooks/useSheetModal';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
@@ -313,7 +314,7 @@ const Community: React.FC = () => {
     setOffendingTitle(title)
   }
 
-  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
     avatarUrl: communityProfileAvatar,
@@ -334,14 +335,7 @@ const Community: React.FC = () => {
 
   useEffect(() => {
     if (communityProfileUserId !== null) {
-      communityProfilePresent({
-        showBackdrop: false,
-        backdropDismiss: true,
-        initialBreakpoint: 0.8,
-        handleBehavior: 'none',
-        expandToScroll: false,
-        cssClass: 'community-profile-modal',
-      });
+      communityProfilePresent({ cssClass: 'community-profile-modal' });
     }
   }, [communityProfileUserId, communityProfilePresent]);
 

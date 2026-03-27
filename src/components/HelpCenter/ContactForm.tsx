@@ -159,7 +159,7 @@ const ContactForm: React.FC = () => {
                         onIonInput={e => setMessage(e.detail.value!)}
                         value={message}
                         rows={3}
-                        placeholder={reason === "profile" ? `Please include what you'd like this field to be updated to so we can help you faster.` : `Give us all the details you think we will need.`}
+                        placeholder="Give us any details you think we will need."
                         autoGrow={true}
                     />
                 </IonItem>

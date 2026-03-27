@@ -33,6 +33,7 @@ import type { RefreshEvent } from '../hooks/api/events';
 import { useGetEvents } from '../hooks/api/events';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getAvatarDisplay, isCommunityPlus, onImgError } from '../hooks/utilities';
+import { useSheetModal } from '../hooks/useSheetModal';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 
 import CreateEventModal from './CreateEventModal';
@@ -190,7 +191,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     eventTitle: selectedEvent?.name ?? 'Event',
     onDismiss: () => dismissEventReport(),
   });
-  const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [eventProfilePresent, eventProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: selectedEvent?.user ?? null,
     isAnonymous: eventAnonymous,
     avatarUrl: eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined,
@@ -399,14 +400,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                   <IonRow
                     className="calendar-event-byline"
                     onClick={() =>
-                      eventProfilePresent({
-                        showBackdrop: false,
-                        backdropDismiss: true,
-                        initialBreakpoint: 0.8,
-                        handleBehavior: 'none',
-                        expandToScroll: false,
-                        cssClass: 'community-profile-modal',
-                      })
+                      eventProfilePresent({ cssClass: 'community-profile-modal' })
                     }
                   >
                     <IonAvatar className={eventAvatarDisplay.className}>

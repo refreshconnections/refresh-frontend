@@ -1,6 +1,7 @@
 import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal } from "@ionic/react";
 import React, { useEffect, useRef, useState } from "react";
 import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, openExternalUrl, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
+import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
 
@@ -377,7 +378,7 @@ const CommentItem: React.FC<Props> = (props) => {
     })
   }
 
-  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: comment?.user ?? null,
     isAnonymous: commentAnonymous,
     avatarUrl: avatarOverride,
@@ -387,14 +388,7 @@ const CommentItem: React.FC<Props> = (props) => {
   const onClickProfileHandler = () => {
     if (commentAnonymous) return;
     if (!comment?.user) return;
-    communityProfilePresent({
-      showBackdrop: false,
-      backdropDismiss: true,
-      initialBreakpoint: 0.8,
-      handleBehavior: 'none',
-      expandToScroll: false,
-      cssClass: 'community-profile-modal',
-    });
+    communityProfilePresent({ cssClass: 'community-profile-modal' });
   }
 
 

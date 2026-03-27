@@ -30,6 +30,7 @@ import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
 import { eyeOffOutline, informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPosts.css';
+import { ModerationCopy } from '../enums/moderation';
 
 const statusLabelMap: Record<string, string> = {
   draft: 'Unsubmitted draft',
@@ -433,7 +434,7 @@ const SubmittedPosts: React.FC = () => {
                   className="status-info-popover"
                 >
                   <div className="status-info-content">
-                    Moderation can take up to 3 business days, but is often faster!
+                    {ModerationCopy.MODERATION_INFO_POPOVER}
                   </div>
                 </IonPopover>
                 <IonRow className="status-row">

@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetStatuses } from '../hooks/api/status';
 import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener } from '../hooks/utilities';
+import { useBlockProfile } from '../hooks/useBlockProfile';
 import { Preferences } from '@capacitor/preferences';
 import { getWithExpiry, removeFromCapacitorLocalStorage, setWithExpiry } from '../hooks/capacitorPreferences/all';
 import ProfileCard from '../components/ProfileCard';
@@ -87,6 +88,7 @@ const Picksv2: React.FC = () => {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
   const [presentAlert] = useIonAlert();
   const [presentfirstFiltersAlert] = useIonAlert();
+  const blockProfile = useBlockProfile();
 
   const markFiltersTipSeen = async () => {
     await Preferences.set({ key: FILTERS_TIP_KEY, value: 'true' });
@@ -653,13 +655,7 @@ const Picksv2: React.FC = () => {
                 <IonFabButton color="warning" disabled={buttonLoading} onClick={() => addDismissedConnection(profileDetails.user)} data-label="Ignore for now">
                   <IonIcon icon={hourglassIcon}></IonIcon>
                 </IonFabButton>
-                <IonFabButton color="danger" disabled={buttonLoading} onClick={() => presentAlert({
-                  header: 'Are you sure you want to block this person?!',
-                  buttons: [
-                    { text: 'Nevermind', role: 'cancel' },
-                    { text: 'Yes!', role: 'confirm', handler: () => addBlockedConnection(profileDetails.user) },
-                  ]
-                })} data-label="Block">
+                <IonFabButton color="danger" disabled={buttonLoading} onClick={() => blockProfile(profileDetails.user, () => addBlockedConnection(profileDetails.user))} data-label="Block">
                   <IonIcon icon={squareIcon}></IonIcon>
                 </IonFabButton>
                 <IonFabButton color="dark" disabled={buttonLoading} onClick={() => handleReportOpen(profileDetails.name, profileDetails.user)} data-label="Report">

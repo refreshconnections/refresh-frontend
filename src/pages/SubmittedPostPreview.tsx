@@ -41,6 +41,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPostPreview.css';
+import { ModerationCopy } from '../enums/moderation';
 import GuidelinesButton from '../components/GuidelinesButton';
 import CitySelectorModal from '../components/CitySelectorModal';
 
@@ -123,7 +124,7 @@ const getLastEditedDate = (post: SubmittedPost | undefined) => {
 
 const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
   <IonContent className="ion-padding">
-    Moderation can take up to 3 business days, but is often faster!
+    {ModerationCopy.MODERATION_INFO_POPOVER}
   </IonContent>
 );
 

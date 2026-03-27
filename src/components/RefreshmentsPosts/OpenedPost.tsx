@@ -1,6 +1,7 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
+import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
@@ -394,7 +395,7 @@ const OpenedPost: React.FC = () => {
         includeBylineClass: true,
     });
     const postAvatarOverride = postAvatarDisplay.hasImage ? postAvatarDisplay.src : undefined;
-    const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
         userId: staticContentPost?.user ?? null,
         isAnonymous: postAnonymous,
         avatarUrl: postAvatarOverride,
@@ -408,12 +409,12 @@ const OpenedPost: React.FC = () => {
         includeBylineClass: true,
     });
     const eventAvatarOverride = eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined;
-    const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
-        userId: approvedEventForPost?.user ?? null,
-        isAnonymous: eventAnonymous,
-        avatarUrl: eventAvatarOverride,
-        onDismiss: () => eventProfileDismiss(),
-    });
+    // const [eventProfilePresent, eventProfileDismiss] = useSheetModal(CommunityProfileModal, {
+    //     userId: approvedEventForPost?.user ?? null,
+    //     isAnonymous: eventAnonymous,
+    //     avatarUrl: eventAvatarOverride,
+    //     onDismiss: () => eventProfileDismiss(),
+    // });
 
     const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
         queryClient.invalidateQueries({
@@ -549,14 +550,7 @@ const OpenedPost: React.FC = () => {
                                       size="7"
                                       onClick={() =>
                                         !postAnonymous && staticContentPost?.user
-                                          ? communityProfilePresent({
-                                              showBackdrop: false,
-                                              backdropDismiss: true,
-                                              initialBreakpoint: 0.8,
-                                              handleBehavior: 'none',
-                                              expandToScroll: false,
-                                              cssClass: 'community-profile-modal',
-                                            })
+                                          ? communityProfilePresent({ cssClass: 'community-profile-modal' })
                                           : null
                                       }
                                     >

@@ -8,6 +8,7 @@ import "./Page.css"
 import "./PostDetails.css"
 
 import { getAvatarDisplay, onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment } from '../hooks/utilities';
+import { useSheetModal } from '../hooks/useSheetModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons/faHeart';
 import { faCommentPlus } from '@fortawesome/pro-solid-svg-icons/faCommentPlus';
@@ -132,7 +133,7 @@ const PostDetails: React.FC<Props> = (props) => {
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
   });
 
-  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
     avatarUrl: communityProfileAvatar,
@@ -171,14 +172,7 @@ const PostDetails: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (communityProfileUserId !== null) {
-      communityProfilePresent({
-        showBackdrop: false,
-        backdropDismiss: true,
-        initialBreakpoint: 0.8,
-        handleBehavior: 'none',
-        expandToScroll: false,
-        cssClass: 'community-profile-modal',
-      });
+      communityProfilePresent({ cssClass: 'community-profile-modal' });
     }
   }, [communityProfileUserId, communityProfilePresent]);
 

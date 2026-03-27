@@ -7,6 +7,7 @@ import { chevronBackOutline } from 'ionicons/icons';
 import axios from 'axios';
 
 import { addToHiddenDialogs, increaseStreak, newMessagePush, removeFromHiddenDialogs, sendAnOpener, updateBlockedConnections, updateDismissedConnections, updateMutualConnection, updateOutgoingConnections, updateUnmatchedConnections } from '../hooks/utilities';
+import { useBlockProfile } from '../hooks/useBlockProfile';
 
 import './ProfileModal.css'
 import ReportModal from './ReportModal';
@@ -38,6 +39,7 @@ const ProfileModal: React.FC<Props> = (props) => {
     const { cardData, profiletype, pro, settingsAlt, yourName, onDismiss, onActionDismiss = () => {} } = props;
 
     const [presentAlert] = useIonAlert();
+    const blockProfile = useBlockProfile();
 
     const [showMessageWithLikeModal, setShowMessageWithLikeModal] = useState(false);
     const [showMessagePop, setShowMessagePop] = useState(false);
@@ -85,45 +87,8 @@ const ProfileModal: React.FC<Props> = (props) => {
     //     })
     // }
 
-    const blockingAlert = async (connection: number) => {
-        const alert = await presentAlert({
-          header: 'Are you sure you want to block this person?!',
-          subHeader:
-            'This cannot be undone. Both of you will lose access to any messages you have exchanged with one another.',
-          inputs: [
-            {
-              name: 'confirmation',
-              type: 'text',
-              placeholder: 'Type "block" to confirm',
-            },
-          ],
-          buttons: [
-            {
-              text: 'Nevermind',
-              role: 'cancel',
-            },
-            {
-              text: 'Yes!',
-              role: 'confirm',
-              handler: async (alertData) => {
-                if (alertData?.confirmation?.toLowerCase() === 'block') {
-                  await addBlockedConnection(connection);
-                } else {
-                  // Optional: Show a warning or re-open the alert
-                //   alert.dismiss();
-                  console.log("no block")
-                  setTimeout(() => {
-                    presentAlert({
-                      header: 'Incorrect Confirmation',
-                      message: 'You must type "block" exactly to proceed. You can try blocking this user again.',
-                      buttons: ['OK'],
-                    });
-                  }, 300);
-                }
-              },
-            },
-          ],
-        });
+    const blockingAlert = (connection: number) => {
+        blockProfile(connection, () => addBlockedConnection(connection));
       };
       
 

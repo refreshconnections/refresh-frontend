@@ -5,11 +5,7 @@
 .moderation-modal .modal-wrapper {
   height: 80vh;
   max-height: 80vh;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  background: #f7f7fc; /* or your app's card/modal background */
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); /* gives floating sheet feel */
-  overflow: hidden;
+  background: #f7f7fc;
 }
 
 .moderation-description {
