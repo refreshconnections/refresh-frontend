@@ -2812,3 +2812,14 @@ export function containsGoogleDocLink(input) {
 export async function openExternalUrl(url: string) {
     await Browser.open({ url });
 }
+
+// Version 3: July 6 2025
+// Version 4: Oct 15 2025
+// Version 5: Dec 4 2025
+export const CURRENT_APP_VERSION: number = 5;
+
+export function maxBirthdateForAdult(): string {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 18);
+    return date.toISOString().split('T')[0];
+}

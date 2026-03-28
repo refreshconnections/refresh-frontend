@@ -49,7 +49,14 @@ const PRECAUTION_OPTIONS = [
   { value: 'masks_required', label: 'Masks required' },
   { value: 'tests_required', label: 'Tests required' },
   { value: 'outdoors', label: 'Outdoors' },
+  { value: 'partially_outdoors', label: 'Partially outdoors' },
   { value: 'air_purifiers', label: 'Air purifiers' },
+];
+
+const ATTENDEE_PRECAUTION_OPTIONS = [
+  { value: 'precautions_only', label: 'Covid conscientious only' },
+  { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
+  { value: 'open', label: 'Open to everyone' },
 ];
 
 type City = {
@@ -60,6 +67,7 @@ type City = {
 
 type CreateEventModalProps = {
   onDismiss: (data?: { submitted?: boolean }) => void;
+  selectedDate?: Date;
 };
 
 function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
@@ -71,7 +79,7 @@ function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
   return diffInDays > 14;
 }
 
-const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
+const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selectedDate }) => {
   const router = useIonRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -93,6 +101,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     onDismiss: () => dismissPostModal(),
   });
   const [precautions, setPrecautions] = useState<string[]>([]);
+  const [attendeePrecautionPreference, setAttendeePrecautionPreference] = useState<string | null>(null);
   const [sensitive, setSensitive] = useState(false);
   const [sensitiveDescription, setSensitiveDescription] = useState('');
   const [allowedAsPostInFeed, setAllowedAsPostInFeed] = useState<boolean | null>(null);
@@ -179,9 +188,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
     }
   }, [postingIdentity, canAnswerQuestionsTouched]);
 
-  const defaultStartDatetime = useMemo(() => (
-    moment().add(7, 'days').hour(20).minute(0).second(0).format('YYYY-MM-DDTHH:mm')
-  ), []);
+  const defaultStartDatetime = useMemo(() => {
+    const base = selectedDate && moment(selectedDate).isAfter(moment(), 'day')
+      ? moment(selectedDate).hour(20).minute(0).second(0)
+      : moment().add(7, 'days').hour(20).minute(0).second(0);
+    return base.format('YYYY-MM-DDTHH:mm');
+  }, [selectedDate]);
 
   const normalizeDatetime = (value: string) => {
     if (!value) return value;
@@ -536,6 +548,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
         anonymous: postingIdentity === 'anonymous' ? 'true' : 'false',
         event_type: eventType,
         in_person_precautions: precautions,
+        attendee_precaution_preference: attendeePrecautionPreference || null,
         external_link: externalLink || null,
         external_registration_required: externalRegistrationRequired ? 'true' : 'false',
         recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
@@ -570,6 +583,38 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
 
   const handleCancel = () => {
     onDismiss?.();
+  };
+
+  const handlePrecautionsChange = (event: CustomEvent) => {
+    let next: string[] = event.detail.value ?? [];
+    const prev = precautions;
+    const added = next.find(v => !prev.includes(v));
+
+    if (added) {
+      const exclusions: [string, string][] = [
+        ['masks_encouraged', 'masks_required'],
+        ['outdoors', 'partially_outdoors'],
+      ];
+      for (const [a, b] of exclusions) {
+        if (added === a && next.includes(b)) next = next.filter(v => v !== b);
+        else if (added === b && next.includes(a)) next = next.filter(v => v !== a);
+      }
+    }
+
+    setPrecautions(next);
+
+    requestAnimationFrame(() => {
+      const popover = document.querySelector('ion-select-popover');
+      if (popover) {
+        const opts = (popover as any).options;
+        if (opts) {
+          (popover as any).options = opts.map((opt: any) => ({
+            ...opt,
+            checked: next.includes(opt.value),
+          }));
+        }
+      }
+    });
   };
 
   const subscriptionLevel = globalProfile?.subscription_level;
@@ -744,9 +789,23 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss }) => {
                     value={precautions}
                     multiple
                     interface="popover"
-                    onIonChange={(event) => setPrecautions(event.detail.value ?? [])}
+                    onIonChange={handlePrecautionsChange}
                   >
                     {PRECAUTION_OPTIONS.map((option) => (
+                      <IonSelectOption key={option.value} value={option.value}>
+                        {option.label}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+                <IonItem>
+                  <IonLabel position="stacked">Who is this event for?</IonLabel>
+                  <IonSelect
+                    value={attendeePrecautionPreference ?? ''}
+                    placeholder="Optional"
+                    onIonChange={(e) => setAttendeePrecautionPreference(e.detail.value || null)}
+                  >
+                    {ATTENDEE_PRECAUTION_OPTIONS.map((option) => (
                       <IonSelectOption key={option.value} value={option.value}>
                         {option.label}
                       </IonSelectOption>

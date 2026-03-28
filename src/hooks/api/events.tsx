@@ -13,6 +13,7 @@ export type RefreshEvent = {
   external_registration_required?: boolean
   event_type?: string | null
   in_person_precautions?: string[]
+  attendee_precaution_preference?: string | null
   local_only?: boolean
   location?: string | null
   location_point_lat?: number | null
@@ -29,14 +30,43 @@ export type RefreshEvent = {
   settings_community_profile?: boolean
 }
 
-const fetchEvents = async () => {
-  const response = await apiClient.get('/api/events/')
+export type EventFilters = {
+  eventTypes: string[]
+  attendeePrecautionPreferences: string[]
+  inPersonPrecautions: string[]
+}
+
+export const DEFAULT_EVENT_FILTERS: EventFilters = {
+  eventTypes: ['all'],
+  attendeePrecautionPreferences: ['all'],
+  inPersonPrecautions: ['all'],
+}
+
+export const EVENT_FILTER_PREF_KEYS = {
+  eventTypes: 'event_filter_type',
+  attendeePrecautionPreferences: 'event_filter_attendee_precaution',
+  inPersonPrecautions: 'event_filter_in_person_precautions',
+}
+
+const fetchEvents = async (filters: EventFilters) => {
+  const params = new URLSearchParams()
+  if (!filters.eventTypes.includes('all')) {
+    params.set('event_type', filters.eventTypes.join(','))
+  }
+  if (!filters.attendeePrecautionPreferences.includes('all')) {
+    params.set('attendee_precaution_preference', filters.attendeePrecautionPreferences.join(','))
+  }
+  if (!filters.inPersonPrecautions.includes('all')) {
+    params.set('in_person_precautions', filters.inPersonPrecautions.join(','))
+  }
+  const query = params.toString()
+  const response = await apiClient.get(query ? `/api/events/?${query}` : '/api/events/')
   return response.data as RefreshEvent[]
 }
 
-export function useGetEvents() {
+export function useGetEvents(filters: EventFilters = DEFAULT_EVENT_FILTERS) {
   return useQuery({
-    queryKey: ['events'],
-    queryFn: fetchEvents,
+    queryKey: ['events', filters.eventTypes, filters.attendeePrecautionPreferences, filters.inPersonPrecautions],
+    queryFn: () => fetchEvents(filters),
   })
 }

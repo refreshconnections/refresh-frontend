@@ -24,13 +24,13 @@ import {
   useIonRouter,
 } from '@ionic/react';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useEffect, useMemo, useState } from 'react';
-import { calendarNumber } from 'ionicons/icons';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { calendarNumber, filter as filterIcon } from 'ionicons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCommentDots } from '@fortawesome/pro-regular-svg-icons/faCommentDots';
 import moment, { type Moment } from 'moment';
 import type { RefreshEvent } from '../hooks/api/events';
-import { useGetEvents } from '../hooks/api/events';
+import { useGetEvents, DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, EventFilters } from '../hooks/api/events';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getAvatarDisplay, isCommunityPlus, onImgError } from '../hooks/utilities';
 import { useSheetModal } from '../hooks/useSheetModal';
@@ -39,6 +39,8 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 import CreateEventModal from './CreateEventModal';
 import CommunityProfileModal from './CommunityProfileModal';
 import EventReportModal from './EventReportModal';
+import EventFiltersModal from './EventFiltersModal';
+import { Preferences } from '@capacitor/preferences';
 
 import './EventsCalendar.css';
 
@@ -81,6 +83,12 @@ const formatPrecautionLabel = (value: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
+const ATTENDEE_PRECAUTION_LABELS: Record<string, string> = {
+  precautions_only: 'Covid conscientious only',
+  precautions_preferred: 'Covid conscientious preferred',
+  open: 'Open to everyone',
+};
+
 type EventsCalendarProps = {
   renderTrigger?: (open: () => void) => React.ReactNode;
   initialDate?: string;
@@ -108,13 +116,29 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
 
   const queryClient = useQueryClient();
   const router = useIonRouter();
-  const { data: eventsResponse, isLoading: eventsLoading } = useGetEvents();
+  const [eventFilters, setEventFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
+  const eventFiltersRef = useRef<EventFilters>(eventFilters);
+  eventFiltersRef.current = eventFilters;
+  const { data: eventsResponse, isLoading: eventsLoading } = useGetEvents(eventFilters);
   const events = eventsResponse ?? [];
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState<Moment>(clampToRange(today).clone().startOf('month'));
   const [selectedDate, setSelectedDate] = useState<Date>(clampToRange(today).toDate());
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [presentEventFiltersModal, dismissEventFiltersModal] = useIonModal(EventFiltersModal, {
+    getInitialFilters: () => eventFiltersRef.current,
+    onDismiss: async (filters?: EventFilters) => {
+      dismissEventFiltersModal();
+      if (filters) {
+        setEventFilters(filters);
+        await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.eventTypes, value: filters.eventTypes.join(',') });
+        await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.attendeePrecautionPreferences, value: filters.attendeePrecautionPreferences.join(',') });
+        await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.inPersonPrecautions, value: filters.inPersonPrecautions.join(',') });
+      }
+    },
+  });
+
   const [presentCreateEventModal, dismissCreateEventModal] = useIonModal(CreateEventModal, {
     onDismiss: (data?: { submitted?: boolean }) => {
       if (data?.submitted) {
@@ -122,6 +146,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
       }
       dismissCreateEventModal();
     },
+    selectedDate,
   });
   const [hostPopoverText, setHostPopoverText] = useState<string | null>(null);
   const HostPopover = () => (
@@ -220,6 +245,22 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     setCalendarMonth(clamped.clone().startOf('month'));
     setIsCalendarOpen(true);
   };
+
+  useEffect(() => {
+    const load = async () => {
+      const [types, attendee, precautions] = await Promise.all([
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.eventTypes }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.attendeePrecautionPreferences }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.inPersonPrecautions }),
+      ]);
+      setEventFilters({
+        eventTypes: types.value ? types.value.split(',') : ['all'],
+        attendeePrecautionPreferences: attendee.value ? attendee.value.split(',') : ['all'],
+        inPersonPrecautions: precautions.value ? precautions.value.split(',') : ['all'],
+      });
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     if (!openOnLoad || !initialDate) return;
@@ -391,6 +432,10 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             <IonButton color="navy" onClick={() => presentCreateEventModal()}>
               Add an event
             </IonButton>
+            <IonButton fill="outline" onClick={() => presentEventFiltersModal()}>
+              <IonIcon icon={filterIcon} slot="start" />
+              Filters
+            </IonButton>
           </IonRow>
           {selectedEvent && (
             <IonCard className="calendar-event-detail">
@@ -441,6 +486,11 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                       </IonChip>
                     ))}
                   </div>
+                ) : null}
+                {selectedEvent.attendee_precaution_preference ? (
+                  <IonChip color="secondary">
+                    <IonLabel>{ATTENDEE_PRECAUTION_LABELS[selectedEvent.attendee_precaution_preference] ?? selectedEvent.attendee_precaution_preference}</IonLabel>
+                  </IonChip>
                 ) : null}
                 {selectedEvent.external_registration_required && (
                   <IonText color="secondary">External registration required.</IonText>

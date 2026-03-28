@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { IonCard, IonItem, IonLabel, IonSelect, IonSelectOption, IonInput, IonTextarea, IonButton, IonText, IonRow, IonAlert } from '@ionic/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { sendAnEmail } from '../../hooks/utilities';
+import { App } from '@capacitor/app';
+import { sendAnEmail, CURRENT_APP_VERSION } from '../../hooks/utilities';
 import { useGetCurrentProfile } from '../../hooks/api/profiles/current-profile';
 import Subscriptions from './Subscriptions';
 import ProfileUpdateFields from './ProfileUpdateFields';
 
 const ContactForm: React.FC = () => {
     const currentUserProfile = useGetCurrentProfile().data;
+    const location = useLocation();
 
     const [reason, setReason] = useState<string | null>("");
     const [message, setMessage] = useState<string | null>("");
@@ -20,12 +22,29 @@ const ContactForm: React.FC = () => {
     const [newName, setNewName] = useState("");
     const [birthdate, setBirthdate] = useState("");
     const [selectedCity, setSelectedCity] = useState("");
+    const [appVersion, setAppVersion] = useState("");
+
+    useEffect(() => {
+        App.getInfo().then(info => setAppVersion(info.version)).catch(() => setAppVersion("x.x.x"));
+    }, []);
 
     useEffect(() => {
         if (profileUpdateType === "location") {
             setSubject("One time location update");
         }
     }, [profileUpdateType]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const prefill = params.get('prefill');
+        if (prefill === 'name') {
+            setReason("profile");
+            setProfileUpdateType("name");
+        } else if (prefill === 'age') {
+            setReason("profile");
+            setProfileUpdateType("age");
+        }
+    }, [location.search]);
 
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
 
@@ -38,6 +57,8 @@ const ContactForm: React.FC = () => {
         setBirthdate("");
         setSelectedCity("");
     };
+
+    const isAutoFilled = reason === "profile" && (profileUpdateType === "name" || profileUpdateType === "age" || profileUpdateType === "location");
 
     const sendHelpMail = async () => {
         setAfterSendWait(true);
@@ -63,8 +84,14 @@ const ContactForm: React.FC = () => {
             subjectAppendage = "[ Other ] ";
         }
 
-        const messageRequired = !(reason === "profile" && (profileUpdateType === "name" || profileUpdateType === "age" || profileUpdateType === "location"));
-        if (subject !== "" && reason !== "" && (message !== "" || !messageRequired)) {
+        let emailSubject = subject;
+        if (reason === "profile" && profileUpdateType === "name") {
+            emailSubject = "Name change: " + newName;
+        } else if (reason === "profile" && profileUpdateType === "age") {
+            emailSubject = "Birthday change: " + birthdate;
+        }
+
+        if ((emailSubject !== "" || isAutoFilled) && reason !== "" && (message !== "" || isAutoFilled)) {
             let deviceType = "";
             if (Capacitor.getPlatform() === 'ios') {
                 deviceType = "ios";
@@ -72,16 +99,14 @@ const ContactForm: React.FC = () => {
                 deviceType = "android";
             }
 
+            const emailMessage = message || emailSubject;
+
             let extraFields = "";
-            if (reason === "profile" && profileUpdateType === "name") {
-                extraFields = "\n requested name: " + newName;
-            } else if (reason === "profile" && profileUpdateType === "age") {
-                extraFields = "\n requested birthdate: " + birthdate;
-            } else if (reason === "profile" && profileUpdateType === "location") {
+            if (reason === "profile" && profileUpdateType === "location") {
                 extraFields = "\n requested location: " + selectedCity;
             }
 
-            const response = await sendAnEmail(toEmail, subjectAppendage + subject, message + "\n\n device: " + deviceType + "\n name: " + (currentUserProfile?.name ?? '') + extraFields);
+            const response = await sendAnEmail(toEmail, subjectAppendage + emailSubject, emailMessage + "\n\n device: " + deviceType + "\n version: " + appVersion + " (" + CURRENT_APP_VERSION + ")" + "\n name: " + (currentUserProfile?.name ?? '') + extraFields);
             if (response.status == 200) {
                 setShowAlert(true);
                 clearFields();
@@ -137,16 +162,19 @@ const ContactForm: React.FC = () => {
                         setBirthdate={setBirthdate}
                         selectedCity={selectedCity}
                         setSelectedCity={setSelectedCity}
+                        birthYear={currentUserProfile?.birth_date ? parseInt(currentUserProfile.birth_date.split('-')[0]) : null}
                     />
                 )}
-                <IonItem className="input">
-                    <IonLabel position="stacked">Subject</IonLabel>
-                    <IonInput
-                        placeholder="Something short and sweet!"
-                        onIonInput={e => setSubject(e.detail.value!)}
-                        value={subject}
-                    />
-                </IonItem>
+                {!isAutoFilled && (
+                    <IonItem className="input">
+                        <IonLabel position="stacked">Subject</IonLabel>
+                        <IonInput
+                            placeholder="Something short and sweet!"
+                            onIonInput={e => setSubject(e.detail.value!)}
+                            value={subject}
+                        />
+                    </IonItem>
+                )}
                 <IonItem className="input">
                     <IonLabel position="stacked">
                         {reason === "profile" && profileUpdateType === "name"
@@ -166,7 +194,8 @@ const ContactForm: React.FC = () => {
             </IonCard>
             <IonRow className="send" style={{ paddingBottom: "20pt" }}>
                 <IonButton onClick={sendHelpMail} disabled={
-                    afterSendWait || !reason || !subject
+                    afterSendWait || !reason
+                    || (!isAutoFilled && !subject)
                     || (reason !== "profile" && !message)
                     || (reason === "profile" && (profileUpdateType === "other" || !profileUpdateType) && !message)
                     || (reason === "profile" && !profileUpdateType)
@@ -174,7 +203,7 @@ const ContactForm: React.FC = () => {
                     || (reason === "profile" && profileUpdateType === "age" && !birthdate)
                     || (reason === "profile" && profileUpdateType === "location" && !selectedCity)
                 }>Send</IonButton>
-                {error ? <IonText>{error}</IonText> : <></>}
+                {error && <IonText>{error}</IonText>}
             </IonRow>
         </>
     );

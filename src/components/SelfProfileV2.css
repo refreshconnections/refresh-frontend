@@ -273,6 +273,10 @@ ion-card-content .card-grid {
   margin-top: 4px;
 }
 
+.field-actions.editing-actions {
+  margin-top: 6px;
+}
+
 .multi-line {
   white-space: pre-line;
 }

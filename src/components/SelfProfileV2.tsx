@@ -29,10 +29,11 @@ import {
   useIonAlert,
   useIonPopover,
 } from '@ionic/react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useHistory } from 'react-router-dom';
 import './SelfProfileV2.css';
 
-import { updateCurrentUserProfile } from '../hooks/utilities';
+import { updateCurrentUserProfile, onImgError } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import ProfileModal from './ProfileModal';
@@ -127,6 +128,7 @@ const initialForm: SimpleFormState = {
 };
 
 const SelfProfileV2: React.FC = () => {
+  const history = useHistory();
   const currentUserProfile: any = useGetCurrentProfile().data;
   const { data: communityProfile } = useGetCommunityProfile();
   const [form, setForm] = useState<SimpleFormState>(initialForm);
@@ -182,6 +184,9 @@ const SelfProfileV2: React.FC = () => {
 
   const [presentShowContactSupportAlert] = useIonAlert();
   const [presentPhotoAlert] = useIonAlert();
+  const [presentUnsavedAlert] = useIonAlert();
+  const pendingLocationRef = useRef<string | null>(null);
+  const unblockRef = useRef<(() => void) | null>(null);
   const [presentPhotoActionSheet] = useIonActionSheet();
   const [photosAccordionValue, setPhotosAccordionValue] = useState<string | undefined>(undefined);
 
@@ -295,6 +300,42 @@ const SelfProfileV2: React.FC = () => {
     });
   }, [currentUserProfile]);
 
+  const hasUnsavedChanges = Object.values(editing).some(Boolean) || editingPhotoOrder;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      unblockRef.current?.();
+      unblockRef.current = null;
+      return;
+    }
+
+    unblockRef.current = history.block((location) => {
+      pendingLocationRef.current = location.pathname;
+      presentUnsavedAlert({
+        header: 'Unsaved changes',
+        message: 'You have unsaved changes. Leave anyway?',
+        buttons: [
+          {
+            text: 'Leave',
+            role: 'destructive',
+            handler: () => {
+              unblockRef.current?.();
+              unblockRef.current = null;
+              history.push(pendingLocationRef.current!);
+            },
+          },
+          { text: 'Keep editing', role: 'cancel' },
+        ],
+      });
+      return false;
+    });
+
+    return () => {
+      unblockRef.current?.();
+      unblockRef.current = null;
+    };
+  }, [hasUnsavedChanges]);
+
   const isFieldEmpty = (key: keyof SimpleFormState) => {
     const value = form[key];
     if (Array.isArray(value)) {
@@ -317,7 +358,7 @@ const SelfProfileV2: React.FC = () => {
       subHeader: `Please use our Help feature and include what you would like your ${field2} updated to.`,
       buttons: [
         { text: 'Nevermind', role: 'cancel' },
-        { text: 'Get Help', handler: () => { window.location.href = '/help'; } },
+        { text: 'Get Help', handler: () => { history.push(`/help?prefill=${field}`); } },
       ],
     });
   };
@@ -623,22 +664,8 @@ const SelfProfileV2: React.FC = () => {
         <div className="editing-section">
           <div className="field-header">
             <p>{fieldLabels[fieldKey].label}</p>
-            <div className="field-actions">
-              {editing[fieldKey] ? (
-                <>
-                  {!!editorValue && (
-                    <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
-                      Clear
-                    </IonButton>
-                  )}
-                  <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
-                    Cancel
-                  </IonButton>
-                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
-                    Save
-                  </IonButton>
-                </>
-              ) : (
+            {!editing[fieldKey] && (
+              <div className="field-actions">
                 <IonButton
                   size="small"
                   fill="outline"
@@ -648,8 +675,8 @@ const SelfProfileV2: React.FC = () => {
                 >
                   Edit
                 </IonButton>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {editing[fieldKey] ? (
@@ -666,6 +693,22 @@ const SelfProfileV2: React.FC = () => {
             )
           ) : (
             <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
+          )}
+
+          {editing[fieldKey] && (
+            <div className="field-actions editing-actions">
+              {!!editorValue && (
+                <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
+                  Clear
+                </IonButton>
+              )}
+              <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
+                Cancel
+              </IonButton>
+              <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
+                Save
+              </IonButton>
+            </div>
           )}
         </div>
       </IonItem>
@@ -692,37 +735,13 @@ const SelfProfileV2: React.FC = () => {
         <div className="editing-section">
           <div className="field-header">
             <p>{fieldLabels.pronouns.label}</p>
-            <div className="field-actions">
-              {editing.pronouns ? (
-                <>
-                  {!!editorValue && (
-                    <IonButton
-                      className="clear-button"
-                      size="small"
-                      fill="clear"
-                      color="danger"
-                      onClick={() => {
-                        setEditorChoice('custom');
-                        setEditorValue('');
-                      }}
-                      type="button"
-                    >
-                      Clear
-                    </IonButton>
-                  )}
-                  <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
-                    Cancel
-                  </IonButton>
-                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
-                    Save
-                  </IonButton>
-                </>
-              ) : (
+            {!editing.pronouns && (
+              <div className="field-actions">
                 <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`} onClick={() => startEdit('pronouns')}>
                   Edit
                 </IonButton>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {editing.pronouns ? (
@@ -752,6 +771,32 @@ const SelfProfileV2: React.FC = () => {
             </>
           ) : (
             <h2 className="multi-line">{value || '-'}</h2>
+          )}
+
+          {editing.pronouns && (
+            <div className="field-actions editing-actions">
+              {!!editorValue && (
+                <IonButton
+                  className="clear-button"
+                  size="small"
+                  fill="clear"
+                  color="danger"
+                  onClick={() => {
+                    setEditorChoice('custom');
+                    setEditorValue('');
+                  }}
+                  type="button"
+                >
+                  Clear
+                </IonButton>
+              )}
+              <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
+                Cancel
+              </IonButton>
+              <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
+                Save
+              </IonButton>
+            </div>
           )}
         </div>
       </IonItem>
@@ -1091,7 +1136,7 @@ const SelfProfileV2: React.FC = () => {
                   {photoOrderDraft.map(key => (
                     <IonItem key={key} button onClick={() => openPhotoActions(key)} detailIcon={ellipsisHorizontal}>
                       <IonThumbnail slot="start" style={{ width: '96px', height: '96px' }}>
-                        <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} />
+                        <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} onError={onImgError} />
                       </IonThumbnail>
                       <IonLabel>
                         {getPhotoCaption(key) ? (

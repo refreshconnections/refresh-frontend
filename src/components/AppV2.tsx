@@ -60,7 +60,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 
 /* Theme variables */
 import '../theme/variables.css';
-import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall, CURRENT_APP_VERSION } from '../hooks/utilities';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -174,10 +174,7 @@ if (isMobile()) {
 
 const AppV2: React.FC = () => {
 
-  // Version 3: July 6 2025
-  // Version 4: Oct 15 2025
-  // Version 5: Dec 4 2025
-  const currentVersion: number = 5
+  const currentVersion: number = CURRENT_APP_VERSION
 
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);

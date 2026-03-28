@@ -1,6 +1,8 @@
 import React from 'react';
-import { IonItem, IonLabel, IonSelect, IonSelectOption, IonInput, IonNote, IonAccordion, IonAccordionGroup, IonRow, IonText, IonRouterLink, useIonModal } from '@ionic/react';
+import { IonItem, IonLabel, IonSelect, IonSelectOption, IonInput, IonNote, IonAccordion, IonAccordionGroup, IonRow, IonText, IonRouterLink, IonDatetime, IonDatetimeButton, IonModal, useIonModal } from '@ionic/react';
+import moment from 'moment';
 import CitySelectorModal from '../CitySelectorModal';
+import { maxBirthdateForAdult } from '../../hooks/utilities';
 import "./HelpCenter.css"
 
 type Props = {
@@ -12,6 +14,7 @@ type Props = {
     setBirthdate: (v: string) => void;
     selectedCity: string;
     setSelectedCity: (v: string) => void;
+    birthYear?: number | null;
 };
 
 const ProfileUpdateFields: React.FC<Props> = ({
@@ -19,13 +22,24 @@ const ProfileUpdateFields: React.FC<Props> = ({
     newName, setNewName,
     birthdate, setBirthdate,
     selectedCity, setSelectedCity,
+    birthYear,
 }) => {
+    const defaultBirthdate = birthYear && birthYear >= 1920 ? `${birthYear}-01-01` : null;
+
+    const citySelectorOpeningRef = React.useRef(false);
     const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
         onDismiss: (city?: { name: string }) => {
             if (city) setSelectedCity(city.name);
             dismissCitySelector();
-        }
+        },
     });
+    const openCitySelector = () => {
+        if (citySelectorOpeningRef.current) return;
+        citySelectorOpeningRef.current = true;
+        presentCitySelector({
+            onDidDismiss: () => { citySelectorOpeningRef.current = false; },
+        });
+    };
 
     return (
         <>
@@ -49,14 +63,28 @@ const ProfileUpdateFields: React.FC<Props> = ({
                 </IonItem>
             )}
             {profileUpdateType === "age" && (
-                <IonItem className="input">
-                    <IonLabel position="stacked">Your date of birth</IonLabel>
-                    <IonInput
-                        type="date"
-                        value={birthdate}
-                        onIonInput={e => setBirthdate(e.detail.value!)}
-                    />
-                </IonItem>
+                <>
+                    <IonItem className="input">
+                        <IonLabel position="stacked">Your date of birth</IonLabel>
+                        <IonInput readonly value={birthdate} placeholder="Tap to select" style={{ pointerEvents: 'none' }} />
+                        <IonDatetimeButton datetime="help-birthdate" style={{ position: "absolute", width: "100%", height: "100%", opacity: 0 }} />
+                    </IonItem>
+                    {birthdate && <IonNote style={{ paddingLeft: '16px', paddingBottom: '8px' }}>Your age will show as {moment().diff(moment(birthdate, 'YYYY-MM-DD'), 'years')}</IonNote>}
+                    <IonModal keepContentsMounted={true}>
+                        <IonDatetime
+                            id="help-birthdate"
+                            preferWheel={true}
+                            presentation="date"
+                            max={maxBirthdateForAdult()}
+                            value={birthdate || defaultBirthdate}
+                            onIonChange={e => {
+                                const val = Array.isArray(e.detail.value) ? e.detail.value[0] : e.detail.value;
+                                setBirthdate(val?.split('T')[0] ?? "");
+                            }}
+                            showDefaultButtons={true}
+                        />
+                    </IonModal>
+                </>
             )}
             {profileUpdateType === "location" && (
                 <>
@@ -84,7 +112,7 @@ const ProfileUpdateFields: React.FC<Props> = ({
                             value={selectedCity}
                             placeholder="Tap to select a city"
                             readonly
-                            onClick={() => presentCitySelector()}
+                            onClick={openCitySelector}
                         />
                     </IonItem>
                 </>

@@ -27,6 +27,10 @@
   --background: transparent;
 }
 
+.create-event-modal ion-select::part(text) {
+  white-space: normal;
+}
+
 .create-event-modal ion-item:first-of-type {
   margin-top: 12px;
 }
