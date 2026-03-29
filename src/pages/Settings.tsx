@@ -11,7 +11,6 @@ import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref,
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
-import ProfileCreationModal from '../components/ProfileCreationModal';
 import { Preferences } from '@capacitor/preferences';
 import Cookies from 'js-cookie';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons/faRightFromBracket';

@@ -2,6 +2,8 @@ import { IonAvatar, IonBadge, IonItem, IonText, useIonModal } from "@ionic/react
 import React from "react";
 import { isPersonalPlus, onImgError } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCommentHeart } from "@fortawesome/pro-solid-svg-icons";
 
 import TextModal from "../TextModal";
 
@@ -44,6 +46,11 @@ const HiddenChatItem: React.FC<Props> = (props) => {
                     }
                     </IonAvatar>
                     <IonText className="name">{profileDetails?.name || "User"}</IonText>
+                    {chat?.opener &&
+                        <div slot="end">
+                            <FontAwesomeIcon icon={faCommentHeart} />
+                        </div>
+                    }
                     {chat?.unread_count > 0 ? <IonBadge className="unread-badge" slot="end">
                                 {currentUserProfile.subscription_level !== "none" && currentUserProfile.settings_new_message_count == true ?
                                   chat?.unread_count + " new"

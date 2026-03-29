@@ -1,5 +1,5 @@
 import { AccordionGroupCustomEvent, IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonRow, IonSpinner } from "@ionic/react";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import HiddenChatItem from "./HiddenChatItem";
 import { useGetHiddenChats } from "../../hooks/api/chats/hidden-chats";
 
@@ -14,6 +14,7 @@ const HiddenChats: React.FC<Props> = (props) => {
   const { currentUserProfile } = props;
 
   const [open, setOpen] = useState<boolean>(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const { data: hiddenChatsData, isLoading: hiddenChatsLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useGetHiddenChats(
     open && currentUserProfile?.hidden_dialogs?.length > 0,
   );
@@ -24,6 +25,7 @@ const HiddenChats: React.FC<Props> = (props) => {
 
     if (selectedValue) {
       setOpen(true)
+      setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     }
     else {
       setOpen(false)
@@ -34,7 +36,7 @@ const HiddenChats: React.FC<Props> = (props) => {
   return (
     <>
       {currentUserProfile?.hidden_dialogs.length > 0 ?
-        <div>
+        <div ref={containerRef}>
           <IonAccordionGroup onIonChange={accordionGroupChange}>
             <IonAccordion value="first">
               <IonItem slot="header">
@@ -43,7 +45,7 @@ const HiddenChats: React.FC<Props> = (props) => {
               <div slot="content">
                 {open ?
                   <>
-                    {hiddenChatsLoading ? (
+                    {(hiddenChatsLoading || !hiddenChatsData) ? (
                       <IonRow className="ion-justify-content-center ion-padding" style={{ minHeight: "120px" }}>
                         <IonSpinner name="dots" />
                       </IonRow>
@@ -51,7 +53,7 @@ const HiddenChats: React.FC<Props> = (props) => {
                       <>
                         <IonList id="wl" lines="full">
                           {hiddenChats?.map((e: any) => (
-                            <li key={e.id}>
+                            <li key={e.other_user_id}>
                               {!(currentUserProfile?.blocked_connections.includes(parseInt(e.other_user_id))) ?
                                 <HiddenChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
                                 : <></>}
