@@ -37,6 +37,7 @@ import { useChatSettings } from "../hooks/api/chats/chat-settings";
 import AttachmentsInfoModal from "./AttachmentsInfoModal";
 import moment from "moment";
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
+import { useProfileDetails } from "../hooks/api/profiles/details";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 
 import { useGetUnreadCount } from '../hooks/api/chats/unread-count';
@@ -240,7 +241,9 @@ const recentlySent = (postedDate) => {
 
 
 const TextModal: React.FC<Props> = (props) => {
-    const { textModalData, unreadCount, pro, settingsAlt, from_name, profileDetails, onDismiss } = props;
+    const { textModalData, unreadCount, pro, settingsAlt, from_name, profileDetails: profileDetailsProp, onDismiss } = props;
+    const fetchedProfile = useProfileDetails(parseInt(textModalData?.other_user_id), !profileDetailsProp).data;
+    const profileDetails = profileDetailsProp ?? fetchedProfile;
 
     const queryClient = useQueryClient()
 
@@ -920,26 +923,18 @@ const TextModal: React.FC<Props> = (props) => {
 
     const removeUnheartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-
-            let index = removeHeartFromArray(id);
-            justHearted.splice(index, 1);
-
-            setJustHearted([...justHearted])
+            setJustHearted(removeIdFromArray(justHearted, id))
             await unheartMessage(id)
         }
     }
 
-    //Removes checkbox from array when you uncheck it
-    const removeHeartFromArray = (id: number) => {
-        return justHearted.findIndex((index) => {
-            return index === id;
-        })
-
+    const removeIdFromArray = (source: number[], id: number) => {
+        return source.filter((itemId) => itemId !== id);
     }
 
-    const removeHeartedMessageHeart = async (id: number, index: number) => {
+    const removeHeartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-            setCurrMessageHeart(index)
+            setCurrMessageHeart(id)
 
             const newArray = [...justUnhearted, id]
             setJustUnhearted(newArray)
@@ -950,11 +945,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const giveHeartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-
-            let index = removeHeartFromArray(id);
-            justUnhearted.splice(index, 1);
-
-            setJustUnhearted([...justUnhearted])
+            setJustUnhearted(removeIdFromArray(justUnhearted, id))
             await heartMessage(id)
         }
 
@@ -1196,7 +1187,7 @@ const TextModal: React.FC<Props> = (props) => {
                                             :
                                             <IonItemSliding key={item.id}>
                                                 <div ref={(page === 0 && index === 0) ? messagesEndRef : null} ></div>
-                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
+                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== item?.id ? () => setCurrMessageHeart(item?.id) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
                                                     {item?.text ?
                                                         <IonLabel className="ion-text-wrap the-actual-message">
 
@@ -1242,14 +1233,14 @@ const TextModal: React.FC<Props> = (props) => {
                                                 {
                                                     item?.heart == false && item?.out === false && justHearted.includes(item?.id) ?
                                                         <FontAwesomeIcon className="in-heart-red" title="message heart" icon={faHeart} onClick={async () => await removeUnheartedMessageHeart(item?.id)} />
-                                                        : item?.heart == false && currMessageHeart == index && item?.out === false ?
+                                                        : item?.heart == false && currMessageHeart == item?.id && item?.out === false ?
                                                             <FontAwesomeIcon className="in-heart" icon={faHeartOutline} title="message heart" onClick={async () => await giveUnheartedMessageAHeart(item?.id)} />
                                                             :
-                                                            item?.out === false && currMessageHeart == index && item?.heart == true && justUnhearted.includes(item?.id) ?
+                                                            item?.out === false && currMessageHeart == item?.id && item?.heart == true && justUnhearted.includes(item?.id) ?
                                                                 <FontAwesomeIcon className="in-heart" icon={faHeartOutline} title="message heart" onClick={async () => await giveHeartedMessageHeart(item?.id)} />
                                                                 :
-                                                                item?.out === false && item?.heart == true && !(justUnhearted.includes(item?.id)) ?
-                                                                    <FontAwesomeIcon className="in-heart-red" icon={faHeart} title="message heart" onClick={async () => await removeHeartedMessageHeart(item?.id, index)} />
+                                                            item?.out === false && item?.heart == true && !(justUnhearted.includes(item?.id)) ?
+                                                                    <FontAwesomeIcon className="in-heart-red" icon={faHeart} title="message heart" onClick={async () => await removeHeartedMessageHeart(item?.id)} />
                                                                     :
                                                                     item?.out === true && item?.heart == true ?
                                                                         <FontAwesomeIcon className="out-heart-red" icon={faHeart} title="message heart" />
@@ -1397,10 +1388,7 @@ const TextModal: React.FC<Props> = (props) => {
                                     <IonTextarea value={messageInput}
                                         name="message_input"
                                         onIonInput={e => {
-                                            const newValue = e.detail.value ?? '';
-                                            if (newValue !== messageInput) {
-                                                setMessageInput(newValue);
-                                            }
+                                            setMessageInput(e.detail.value ?? '');
                                         }}
                                         placeholder={(!canText && !canTextisWaiting) ? "Not receiving." : "Message"}
                                         autocapitalize="sentences"

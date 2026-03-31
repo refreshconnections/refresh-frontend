@@ -18,20 +18,15 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const livedExperienceOptions: [string, string][] = [
-  ['poc', 'POC'],
-  ['spiritual', 'Spiritual'],
-  ['neurodivergent', 'Neurodivergent'],
-  ['sober', 'Sober'],
-];
-
-const livedExperiencePopoverText =
-  "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
+const livedExperienceOptions: [string, string][] = ONBOARDING_COPY.cards.livedExperiences.options;
+const livedExperiencePopoverText = ONBOARDING_COPY.cards.livedExperiences.popover;
 
 const OnboardingCardLivedExperiences: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.livedExperiences;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [selected, setSelected] = useState<string[]>([]);
@@ -81,7 +76,7 @@ const OnboardingCardLivedExperiences: React.FC = () => {
     <IonCard className="onboarding-slide">
       <IonCardContent className="w-checkboxes">
         <IonCardTitle className="onboarding-title-row">
-          <span>Lived experiences</span>
+          <span>{copy.title}</span>
           <IonButton
             fill="clear"
             size="small"
@@ -94,7 +89,7 @@ const OnboardingCardLivedExperiences: React.FC = () => {
             *
           </IonButton>
         </IonCardTitle>
-        <IonText>Choose any that apply. These are used for filtering in picks.</IonText>
+        <IonText>{copy.body}</IonText>
         <IonText className="onboarding-future-filters">
           {livedExperiencePopoverText}
         </IonText>
@@ -112,12 +107,12 @@ const OnboardingCardLivedExperiences: React.FC = () => {
               </IonItem>
             ))}
           </IonList>
-          <IonNote className="onboarding-option-note">Scroll for all options!</IonNote>
+          <IonNote className="onboarding-option-note">{copy.scrollNote}</IonNote>
           <IonText className="onboarding-subtext">
-            You can choose to show these on your profile, or keep them just for filtering.
+            {copy.subtext}
           </IonText>
           <IonItem className="onboarding-toggle-row">
-            <IonLabel>Show on profile</IonLabel>
+            <IonLabel>{copy.showOnProfile}</IonLabel>
             <IonToggle
               slot="end"
               checked={showOnProfile}
@@ -126,8 +121,8 @@ const OnboardingCardLivedExperiences: React.FC = () => {
           </IonItem>
         </div>
         <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-          <IonButton onClick={updateProfile} disabled={selected.length === 0}>Next</IonButton>
+          <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton onClick={updateProfile} disabled={selected.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
         </IonRow>
       </IonCardContent>
     </IonCard>

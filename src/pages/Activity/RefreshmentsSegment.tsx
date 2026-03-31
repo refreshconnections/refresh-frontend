@@ -121,9 +121,10 @@ const RefreshmentsSegment: React.FC<Props> = ({
                             ? (comment.is_reply ? faComments : faComment)
                             : faComments;
                         const ownCommentText = comment.item_type === 'comment' ? (comment.text || '') : '';
-                        const isRemoved = comment.item_type === 'comment' && comment.removed && comment.removed_reason;
-                        const isModerated = comment.item_type === 'comment' && !isRemoved && (comment.moderation_note || comment.moderation_note_longer);
-                        const iconColor = isRemoved ? 'var(--ion-color-maroon)' : isModerated ? 'var(--ion-color-secondary)' : undefined;
+                        const isRemoved = comment.item_type === 'comment' && comment.removed && !!comment.removed_reason;
+                        const isRemovedNoReason = comment.item_type === 'comment' && comment.removed && !comment.removed_reason;
+                        const isModerated = comment.item_type === 'comment' && !isRemovedNoReason && (comment.moderation_note || comment.moderation_note_longer);
+                        const iconColor = (isRemoved || isRemovedNoReason) ? 'var(--ion-color-maroon)' : isModerated ? 'var(--ion-color-secondary)' : undefined;
                         const isExpandable = isReplyType || comment.is_reply || isRemoved || isModerated || ownCommentText.length > 60;
 
                         return (
@@ -133,7 +134,7 @@ const RefreshmentsSegment: React.FC<Props> = ({
                                         <div className={`comment-card-text${expanded ? ' expanded' : ''}`}>
                                             <span className="comment-card-icon" style={iconColor ? { color: iconColor } : undefined}>
                                                 <FontAwesomeIcon icon={icon} />
-                                            </span> &nbsp;{comment.text}
+                                            </span> &nbsp;{isRemovedNoReason ? 'You removed a comment you left.' : comment.text}
                                         </div>
                                         {isExpandable && (
                                             <div style={{ textAlign: 'right' }}>

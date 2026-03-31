@@ -18,7 +18,7 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetIncomingConnectionStatus } from '../hooks/api/profiles/incoming-connection-status';
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
-import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked, removeCommunityBlocked } from '../hooks/utilities';
+import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked } from '../hooks/utilities';
 import { useBlockProfile } from '../hooks/useBlockProfile';
 import './CommunityProfileModal.css';
 import TextModal from './TextModal';
@@ -68,7 +68,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     cardData: profileDetails.data,
     profiletype: isConnected ? 'connected-nodismiss' : 'unconnected-nodismiss',
     pro: isPersonalPlus(currentProfile?.subscription_level),
-    settingsAlt: currentProfile?.settings_alt_text || true,
+    settingsAlt: Boolean(currentProfile?.settings_alt_text),
     yourName: currentProfile?.name || '',
     onDismiss: () => profileDismiss(),
   });
@@ -77,7 +77,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     cardData: profileDetails.data,
     profiletype: 'unconnected',
     pro: isPersonalPlus(currentProfile?.subscription_level),
-    settingsAlt: currentProfile?.settings_alt_text || true,
+    settingsAlt: Boolean(currentProfile?.settings_alt_text),
     yourName: currentProfile?.name || '',
     onDismiss: () => likeBackDismiss(),
     onActionDismiss: () => {
@@ -281,10 +281,8 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     }
     if (!isCommunityBlocked) {
       buttons.push({
-        text: isCommunityBlocked ? 'Remove full community block' : 'Full community block',
-        handler: () => isCommunityBlocked
-          ? (removeCommunityBlocked(userId!).then(() => queryClient.invalidateQueries({ queryKey: userQueryKeys.current })))
-          : handleCommunityBlockConfirm(),
+        text: 'Full community block',
+        handler: () => handleCommunityBlockConfirm(),
       });
     }
     buttons.push({

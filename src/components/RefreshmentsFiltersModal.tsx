@@ -418,6 +418,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
                     {sortOptions.map((option) => (
 
                         <IonRadio
+                          key={option.value}
                           slot="start"
                           value={option.value}
                           disabled={!isCommunityPlus(currentUserProfile?.subscription_level) && option.value !== sortOptions[0].value}

@@ -20,6 +20,7 @@ import CommunityProfileModal from '../components/CommunityProfileModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
+// Deprecated: legacy Community.tsx detail component. AppV2 uses CommunityPostRoute and SubmittedPostPreview instead.
 
 type Props = {
   comments: any;
@@ -184,7 +185,7 @@ const PostDetails: React.FC<Props> = (props) => {
   return (
     <IonList className="comments">
       {data.map((item: any, index: number) => (
-            <>
+            <React.Fragment key={item?.id ?? index}>
             <IonItemSliding key={index}>
               {item.approved?
               <IonItem className={me?.user == item.user ? "selfwritten" : "written"}>
@@ -237,7 +238,7 @@ const PostDetails: React.FC<Props> = (props) => {
               </IonItemOptions>
               : <></>}
             </IonItemSliding>
-            </>
+            </React.Fragment>
 
       ))}
       {loading || me?.username ?

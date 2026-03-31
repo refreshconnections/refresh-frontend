@@ -7,7 +7,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 import "./Page.css"
 import "./Settings.css"
 
-import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
+import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref } from '../hooks/utilities';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -44,16 +44,18 @@ import { faEnvelopes } from '@fortawesome/pro-regular-svg-icons';
 
 const Settings: React.FC = () => {
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<any>(null);
   const [theme, setTheme] = useState<'auto' | 'light' | 'dark' | null>(null);
   const [fontZoom, setFontZoom] = useState<'auto' | 'default' | 'large' | 'xl' | null>(null);
-
-  const [streakTracker, setStreakTracker] = useState<boolean | null>(null);
-
+  const [reduceAnimations, setReduceAnimations] = useState<boolean>(false);
+  const [chatOrganizer, setChatOrganizer] = useState<boolean>(true);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
+  const [streakTracker, setStreakTracker] = useState<boolean | null>(
+    typeof data?.settings_streak_tracker === 'boolean' ? data.settings_streak_tracker : null
+  );
   const moderation = useGetCurrentModeration().data;
 
 
@@ -372,24 +374,39 @@ const Settings: React.FC = () => {
 
 
   useEffect(() => {
-
-    setLoading(true); // set loading to true
+    let cancelled = false;
 
     const fetchData = async () => {
-      setError(null);
-      setLoading(true);
-
       try {
         const themePref = await getThemePreference()
+        if (cancelled) {
+          return;
+        }
         setTheme(themePref == 'dark' ? 'dark' : themePref == 'light' ? 'light' : 'auto')
         const textSizePref = await getFontSizePreference()
+        if (cancelled) {
+          return;
+        }
         setFontZoom((textSizePref == 'default' || textSizePref == 'large' || textSizePref == 'xl') ? textSizePref : 'auto')
+        const reduceAnimPref = await getReduceAnimations()
+        if (cancelled) {
+          return;
+        }
+        setReduceAnimations(reduceAnimPref)
+        const { value: chatOrganizerPref } = await Preferences.get({ key: 'chat_organizer' });
+        if (cancelled) {
+          return;
+        }
+        setChatOrganizer(chatOrganizerPref !== 'false');
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
         // setPushOptedIn(await (window as any).plugins.OneSignal.User.pushSubscription.getOptedInAsync())
         setLoading(false);
       } catch (error: any) {
+        if (cancelled) {
+          return;
+        }
         setError(error.message);
         setLoading(false)
         console.log(error)
@@ -403,6 +420,10 @@ const Settings: React.FC = () => {
     // }
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
 
     // if (isMobile() && realSettingsPushAllowed) {
     //   setOptin();
@@ -425,21 +446,21 @@ const Settings: React.FC = () => {
   }, [theme]);
 
   useEffect(() => {
-
-    console.log("data changed", data?.settings_streak_tracker)
-
-    if (data?.settings_streak_tracker == false) {
-      setStreakTracker(false)
-    }
-    else if (data?.settings_streak_tracker == true) {
-      setStreakTracker(true)
+    if (typeof data?.settings_streak_tracker !== 'boolean') {
+      return;
     }
 
-  }, [data]);
+    setStreakTracker((currentValue) =>
+      currentValue === data.settings_streak_tracker
+        ? currentValue
+        : data.settings_streak_tracker
+    );
+  }, [data?.settings_streak_tracker]);
 
   useEffect(() => {
-
-    console.log("Streak tracker", streakTracker)
+    if (streakTracker === null || streakTracker === data?.settings_streak_tracker) {
+      return;
+    }
 
     const setToTrue = async () => {
       await updateCurrentUserProfile({ "settings_streak_tracker": true })
@@ -447,7 +468,6 @@ const Settings: React.FC = () => {
     }
 
     if (streakTracker == false && data?.settings_streak_tracker == true) {
-      console.log("hi this has changed")
       clearStreakTracker()
 
     }
@@ -456,7 +476,7 @@ const Settings: React.FC = () => {
     }
 
 
-  }, [streakTracker]);
+  }, [data?.settings_streak_tracker, queryClient, streakTracker]);
 
 
   useEffect(() => {
@@ -575,6 +595,18 @@ const Settings: React.FC = () => {
               <IonButton slot="end" onClick={() => editPushNotificationsPresent()}> Edit </IonButton>
             </IonItem>
             <IonItem>
+              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Chat organizer</span></IonLabel>
+              <IonToggle slot="end"
+                onIonChange={async e => {
+                  const val = e.detail.checked;
+                  setChatOrganizer(val);
+                  await Preferences.set({ key: 'chat_organizer', value: String(val) });
+                  window.dispatchEvent(new CustomEvent('chat_organizer_changed', { detail: val }));
+                }}
+                checked={chatOrganizer}
+              />
+            </IonItem>
+            <IonItem>
               <IonLabel className="ion-text-wrap">Chat preferences</IonLabel>
               <IonButton slot="end" onClick={() => editChatSettingsPresent()}> Edit </IonButton>
             </IonItem>
@@ -648,6 +680,16 @@ const Settings: React.FC = () => {
                   <IonSelectOption value="large">Large</IonSelectOption>
                   <IonSelectOption value="xl">X-Large</IonSelectOption>
                 </IonSelect>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Reduce animations</IonLabel>
+                <IonToggle slot="end"
+                  checked={reduceAnimations}
+                  onIonChange={async e => {
+                    setReduceAnimations(e.detail.checked);
+                    await setReduceAnimationsPref(e.detail.checked);
+                  }}
+                />
               </IonItem>
               <IonItem>
               <IonLabel className="ion-text-wrap">Change/Add Email</IonLabel>

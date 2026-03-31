@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REAL_CODEX="${CODEX_REAL_BIN:-/opt/homebrew/bin/codex}"
+SOUND_FILE="${CODEX_NOTIFY_SOUND:-/System/Library/Sounds/Glass.aiff}"
+SESSIONS_DIR="${CODEX_NOTIFY_SESSIONS_DIR:-$HOME/.codex/sessions}"
+LOG_FILE="${CODEX_NOTIFY_LOG:-$HOME/.codex/log/codex-tui.log}"
+POLL_INTERVAL="${CODEX_NOTIFY_POLL_INTERVAL:-1}"
+
+if [[ ! -x "$REAL_CODEX" ]]; then
+  echo "codex-notify: unable to find Codex at $REAL_CODEX" >&2
+  exit 1
+fi
+
+play_sound() {
+  if [[ -f "$SOUND_FILE" ]]; then
+    afplay "$SOUND_FILE" >/dev/null 2>&1 &
+  fi
+}
+
+monitor_codex_events() {
+  local log_offset=0
+  local approval_epoch=0
+  local task_epoch=0
+  local session_file=""
+  local session_offset=0
+  local now
+  local line
+
+  while true; do
+    if [[ -d "$SESSIONS_DIR" ]]; then
+      local newest_session
+      newest_session="$(find "$SESSIONS_DIR" -type f -name '*.jsonl' -print 2>/dev/null | xargs ls -1t 2>/dev/null | head -n 1 || true)"
+      if [[ -n "$newest_session" && "$newest_session" != "$session_file" ]]; then
+        session_file="$newest_session"
+        session_offset="$(wc -l < "$session_file" 2>/dev/null || echo 0)"
+      fi
+    fi
+
+    if [[ -n "$session_file" && -f "$session_file" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if [[ "$line" == *'"type":"task_complete"'* ]]; then
+          now="$(date +%s)"
+          if (( now > task_epoch )); then
+            play_sound
+            task_epoch=$((now + 1))
+          fi
+        fi
+      done < <(sed -n "$((session_offset + 1)),\$p" "$session_file" 2>/dev/null || true)
+      session_offset="$(wc -l < "$session_file" 2>/dev/null || echo "$session_offset")"
+    fi
+
+    if [[ -f "$LOG_FILE" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if [[ "$line" == *"approval requested"* || "$line" == *"needs your approval"* || "$line" == *"Tool call needs your approval"* || "$line" == *"requires approval by policy"* ]]; then
+          now="$(date +%s)"
+          if (( now > approval_epoch )); then
+            play_sound
+            approval_epoch=$((now + 2))
+          fi
+        fi
+      done < <(sed -n "$((log_offset + 1)),\$p" "$LOG_FILE" 2>/dev/null || true)
+      log_offset="$(wc -l < "$LOG_FILE" 2>/dev/null || echo "$log_offset")"
+    fi
+
+    sleep "$POLL_INTERVAL"
+  done
+}
+
+if [[ ! -t 0 || ! -t 1 ]]; then
+  exec "$REAL_CODEX" "$@"
+fi
+
+monitor_codex_events &
+MONITOR_PID=$!
+
+cleanup() {
+  if kill -0 "$MONITOR_PID" >/dev/null 2>&1; then
+    kill "$MONITOR_PID" >/dev/null 2>&1 || true
+    wait "$MONITOR_PID" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT INT TERM
+
+"$REAL_CODEX" "$@"

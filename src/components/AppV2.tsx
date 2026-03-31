@@ -60,7 +60,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 
 /* Theme variables */
 import '../theme/variables.css';
-import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall, CURRENT_APP_VERSION } from '../hooks/utilities';
+import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall, CURRENT_APP_VERSION, getReduceAnimations } from '../hooks/utilities';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -74,6 +74,7 @@ import { useGetCurrentUserChats } from '../hooks/api/chats/current-user-chats';
 import { getProfileDetailsFn } from '../hooks/api/profiles/details';
 import { getLimitsFn, useGetLimits } from '../hooks/api/profiles/current-limits';
 import Change from '../pages/Change';
+import Hub from '../pages/Hub';
 import EmailBuilderDetails from './Change/EmailBuilder/EmailBuilderDetails';
 import OtherDetails from './Change/Other/OtherDetails';
 
@@ -179,6 +180,7 @@ const AppV2: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
+  const [reduceAnimations, setReduceAnimations] = useState(false);
 
   const [maintenance, setMaintenance] = useState(false);
   const [loggedin, setLoggedin] = useState(false);
@@ -438,6 +440,7 @@ const AppV2: React.FC = () => {
 
       await applyThemeFromPref()
       await setTextZoom()
+      setReduceAnimations(await getReduceAnimations())
       if (localStorage.getItem('token') == null) {
         setLoggedin(false)
       }
@@ -864,6 +867,9 @@ const AppV2: React.FC = () => {
             <Route path="/construction">
               <Construction />
             </Route>
+            <Route exact path="/hub">
+              <Hub />
+            </Route>
             <Route exact path="/change">
               <Change />
             </Route>
@@ -895,9 +901,9 @@ const AppV2: React.FC = () => {
               <IonIcon icon={cafe} />
               <IonLabel>Refreshments</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="change" href="/change">
+            <IonTabButton tab="change" href="/hub">
               <IonIcon icon={flash} />
-              <IonLabel>Change</IonLabel>
+              <IonLabel>Hub</IonLabel>
             </IonTabButton>
             <IonTabButton tab="person" href="/me">
               <IonIcon icon={personIcon} />
@@ -949,7 +955,7 @@ const AppV2: React.FC = () => {
         position="top"
       ></IonToast>
 
-      <IconPop trigger={streakOpen} position="top-right" />
+      {!reduceAnimations && <IconPop trigger={streakOpen} position="top-right" />}
     </IonApp>
   );
 };

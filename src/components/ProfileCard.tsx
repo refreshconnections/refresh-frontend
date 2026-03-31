@@ -19,9 +19,8 @@ import {
     IonButton,
     IonPopover,
     IonNote,
-    useIonAlert,
     useIonPopover,
-    IonAlert,
+    useIonRouter,
     IonBadge,
     IonSpinner
 } from '@ionic/react';
@@ -54,6 +53,7 @@ import { Navigation, Pagination } from 'swiper';
 
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { onImgError, somethingInLetsTalkAbout } from '../hooks/utilities';
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import { faSubtitles } from '@fortawesome/pro-regular-svg-icons/faSubtitles';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCurrentStreak } from '../hooks/api/profiles/current-streak';
@@ -85,6 +85,7 @@ const amINewHere = (date: any) => {
 const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) => {
 
     const swiperRef = useRef<any>(null);
+    const primaryImageRef = useRef<HTMLImageElement | null>(null);
 
     const Popover = () => <IonContent className="ion-padding no-scroll">{popoverValue}</IonContent>;
 
@@ -95,7 +96,8 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
     const [popoverValue, setPopover] = useState<null | string>(null)
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    const [showStoreAlert, setShowStoreAlert] = useState(false);
+    const presentUpsellAlert = useUpsellAlert();
+    const router = useIonRouter();
 
     const [altShow, setAltShow] = useState<string | null>(null);
     const [showStreakLetsTalkAbouts, setShowStreakLetsTalkAbouts] = useState<boolean>(false);
@@ -136,7 +138,17 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
         ...existingPhotos.filter(key => !preferredOrder.includes(key)),
     ];
     const primaryPhotoKey = orderedPhotos[0] || 'pic1_main';
+    const primaryPhotoSrc = cardData?.[primaryPhotoKey] || "../static/img/null.png";
     const secondaryPhotoKeys = orderedPhotos.filter(key => key !== primaryPhotoKey);
+
+    useEffect(() => {
+        setImageLoaded(false);
+
+        const image = primaryImageRef.current;
+        if (image?.complete) {
+            setImageLoaded(true);
+        }
+    }, [primaryPhotoSrc]);
 
     if (cardData?.deactivated_profile || currentUserProfile?.blocked_by?.includes(cardData?.user)) {
         return (
@@ -161,9 +173,10 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                             </div>
                         )}
                         <img
+                            ref={primaryImageRef}
                             className={`profilepic ${imageLoaded ? 'loaded' : 'loading'}`}
                             alt={cardData?.[`${primaryPhotoKey}_alt`] || "Profile photo"}
-                            src={cardData?.[primaryPhotoKey] || "../static/img/null.png"}
+                            src={primaryPhotoSrc}
                             onError={(e) => onImgError(e)}
                             loading="lazy"
                             onLoad={() => setImageLoaded(true)}
@@ -535,29 +548,11 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     {cardData.fave_sport_play ? <IonItem> <IonLabel><p>Sport to play:</p> <h2 className="wrap">{cardData.fave_sport_play}</h2></IonLabel> </IonItem> : <></>}
                                                 </> : <></>}
                                         </IonList>
-                                        {!(pro || currentStreak?.streak_count >= 3) ? <IonRow className="ion-justify-content-center"><IonButton size="small" fill="outline" onClick={() => setShowStoreAlert(true)}>Want to see more?</IonButton>
-                                            <IonAlert
-                                                isOpen={showStoreAlert}
-                                                onDidDismiss={() => setShowStoreAlert(false)}
-                                                header="A 3 day streak allows you to to view all Let's Talk About fields for everyone!"
-                                                subHeader="Or become a Personal+ or Pro member!"
-                                                buttons={[{
-                                                    text: "Ok, maybe later.",
-                                                    role: 'cancel'
-                                                },
-                                                {
-                                                    text: 'What is my streak?',
-                                                    handler: async () => {
-                                                        window.location.pathname = "/activity"
-                                                    }
-                                                },
-                                                {
-                                                    text: 'Get Pro!',
-                                                    handler: async () => {
-                                                        window.location.pathname = "/store"
-                                                    }
-                                                }]}
-                                            />
+                                        {!(pro || currentStreak?.streak_count >= 3) ? <IonRow className="ion-justify-content-center"><IonButton size="small" fill="outline" onClick={() => presentUpsellAlert({
+                                            header: "A 3 day streak lets you view all Let's Talk About fields!",
+                                            message: 'Or become a Personal+ or Pro member.',
+                                            extraButtons: [{ text: 'What is my streak?', handler: () => router.push('/activity') }],
+                                        })}>Want to see more?</IonButton>
                                         </IonRow> : <></>}
                                         {(!pro && currentStreak?.streak_count >= 3) &&
 

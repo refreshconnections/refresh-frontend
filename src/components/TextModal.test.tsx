@@ -14,6 +14,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { IonApp } from '@ionic/react';
 import { vi, describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import TextModal from './TextModal';
 import { useWebSocketContext } from './WebsocketContext';
@@ -23,6 +24,9 @@ import {
   uploadFileForMessageNew,
   markAllInChatAsRead,
   increaseStreak,
+  heartMessage,
+  unheartMessage,
+  removeMessage,
 } from '../hooks/utilities';
 import { Camera } from '@capacitor/camera';
 
@@ -37,8 +41,15 @@ const mockSend = vi.fn();
 const mockAddListener = vi.fn().mockReturnValue(vi.fn());
 const mockConnect = vi.fn();
 const mockInvalidateQueries = vi.fn();
+const mockPresentAlert = vi.fn();
+const mockPresentModal = vi.fn();
+const mockDismissModal = vi.fn();
 
-const mockMessages = {
+let mockIsConnected = true;
+let mockHasNextPage = false;
+let mockOverallUnread = 0;
+
+const mockMessages: { pages: any[]; hasNextPage: boolean } = {
   pages: [{ data: [] }],
   hasNextPage: false,
 };
@@ -52,24 +63,41 @@ const mockChatSettings = {
   allow_images_global: true,
   allow_audio_global: true,
 };
+const mockYourChatSettings = {
+  ...mockChatSettings,
+  conversation_starter: false,
+  conversation_starter_text: '',
+};
+const mockOtherChatSettings = {
+  ...mockChatSettings,
+  conversation_starter: false,
+  conversation_starter_text: '',
+};
 
 // ---------------------------------------------------------------------------
 // vi.mock declarations (hoisted to top of module by vitest)
 // ---------------------------------------------------------------------------
 
-vi.mock('@ionic/react', async () => {
-  const { createIonicMock } = await import('../test-utils/shared-mocks');
-  return createIonicMock();
-});
-
 vi.mock('./WebsocketContext', () => ({
   useWebSocketContext: () => ({
     send: mockSend,
     addListener: mockAddListener,
-    isConnected: true,
+    isConnected: mockIsConnected,
     connect: mockConnect,
   }),
 }));
+
+vi.mock('@ionic/react', async () => {
+  const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  return {
+    ...actual,
+    useIonAlert: () => [mockPresentAlert, vi.fn()],
+    useIonModal: (component: any, modalProps: any) => [
+      (...args: any[]) => mockPresentModal(component?.name ?? 'AnonymousModal', modalProps, ...args),
+      (...args: any[]) => mockDismissModal(...args),
+    ],
+  };
+});
 
 // Keep real QueryClient/QueryClientProvider; only override useQueryClient so
 // we can spy on invalidateQueries without actual query network calls.
@@ -101,13 +129,15 @@ vi.mock('../hooks/api/chats/accepting-messages', () => ({
   useAcceptingMessages: () => ({ data: true, isLoading: false }),
 }));
 
+const mockFetchNextPage = vi.fn();
+
 vi.mock('../hooks/api/chats/messages-inf', () => ({
   useMessagesInf: () => ({
     data: mockMessages,
     isPending: false,
     fetchStatus: 'idle',
-    hasNextPage: false,
-    fetchNextPage: vi.fn(),
+    hasNextPage: mockHasNextPage,
+    fetchNextPage: mockFetchNextPage,
   }),
 }));
 
@@ -116,7 +146,9 @@ vi.mock('../hooks/api/chats/message-file', () => ({
 }));
 
 vi.mock('../hooks/api/chats/chat-settings', () => ({
-  useChatSettings: () => ({ data: mockChatSettings }),
+  useChatSettings: (userId?: string | number) => ({
+    data: userId ? mockOtherChatSettings : mockYourChatSettings,
+  }),
 }));
 
 vi.mock('../hooks/api/profiles/current-profile', () => ({
@@ -128,7 +160,7 @@ vi.mock('../hooks/api/profiles/current-limits', () => ({
 }));
 
 vi.mock('../hooks/api/chats/unread-count', () => ({
-  useGetUnreadCount: () => ({ data: 0 }),
+  useGetUnreadCount: () => ({ data: mockOverallUnread }),
 }));
 
 vi.mock('@capacitor/camera', () => ({
@@ -183,10 +215,22 @@ vi.mock('base64-arraybuffer', () => ({
   decode: vi.fn().mockReturnValue(new ArrayBuffer(0)),
 }));
 
-vi.mock('./ProfileModal', () => ({ default: () => null }));
-vi.mock('./AttachmentsInfoModal', () => ({ default: () => null }));
-vi.mock('./ConversationStarterCard', () => ({ default: () => null }));
-vi.mock('./ConversationContextCard', () => ({ default: () => null }));
+vi.mock('./ProfileModal', () => ({ default: function ProfileModal() { return null; } }));
+vi.mock('./AttachmentsInfoModal', () => ({ default: function AttachmentsInfoModal() { return null; } }));
+vi.mock('./ConversationStarterCard', () => ({
+  default: ({ their_conversation_starter_text, your_conversation_starter_text }: any) => (
+    <div>
+      starter:{their_conversation_starter_text}:{your_conversation_starter_text}
+    </div>
+  ),
+}));
+vi.mock('./ConversationContextCard', () => ({
+  default: ({ their_conversation_starter_text, your_conversation_starter_text }: any) => (
+    <div>
+      context:{their_conversation_starter_text}:{your_conversation_starter_text}
+    </div>
+  ),
+}));
 vi.mock('./MessageLikePopover', () => ({ default: () => null }));
 
 // ---------------------------------------------------------------------------
@@ -214,9 +258,11 @@ function renderWithClient(props: Partial<typeof defaultProps> = {}) {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <TextModal {...defaultProps} {...props} />
-    </QueryClientProvider>
+    <IonApp>
+      <QueryClientProvider client={queryClient}>
+        <TextModal {...defaultProps} {...props} />
+      </QueryClientProvider>
+    </IonApp>
   );
 }
 
@@ -244,6 +290,35 @@ describe('TextModal', () => {
     vi.clearAllMocks();
     // Ensure addListener always returns a valid unsubscribe function.
     mockAddListener.mockReturnValue(vi.fn());
+    mockIsConnected = true;
+    mockHasNextPage = false;
+    mockOverallUnread = 0;
+    mockMessages.pages = [{ data: [] }];
+    mockMessages.pages[0].count = 0;
+    mockYourChatSettings.conversation_starter = false;
+    mockYourChatSettings.conversation_starter_text = '';
+    mockOtherChatSettings.conversation_starter = false;
+    mockOtherChatSettings.conversation_starter_text = '';
+  });
+
+  // -------------------------------------------------------------------------
+  // Helper: build a minimal message object for list-rendering tests
+  // -------------------------------------------------------------------------
+
+  const makeMessage = (overrides: any = {}) => ({
+    id: 1,
+    out: false,
+    text: 'hello',
+    file: null,
+    is_removed: false,
+    heart: false,
+    sent: 1700000000,
+    sender: 42,
+    sender_username: 'them',
+    edited: 0,
+    read: true,
+    recipient: DEFAULT_OTHER_USER_ID,
+    ...overrides,
   });
 
   // -------------------------------------------------------------------------
@@ -253,6 +328,36 @@ describe('TextModal', () => {
   it('renders without crashing', () => {
     const { container } = renderWithClient();
     expect(container).toBeTruthy();
+  });
+
+  it('marks the chat as read and invalidates unread-related queries when unreadCount is present', async () => {
+    renderWithClient({ unreadCount: 2 });
+
+    await waitFor(() => {
+      expect(markAllInChatAsRead).toHaveBeenCalledWith(DEFAULT_OTHER_USER_ID);
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['unread'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['chats', 'details', 1],
+    });
+  });
+
+  it('marks the chat as read when overall unread count exists even if unreadCount prop is zero', async () => {
+    mockOverallUnread = 4;
+
+    renderWithClient({ unreadCount: 0 });
+
+    await waitFor(() => {
+      expect(markAllInChatAsRead).toHaveBeenCalledWith(DEFAULT_OTHER_USER_ID);
+    });
+  });
+
+  it('does not mark the chat as read when no unread counts exist', async () => {
+    renderWithClient({ unreadCount: 0 });
+
+    await waitFor(() => {
+      expect(markAllInChatAsRead).not.toHaveBeenCalled();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -452,6 +557,7 @@ describe('TextModal', () => {
     });
 
     beforeEach(() => {
+      mockPresentAlert.mockReset();
       // uploadFileForMessageNew succeeds with a file ID of 99
       vi.mocked(uploadFileForMessageNew).mockResolvedValue({
         status: 200,
@@ -481,34 +587,30 @@ describe('TextModal', () => {
       delete (global as any).fetch;
     });
 
-    it('clears the image preview after a successful image send so blob does not persist', async () => {
-      const { container } = renderWithClient();
-
-      // ── Step 1: Open the attachment panel via the paperclip button ──────────
+    const openImageAttachment = async (container: HTMLElement) => {
       const paperclipBtn = container.querySelector('.message-attachments') as HTMLElement;
       expect(paperclipBtn).toBeTruthy();
       fireEvent.click(paperclipBtn);
 
-      // ── Step 2: Click the image-upload button (first shape="round" button) ──
-      // The image button is the first attachment button in the revealed panel.
       const imageBtn = container.querySelector('[shape="round"]') as HTMLElement;
       expect(imageBtn).toBeTruthy();
       fireEvent.click(imageBtn);
 
-      // ── Step 3: Wait for Camera + fetch + canvas pipeline to complete ────────
-      // uploadPhoto → Camera.getPhoto → fetch → resizeToJpegBase64 → setBlob/setImage
       await waitFor(() => {
         expect(screen.getByAltText('uploaded image')).toBeInTheDocument();
       });
 
-      // The send button is now enabled (image is set)
-      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      return container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+    };
+
+    it('clears the image preview after a successful image send so blob does not persist', async () => {
+      const { container } = renderWithClient();
+
+      const sendBtn = await openImageAttachment(container);
       expect(sendBtn).toBeTruthy();
 
-      // ── Step 4: Click send ───────────────────────────────────────────────────
       fireEvent.click(sendBtn);
 
-      // ── Step 5: Wait for upload to finish and state to clear ─────────────────
       await waitFor(() => {
         expect(screen.queryByAltText('uploaded image')).not.toBeInTheDocument();
       });
@@ -518,19 +620,10 @@ describe('TextModal', () => {
     });
 
     it('does not call uploadFileForMessageNew a second time if send is triggered again after image is cleared', async () => {
+
       const { container } = renderWithClient();
 
-      // Select image
-      const paperclipBtn = container.querySelector('.message-attachments') as HTMLElement;
-      fireEvent.click(paperclipBtn);
-      const imageBtn = container.querySelector('[shape="round"]') as HTMLElement;
-      fireEvent.click(imageBtn);
-
-      await waitFor(() => {
-        expect(screen.getByAltText('uploaded image')).toBeInTheDocument();
-      });
-
-      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      const sendBtn = await openImageAttachment(container);
 
       // First send — uploads the image
       fireEvent.click(sendBtn);
@@ -545,6 +638,464 @@ describe('TextModal', () => {
 
       // Should still be exactly 1 call — the blob was cleared after the first send
       expect(uploadFileForMessageNew).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to a smaller multipart upload when the initial multipart upload fails', async () => {
+      vi.mocked(uploadFileForMessageNew)
+        .mockRejectedValueOnce(new Error('too large'))
+        .mockResolvedValueOnce({ status: 200, data: { id: 101 } } as any);
+
+      const { container } = renderWithClient();
+      const sendBtn = await openImageAttachment(container);
+
+      fireEvent.click(sendBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByAltText('uploaded image')).not.toBeInTheDocument();
+      });
+
+      expect(uploadFileForMessageNew).toHaveBeenCalledTimes(2);
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({ msg_type: 4, file_id: 101, user_pk: DEFAULT_OTHER_USER_ID })
+      );
+    });
+
+    it('falls back to the base64 upload path when both multipart uploads fail', async () => {
+      vi.mocked(uploadFileForMessageNew)
+        .mockRejectedValueOnce(new Error('too large'))
+        .mockRejectedValueOnce(new Error('still too large'))
+        .mockResolvedValueOnce({ status: 200, data: { id: 202 } } as any);
+
+      const { container } = renderWithClient();
+      const sendBtn = await openImageAttachment(container);
+
+      fireEvent.click(sendBtn);
+
+      await waitFor(() => {
+        expect(uploadFileForMessageNew).toHaveBeenCalledTimes(3);
+      });
+
+      const thirdCall = vi.mocked(uploadFileForMessageNew).mock.calls[2][0];
+      expect(thirdCall).toEqual(
+        expect.objectContaining({
+          file: expect.stringMatching(/^data:image\/jpeg;base64,/),
+        })
+      );
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({ msg_type: 4, file_id: 202, user_pk: DEFAULT_OTHER_USER_ID })
+      );
+    });
+
+    it('shows the attachment error toast when every image upload fallback fails', async () => {
+      vi.mocked(uploadFileForMessageNew)
+        .mockRejectedValueOnce(new Error('too large'))
+        .mockRejectedValueOnce(new Error('still too large'))
+        .mockResolvedValueOnce({ status: 500, data: {} } as any)
+        .mockResolvedValueOnce({ status: 500, data: {} } as any);
+
+      const { container } = renderWithClient();
+      const sendBtn = await openImageAttachment(container);
+
+      fireEvent.click(sendBtn);
+
+      await waitFor(() => {
+        expect(document.querySelector('ion-toast')?.getAttribute('message')).toBe(
+          'Your attachment is having troubles sending right now. Try again later.'
+        );
+      });
+    });
+
+    it('shows a confirm alert when opening the photo picker fails', async () => {
+      vi.mocked(Camera.getPhoto).mockRejectedValueOnce(new Error('No permission'));
+
+      const { container } = renderWithClient();
+      const paperclipBtn = container.querySelector('.message-attachments') as HTMLElement;
+      fireEvent.click(paperclipBtn);
+
+      const imageBtn = container.querySelector('[shape="round"]') as HTMLElement;
+      fireEvent.click(imageBtn);
+
+      await waitFor(() => {
+        expect(mockPresentAlert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            header: expect.stringContaining('Photo picker failed. Please check Photos permissions in Settings.'),
+          })
+        );
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Text message send flow
+  // -------------------------------------------------------------------------
+
+  describe('Text message send flow', () => {
+    /** Dispatches an ionInput custom event on an ion-textarea, matching Ionic's API. */
+    const ionInput = (el: HTMLElement, value: string) => {
+      fireEvent(el, new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
+    };
+
+    it('sends a text message via WebSocket when user types and clicks send', () => {
+      const { container } = renderWithClient();
+      const textarea = container.querySelector('ion-textarea[name="message_input"]') as HTMLElement;
+      expect(textarea).toBeTruthy();
+
+      ionInput(textarea, 'hello world');
+
+      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      fireEvent.click(sendBtn);
+
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          msg_type: 3,
+          text: 'hello world',
+          user_pk: DEFAULT_OTHER_USER_ID,
+        })
+      );
+    });
+
+    it('clears the textarea after sending', () => {
+      const { container } = renderWithClient();
+      const textarea = container.querySelector('ion-textarea[name="message_input"]') as HTMLElement;
+
+      ionInput(textarea, 'test message');
+
+      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      fireEvent.click(sendBtn);
+
+      expect(textarea.getAttribute('value')).toBeFalsy();
+    });
+
+    it('increases streak when settings_streak_tracker is enabled', async () => {
+      mockCurrentUser.settings_streak_tracker = true;
+      const { container } = renderWithClient();
+      const textarea = container.querySelector('ion-textarea[name="message_input"]') as HTMLElement;
+
+      ionInput(textarea, 'streak test');
+
+      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      fireEvent.click(sendBtn);
+
+      await waitFor(() => {
+        expect(increaseStreak).toHaveBeenCalledTimes(1);
+      });
+
+      mockCurrentUser.settings_streak_tracker = false;
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Back button
+  // -------------------------------------------------------------------------
+
+  describe('Back button', () => {
+    it('calls onDismiss when the back button is clicked', () => {
+      const { container } = renderWithClient();
+      const backIcon = container.querySelector('.message-back') as HTMLElement;
+      expect(backIcon).toBeTruthy();
+      fireEvent.click(backIcon);
+      expect(defaultProps.onDismiss).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Header profile modal', () => {
+    it('opens the profile modal from the header and passes through profile details and settingsAlt', () => {
+      renderWithClient({ settingsAlt: true, from_name: 'Alice' });
+
+      fireEvent.click(screen.getByText('Test User'));
+
+      expect(mockPresentModal).toHaveBeenCalledWith(
+        'ProfileModal',
+        expect.objectContaining({
+          cardData: expect.objectContaining({ name: 'Test User' }),
+          profiletype: 'connected',
+          settingsAlt: true,
+          yourName: 'Alice',
+        })
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Disconnected state
+  // -------------------------------------------------------------------------
+
+  describe('Disconnected state', () => {
+    it('shows "Trying to reconnect…" text when websocket is disconnected', () => {
+      mockIsConnected = false;
+      const { container } = renderWithClient();
+      expect(container.textContent).toContain('Trying to reconnect');
+    });
+
+    it('does not show the Reconnect button before the 10-second timeout elapses', async () => {
+      vi.useFakeTimers();
+      mockIsConnected = false;
+      renderWithClient();
+
+      await act(async () => {
+        vi.advanceTimersByTime(9000);
+      });
+
+      expect(screen.queryByText('Reconnect')).not.toBeInTheDocument();
+      expect(screen.getByText('Trying to reconnect…')).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
+
+    it('calls connect() when the Reconnect button is clicked', async () => {
+      vi.useFakeTimers();
+      mockIsConnected = false;
+      renderWithClient();
+
+      // Fast-forward past the 10-second delay before the Reconnect button appears
+      await act(async () => {
+        vi.advanceTimersByTime(11000);
+      });
+
+      const reconnectBtn = screen.getByText('Reconnect');
+      fireEvent.click(reconnectBtn);
+      expect(mockConnect).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('Conversation starter and context helpers', () => {
+    it('shows the starter card when the chat is empty and the other person has a starter prompt', () => {
+      mockMessages.pages = [{ count: 0, data: [] }];
+      mockOtherChatSettings.conversation_starter = true;
+      mockOtherChatSettings.conversation_starter_text = 'Ask me about mask blocs';
+      mockYourChatSettings.conversation_starter = true;
+      mockYourChatSettings.conversation_starter_text = 'Ask me about books';
+
+      renderWithClient();
+
+      expect(screen.getByText('starter:Ask me about mask blocs:Ask me about books')).toBeInTheDocument();
+    });
+
+    it('shows and hides the context card for short existing conversations with starter text', () => {
+      mockMessages.pages = [{ count: 2, data: [makeMessage({ id: 2 }), makeMessage({ id: 1 })] }];
+      mockOtherChatSettings.conversation_starter = true;
+      mockOtherChatSettings.conversation_starter_text = 'Ask me about mask blocs';
+      mockYourChatSettings.conversation_starter = true;
+      mockYourChatSettings.conversation_starter_text = 'Ask me about books';
+
+      renderWithClient();
+
+      fireEvent.click(screen.getByText('Need Context?'));
+      expect(screen.getByText('context:Ask me about mask blocs:Ask me about books')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Hide Context'));
+      expect(screen.queryByText('context:Ask me about mask blocs:Ask me about books')).not.toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // "See more" button
+  // -------------------------------------------------------------------------
+
+  describe('"See more" button', () => {
+    it('shows "See more" button when there are more pages to load', () => {
+      mockHasNextPage = true;
+      renderWithClient();
+      expect(screen.getByText('See more')).toBeInTheDocument();
+    });
+
+    it('calls fetchNextPage when "See more" is clicked', () => {
+      mockHasNextPage = true;
+      renderWithClient();
+      fireEvent.click(screen.getByText('See more'));
+      expect(mockFetchNextPage).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not show "See more" button when hasNextPage is false', () => {
+      renderWithClient();
+      expect(screen.queryByText('See more')).not.toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Message list rendering
+  // -------------------------------------------------------------------------
+
+  describe('Message list rendering', () => {
+    it('renders a text message', () => {
+      mockMessages.pages = [{ data: [makeMessage({ text: 'Hey there!' })] }];
+      renderWithClient();
+      expect(screen.getByText('Hey there!')).toBeInTheDocument();
+    });
+
+    it('renders a removed message', () => {
+      mockMessages.pages = [{ data: [makeMessage({ is_removed: true, text: null })] }];
+      const { container } = renderWithClient();
+      expect(container.querySelector('.removed-item')).toBeTruthy();
+    });
+
+    it('renders an incoming hearted message with a filled heart', () => {
+      mockMessages.pages = [{ data: [makeMessage({ out: false, heart: true })] }];
+      const { container } = renderWithClient();
+      expect(container.querySelector('.in-heart-red')).toBeTruthy();
+    });
+
+    it('renders an outgoing hearted message with a filled heart', () => {
+      mockMessages.pages = [{ data: [makeMessage({ out: true, heart: true })] }];
+      const { container } = renderWithClient();
+      expect(container.querySelector('.out-heart-red')).toBeTruthy();
+    });
+
+    it('renders a liked message (id === -1) with the conversation-heart icon', () => {
+      mockMessages.pages = [{ data: [makeMessage({ id: -1, text: 'liked this' })] }];
+      const { container } = renderWithClient();
+      // The faCommentHeart SVG is rendered before the message text
+      expect(screen.getByText('liked this')).toBeInTheDocument();
+      expect(container.querySelector('svg[data-icon="comment-heart"]')).toBeTruthy();
+    });
+
+    it('renders a file attachment message', () => {
+      mockMessages.pages = [{ data: [makeMessage({ text: null, file: '99' })] }];
+      const { container } = renderWithClient();
+      // MessageAttachment renders a fallback img when file data hasn't loaded
+      expect(container.querySelector('img[alt="audio message isn\'t loading"]')).toBeTruthy();
+    });
+  });
+
+  describe('Message heart interactions', () => {
+    it('reveals an outline heart when an incoming unhearted message is tapped', async () => {
+      mockMessages.pages = [{ data: [makeMessage({ id: 101, out: false, heart: false, text: 'tap me' })] }];
+      const { container } = renderWithClient();
+
+      fireEvent.click(screen.getByText('tap me').closest('ion-item') as HTMLElement);
+
+      await waitFor(() => {
+        expect(container.querySelector('.in-heart')).toBeTruthy();
+      });
+    });
+
+    it('likes an incoming unhearted message and then lets you undo that temporary heart', async () => {
+      mockMessages.pages = [{ data: [makeMessage({ id: 102, out: false, heart: false, text: 'like me' })] }];
+      const { container } = renderWithClient();
+
+      fireEvent.click(screen.getByText('like me').closest('ion-item') as HTMLElement);
+
+      await waitFor(() => {
+        expect(container.querySelector('.in-heart')).toBeTruthy();
+      });
+
+      fireEvent.click(container.querySelector('.in-heart') as HTMLElement);
+
+      await waitFor(() => {
+        expect(heartMessage).toHaveBeenCalledWith(102);
+        expect(container.querySelector('.in-heart-red')).toBeTruthy();
+      });
+
+      fireEvent.click(container.querySelector('.in-heart-red') as HTMLElement);
+
+      await waitFor(() => {
+        expect(unheartMessage).toHaveBeenCalledWith(102);
+        expect(container.querySelector('.in-heart-red')).toBeFalsy();
+      });
+    });
+
+    it('unlikes a hearted incoming message and then re-hearts it from the outline state', async () => {
+      mockMessages.pages = [{ data: [makeMessage({ id: 103, out: false, heart: true, text: 'hearted already' })] }];
+      const { container } = renderWithClient();
+
+      fireEvent.click(container.querySelector('.in-heart-red') as HTMLElement);
+
+      await waitFor(() => {
+        expect(unheartMessage).toHaveBeenCalledWith(103);
+        expect(container.querySelector('.in-heart')).toBeTruthy();
+      });
+
+      fireEvent.click(container.querySelector('.in-heart') as HTMLElement);
+
+      await waitFor(() => {
+        expect(heartMessage).toHaveBeenCalledWith(103);
+        expect(container.querySelector('.in-heart-red')).toBeTruthy();
+      });
+    });
+
+    it('tracks the active heart affordance by message id so matching indexes on different pages do not both open', async () => {
+      mockMessages.pages = [
+        { data: [makeMessage({ id: 201, out: false, heart: false, text: 'page one' })] },
+        { data: [makeMessage({ id: 202, out: false, heart: false, text: 'page two' })] },
+      ];
+      const { container } = renderWithClient();
+
+      fireEvent.click(screen.getByText('page one').closest('ion-item') as HTMLElement);
+
+      await waitFor(() => {
+        expect(container.querySelectorAll('.in-heart').length).toBe(1);
+      });
+
+      fireEvent.click(screen.getByText('page two').closest('ion-item') as HTMLElement);
+
+      await waitFor(() => {
+        expect(container.querySelectorAll('.in-heart').length).toBe(1);
+      });
+    });
+  });
+
+  describe('Additional non-audio actions', () => {
+    it('opens the attachments info modal from the attachment tray', () => {
+      const { container } = renderWithClient();
+
+      fireEvent.click(container.querySelector('.message-attachments') as HTMLElement);
+      fireEvent.click(container.querySelector('.attachment-buttons ion-button[fill="outline"]') as HTMLElement);
+
+      expect(mockPresentModal).toHaveBeenCalledWith(
+        'AttachmentsInfoModal',
+        expect.objectContaining({
+          onNavigate: expect.any(Function),
+        })
+      );
+    });
+
+    it('confirms and unsends an eligible outgoing message', async () => {
+      mockMessages.pages = [{
+        count: 1,
+        data: [makeMessage({ id: 44, out: true, sender_username: 'you', sent: Math.floor(Date.now() / 1000) })],
+      }];
+
+      const { container } = renderWithClient();
+      const unsendButton = Array.from(container.querySelectorAll('ion-button')).find((button) =>
+        button.textContent?.includes('Unsend')
+      ) as HTMLElement;
+
+      fireEvent.click(unsendButton);
+
+      const unsendAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
+      expect(unsendAlert.header).toBe('Do you want to unsend this message?');
+
+      await act(async () => {
+        await unsendAlert.buttons[1].handler();
+      });
+
+      await waitFor(() => {
+        expect(removeMessage).toHaveBeenCalledWith(44);
+      });
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['limits'] });
+    });
+
+    it('shows the early-support notice CTA and routes to help', async () => {
+      const pushStateSpy = vi.spyOn(window.history, 'pushState');
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      renderWithClient({
+        textModalData: { other_user_id: '24', id: 1 },
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('Get help'));
+      });
+
+      await waitFor(() => {
+        expect(defaultProps.onDismiss).toHaveBeenCalled();
+      });
+      await waitFor(() => {
+        expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/help');
+        expect(dispatchSpy).toHaveBeenCalled();
+      });
     });
   });
 });

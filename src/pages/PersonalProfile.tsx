@@ -39,12 +39,14 @@ import OnboardingCardPronouns from '../components/OnboardingCardPronouns';
 import OnboardingCardLivedExperiences from '../components/OnboardingCardLivedExperiences';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { Preferences } from '@capacitor/preferences';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 type PersonalProfileProps = {
   onDismiss?: () => void;
 };
 
 const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
+  const copy = ONBOARDING_COPY.personalProfile;
   const [confirmLogout] = useIonAlert();
   const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
     onDismiss: () => stayPausedDismiss(),
@@ -94,15 +96,15 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
 
   const confirmLogoutAlert = async () => {
     confirmLogout({
-      header: `Are you sure you want to return to login?`,
-      subHeader: 'You will be logged out.',
+      header: copy.logoutConfirm.header,
+      subHeader: copy.logoutConfirm.subHeader,
       buttons: [
         {
-          text: 'Nevermind',
+          text: copy.logoutConfirm.cancel,
           role: 'destructive',
         },
         {
-          text: 'Yes',
+          text: copy.logoutConfirm.confirm,
           handler: async () => {
             await handleLogoutCommon();
           },
@@ -143,20 +145,20 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           <SwiperSlide>
               <IonCard className="onboarding-slide" style={{ overflow: 'scroll', position: 'relative', height: '95vh' }}>
                 <IonCardContent style={{ padding: '20px' }}>
-              <IonCardTitle style={{ fontSize: '26px' }}>Create your personal profile</IonCardTitle>
+              <IonCardTitle style={{ fontSize: '26px' }}>{copy.intro.title}</IonCardTitle>
                 <img
                   src="../static/img/flower-mask.png"
                   style={{ width: '50%', alignSelf: 'center', margin: '30pt' }}
                 />
                 <IonText style={{ textAlign: 'center' }}>
-                  <h2>Create your personal profile so other members can get to know you one-on-one.</h2>
+                  <h2>{copy.intro.bodyPrimary}</h2>
                 </IonText>
                 <IonText style={{ textAlign: 'center' }}>
-                  <h2>You'll need a personal profile to send likes and private messages.</h2>
+                  <h2>{copy.intro.bodySecondary}</h2>
                 </IonText>
               </IonCardContent>
               <IonRow className="onboarding-slide-buttons">
-                <SwiperButtonNext>Let’s go</SwiperButtonNext>
+                <SwiperButtonNext>{copy.intro.cta}</SwiperButtonNext>
               </IonRow>
             </IonCard>
           </SwiperSlide>
@@ -215,7 +217,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           }}
           onClick={handleFinishLater}
         >
-          Finish later
+          {ONBOARDING_COPY.common.finishLater}
         </IonButton>
       </IonContent>
     </IonPage>

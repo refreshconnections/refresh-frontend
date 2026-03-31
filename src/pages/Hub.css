@@ -1,0 +1,126 @@
+ion-row.surrounding-room {
+  margin: 20pt;
+}
+
+.hub-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ion-color-navy);
+  line-height: 1.1;
+}
+
+.hub-section-row {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.hub-section-card {
+  border-radius: 0;
+  margin: 4px 0;
+  box-shadow: none;
+}
+
+.hub-section-card ion-card-title {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.hub-white-card {
+  background: var(--ion-color-white);
+}
+
+.hub-tips-section-card {
+  border-radius: 12px;
+  margin: 8px;
+  border: 1px solid var(--ion-color-step-150, #e3e3ef);
+  overflow: hidden;
+}
+
+.hub-tip-card {
+  border-radius: 0;
+  box-shadow: none;
+  margin: 6px 0 0;
+  background: transparent;
+  border: 0;
+}
+
+.hub-tip-card-title {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ion-color-navy);
+  margin-bottom: 4px;
+}
+
+.hub-tip-card-copy {
+  display: block;
+  line-height: 1.35;
+}
+
+.hub-section-note {
+  display: block;
+  padding-top: 2pt;
+  padding-bottom: 4pt;
+  line-height: 1.35;
+}
+
+.hub-subsection {
+  padding-top: 6pt;
+}
+
+.hub-subsection h3 {
+  margin: 0 0 6pt;
+  font-size: 16px;
+}
+
+.hub-interest-list {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.hub-interest-list ion-item {
+  border-radius: 8pt;
+  margin: 5pt 0;
+  --background: var(--ion-color-white);
+}
+
+.hub-section-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ion-color-navy);
+  line-height: 1.2;
+}
+
+.hub-mini-posts-row {
+  row-gap: 6px;
+}
+
+.hub-mini-post {
+  cursor: pointer;
+  margin-left: 0;
+  margin-right: 0;
+  box-shadow: none;
+}
+
+.hub-change-action {
+  padding: 10px 12px 18px;
+}
+
+ion-list.change-projects {
+  width: 100%;
+  padding-top: 15pt;
+  padding-left: 10pt;
+  padding-right: 10pt
+}
+
+ion-list.change-projects ion-item{
+  border-radius: 8pt;
+  margin: 5pt
+  
+}
+
+ion-list.change-projects ion-item ion-label h2{
+  font-size: 20px;
+  
+}

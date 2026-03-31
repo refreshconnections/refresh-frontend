@@ -16,10 +16,12 @@ import 'swiper/css';
 import 'swiper/css/effect-cards';
 import 'swiper/css/navigation';
 import { useSwiper } from 'swiper/react';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 const OnboardingCardZipcode: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.name;
 
   const [nickname, setNickname] = useState<string | null>(null);
   const swiper = useSwiper();
@@ -76,9 +78,9 @@ const OnboardingCardZipcode: React.FC = () => {
   return (
     <IonCard  className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>What's your name?</IonCardTitle>
-            <IonText>This is the name (a first name or a nickname) that will be shown on your profile.</IonText>
-            <IonText>We require you to contact support if you need to change your name later.</IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+            <IonText>{copy.bodyPrimary}</IonText>
+            <IonText>{copy.bodySecondary}</IonText>
             {data ?
             <IonItem>
             
@@ -101,8 +103,8 @@ const OnboardingCardZipcode: React.FC = () => {
             
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons ">
-            <IonButton color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>
-            <IonButton onClick={updateProfile}>Next</IonButton>
+            <IonButton color="gray" onClick={()=>swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+            <IonButton onClick={updateProfile}>{ONBOARDING_COPY.common.next}</IonButton>
             </IonRow>
     </IonCard>
   )

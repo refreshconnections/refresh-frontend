@@ -190,9 +190,6 @@ const SelfProfileV2: React.FC = () => {
   const [presentPhotoActionSheet] = useIonActionSheet();
   const [photosAccordionValue, setPhotosAccordionValue] = useState<string | undefined>(undefined);
 
-  // ✅ Option A for useIonModal: store the exact data you want the modal to render
-  const [profileModalData, setProfileModalData] = useState<any>(null);
-
   const previewProfile = React.useMemo(() => {
     if (!currentUserProfile) return null;
     return {
@@ -365,11 +362,11 @@ const SelfProfileV2: React.FC = () => {
 
   // ✅ useIonModal version: feed from profileModalData state
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: profileModalData,
+    cardData: previewProfile,
     pro: true,
     settingsAlt: true,
     profiletype: 'self',
-    yourName: profileModalData?.name || '',
+    yourName: previewProfile?.name || '',
     onDismiss: (data: any, role: any) => {
       refreshProfile();
       profileDismiss(data, role);
@@ -1024,7 +1021,6 @@ const SelfProfileV2: React.FC = () => {
             <IonButton
               color="primary"
               onClick={() => {
-                setProfileModalData(previewProfile);
                 profilePresent();
               }}
             >

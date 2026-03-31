@@ -5,7 +5,7 @@ import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
-import { chevronBackOutline, informationCircleOutline } from 'ionicons/icons';
+import { chevronBackOutline, informationCircleOutline, star, starOutline } from 'ionicons/icons';
 
 
 import './OpenedPost.css'
@@ -41,6 +41,7 @@ import { useGetCurrentModeration } from "../../hooks/api/profiles/current-modera
 import Poll from "./Polls/Poll";
 import ContactDetailsPopover from "../ContactDetailsPopover";
 import moment from "moment";
+import { useInterestPost, useUninterestPost } from "../../hooks/api/interests";
 
 type Comment = {
     id: number;
@@ -114,6 +115,7 @@ const OpenedPost: React.FC = () => {
 
     const [liked, setLiked] = useState<boolean>(false)
     const [likedLength, setLikedLength] = useState(0)
+    const [interested, setInterested] = useState<boolean>(false)
 
     const [showSidenotes, setShowSidenotes] = useState<boolean>(false)
 
@@ -132,6 +134,8 @@ const OpenedPost: React.FC = () => {
     });
 
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
+    const interestPost = useInterestPost();
+    const uninterestPost = useUninterestPost();
 
     const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
     const approvedEventForPost = staticContentPost?.event ?? null;
@@ -347,6 +351,28 @@ const OpenedPost: React.FC = () => {
     }, [currentProfileRefreshments])
 
     useEffect(() => {
+        setInterested(Boolean(dynamicContentPost?.interested))
+    }, [dynamicContentPost?.interested])
+
+    const markInterested = async () => {
+        setInterested(true)
+        try {
+            await interestPost.mutateAsync(parseInt(id))
+        } catch (error) {
+            setInterested(false)
+        }
+    }
+
+    const unmarkInterested = async () => {
+        setInterested(false)
+        try {
+            await uninterestPost.mutateAsync(parseInt(id))
+        } catch (error) {
+            setInterested(true)
+        }
+    }
+
+    useEffect(() => {
         document.querySelector("ion-item-sliding")?.closeOpened();
     }, [replyTo])
 
@@ -491,6 +517,37 @@ const OpenedPost: React.FC = () => {
     const hasSensitive  = !!staticContentPost?.sensitive;
     const hasDisclaimer = !!staticContentPost?.disclaimer;
     const sensitiveText = staticContentPost?.sensitive_description ?? 'This post contains sensitive content.';
+    const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
+    const commentingPausedUntil = moderation?.commenting_paused_until;
+    const commentingPauseActive = Boolean(
+        commentingPausedUntil &&
+        moment(commentingPausedUntil).isValid() &&
+        moment(commentingPausedUntil).isAfter(moment())
+    );
+    const commentingPausedLabel = commentingPauseActive
+        ? moment(commentingPausedUntil).format('MMM D [at] h:mm A')
+        : null;
+    const commentingBlocked = Boolean(
+        staticContentPost?.comments_deactivated ||
+        staticContentPost?.closed ||
+        moderatorDeactivated ||
+        globalCurrentProfile?.deactivated_profile ||
+        commentingPauseActive ||
+        (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+    );
+    const moderationCommentBlockMessage = moderatorDeactivated
+        ? 'Your account is currently suspended from commenting.'
+        : commentingPauseActive
+            ? `Your commenting is temporarily paused until ${commentingPausedLabel}.`
+            : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                ? 'Your account needs to be reviewed before you can comment.'
+                : null;
+    const disableHideAuthorAction = Boolean(globalCurrentProfile?.user == staticContentPost?.user || staticContentPost?.user == 24);
+    const disableHidePostAction = Boolean(
+        currentProfileRefreshments?.hidden_announcements?.includes(parseInt(id)) ||
+        currentProfileRefreshments?.hidden_authors?.includes(staticContentPost?.user)
+    );
+    const disableSidenotesAction = Boolean(commentsNotShownCount <= 0);
 
 
 
@@ -685,6 +742,31 @@ const OpenedPost: React.FC = () => {
                                             : <></>}
                                     </IonRow>
                                 </IonCol>
+                                <IonCol>
+                                    <IonRow>
+                                        {interested ? (
+                                            <IonButton
+                                                aria-label="Remove post interest"
+                                                size="small"
+                                                fill="clear"
+                                                onClick={() => unmarkInterested()}
+                                                disabled={interestPost.isPending || uninterestPost.isPending}
+                                            >
+                                                <IonIcon color="warning" icon={star} />
+                                            </IonButton>
+                                        ) : (
+                                            <IonButton
+                                                aria-label="Mark post interested"
+                                                size="small"
+                                                fill="clear"
+                                                onClick={() => markInterested()}
+                                                disabled={interestPost.isPending || uninterestPost.isPending}
+                                            >
+                                                <IonIcon icon={starOutline} />
+                                            </IonButton>
+                                        )}
+                                    </IonRow>
+                                </IonCol>
                             </IonRow>
                             {staticContentPost?.comment_instructions ?
                                 <IonRow className="comment-instructions-note">
@@ -726,23 +808,26 @@ const OpenedPost: React.FC = () => {
                                 {
                                     text: 'Hide all posts by this author',
                                     handler: () => {
+                                        if (disableHideAuthorAction) return;
                                         hideAuthorHandler()
                                     },
-                                    cssClass: ((globalCurrentProfile?.user == staticContentPost?.user || staticContentPost?.user == 24) ? "disabled-action-button" : "")
+                                    cssClass: (disableHideAuthorAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: 'Hide post',
                                     handler: () => {
+                                        if (disableHidePostAction) return;
                                         hidePostHandler()
                                     },
-                                    cssClass: ((currentProfileRefreshments?.hidden_announcements?.includes(parseInt(id)) || currentProfileRefreshments?.hidden_authors?.includes(staticContentPost?.user)) ? "disabled-action-button" : "")
+                                    cssClass: (disableHidePostAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: showSidenotes ? 'Hide sidenotes' : 'Show sidenotes',
                                     handler: () => {
+                                        if (disableSidenotesAction) return;
                                         { showSidenotes ? setShowSidenotes(false) : setShowSidenotes(true) }
                                     },
-                                    cssClass: (commentsNotShownCount <= 0 ? "disabled-action-button" : "")
+                                    cssClass: (disableSidenotesAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: 'Nevermind',
@@ -788,19 +873,42 @@ const OpenedPost: React.FC = () => {
                                                 className="comment-creator"
                                                 name="comment_input"
                                                 onIonInput={e => setCommentInput(e.detail.value!)}
-                                                disabled={staticContentPost?.comments_deactivated || staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)}
+                                                disabled={commentingBlocked}
                                                 maxlength={900}
                                                 autoGrow={true}
                                                 autoCorrect="on"
                                                 spellcheck
-                                                rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile) ? 2 : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? 3 : 1}
-                                                placeholder={staticContentPost?.comments_deactivated ? 'Comments are closed.' : staticContentPost?.closed ? "Discussion closed. Want to start a new one?" : globalCurrentProfile?.deactivated_profile ? "You need an active account to comment." : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? "Your account needs to be reviewed before you can comment." : "Leave a comment"}
+                                                rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || moderatorDeactivated) ? 2 : (commentingPauseActive || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)) ? 3 : 1}
+                                                placeholder={
+                                                    staticContentPost?.comments_deactivated
+                                                        ? 'Comments are closed.'
+                                                        : staticContentPost?.closed
+                                                            ? "Discussion closed. Want to start a new one?"
+                                                            : moderatorDeactivated
+                                                                ? 'Your account is currently suspended from commenting.'
+                                                                : globalCurrentProfile?.deactivated_profile
+                                                                    ? "You need an active account to comment."
+                                                                    : commentingPauseActive
+                                                                        ? `Your commenting is temporarily paused until ${commentingPausedLabel}.`
+                                                                        : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                                                                            ? "Your account needs to be reviewed before you can comment."
+                                                                            : "Leave a comment"
+                                                }
                                                 autoCapitalize='sentences'
                                             />
                                         </IonItem>
                                     </IonCol>
                                     <IonCol size="2">
-                                        <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput || hasPii} onClick={() => createComment(commentInput!, replyTo)}>
+                                        <IonButton
+                                            expand="block"
+                                            className="send-button"
+                                            color="tertiary"
+                                            disabled={noComment || commentingBlocked || !commentInput || hasPii}
+                                            onClick={() => {
+                                                if (commentingBlocked || !commentInput || hasPii || noComment) return;
+                                                createComment(commentInput!, replyTo);
+                                            }}
+                                        >
                                             <FontAwesomeIcon icon={faCommentPlus} />
                                         </IonButton>
                                     </IonCol>
@@ -813,6 +921,20 @@ const OpenedPost: React.FC = () => {
                                      <ContactDetailsPopover />
                                 </IonRow>
                                 }
+                                {moderationCommentBlockMessage && (
+                                <IonRow class="ion-padding">
+                                    <IonCol size="12">
+                                        <IonText color="medium">
+                                            {moderationCommentBlockMessage} Check your Activity for moderation details and our guidelines.
+                                        </IonText>
+                                    </IonCol>
+                                    <IonCol size="12">
+                                        <IonButton fill="outline" color="primary" onClick={() => router.push('/activity')}>
+                                            View Activity
+                                        </IonButton>
+                                    </IonCol>
+                                </IonRow>
+                                )}
                                 </>
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">

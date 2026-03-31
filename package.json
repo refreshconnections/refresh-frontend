@@ -49,6 +49,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/ws": "^8.5.10",
     "@vitejs/plugin-react": "^4.3.2",
+    "@vitest/coverage-v8": "^2.1.9",
     "babel-loader": "^9.1.2",
     "copy-webpack-plugin": "^13.0.1",
     "cross-env": "^7.0.3",

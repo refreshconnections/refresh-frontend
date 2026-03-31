@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react'
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 import './CantAccessCard.css';
@@ -20,6 +21,7 @@ import { useSwiper } from 'swiper/react';
 
 
 const OnboardingCardCovid: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.covid;
 
   const swiper = useSwiper();
   const [covidPrecautions, setCovidPrecautions] = useState<number[]>([]);
@@ -79,106 +81,106 @@ const OnboardingCardCovid: React.FC = () => {
     <>
     <IonCard className="onboarding-slide extra-top-padding">
       <IonCardContent className="w-checkboxes">
-        <IonCardTitle>How are you dealing with Covid?</IonCardTitle>
-        <IonText>These will be shown on your profile. You can change these at any time. </IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem className="scrollable-list">
           <IonList lines="none" className="onboarding-checkbox-list">
-          <IonItem lines="none"><IonLabel>Home:</IonLabel></IonItem>
+          <IonItem lines="none"><IonLabel>{copy.sections.home}</IonLabel></IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={18} checked={covidPrecautions.includes(18)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I have no routine daily exposures
+                                                {copy.options[0].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={3} checked={covidPrecautions.includes(3)} onIonChange={e => addCovidPrecautionsCheckbox(e)}/>
-                                                I live with non-covid cautious people
+                                                {copy.options[1].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={8} checked={covidPrecautions.includes(8)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I live alone/with others that share my level of covid caution
+                                                {copy.options[2].label}
                                             </IonItem>
-                                            <IonItem lines="none"><IonLabel>Work:</IonLabel></IonItem>
+                                            <IonItem lines="none"><IonLabel>{copy.sections.work}</IonLabel></IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={1} checked={covidPrecautions.includes(1)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I work from home
+                                                {copy.options[3].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={9} checked={covidPrecautions.includes(9)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I go to work/school but always in a high quality mask
+                                                {copy.options[4].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={16} checked={covidPrecautions.includes(16)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                My work requires poor/no masking
+                                                {copy.options[5].label}
                                             </IonItem>
-                                            <IonItem lines="none"><IonLabel>Play:</IonLabel></IonItem>
+                                            <IonItem lines="none"><IonLabel>{copy.sections.play}</IonLabel></IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={2} checked={covidPrecautions.includes(2)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                I eat outside at restaurants with good airflow and spacing
+                                                {copy.options[6].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={15} checked={covidPrecautions.includes(15)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                I do takeout from restaurants
+                                                {copy.options[7].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={5} checked={covidPrecautions.includes(5)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I attend outdoor events
+                                                {copy.options[8].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={12} checked={covidPrecautions.includes(12)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I attend outdoor events with a mask on
+                                                {copy.options[9].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={6} checked={covidPrecautions.includes(6)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I attend indoor events with a mask on
+                                                {copy.options[10].label}
                                             </IonItem>
-                                            <IonItem lines="none"><IonLabel>Other:</IonLabel></IonItem>
+                                            <IonItem lines="none"><IonLabel>{copy.sections.other}</IonLabel></IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={4} checked={covidPrecautions.includes(4)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                I'm immunocompromised/have a high-risk health condition
+                                                {copy.options[11].label}
                                             </IonItem> 
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={17} checked={covidPrecautions.includes(17)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I am a caregiver
+                                                {copy.options[12].label}
                                             </IonItem>
                                             
                                             
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={7} checked={covidPrecautions.includes(7)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I only leave home/outdoors for medically necessary reasons
+                                                {copy.options[13].label}
                                             </IonItem>
                                            
                                             
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={10} checked={covidPrecautions.includes(10)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I am living with Long Covid
+                                                {copy.options[14].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={11} checked={covidPrecautions.includes(11)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                I use air purifiers and use HEPA filters
+                                                {copy.options[15].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={13} checked={covidPrecautions.includes(13)} onIonChange={e => addCovidPrecautionsCheckbox(e)}  />
-                                                I ask for testing before all meetups
+                                                {copy.options[16].label}
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonCheckbox slot="start" value={14} checked={covidPrecautions.includes(14)} onIonChange={e => addCovidPrecautionsCheckbox(e)} />
-                                                I ask for testing before indoor meetups
+                                                {copy.options[17].label}
                                             </IonItem>
           </IonList>
         </IonItem>
         <IonItem>
-          <IonLabel position="stacked">Anything else you want to share?</IonLabel>
+          <IonLabel position="stacked">{copy.noteLabel}</IonLabel>
           <IonInput
             value={covidNote}
             onIonInput={(e) => setCovidNote(e.detail.value ?? '')}
-            placeholder="Optional note about your Covid precautions"
+            placeholder={copy.notePlaceholder}
             maxlength={200}
           />
         </IonItem>
       </IonCardContent>
-      <IonNote style={{textAlign: "center"}}>Scroll for all options!</IonNote>
+      <IonNote style={{textAlign: "center"}}>{copy.scrollNote}</IonNote>
       <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray " onClick={() => swiper.slidePrev()}>Back</IonButton>
-        <IonButton onClick={updateProfile} disabled={covidPrecautions.length == 0 ? true : false}>Next</IonButton>
+        <IonButton color="gray " onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+        <IonButton onClick={updateProfile} disabled={covidPrecautions.length == 0 ? true : false}>{ONBOARDING_COPY.common.next}</IonButton>
       </IonRow>
     </IonCard>
     {/* <IonRow class="notyet">

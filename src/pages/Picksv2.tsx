@@ -7,7 +7,7 @@ import { faCommentHeart } from '@fortawesome/pro-solid-svg-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetStatuses } from '../hooks/api/status';
-import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener } from '../hooks/utilities';
+import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener, getReduceAnimations } from '../hooks/utilities';
 import { useBlockProfile } from '../hooks/useBlockProfile';
 import { Preferences } from '@capacitor/preferences';
 import { getWithExpiry, removeFromCapacitorLocalStorage, setWithExpiry } from '../hooks/capacitorPreferences/all';
@@ -66,6 +66,7 @@ const Picksv2: React.FC = () => {
   const [nextLoading, setNextLoading] = useState(false);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [showMessagePop, setShowMessagePop] = useState(false);
+  const [reduceAnimations, setReduceAnimations] = useState(false);
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [sortedPicks, setSortedPicks] = useState<typeof picksData>(null);
@@ -94,6 +95,10 @@ const Picksv2: React.FC = () => {
     await Preferences.set({ key: FILTERS_TIP_KEY, value: 'true' });
     setShowFiltersDialog(false);
   };
+
+  useEffect(() => {
+    getReduceAnimations().then(setReduceAnimations);
+  }, []);
 
   useEffect(() => {
     const maybeShowFiltersTip = async () => {
@@ -395,7 +400,7 @@ const Picksv2: React.FC = () => {
     onSendWithMessage: async (msg: string) => {
       await sendAnOpener(profileDetails?.user, msg);
       await addOutgoingConnection(profileDetails?.user);
-      setShowMessagePop(true);
+      if (!reduceAnimations) setShowMessagePop(true);
       dismissLikeMessageModal();
     },
   });
@@ -622,7 +627,7 @@ const Picksv2: React.FC = () => {
           </>
         ) : hasProfile ? (
           <>
-            <div className="profile-card-container" key={profileDetails?.user}>
+            <div className={`profile-card-container${reduceAnimations ? ' no-animation' : ''}`} key={profileDetails?.user}>
               <ProfileCard
                 cardData={profileDetails}
                 pro={isPersonalPlus(filterData.subscription_level)}
@@ -664,14 +669,14 @@ const Picksv2: React.FC = () => {
               </IonFabList>
             </IonFab>
 
-            <IconPop
+            {!reduceAnimations && <IconPop
               trigger={showMessagePop}
               position="center"
               emojis={['🧡']}
               icons={[faCommentHeart]}
               intensity="big"
               onComplete={() => setShowMessagePop(false)}
-            />
+            />}
           </>
         ) : (
           <div style={{ marginTop: "100pt" }}>

@@ -38,6 +38,7 @@ import CroppedImageModal from '../components/CroppedImageModal';
 import EditLocationModal from '../components/EditLocationModal';
 
 import './OnboardingV2.css';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 const USERNAME_CHANGE_WINDOW_DAYS = 60;
 
@@ -56,6 +57,7 @@ type CommunityOnboardingProps = {
 };
 
 const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) => {
+  const copy = ONBOARDING_COPY.communityOnboarding;
   const router = useIonRouter();
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
@@ -128,7 +130,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     }
 
     if (!username) {
-      setUsernameError('Please choose a username to continue.');
+      setUsernameError(copy.username.requiredToContinue);
       return;
     }
 
@@ -139,7 +141,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
       await queryClient.invalidateQueries({ queryKey: ['global-current'] });
       swiperRef.current?.slideNext();
     } else {
-      setUsernameError('That username is already taken. Try another.');
+      setUsernameError(copy.username.taken);
     }
     setUsernameBusy(false);
   };
@@ -198,7 +200,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
   const handleFinish = async () => {
     if (!currentProfile?.username) {
-      setUsernameError('Please choose a username to finish.');
+      setUsernameError(copy.username.requiredToFinish);
       swiperRef.current?.slideTo(0, 0);
       return;
     }
@@ -284,15 +286,12 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body">
-                  <IonCardTitle>Welcome to your community profile</IonCardTitle>
-                  <p>
-                    This creates your community identity—your username for posts and comments, plus a photo
-                    and any extra details you want to share. Anyone can see this.
-                  </p>
+                  <IonCardTitle>{copy.welcome.title}</IonCardTitle>
+                  <p>{copy.welcome.withPersonalProfile}</p>
                   <p>
                     {hasPersonalProfile
-                      ? 'Since you already have a personal profile, you can also connect 1:1 by turning on Connect from Refreshments.'
-                      : 'Later, if you create a personal profile, you can connect 1:1 by turning on Connect from Refreshments.'}
+                      ? copy.welcome.withPersonalProfileSecondary
+                      : copy.welcome.withoutPersonalProfileSecondary}
                   </p>
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
@@ -301,7 +300,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       className="onboarding-v2__primary-action"
                       onClick={() => swiperRef.current?.slideNext()}
                     >
-                      Next
+                      {ONBOARDING_COPY.common.next}
                     </IonButton>
                   </IonRow>
                 </div>
@@ -312,15 +311,15 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Pick your community username</IonCardTitle>
+                  <IonCardTitle>{copy.username.title}</IonCardTitle>
                   <p>
-                    Your username appears next to your posts and comments. You can only change it every {USERNAME_CHANGE_WINDOW_DAYS} days.
+                    {copy.username.body.replace('{days}', String(USERNAME_CHANGE_WINDOW_DAYS))}
                   </p>
                   <div className="onboarding-v2__input-wrapper">
                     <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
                       <IonInput
                         value={username}
-                        placeholder={currentProfile?.username ?? 'yourname'}
+                        placeholder={currentProfile?.username ?? copy.username.placeholderFallback}
                         onIonInput={(e) => setUsername(e.detail.value!)}
                         maxlength={30}
                         counter
@@ -330,7 +329,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                     {usernameError && <IonNote color="danger" className="onboarding-v2__error">{usernameError}</IonNote>}
                     {!canChangeUsername() && (
                       <IonText color="medium">
-                        You can’t change your username yet.
+                        {copy.username.lockedNote}
                       </IonText>
                     )}
                   </div>
@@ -343,7 +342,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       onClick={handleUsernameNext}
                     >
                       <span className={`onboarding-v2__button-label ${usernameBusy ? 'loading' : ''}`}>
-                        Next
+                        {ONBOARDING_COPY.common.next}
                       </span>
                       {usernameBusy && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
@@ -358,12 +357,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
               <div className="onboarding-v2__slide">
                 <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                   <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                    <IonCardTitle>Connect from Refreshments</IonCardTitle>
-                    <p>
-                      Turn this on to let people discover your personal profile from your community posts and comments.
-                    </p>
+                    <IonCardTitle>{copy.connect.title}</IonCardTitle>
+                    <p>{copy.connect.body}</p>
                     <IonItem lines="none">
-                      <IonLabel>Connect from Refreshments</IonLabel>
+                      <IonLabel>{copy.connect.toggleLabel}</IonLabel>
                       <IonToggle
                         slot="end"
                         checked={Boolean(currentProfile?.settings_community_profile)}
@@ -375,10 +372,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   <div className="onboarding-v2__card-footer">
                     <IonRow className="onboarding-v2__nav">
                       <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                        Back
+                        {ONBOARDING_COPY.common.back}
                       </IonButton>
                       <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()}>
-                        Next
+                        {ONBOARDING_COPY.common.next}
                       </IonButton>
                     </IonRow>
                   </div>
@@ -391,15 +388,15 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Choose your community photo</IonCardTitle>
+                  <IonCardTitle>{copy.photo.title}</IonCardTitle>
                   <p>
                     {hasPersonalPhoto
-                      ? 'Use your personal profile photo or upload a community-only photo.'
-                      : 'Upload a community-only photo to represent you in the community.'}
+                      ? copy.photo.withPersonalPhoto
+                      : copy.photo.withoutPersonalPhoto}
                   </p>
                   {hasPersonalPhoto && (
                     <IonItem lines="none">
-                      <IonLabel>Use personal profile photo</IonLabel>
+                      <IonLabel>{copy.photo.toggleLabel}</IonLabel>
                       <IonToggle
                         slot="end"
                         checked={usePersonalPhoto}
@@ -427,28 +424,28 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonList>
                   {usePersonalPhoto && !personalPhoto && (
                     <IonText color="medium">
-                      Add a personal profile photo first to use it here.
+                      {copy.photo.missingPersonalPhoto}
                     </IonText>
                   )}
                   <IonButton expand="block" color="tertiary" onClick={updatePicture}>
-                    Upload a community photo
+                    {copy.photo.uploadCta}
                   </IonButton>
                   {communityPhoto && !usePersonalPhoto && (
-                    <IonText color="medium">Your current community photo will stay unless you upload a new one.</IonText>
+                    <IonText color="medium">{copy.photo.existingPhotoNote}</IonText>
                   )}
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      Back
+                      {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()} disabled>
-                      Next
+                      {ONBOARDING_COPY.common.next}
                     </IonButton>
                   </IonRow>
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
-                      Skip
+                      {ONBOARDING_COPY.common.skip}
                     </IonButton>
                   </IonRow>
                 </div>
@@ -460,8 +457,8 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Write a community bio</IonCardTitle>
-                  <p>Keep it short—this is what people will see when they click your name on comments and posts.</p>
+                  <IonCardTitle>{copy.bio.title}</IonCardTitle>
+                  <p>{copy.bio.body}</p>
                   <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
                     <IonTextarea
                       value={communityBio}
@@ -475,18 +472,18 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      Back
+                      {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton className="onboarding-v2__primary-action" onClick={handleBioNext} disabled>
                       <span className={`onboarding-v2__button-label ${savingBio ? 'loading' : ''}`}>
-                        Next
+                        {ONBOARDING_COPY.common.next}
                       </span>
                       {savingBio && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
                   </IonRow>
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
-                      Skip
+                      {ONBOARDING_COPY.common.skip}
                     </IonButton>
                   </IonRow>
                 </div>
@@ -498,18 +495,18 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Show your location?</IonCardTitle>
-                  <p>Share your general location on your community profile.</p>
+                  <IonCardTitle>{copy.location.title}</IonCardTitle>
+                  <p>{copy.location.body}</p>
                   <IonText color="medium">
                     <p style={{ marginTop: 0 }}>
-                      Location shown on your profile: {locationLabel || '-'}
+                      {copy.location.shownPrefix}{locationLabel || '-'}
                     </p>
                   </IonText>
                   <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
-                    {locationLabel ? 'Edit location' : 'Add location'}
+                    {locationLabel ? copy.location.editLocation : copy.location.addLocation}
                   </IonButton>
                   <IonItem lines="none">
-                    <IonLabel>Show location</IonLabel>
+                    <IonLabel>{copy.location.toggleLabel}</IonLabel>
                     <IonToggle
                       slot="end"
                       checked={showLocation}
@@ -520,11 +517,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      Back
+                      {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton className="onboarding-v2__primary-action" onClick={handleLocationNext} disabled={savingLocation}>
                       <span className={`onboarding-v2__button-label ${savingLocation ? 'loading' : ''}`}>
-                        Next
+                        {ONBOARDING_COPY.common.next}
                       </span>
                       {savingLocation && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
@@ -538,25 +535,25 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Show your age?</IonCardTitle>
-                  <p>Choose how your age appears on your community profile.</p>
+                  <IonCardTitle>{copy.age.title}</IonCardTitle>
+                  <p>{copy.age.body}</p>
                   <IonText color="medium">
                     <p style={{ marginTop: 0 }}>
-                      Age shown on your profile:{' '}
-                      {showAgeTier === 'none' ? 'Don\u2019t show age' : showAgeTier === 'decade' ? ageDecade : ageLabel}
+                      {copy.age.shownPrefix}
+                      {showAgeTier === 'none' ? copy.age.hideAge : showAgeTier === 'decade' ? ageDecade : ageLabel}
                     </p>
                   </IonText>
                   <IonRadioGroup value={showAgeTier} onIonChange={(e) => setShowAgeTier(e.detail.value)}>
                     <IonItem lines="none">
-                      <IonLabel>Show exact age</IonLabel>
+                      <IonLabel>{copy.age.showExact}</IonLabel>
                       <IonRadio slot="start" value="exact" />
                     </IonItem>
                     <IonItem lines="none">
-                      <IonLabel>Show decade only</IonLabel>
+                      <IonLabel>{copy.age.showDecade}</IonLabel>
                       <IonRadio slot="start" value="decade" />
                     </IonItem>
                     <IonItem lines="none">
-                      <IonLabel>Hide age</IonLabel>
+                      <IonLabel>{copy.age.hide}</IonLabel>
                       <IonRadio slot="start" value="none" />
                     </IonItem>
                   </IonRadioGroup>
@@ -564,11 +561,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      Back
+                      {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton className="onboarding-v2__primary-action" onClick={handleAgeNext} disabled={savingAge}>
                       <span className={`onboarding-v2__button-label ${savingAge ? 'loading' : ''}`}>
-                        Next
+                        {ONBOARDING_COPY.common.next}
                       </span>
                       {savingAge && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
@@ -582,14 +579,14 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             <div className="onboarding-v2__slide onboarding-v2__ready">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>Community profile ready!</IonCardTitle>
-                  <p>You can update any of these choices later in Settings.</p>
+                  <IonCardTitle>{copy.ready.title}</IonCardTitle>
+                  <p>{copy.ready.body}</p>
                   <IonButton
                     expand="block"
                     className="onboarding-v2__primary-action"
                     onClick={handleFinish}
                   >
-                    Finish
+                    {copy.ready.finish}
                   </IonButton>
                 </IonCardContent>
               </IonCard>
@@ -610,7 +607,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             }}
             onClick={handleFinishLater}
           >
-            Finish later
+            {ONBOARDING_COPY.common.finishLater}
           </IonButton>
         )}
       </IonContent>

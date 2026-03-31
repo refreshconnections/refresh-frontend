@@ -100,10 +100,12 @@ const CommentItem: React.FC<Props> = (props) => {
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
   const [presentSidenoteInfo] = useIonAlert();
-  const [presentEditAlert] = useIonAlert();
   const slidingRef = useRef<HTMLIonItemSlidingElement | null>(null);
 
   const isOwner = globalCurrentProfile?.user === comment?.user;
+  // Owners should still see moderator-hidden comments so they can understand what happened
+  // without enabling "show sidenotes", but self-removed comments should feel gone unless a
+  // moderator reason is attached.
   const showOwnHidden = isOwner && (comment?.sidenoted || (comment?.removed && comment?.removed_reason));
   const reportedByMe = Array.isArray(currentProfileRefreshments?.reported_comments)
     ? currentProfileRefreshments.reported_comments.includes(comment?.id)
@@ -111,6 +113,8 @@ const CommentItem: React.FC<Props> = (props) => {
   const sidenotedByMe = Array.isArray(currentProfileRefreshments?.comment_sidenotes)
     ? currentProfileRefreshments.comment_sidenotes.includes(comment?.id)
     : false;
+  // "Show sidenotes" is the moderator-view toggle for hidden thread context, so it also
+  // allows non-owners to see removed-comment placeholders, not just sidenoted comments.
   const canShowComment = comment?.approved
     && (
       (!comment?.sidenoted && !comment?.removed && !reportedByMe && !sidenotedByMe)
@@ -438,7 +442,7 @@ const CommentItem: React.FC<Props> = (props) => {
                                 <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                               </div>
                             )}
-                            {comment?.removed_reason ? (
+                            {isOwner && comment?.removed_reason ? (
                               <>
                                 <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                               </>
@@ -504,15 +508,16 @@ const CommentItem: React.FC<Props> = (props) => {
                             {isEditing ? (
                               <div className="comment-edit-inline">
                                 <IonTextarea
+                                  aria-label="Edit comment text"
                                   value={editDraft}
                                   rows={4}
                                   onIonInput={(event) => setEditDraft(event.detail.value ?? "")}
                                 />
                                 <div className="comment-edit-actions">
-                                  <IonButton size="small" fill="clear" color="medium" onClick={handleCancelEdit}>
+                                  <IonButton aria-label="Cancel edit" size="small" fill="clear" color="medium" onClick={handleCancelEdit}>
                                     Cancel
                                   </IonButton>
-                                  <IonButton size="small" color="primary" onClick={handleSaveEdit} disabled={editSaving}>
+                                  <IonButton aria-label="Save comment" size="small" color="primary" onClick={handleSaveEdit} disabled={editSaving}>
                                     {editSaving ? "Saving..." : "Save"}
                                   </IonButton>
                                 </div>
@@ -617,7 +622,7 @@ const CommentItem: React.FC<Props> = (props) => {
                           <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
                           {canEdit && (
                             <IonItemOption color="medium">
-                              <IonButton fill="clear" color="white" onClick={handleStartEdit} disabled={isEditing}>
+                              <IonButton aria-label="Edit comment" fill="clear" color="white" onClick={handleStartEdit} disabled={isEditing}>
                                 <FontAwesomeIcon icon={faPen} />
                               </IonButton>
                             </IonItemOption>

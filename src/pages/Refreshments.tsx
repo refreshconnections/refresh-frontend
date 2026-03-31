@@ -10,7 +10,6 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonCol,
-  IonAlert,
   IonNote,
   IonSpinner,
   IonList,
@@ -18,7 +17,6 @@ import {
   IonCardContent,
   IonItem,
   IonIcon,
-  useIonAlert,
   useIonModal,
   useIonRouter,
 } from '@ionic/react';
@@ -26,6 +24,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import "./Page.css"
 import "./Community.css"
 import "./Refreshments.css"
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import { useGetPosts } from '../hooks/api/refreshments/posts';
 import EventsCalendar from '../components/EventsCalendar';
 import RefreshmentsPost from '../components/RefreshmentsPosts/RefreshmentsPost';
@@ -117,7 +116,7 @@ const Refreshments: React.FC = () => {
 
   const [somePosts, setSomePosts] = useState(posts?.slice(0, 5))
 
-  const [showStoreAlert, setShowStoreAlert] = useState(false)
+  const presentUpsellAlert = useUpsellAlert();
   const [showFilterRow, setShowFilterRow] = useState(false)
 
   const statuses = useGetStatuses().data;
@@ -271,7 +270,7 @@ const Refreshments: React.FC = () => {
             {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
-            <IonRow class="ion-flex-column">
+            <IonRow className="ion-flex-column">
               {!bars || (bars == "all") ? (
                 <IonText className="refreshments-filter-title" color="gray">Showing all posts</IonText>
               ) : (
@@ -304,31 +303,13 @@ const Refreshments: React.FC = () => {
               <></>
               :
               <>
-                <IonButton className="refreshments-control-button" color="gray" onClick={() => setShowStoreAlert(true)}>
+                <IonButton className="refreshments-control-button" color="gray" onClick={() => presentUpsellAlert({
+                  header: 'You need a 5 day streak to create your own post.',
+                  message: 'Or get Community+ or Refresh Pro to post now!',
+                  extraButtons: [{ text: 'What is my streak?', handler: () => router.push('/activity') }],
+                })}>
                   <FontAwesomeIcon icon={faMegaphone} />
                 </IonButton>
-                <IonAlert
-                  isOpen={showStoreAlert}
-                  onDidDismiss={() => setShowStoreAlert(false)}
-                  header="You need a 5 day streak to create your own post."
-                  subHeader="Or get Community+ or Refresh Pro to post now!"
-                  buttons={[{
-                    text: "Not now",
-                    role: 'destructive'
-                  },
-                  {
-                    text: 'What is my streak?',
-                    handler: async () => {
-                      window.location.pathname = "/activity"
-                    }
-                  },
-                  {
-                    text: 'Get Pro!',
-                    handler: async () => {
-                      window.location.pathname = "/store"
-                    }
-                  }]}
-                />
               </>}
         </IonRow>
         {topRefreshmentsAlert ? (

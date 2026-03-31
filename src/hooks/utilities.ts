@@ -2051,6 +2051,15 @@ const DARK_BG  = '#2f2f2f';
 
 type ThemePref = 'light' | 'dark' | 'auto';
 
+export async function getReduceAnimations(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: 'reduce_animations' });
+  return value === 'true';
+}
+
+export async function setReduceAnimationsPref(reduce: boolean): Promise<void> {
+  await Preferences.set({ key: 'reduce_animations', value: String(reduce) });
+}
+
 export async function setThemePref(theme?: ThemePref) {
   await Preferences.set({ key: 'theme', value: theme ?? 'auto' });
   // Immediately apply after saving

@@ -19,24 +19,14 @@ import { useSwiper } from 'swiper/react';
 import { chevronDownOutline } from 'ionicons/icons';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const talkAboutOptions = [
-  { value: 'together_idea', label: 'Something we could do together' },
-  { value: 'hobby', label: 'Hobbies' },
-  { value: 'petpeeve', label: 'Pet peeves' },
-  { value: 'talent', label: 'Talents' },
-  { value: 'fixation_book', label: 'Favorite book' },
-  { value: 'fixation_tv', label: 'Favorite TV show' },
-  { value: 'fixation_movie', label: 'Favorite movie' },
-  { value: 'fixation_album', label: 'Favorite album' },
-  { value: 'fixation_musicalartist', label: 'Favorite musical artist' },
-  { value: 'fixation_game', label: 'Favorite game' },
-  { value: 'fixation_topic', label: 'Favorite interest/topic' },
-];
+const talkAboutOptions = ONBOARDING_COPY.cards.letsTalkAbout.options;
 
 const OnboardingCardLetsTalkAbout: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.letsTalkAbout;
   const swiper = useSwiper();
   const [selected, setSelected] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -131,8 +121,8 @@ const OnboardingCardLetsTalkAbout: React.FC = () => {
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent className="talkabouts">
-        <IonCardTitle>Let’s talk about</IonCardTitle>
-        <IonText>Choose three prompts and fill them out so people have easy conversation starters.</IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem
           className="talkabout-select-item"
           button
@@ -141,9 +131,9 @@ const OnboardingCardLetsTalkAbout: React.FC = () => {
             presentTopicsPopover({ event: event.nativeEvent as Event })
           }
         >
-          <IonLabel position="stacked">Choose three topics</IonLabel>
+          <IonLabel position="stacked">{copy.chooseTopics}</IonLabel>
           <IonText className="talkabout-summary">
-            {selectedSummary || 'Pick three'}
+            {selectedSummary || copy.pickThree}
           </IonText>
           <IonIcon slot="end" icon={chevronDownOutline} />
         </IonItem>
@@ -166,10 +156,10 @@ const OnboardingCardLetsTalkAbout: React.FC = () => {
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
+          {ONBOARDING_COPY.common.back}
         </IonButton>
         <IonButton onClick={updateProfile} disabled={!canContinue}>
-          Next
+          {ONBOARDING_COPY.common.next}
         </IonButton>
       </IonRow>
     </IonCard>

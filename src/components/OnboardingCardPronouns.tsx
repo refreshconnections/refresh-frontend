@@ -15,18 +15,14 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const pronounOptions = [
-  { label: 'She / Her', value: 'She/Her' },
-  { label: 'He / Him', value: 'He/Him' },
-  { label: 'They / Them', value: 'They/Them' },
-  { label: 'Prefer not to say', value: 'Prefer not to say' },
-  { label: 'Custom', value: 'custom' },
-];
+const pronounOptions = ONBOARDING_COPY.cards.pronouns.options;
 
 const OnboardingCardPronouns: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.pronouns;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [selected, setSelected] = useState<string>('');
@@ -60,15 +56,13 @@ const OnboardingCardPronouns: React.FC = () => {
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>What are your pronouns?</IonCardTitle>
-        <IonText>
-          Select your pronouns or add your own. You can always update this later in your profile.
-        </IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem>
-          <IonLabel position="stacked">Pronouns</IonLabel>
+          <IonLabel position="stacked">{copy.label}</IonLabel>
           <IonSelect
             value={selected}
-            placeholder="Select"
+            placeholder={copy.placeholder}
             onIonChange={(event) => {
               const value = event.detail.value as string;
               setSelected(value);
@@ -86,10 +80,10 @@ const OnboardingCardPronouns: React.FC = () => {
         </IonItem>
         {selected === 'custom' && (
           <IonItem>
-            <IonLabel position="stacked">Custom pronouns</IonLabel>
+            <IonLabel position="stacked">{copy.customLabel}</IonLabel>
             <IonInput
               value={custom}
-              placeholder="e.g. ze/zir"
+              placeholder={copy.customPlaceholder}
               maxlength={30}
               onIonInput={(event) => setCustom(event.detail.value ?? '')}
               onKeyUp={(event) => {
@@ -103,10 +97,10 @@ const OnboardingCardPronouns: React.FC = () => {
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
+          {ONBOARDING_COPY.common.back}
         </IonButton>
         <IonButton onClick={updateProfile} disabled={!canContinue}>
-          Next
+          {ONBOARDING_COPY.common.next}
         </IonButton>
       </IonRow>
     </IonCard>

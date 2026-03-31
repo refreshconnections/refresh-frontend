@@ -183,19 +183,45 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
   // Auto recheck on resume
   useEffect(() => {
     if (!needsRecheck) return;
-    const listen = async () => {
-      App.addListener("resume", async () => {
+    let isActive = true;
+    let resumeHandle: { remove: () => Promise<void> | void } | undefined;
+    let pauseHandle: { remove: () => Promise<void> | void } | undefined;
+
+    const attachListeners = async () => {
+      const handleResume = async () => {
         try {
           await statusQuery.refetch();
         } catch (e) {
           console.warn("Failed to refetch on resume", e);
         }
-      });
-      App.addListener("pause", async () => {
+      };
+
+      const noopPause = async () => {
         // no-op
-      });
+      };
+
+      const [nextResumeHandle, nextPauseHandle] = await Promise.all([
+        App.addListener("resume", handleResume),
+        App.addListener("pause", noopPause),
+      ]);
+
+      if (!isActive) {
+        await nextResumeHandle.remove();
+        await nextPauseHandle.remove();
+        return;
+      }
+
+      resumeHandle = nextResumeHandle;
+      pauseHandle = nextPauseHandle;
     };
-    listen();
+
+    attachListeners();
+
+    return () => {
+      isActive = false;
+      void resumeHandle?.remove();
+      void pauseHandle?.remove();
+    };
   }, [needsRecheck, statusQuery]);
 
   // password dialog handler (always required to add a backup, including after removal)
@@ -483,7 +509,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
 
       {/* Password dialog used by both actions */}
       <IonAlert
-        key={pwdAlertKey} // force fresh mount each time to avoid sticky value
+        key={`pwd-${pwdAlertKey}`} // force fresh mount each time to avoid sticky value
         isOpen={pwdOpen}
         header="Confirm password"
         backdropDismiss={false}
@@ -514,7 +540,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
       />
 
       <IonAlert
-        key={smsAlertKey} // force fresh mount only when actually opened
+        key={`sms-${smsAlertKey}`} // force fresh mount only when actually opened
         isOpen={smsOpen}
         header="Enter SMS code"
         message={`We texted a 6-digit code to your phone number ending in ••${lastTwoDigits || "??"}`}

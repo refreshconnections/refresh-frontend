@@ -27,10 +27,12 @@ import CroppedImageModal from './CroppedImageModal';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { decode } from 'base64-arraybuffer';
 import StayPausedModal from './StayPausedModal';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 const OnboardingCardProfilePic: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.profilePic;
 
   const swiper = useSwiper();
 
@@ -126,9 +128,9 @@ const OnboardingCardProfilePic: React.FC = () => {
     <>
       <IonCard className="onboarding-slide">
         <IonCardContent>
-          <IonCardTitle>Upload a profile picture!</IonCardTitle>
+          <IonCardTitle>{copy.title}</IonCardTitle>
 
-          <IonText>Make a good first impression. This is the first thing that will show on your profile. We recommend it be of just you. Remember, your profile needs to include at least one photo that shows your face.</IonText>
+          <IonText>{copy.body}</IonText>
           <IonItem className="no-bottom-line prof" style={{ overflow: "auto" }}>
             {data ?
               <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
@@ -138,7 +140,7 @@ const OnboardingCardProfilePic: React.FC = () => {
                     <img alt="Picture 1" src={data.pic1_main} onError={(e) => onImgError(e)} />
                     : <img alt="Picture 1 null" src={"../static/img/null.png"} />
                 }
-                <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic1_main")}><FontAwesomeIcon icon={faPenToSquare} />&nbsp; Upload</IonButton>
+                <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic1_main")}><FontAwesomeIcon icon={faPenToSquare} />&nbsp; {copy.upload}</IonButton>
               </div>
 
               :
@@ -151,12 +153,12 @@ const OnboardingCardProfilePic: React.FC = () => {
 
         </IonCardContent>
         <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-          <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic1_main == null ? true : false}>Next</IonButton>
+          <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic1_main == null ? true : false}>{ONBOARDING_COPY.common.next}</IonButton>
         </IonRow>
       </IonCard>
       <IonRow className="notyet">
-        <IonButton fill="clear" onClick={() => stayPausedOpen()}>Don't feel like adding pictures yet?</IonButton>
+        <IonButton fill="clear" onClick={() => stayPausedOpen()}>{copy.skip}</IonButton>
       </IonRow>
     </>
   )

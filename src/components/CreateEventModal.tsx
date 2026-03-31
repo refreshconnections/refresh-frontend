@@ -32,6 +32,7 @@ import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
+import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import SubmissionAgeGateCard from './SubmissionAgeGateCard';
 import CreatePostModal from './CreatePostModal';
 import { informationCircleOutline } from 'ionicons/icons';
@@ -92,7 +93,33 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [eventType, setEventType] = useState('');
   const [showPostTip, setShowPostTip] = useState(false);
   const { data: globalProfile } = useGetGlobalAppCurrentProfile();
+  const moderation = useGetCurrentModeration().data;
   const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate);
+  const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
+  const commentingPausedUntil = moderation?.commenting_paused_until;
+  const commentingPauseActive = Boolean(
+    commentingPausedUntil &&
+    moment(commentingPausedUntil).isValid() &&
+    moment(commentingPausedUntil).isAfter(moment())
+  );
+  const commentingPausedLabel = commentingPauseActive
+    ? moment(commentingPausedUntil).format('MMM D [at] h:mm A')
+    : null;
+  const moderationSubmissionBlocked = Boolean(
+    moderatorDeactivated ||
+    globalProfile?.deactivated_profile ||
+    commentingPauseActive ||
+    (moderation?.paused_on_creation && globalProfile?.paused_profile)
+  );
+  const moderationSubmissionMessage = moderatorDeactivated
+    ? 'Your account is currently suspended from posting.'
+    : globalProfile?.deactivated_profile
+      ? 'You need an active account to submit an event.'
+      : commentingPauseActive
+        ? `Your posting is temporarily paused until ${commentingPausedLabel}.`
+        : (moderation?.paused_on_creation && globalProfile?.paused_profile)
+          ? 'Your account needs to be reviewed before you can submit an event.'
+          : null;
   const [presentPostModal, dismissPostModal] = useIonModal(CreatePostModal, {
     preferred_name: globalProfile?.preferred_name ?? '',
     username: globalProfile?.username ?? '',
@@ -454,32 +481,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       return;
     }
 
-    const subscriptionLevel = globalProfile?.subscription_level;
-    const maxRecurringEvents = isPro(subscriptionLevel)
-      ? 10
-      : isCommunityPlus(subscriptionLevel)
-        ? 5
-        : 1;
-
     const trimmedCustomDates = recurrenceCustomDates
       .map((date) => (date ?? '').trim())
       .filter((date) => date);
 
     if (recurrenceType !== 'none') {
-      if (maxRecurringEvents <= 1) {
-        setError('Recurring events are available for Community+ and Pro members.');
-        return;
-      }
       if (recurrenceType === 'custom' && trimmedCustomDates.length === 0) {
         setError('Add at least one additional date.');
-        return;
-      }
-      if (recurrenceType !== 'custom' && recurrenceCount > maxRecurringEvents) {
-        setError(`Recurring events are limited to ${maxRecurringEvents} total events.`);
-        return;
-      }
-      if (recurrenceType === 'custom' && (trimmedCustomDates.length + 1) > maxRecurringEvents) {
-        setError(`Recurring events are limited to ${maxRecurringEvents} total events.`);
         return;
       }
       if (recurrenceType === 'custom') {
@@ -705,6 +713,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       <IonContent className="create-event-modal">
         {!isOldEnoughForEvents ? (
           <SubmissionAgeGateCard noun="event" onUpgrade={() => router.push('/store')} />
+        ) : moderationSubmissionBlocked ? (
+          <IonCard className="ion-padding ion-text-center">
+            <IonText>
+              <p>{moderationSubmissionMessage}</p>
+              <p>Check your Activity for moderation details and our guidelines.</p>
+            </IonText>
+            <IonButton onClick={() => router.push('/activity')}>View Activity</IonButton>
+          </IonCard>
         ) : (
           <>
         <IonList>

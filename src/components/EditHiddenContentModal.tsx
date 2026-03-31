@@ -194,6 +194,13 @@ const EditHiddenContentModal: React.FC<Props> = (props) => {
                     )}
                 </IonItem>
 
+                <IonItem lines="full">
+                    <IonLabel className="ion-text-wrap">Hidden authors ({data?.hidden_authors?.length ?? 0})</IonLabel>
+                    {(data?.hidden_authors?.length ?? 0) > 0 && (
+                        <IonButton slot="end" fill="clear" onClick={() => confirmClear("authors")}>Unhide all</IonButton>
+                    )}
+                </IonItem>
+
                 {(data?.blocked_connections?.length ?? 0) > 0 && (
                     <IonItem lines="full">
                         <IonLabel className="ion-text-wrap">

@@ -1,9 +1,10 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
 import { arrowDown, close } from 'ionicons/icons';
 
 import "./Page.css"
 import "./Community.css"
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 
 import { getAvatarDisplay, getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus } from '../hooks/utilities';
 import { useSheetModal } from '../hooks/useSheetModal';
@@ -51,7 +52,7 @@ const Community: React.FC = () => {
 
   const [showPostOverride, setShowPostOverride] = useState<number[]>([]);
 
-  const [showStoreAlert, setShowStoreAlert] = useState(false);
+  const presentUpsellAlert = useUpsellAlert();
 
   const [error, setError] = useState<any>(null);
   const [loading, setLoading] = useState<any>(false);
@@ -411,31 +412,13 @@ const Community: React.FC = () => {
             <></>
             :
             <>
-              <IonButton color="tertiary" onClick={() => setShowStoreAlert(true)}>
+              <IonButton color="tertiary" onClick={() => presentUpsellAlert({
+                header: 'Increase your streak to create your own post!',
+                message: 'Or become a Refresh Pro!',
+                extraButtons: [{ text: 'What is my streak?', handler: () => router.push('/activity') }],
+              })}>
                 <FontAwesomeIcon icon={faMegaphone} />
               </IonButton>
-              <IonAlert
-                isOpen={showStoreAlert}
-                onDidDismiss={() => setShowStoreAlert(false)}
-                header="Increase your streak to create your own post!"
-                subHeader="Or become a Refresh Pro!"
-                buttons={[{
-                  text: "Not now",
-                  role: 'destructive'
-                },
-                {
-                  text: 'What is my streak?',
-                  handler: async () => {
-                      router.push("/activity")
-                  }
-                },
-                {
-                  text: 'Get Pro!',
-                  handler: async () => {
-                    router.push("/store")
-                  }
-                }]}
-              />
             </>}
         </IonRow>
         {data ?

@@ -1,4 +1,4 @@
-import { IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonItem, IonLabel, IonList, IonRow, IonText, useIonModal } from "@ionic/react";
+import { IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonIcon, IonItem, IonLabel, IonList, IonRow, IonText, useIonModal } from "@ionic/react";
 import React, { useEffect, useState } from "react";
 import { increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,8 @@ import { useGetSettingsCurrentProfile } from "../../hooks/api/profiles/settings-
 import { useGetRefreshmentsCurrentProfile } from "../../hooks/api/profiles/refreshments-current-profile";
 import { faLocationDot } from "@fortawesome/pro-solid-svg-icons/faLocationDot";
 import Poll from "./Polls/Poll";
+import { star, starOutline } from "ionicons/icons";
+import { useInterestPost, useUninterestPost } from "../../hooks/api/interests";
 
 
 type Props = {
@@ -39,8 +41,11 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
 
     const [liked, setLiked] = useState<boolean>(false)
     const [likedLength, setLikedLength] = useState(0)
+    const [interested, setInterested] = useState<boolean>(false)
 
     const queryClient = useQueryClient()
+    const interestPost = useInterestPost()
+    const uninterestPost = useUninterestPost()
 
     const likePost = async () => {
         setLiked(true)
@@ -77,6 +82,28 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
         setLiked(currentProfileRefreshments?.likes?.includes(post_id))
 
     }, [currentProfileRefreshments])
+
+    useEffect(() => {
+        setInterested(Boolean(dynamicContentPost?.interested))
+    }, [dynamicContentPost?.interested])
+
+    const markInterested = async () => {
+        setInterested(true)
+        try {
+            await interestPost.mutateAsync(post_id)
+        } catch (error) {
+            setInterested(false)
+        }
+    }
+
+    const unmarkInterested = async () => {
+        setInterested(false)
+        try {
+            await uninterestPost.mutateAsync(post_id)
+        } catch (error) {
+            setInterested(true)
+        }
+    }
 
 
 
@@ -190,10 +217,10 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
             <IonRow className="post-likes"></IonRow> :
             <IonRow className="post-likes">
                 <IonCol>
-                    <IonRow onClick={liked || currentProfileRefreshmentsLoading ? () => { } : () => likePost()} >
+                    <IonRow>
                         {liked ?
-                            <IonButton size="small" fill="clear" onClick={() => unlikePost()} disabled={currentProfileRefreshmentsLoading}><FontAwesomeIcon color="red" icon={heartFull} /></IonButton> :
-                            <IonButton size="small" fill="clear" onClick={() => likePost()} disabled={currentProfileRefreshmentsLoading}><FontAwesomeIcon icon={heartOutline} /></IonButton>}
+                            <IonButton aria-label="Unlike post" size="small" fill="clear" onClick={() => unlikePost()} disabled={currentProfileRefreshmentsLoading}><FontAwesomeIcon color="red" icon={heartFull} /></IonButton> :
+                            <IonButton aria-label="Like post" size="small" fill="clear" onClick={() => likePost()} disabled={currentProfileRefreshmentsLoading}><FontAwesomeIcon icon={heartOutline} /></IonButton>}
                         {likedLength > 0 ?
                             <IonText>{likedLength}</IonText>
                             : <></>}
@@ -207,6 +234,31 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
                         {dynamicContentPost?.comment_count - commentsNotShownCount > 0 ?
                             <IonText>{dynamicContentPost?.comment_count - commentsNotShownCount}</IonText>
                             : <></>}
+                    </IonRow>
+                </IonCol>
+                <IonCol>
+                    <IonRow>
+                        {interested ? (
+                            <IonButton
+                                aria-label="Remove post interest"
+                                size="small"
+                                fill="clear"
+                                onClick={() => unmarkInterested()}
+                                disabled={interestPost.isPending || uninterestPost.isPending}
+                            >
+                                <IonIcon color="warning" icon={star} />
+                            </IonButton>
+                        ) : (
+                            <IonButton
+                                aria-label="Mark post interested"
+                                size="small"
+                                fill="clear"
+                                onClick={() => markInterested()}
+                                disabled={interestPost.isPending || uninterestPost.isPending}
+                            >
+                                <IonIcon icon={starOutline} />
+                            </IonButton>
+                        )}
                     </IonRow>
                 </IonCol>
             </IonRow>

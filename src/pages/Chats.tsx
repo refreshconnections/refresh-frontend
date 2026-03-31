@@ -78,8 +78,11 @@ const Chats: React.FC = () => {
 
 
   const isBeforeExpiration = useMemo(
-    () => chatsStatus?.active && new Date() < new Date(chatsStatus?.expirationDateTime) || !chatsStatus?.expirationDateTime,
-    [chatsStatus?.expirationDateTime]
+    () =>
+      chatsStatus?.active &&
+      (!chatsStatus?.expirationDateTime ||
+        new Date() < new Date(chatsStatus.expirationDateTime)),
+    [chatsStatus?.active, chatsStatus?.expirationDateTime]
   );
 
   useEffect(() => {

@@ -33,6 +33,7 @@ import { Preferences } from '@capacitor/preferences';
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
@@ -43,6 +44,7 @@ type OnboardingCardDoneProps = {
 };
 
 const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectToggle = true }) => {
+  const copy = ONBOARDING_COPY.cards.done;
 
   const swiper = useSwiper();
   const [appLoading, setAppLoading] = useState(false);
@@ -66,11 +68,11 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
 
     if (moderation?.paused_on_creation) {
       presentPausedOnCreationAlert({
-        subHeader: "As part of our effort to keep Refresh safe and conscientious, we're reviewing your account before you can connect with others. We appreciate your patience.",
-        message: 'In the meantime, you can continue to add to your profile by going to the Me tab > Profile.',
+        subHeader: copy.pausedReview.subHeader,
+        message: copy.pausedReview.message,
         buttons: [
           {
-            text: 'Ok',
+            text: copy.pausedReview.confirm,
             role: 'cancel',
             handler: async ()=>{
               await updateProfile()
@@ -127,14 +129,14 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>That's it!</IonCardTitle>
-        <IonText>Head to the "Me" tab at any time to update or add to your profile!</IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         {showConnectToggle && (
           <IonItem>
             <IonLabel>
-              <p className="connect-refreshments-title">Connect from Refreshments</p>
+              <p className="connect-refreshments-title">{copy.connectTitle}</p>
               <IonText color="medium">
-                Turn this on to let people discover your personal profile from your community posts and comments.
+                {copy.connectBody}
               </IonText>
             </IonLabel>
             <IonToggle
@@ -146,8 +148,8 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
         )}
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
-        <IonButton disabled={appLoading} color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>
-        <IonButton disabled={appLoading} onClick={handleGetStarted}>Let's Refresh!</IonButton>
+        <IonButton disabled={appLoading} color="gray" onClick={()=>swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+        <IonButton disabled={appLoading} onClick={handleGetStarted}>{copy.refreshCta}</IonButton>
         </IonRow>
       {appLoading ?
         <IonRow className="ion-justify-content-center">

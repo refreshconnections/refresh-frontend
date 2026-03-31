@@ -17,10 +17,12 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getCurrentPositionSmart } from '../hooks/geolocationUtilities';
 import CitySelectorModal from './CitySelectorModal';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
 const OnboardingCardLocationCoords: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.locationCoords;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [presentAlert] = useIonAlert();
@@ -62,11 +64,11 @@ const OnboardingCardLocationCoords: React.FC = () => {
       `${lat.toFixed(3)}, ${long.toFixed(3)}`;
 
     presentConfirm({
-      header: `So just confirming, you're near ${local}?`,
+      header: `${copy.confirmPrefix}${local}${copy.confirmSuffix}`,
       buttons: [
-        { text: "Nope, I'll try again.", role: 'cancel' },
+        { text: copy.confirmCancel, role: 'cancel' },
         {
-          text: 'Yep',
+          text: copy.confirmConfirm,
           handler: async () => {
             await updateCurrentUserProfile({
               location_point_long: long,
@@ -87,8 +89,8 @@ const OnboardingCardLocationCoords: React.FC = () => {
     const permissionsStatus = await Geolocation.checkPermissions();
     if (permissionsStatus.location === 'denied') {
       await presentAlert({
-        header: "Location access isn't enabled.",
-        message: 'You can enable location access, choose your city, or continue without sharing.',
+        header: copy.deniedHeader,
+        message: copy.deniedMessage,
         buttons: ['OK'],
       });
       return;
@@ -103,8 +105,8 @@ const OnboardingCardLocationCoords: React.FC = () => {
 
       if (!coordinates) {
         await presentAlert({
-          header: "We couldn't get your GPS coordinates.",
-          message: 'Try again, choose your city, or continue without sharing.',
+          header: copy.gpsErrorHeader,
+          message: copy.gpsErrorMessage,
           buttons: ['OK'],
         });
         return;
@@ -118,8 +120,8 @@ const OnboardingCardLocationCoords: React.FC = () => {
       );
     } catch (err) {
       await presentAlert({
-        header: "We couldn't get your GPS coordinates.",
-        message: 'Try again, choose your city, or continue without sharing.',
+        header: copy.gpsErrorHeader,
+        message: copy.gpsErrorMessage,
         buttons: ['OK'],
       });
     }
@@ -128,15 +130,15 @@ const OnboardingCardLocationCoords: React.FC = () => {
   const declineCoordinates = async () => {
     setCoordsSet(false);
     await presentAlert({
-      header: "Distance filters won’t work without coordinates",
-      message: "You can still use Refresh, but you won’t be able to filter your picks by distance.",
+      header: copy.declineHeader,
+      message: copy.declineMessage,
       buttons: [
         {
-          text: 'Go back',
+          text: copy.declineCancel,
           role: 'cancel',
         },
         {
-          text: 'OK',
+          text: copy.declineConfirm,
           handler: () => {
             swiper.slideNext();
           },
@@ -148,31 +150,28 @@ const OnboardingCardLocationCoords: React.FC = () => {
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>Where do you live?</IonCardTitle>
-        <IonText>
-          Refresh uses your coordinates to show nearby matches. Your profile shows a location label,
-          and you control how specific it is.
-        </IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
           <IonButton expand="block" onClick={shareLocation}>
-            Use my location
+            {copy.useLocation}
           </IonButton>
           <IonButton expand="block" fill="outline" onClick={openCitySelector}>
-            Choose my city
+            {copy.chooseCity}
           </IonButton>
         </IonRow>
         {coordsSet && (
           <IonNote style={{ textAlign: 'center' }}>
-            Coordinates saved. You can edit your location label on the next step.
+            {copy.coordsSaved}
           </IonNote>
         )}
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
+          {ONBOARDING_COPY.common.back}
         </IonButton>
         <IonButton onClick={declineCoordinates}>
-          Don’t share my location
+          {copy.dontShare}
         </IonButton>
       </IonRow>
     </IonCard>

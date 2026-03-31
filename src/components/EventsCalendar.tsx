@@ -25,7 +25,7 @@ import {
 } from '@ionic/react';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { calendarNumber, filter as filterIcon } from 'ionicons/icons';
+import { calendarNumber, filter as filterIcon, star, starOutline } from 'ionicons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCommentDots } from '@fortawesome/pro-regular-svg-icons/faCommentDots';
 import moment, { type Moment } from 'moment';
@@ -41,6 +41,7 @@ import CommunityProfileModal from './CommunityProfileModal';
 import EventReportModal from './EventReportModal';
 import EventFiltersModal from './EventFiltersModal';
 import { Preferences } from '@capacitor/preferences';
+import { useInterestEvent, useUninterestEvent } from '../hooks/api/interests';
 
 import './EventsCalendar.css';
 
@@ -125,6 +126,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const [calendarMonth, setCalendarMonth] = useState<Moment>(clampToRange(today).clone().startOf('month'));
   const [selectedDate, setSelectedDate] = useState<Date>(clampToRange(today).toDate());
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedEventInterested, setSelectedEventInterested] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [presentEventFiltersModal, dismissEventFiltersModal] = useIonModal(EventFiltersModal, {
     getInitialFilters: () => eventFiltersRef.current,
@@ -155,6 +157,8 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const [presentHostPopover, dismissHostPopover] = useIonPopover(HostPopover, {
     onDismiss: () => dismissHostPopover(),
   });
+  const interestEvent = useInterestEvent();
+  const uninterestEvent = useUninterestEvent();
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, RefreshEvent[]>();
@@ -202,6 +206,9 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   }, [eventsForSelectedDate, selectedEventId]);
 
   const selectedEvent = eventsForSelectedDate.find((event) => event.id === selectedEventId) ?? null;
+  useEffect(() => {
+    setSelectedEventInterested(Boolean(selectedEvent?.interested));
+  }, [selectedEvent?.id, selectedEvent?.interested]);
   const selectedEventType = selectedEvent?.event_type ? formatEventType(selectedEvent.event_type) : null;
   const safeExternalLink: string | undefined = selectedEvent?.external_link ?? undefined;
   const eventAnonymous = Boolean(selectedEvent?.anonymous);
@@ -296,6 +303,25 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const isWeekView = viewMode === 'week';
 
   const handleOpenCalendar = () => openEventsCalendar();
+  const handleInterestEvent = async () => {
+    if (!selectedEvent?.id) return;
+    setSelectedEventInterested(true);
+    try {
+      await interestEvent.mutateAsync(selectedEvent.id);
+    } catch (error) {
+      setSelectedEventInterested(false);
+    }
+  };
+
+  const handleUninterestEvent = async () => {
+    if (!selectedEvent?.id) return;
+    setSelectedEventInterested(false);
+    try {
+      await uninterestEvent.mutateAsync(selectedEvent.id);
+    } catch (error) {
+      setSelectedEventInterested(true);
+    }
+  };
   const triggerNode = renderTrigger ? renderTrigger(handleOpenCalendar) : (
     <IonRow className="events-calendar-trigger">
       <IonButton fill="outline" color="primary" onClick={handleOpenCalendar}>
@@ -494,6 +520,26 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                 ) : null}
                 {selectedEvent.external_registration_required && (
                   <IonText color="secondary">External registration required.</IonText>
+                )}
+                {selectedEventInterested ? (
+                  <IonButton
+                    fill="outline"
+                    color="warning"
+                    onClick={handleUninterestEvent}
+                    disabled={interestEvent.isPending || uninterestEvent.isPending}
+                  >
+                    <IonIcon icon={star} slot="start" />
+                    Interested
+                  </IonButton>
+                ) : (
+                  <IonButton
+                    fill="outline"
+                    onClick={handleInterestEvent}
+                    disabled={interestEvent.isPending || uninterestEvent.isPending}
+                  >
+                    <IonIcon icon={starOutline} slot="start" />
+                    Interested in this event
+                  </IonButton>
                 )}
                 {safeExternalLink && (
                   <IonButton fill="outline" target="_blank" rel="noreferrer" href={safeExternalLink}>

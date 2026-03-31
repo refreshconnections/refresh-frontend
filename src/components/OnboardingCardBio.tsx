@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 import './CantAccessCard.css';
@@ -20,6 +21,7 @@ import { useSwiper } from 'swiper/react';
 
 
 const OnboardingCardBio: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.bio;
 
   const [bio, setBio] = useState<string | null>(null);
   const swiper = useSwiper();
@@ -52,8 +54,8 @@ const OnboardingCardBio: React.FC = () => {
   return (
     <IonCard className="onboarding-slide ">
       <IonCardContent>
-        <IonCardTitle>You're just about done!</IonCardTitle>
-        <IonText>Anything else you want to tell people? Fill out the bio section! This is free space for you to say whatever you want about yourself (you know, within reason). Update this at any time. It will be shown front and center on your profile!</IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem>
           <IonTextarea value={bio}
             name="bio"
@@ -66,8 +68,8 @@ const OnboardingCardBio: React.FC = () => {
             />
         </IonItem>
         <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-        <IonButton disabled={bio == null || bio.length < 5} onClick={updateProfile} >Next</IonButton>
+        <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+        <IonButton disabled={bio == null || bio.length < 5} onClick={updateProfile} >{ONBOARDING_COPY.common.next}</IonButton>
       </IonRow>
       </IonCardContent>
     </IonCard>

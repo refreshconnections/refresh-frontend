@@ -102,6 +102,42 @@ export function createIonicMock() {
   const stub = () => (props: any) =>
     React.createElement('div', props, props.children);
 
+  const buttonStub = () => ({ children, ...props }: any) =>
+    React.createElement('button', { type: 'button', ...props }, children);
+
+  const inputStub = () => ({ value, onIonInput, onChange, children, ...props }: any) =>
+    React.createElement('input', {
+      ...props,
+      value: value ?? '',
+      onChange: (event: any) => {
+        onChange?.(event);
+        onIonInput?.({ detail: { value: event.target.value } });
+      },
+    }, children);
+
+  const textareaStub = () => ({ value, onIonInput, onChange, children, ...props }: any) =>
+    React.createElement('textarea', {
+      ...props,
+      value: value ?? '',
+      onChange: (event: any) => {
+        onChange?.(event);
+        onIonInput?.({ detail: { value: event.target.value } });
+      },
+    }, children);
+
+  const selectStub = () => ({ value, onIonChange, onChange, children, ...props }: any) =>
+    React.createElement('select', {
+      ...props,
+      value: value ?? '',
+      onChange: (event: any) => {
+        onChange?.(event);
+        onIonChange?.({ detail: { value: event.target.value } });
+      },
+    }, children);
+
+  const optionStub = () => ({ children, ...props }: any) =>
+    React.createElement('option', props, children);
+
   const stubWithId = (testId: string) => (props: any) =>
     React.createElement(
       'div',
@@ -114,13 +150,16 @@ export function createIonicMock() {
 
   return {
     IonAlert: stub(),
-    IonButton: stub(),
+    IonApp: stub(),
+    IonButton: buttonStub(),
     IonCard: stub(),
+    IonCardSubtitle: stub(),
     IonCardTitle: stub(),
     IonCol: stub(),
     IonContent: stub(),
     IonFab: stub(),
-    IonFabButton: stub(),
+    IonFabButton: buttonStub(),
+    IonFabList: stub(),
     IonGrid: stubWithId('ion-grid'),
     IonIcon: stub(),
     IonInfiniteScroll: ({ onIonInfinite, children, ...rest }: any) => {
@@ -143,10 +182,10 @@ export function createIonicMock() {
     IonList: stub(),
     IonItem: stub(),
     IonLabel: stub(),
-    IonInput: stub(),
-    IonTextarea: stub(),
-    IonSelect: stub(),
-    IonSelectOption: stub(),
+    IonInput: inputStub(),
+    IonTextarea: textareaStub(),
+    IonSelect: selectStub(),
+    IonSelectOption: optionStub(),
     IonToggle: stub(),
     IonSegment: stub(),
     IonSegmentButton: stub(),

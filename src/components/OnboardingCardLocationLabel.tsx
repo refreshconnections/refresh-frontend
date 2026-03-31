@@ -14,10 +14,12 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
 const OnboardingCardLocationLabel: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.locationLabel;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [location, setLocation] = useState('');
@@ -46,32 +48,30 @@ const OnboardingCardLocationLabel: React.FC = () => {
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>Location shown on your profile</IonCardTitle>
+        <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>
           {hasCoords
-            ? "We’ll use your location to show nearby matches. This is the location label other members will see."
-            : "You chose not to share your location with the app, but you can still add a location label to your profile for other members to see."}
+            ? copy.withCoords
+            : copy.withoutCoords}
         </IonText>
         <IonItem>
-          <IonLabel position="stacked">Location label</IonLabel>
+          <IonLabel position="stacked">{copy.label}</IonLabel>
           <IonInput
             value={location}
-            placeholder="City, region, or neighborhood"
+            placeholder={copy.placeholder}
             autoCapitalize="words"
             maxlength={40}
             onIonInput={(event) => setLocation(event.detail.value ?? '')}
           />
         </IonItem>
-        <IonNote>
-          You can keep this broad (like a state or country even) or more specific (like your city) - but never share your exact address!
-        </IonNote>
+        <IonNote>{copy.note}</IonNote>
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
+          {ONBOARDING_COPY.common.back}
         </IonButton>
         <IonButton onClick={saveAndContinue} disabled={!location.trim()}>
-          Next
+          {ONBOARDING_COPY.common.next}
         </IonButton>
       </IonRow>
     </IonCard>

@@ -14,6 +14,5 @@ export function useGetMegathreads(search: string) {
   return useQuery({
     queryKey: ['megathreads', search],
     queryFn: () => getMegathreadsFn(search),
-    enabled: !!search,
   });
 }

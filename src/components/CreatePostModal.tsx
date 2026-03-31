@@ -17,8 +17,9 @@ import { faImage } from "@fortawesome/pro-solid-svg-icons/faImage";
 import { faTrash } from "@fortawesome/pro-solid-svg-icons/faTrash";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
-import { faCommentDots, faHeart, faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
+import { faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
+import { useGetCurrentModeration } from "../hooks/api/profiles/current-moderation";
 import { useGetSubmissionSummary } from "../hooks/api/refreshments/submission-summary";
 import { useGetAnnouncementSuggestions } from "../hooks/api/refreshments/announcement-suggestions";
 import CitySelectorModal from "./CitySelectorModal";
@@ -26,6 +27,7 @@ import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
 import { informationCircle } from "ionicons/icons";
 import ContactDetailsPopover from "./ContactDetailsPopover";
 import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
+import PostSuggestionMini from "./PostSuggestionMini";
 
 
 
@@ -84,7 +86,33 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const currentStreak = useGetCurrentStreak().data;
 
     const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
+    const moderation = useGetCurrentModeration().data;
     const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate);
+    const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
+    const commentingPausedUntil = moderation?.commenting_paused_until;
+    const commentingPauseActive = Boolean(
+        commentingPausedUntil &&
+        moment(commentingPausedUntil).isValid() &&
+        moment(commentingPausedUntil).isAfter(moment())
+    );
+    const commentingPausedLabel = commentingPauseActive
+        ? moment(commentingPausedUntil).format('MMM D [at] h:mm A')
+        : null;
+    const moderationSubmissionBlocked = Boolean(
+        moderatorDeactivated ||
+        globalCurrentProfile?.deactivated_profile ||
+        commentingPauseActive ||
+        (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+    );
+    const moderationSubmissionMessage = moderatorDeactivated
+        ? 'Your account is currently suspended from posting.'
+        : globalCurrentProfile?.deactivated_profile
+            ? 'You need an active account to submit a post.'
+            : commentingPauseActive
+                ? `Your posting is temporarily paused until ${commentingPausedLabel}.`
+                : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                    ? 'Your account needs to be reviewed before you can submit a post.'
+                    : null;
     const submissionSummary = useGetSubmissionSummary().data;
     const totalSubmissions =
         (submissionSummary?.totals?.approved ?? 0)
@@ -462,7 +490,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
 
 
-        if (requestSupportive && (bar == "mingle" || bar == "family")) {
+        if (requestSupportive && (bar == "mingle" || bar == "families")) {
             form_data.comment_instructions = "Supportive comments only please!"
         }
 
@@ -594,6 +622,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
             e.preventDefault();
         }
 
+        const hasCompleteEventDetails = !!(eventType && eventStart && eventEnd);
+
         if (!skipWarning && bar === "events") {
             const missing: string[] = [];
             if (!eventType) missing.push("Event type");
@@ -605,7 +635,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
             }
         }
 
-        if (bar === "events") {
+        if (bar === "events" && hasCompleteEventDetails) {
             const startMoment = moment(eventStart);
             const endMoment = moment(eventEnd);
             if (!startMoment.isValid() || !endMoment.isValid()) {
@@ -626,26 +656,11 @@ const CreatePostModal: React.FC<Props> = (props) => {
             }
         }
 
-        if (bar === "events" && recurrenceType !== 'none') {
-            const subscriptionLevel = globalCurrentProfile?.subscription_level;
-            const maxRecurringEvents = isPro(subscriptionLevel)
-                ? 10
-                : isCommunityPlus(subscriptionLevel)
-                    ? 5
-                    : 1;
+        if (bar === "events" && hasCompleteEventDetails && recurrenceType !== 'none') {
             const trimmedCustomDates = recurrenceCustomDates
                 .map((date) => (date ?? '').trim())
                 .filter((date) => date);
             const recurrenceErrors: string[] = [];
-            if (maxRecurringEvents <= 1) {
-                recurrenceErrors.push("Recurring events are available for Community+ and Pro members.");
-            }
-            if (recurrenceType !== 'custom' && recurrenceCount > maxRecurringEvents) {
-                recurrenceErrors.push(`Recurring events are limited to ${maxRecurringEvents} total events.`);
-            }
-            if (recurrenceType === 'custom' && (trimmedCustomDates.length + 1) > maxRecurringEvents) {
-                recurrenceErrors.push(`Recurring events are limited to ${maxRecurringEvents} total events.`);
-            }
             if (recurrenceType === 'custom' && trimmedCustomDates.length === 0) {
                 recurrenceErrors.push("Add at least one additional date.");
             }
@@ -982,6 +997,14 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 )}
                 {!isOldEnoughForPosts ? (
                     <SubmissionAgeGateCard noun="post" onUpgrade={() => navigateTo("/store")} />
+                ) : moderationSubmissionBlocked ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonText className="ion-text-center">
+                            <p>{moderationSubmissionMessage}</p>
+                            <p>Check your Activity for moderation details and our guidelines.</p>
+                        </IonText>
+                        <IonButton onClick={() => navigateTo("/activity")}>View Activity</IonButton>
+                    </IonCard>
                 ) : (
                     <>
                         {(isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2)) ? (
@@ -1024,23 +1047,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonRow className="post-suggestions-row">
                                         {suggestionItems.map((post: any) => (
                                             <IonCol key={post.id} size={suggestionColSize}>
-                                                <IonCard
-                                                    className="post-suggestion-mini"
+                                                <PostSuggestionMini
+                                                    post={post}
                                                     onClick={() => handleSuggestionClick(post.id)}
-                                                >
-                                                    <div className={`post-suggestion-banner category-${post.category || 'refreshments'}`} />
-                                                    <IonCardContent className="post-suggestion-body">
-                                                        <IonText className="post-suggestion-title">{post.title}</IonText>
-                                                        <IonRow className="post-suggestion-meta">
-                                                            <IonText className="post-suggestion-meta-item">
-                                                                <FontAwesomeIcon icon={faHeart} /> {post.like_count ?? 0}
-                                                            </IonText>
-                                                            <IonText className="post-suggestion-meta-item">
-                                                                <FontAwesomeIcon icon={faCommentDots} /> {post.comment_count ?? 0}
-                                                            </IonText>
-                                                        </IonRow>
-                                                    </IonCardContent>
-                                                </IonCard>
+                                                />
                                             </IonCol>
                                         ))}
                                     </IonRow>

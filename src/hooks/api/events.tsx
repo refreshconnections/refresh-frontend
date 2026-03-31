@@ -28,6 +28,7 @@ export type RefreshEvent = {
   username?: string | null
   profile_image?: string | null
   settings_community_profile?: boolean
+  interested?: boolean
 }
 
 export type EventFilters = {

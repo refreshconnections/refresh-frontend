@@ -26,10 +26,12 @@ import CaptionsSelect from './CaptionsSelect';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { decode } from 'base64-arraybuffer';
 import StayPausedModal from './StayPausedModal';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 const OnboardingCardPictures: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.pictures;
 
   const swiper = useSwiper();
 
@@ -141,9 +143,9 @@ const OnboardingCardPictures: React.FC = () => {
   <>
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>Now add a couple more pictures!</IonCardTitle>
+        <IonCardTitle>{copy.title}</IonCardTitle>
 
-        <IonText>You can add a bunch more later. Add two, and a caption for each, now!</IonText>
+        <IonText>{copy.body}</IonText>
         <IonItem className="no-bottom-line" style={{ overflow: "auto" }}>
           {data ?
             <IonGrid className="pics">
@@ -156,7 +158,7 @@ const OnboardingCardPictures: React.FC = () => {
                       <img alt="Picture 2" src={data.pic2} onError={(e) => onImgError(e)} />
                       : <img alt="Picture 2 null" src={"../static/img/null.png"} />
                     }
-                    <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic2")}><FontAwesomeIcon icon={faPenToSquare}/> Upload</IonButton>
+                    <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic2")}><FontAwesomeIcon icon={faPenToSquare}/> {copy.upload}</IonButton>
                   </div>
                 </IonCol>
                 <IonCol size="12" >
@@ -172,7 +174,7 @@ const OnboardingCardPictures: React.FC = () => {
                       <img alt="Picture 3" src={data.pic3} onError={(e) => onImgError(e)} />
                       : <img alt="Picture 3 null" src={"../static/img/null.png"} />
                     }
-                    <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic3")}><FontAwesomeIcon icon={faPenToSquare}/> Upload</IonButton>
+                    <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic3")}><FontAwesomeIcon icon={faPenToSquare}/> {copy.upload}</IonButton>
                   </div>
                 </IonCol>
                 <IonCol size="12">
@@ -191,12 +193,12 @@ const OnboardingCardPictures: React.FC = () => {
 
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-        <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic2 !== null && data.pic3 !== null ? false : true}>Next</IonButton>
+        <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+        <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic2 !== null && data.pic3 !== null ? false : true}>{ONBOARDING_COPY.common.next}</IonButton>
       </IonRow>
     </IonCard>
     <IonRow className="notyet">
-    <IonButton fill="clear" onClick={() => stayPausedOpen()}>Don't feel like adding pictures yet?</IonButton>
+    <IonButton fill="clear" onClick={() => stayPausedOpen()}>{copy.skip}</IonButton>
   </IonRow>
   </>
   )

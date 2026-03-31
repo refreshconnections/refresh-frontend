@@ -1,6 +1,7 @@
-import { AccordionGroupCustomEvent, IonAccordion, IonAccordionGroup, IonAlert, IonAvatar, IonBadge, IonButton, IonContent, IonFab, IonFabButton, IonIcon, IonItem, IonLabel, IonList, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, IonText, RefresherEventDetail, useIonModal } from '@ionic/react';
+import { AccordionGroupCustomEvent, IonAccordion, IonAccordionGroup, IonAvatar, IonBadge, IonButton, IonContent, IonFab, IonFabButton, IonIcon, IonItem, IonLabel, IonList, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, IonText, RefresherEventDetail, useIonModal } from '@ionic/react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getChats, getGroupChatInvites, getGroupChats, getMessages, getMutualConnections, getWebsocketUrl, onImgError } from '../hooks/utilities';
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import './Chats.css';
 import TextModal from '../components/TextModal';
 
@@ -32,7 +33,7 @@ const OldChats: React.FC = () => {
   const [groupChatInvites, setGroupChatInvites] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [currSegment, setCurrSegment] = useState<"chats" | "groups">("chats");
-  const [showStoreAlert, setShowStoreAlert] = useState(false);
+  const presentUpsellAlert = useUpsellAlert();
 
   // const [loading, setLoading] = useState(true);
   const [error, setError] = useState<null | string>(null);
@@ -522,23 +523,8 @@ const OldChats: React.FC = () => {
                   : currentUserProfile.subscription_level == "pro" && !currentUserProfile.settings_create_groups ?
                     <></>
                     :
-                    <IonFabButton onClick={() => setShowStoreAlert(true)}>
+                    <IonFabButton onClick={() => presentUpsellAlert({ header: 'Become a Refresh Pro to start groups!' })}>
                       <FontAwesomeIcon icon={faMessagePlus} />
-                      <IonAlert
-                        isOpen={showStoreAlert}
-                        onDidDismiss={() => setShowStoreAlert(false)}
-                        header="Become a Refresh Pro to start groups!"
-                        buttons={[{
-                          text: "Not now",
-                          role: 'destructive'
-                        },
-                        {
-                          text: 'Get Pro!',
-                          handler: async () => {
-                            window.location.pathname = "/store"
-                          }
-                        }]}
-                      />
                     </IonFabButton>}
               </IonFab>
 
