@@ -25,7 +25,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { apiClient } from '../hooks/api/api-client';
-import { onImgError, updateCurrentUserProfile, uploadCommunityProfilePhoto } from '../hooks/utilities';
+import { normalizeLocalMediaUrl, onImgError, updateCurrentUserProfile, uploadCommunityProfilePhoto } from '../hooks/utilities';
 import CroppedImageModal from './CroppedImageModal';
 import EditUsernameModal from './EditUsernameModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
@@ -52,8 +52,8 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const [imageName, setImageName] = useState<string | null>(null);
   const [picDb, setPicDb] = useState<string>('community_profile_pic');
 
-  const personalPhoto = currentProfile?.pic1_main ?? null;
-  const communityPhoto = communityProfile?.community_profile_pic ?? null;
+  const personalPhoto = normalizeLocalMediaUrl(currentProfile?.pic1_main) ?? null;
+  const communityPhoto = normalizeLocalMediaUrl(communityProfile?.community_profile_pic) ?? null;
   const previewPhoto = usePersonalPhoto ? personalPhoto : (communityPhoto || personalPhoto);
   const photoButtonLabel = communityPhoto ? 'Change community photo' : 'Upload community photo';
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
@@ -172,11 +172,11 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
           <IonCardContent className="card-grid">
             <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                {previewPhoto ? (
-                  <img alt="Community profile" src={previewPhoto} onError={onImgError} />
-                ) : (
-                  <img alt="Community profile placeholder" src={"../static/img/null.png"} />
-                )}
+                <img
+                  alt="Community profile"
+                  src={previewPhoto || '../static/img/refresh-flower-blue.png'}
+                  onError={(e) => onImgError(e)}
+                />
               </div>
             </IonItem>
             <IonItem lines="none" className="community-profile-item">

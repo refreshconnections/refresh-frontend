@@ -244,10 +244,11 @@ const ListAccordion: React.FC<ListAccordionProps> = ({
               )
             )}
             <IonItem lines="none" style={{ '--background': 'var(--ion-color-white)', marginTop: '4px' } as React.CSSProperties}>
-              <IonLabel>Show in filter bar</IonLabel>
+              <IonLabel>Show in organizer bar</IonLabel>
               <IonToggle
                 slot="end"
-                checked={!hidden}
+                checked={members.length > 0 && !hidden}
+                disabled={members.length === 0}
                 onIonChange={e => onToggleHidden(!e.detail.checked)}
               />
             </IonItem>

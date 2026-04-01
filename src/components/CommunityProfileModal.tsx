@@ -168,7 +168,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const fallbackPersonalPhoto =
     showRestricted || !data?.connect_enabled ? undefined : normalizeLocalMediaUrl(data?.personal_photo);
   const resolvedDisplayPhoto = displayPhoto || fallbackPersonalPhoto;
-  const fallbackLogo = showRestricted ? '../static/img/null.png' : '../static/img/refresh-flower-blue.png';
+  const fallbackLogo = showRestricted ? undefined : '../static/img/refresh-flower-blue.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(data?.connect_enabled);
   const canSendLikeFromCommunity = viewerConnect && otherConnect && !isConnected && !isBlocked && !isUnmatched && (hasIncomingLike || !hasOutgoingLike);
@@ -426,6 +426,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                           <img
                             alt="Profile placeholder"
                             src={fallbackLogo}
+                            onError={(e) => onImgError(e)}
                             style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', marginRight: '12px' }}
                           />
                         )}

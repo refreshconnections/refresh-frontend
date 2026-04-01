@@ -6,6 +6,8 @@ import { IonApp } from '@ionic/react';
 
 const {
   routerPush,
+  routerGoBack,
+  routerCanGoBack,
   addComment,
   addToHiddenAuthors,
   addToHiddenPosts,
@@ -21,6 +23,8 @@ const {
   invalidateQueries,
 } = vi.hoisted(() => ({
   routerPush: vi.fn(),
+  routerGoBack: vi.fn(),
+  routerCanGoBack: vi.fn(() => true),
   addComment: vi.fn(),
   addToHiddenAuthors: vi.fn(),
   addToHiddenPosts: vi.fn(),
@@ -45,8 +49,8 @@ vi.mock('@ionic/react', async () => {
     useIonModal: () => [mockPresentModal, mockDismissModal],
     useIonRouter: () => ({
       push: routerPush,
-      goBack: vi.fn(),
-      canGoBack: vi.fn(() => true),
+      goBack: routerGoBack,
+      canGoBack: routerCanGoBack,
     }),
   };
 });
@@ -720,5 +724,31 @@ describe('OpenedPost', () => {
 
     expect(openExternalUrl).toHaveBeenCalledWith('https://example.com/disclaimer');
     expect(openExternalUrl).toHaveBeenCalledWith('https://example.com/rules');
+  });
+
+  it('calls router.goBack() when the back button is pressed and history exists', async () => {
+    routerCanGoBack.mockReturnValue(true);
+    const { container } = renderOpenedPost();
+
+    await screen.findByText('Spring picnic');
+
+    const backButton = container.querySelector('.very-top ion-fab-button') as HTMLElement;
+    fireEvent.click(backButton);
+
+    expect(routerGoBack).toHaveBeenCalledTimes(1);
+    expect(routerPush).not.toHaveBeenCalledWith('/community', 'back');
+  });
+
+  it('falls back to /community when the back button is pressed with no history', async () => {
+    routerCanGoBack.mockReturnValue(false);
+    const { container } = renderOpenedPost();
+
+    await screen.findByText('Spring picnic');
+
+    const backButton = container.querySelector('.very-top ion-fab-button') as HTMLElement;
+    fireEvent.click(backButton);
+
+    expect(routerGoBack).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith('/community', 'back');
   });
 });

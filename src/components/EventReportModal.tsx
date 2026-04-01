@@ -5,6 +5,10 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
   IonTextarea,
   IonTitle,
   IonToolbar,
@@ -18,6 +22,7 @@ type EventReportModalProps = {
 };
 
 const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle, onDismiss }) => {
+  const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -26,7 +31,7 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
     if (sending) return;
     setSending(true);
     const subject = `[Event Report] ${eventTitle} (${eventId})`;
-    const body = `Event title: ${eventTitle}\nEvent id: ${eventId}\n\nDetails:\n${details || 'No additional details provided.'}`;
+    const body = `Event title: ${eventTitle}\nEvent id: ${eventId}\nReason: ${reason}\n\nDetails:\n${details}`;
     await sendAnEmail('report@refreshconnections.com', subject, body);
     setSending(false);
     setShowAlert(true);
@@ -35,7 +40,7 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
   return (
     <>
       <IonHeader>
-        <IonToolbar className="modal-title">
+        <IonToolbar color="danger" className="modal-title">
           <IonTitle>Report event</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onDismiss}>Cancel</IonButton>
@@ -49,22 +54,42 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
             setShowAlert(false);
             onDismiss();
           }}
-          header="Thanks for the report."
-          subHeader="The Refresh team will check this out."
+          header="Thanks for helping our community."
+          subHeader="The Refresh team will check this out ASAP!"
           buttons={['OK']}
         />
-        <IonTextarea
-          value={details}
-          onIonInput={(event) => setDetails(event.detail.value ?? '')}
-          placeholder="Tell us what’s wrong with this event (optional)."
-          autoGrow
-          rows={6}
-        />
+        <IonItem>
+          <IonLabel position="stacked">Reason</IonLabel>
+          <IonSelect
+            aria-label="Reason"
+            placeholder="What's wrong with this event?"
+            onIonChange={(e) => setReason(e.detail.value)}
+          >
+            <IonSelectOption value="Covid Minimizing">Covid minimizing</IonSelectOption>
+            <IonSelectOption value="Safety Shaming">Safety shaming</IonSelectOption>
+            <IonSelectOption value="Disinformation">Disinformation</IonSelectOption>
+            <IonSelectOption value="Hate/harassment">Hate/harassment</IonSelectOption>
+            <IonSelectOption value="Scams">Scams</IonSelectOption>
+            <IonSelectOption value="Offensive material">Offensive material</IonSelectOption>
+            <IonSelectOption value="Other">Other</IonSelectOption>
+          </IonSelect>
+        </IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Details</IonLabel>
+          <IonTextarea
+            value={details}
+            onIonInput={(e) => setDetails(e.detail.value ?? '')}
+            placeholder="Add specifics for the moderation team to check out."
+            autoGrow
+            autoCapitalize="sentences"
+            rows={5}
+          />
+        </IonItem>
         <IonButton
           expand="block"
           className="ion-margin-top"
           onClick={handleSubmit}
-          disabled={sending}
+          disabled={!reason || !details.trim() || sending}
         >
           {sending ? 'Sending...' : 'Submit report'}
         </IonButton>

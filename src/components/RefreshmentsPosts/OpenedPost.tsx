@@ -561,7 +561,7 @@ const OpenedPost: React.FC = () => {
                             <IonRefresherContent></IonRefresherContent>
                         </IonRefresher>
                         <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light" onClick={() => backToAllPosts()}>
+                            <IonFabButton color="light" onClick={() => { backToAllPosts(); router.canGoBack() ? router.goBack() : router.push('/community', 'back'); }}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
@@ -775,7 +775,7 @@ const OpenedPost: React.FC = () => {
                                 : <></>}
                             {!staticContentPost?.comments_deactivated &&
                                 <>
-                                    <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity} />
+                                    <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity} onViewThread={(id) => setForceShowRepliesFor(prev => { const next = new Set(prev); next.add(id); return next; })} isMegathread={!!staticContentPost?.megathread} />
                                     {!comments?.isPending && commentsNotShownCount > 0 ?
                                         <>
                                             {showSidenotes ?
@@ -871,6 +871,7 @@ const OpenedPost: React.FC = () => {
                                                 : <></>}
                                             <IonTextarea value={commentInput}
                                                 className="comment-creator"
+                                                color="black"
                                                 name="comment_input"
                                                 onIonInput={e => setCommentInput(e.detail.value!)}
                                                 disabled={commentingBlocked}
@@ -949,7 +950,7 @@ const OpenedPost: React.FC = () => {
                 (staticContentPostLoading) ?
                     <IonContent>
                         <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light">
+                            <IonFabButton color="light" onClick={() => router.canGoBack() ? router.goBack() : router.push('/community', 'back')}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
@@ -957,7 +958,7 @@ const OpenedPost: React.FC = () => {
                     :
                     <IonContent>
                         <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community`} routerDirection="back" color="light">
+                            <IonFabButton color="light" onClick={() => router.canGoBack() ? router.goBack() : router.push('/community', 'back')}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>

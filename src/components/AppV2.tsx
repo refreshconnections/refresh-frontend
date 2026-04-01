@@ -15,7 +15,7 @@ import {
   IonToast,
   setupIonicReact
 } from '@ionic/react';
-import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, flashOutline as flash } from 'ionicons/icons';
+import { star, flowerOutline as flowerIcon, heartOutline as heartIcon, personOutline as personIcon, chatbubblesOutline as chatbubble, cafeOutline as cafe, starOutline } from 'ionicons/icons';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Route, Redirect, useParams, useLocation } from 'react-router-dom';
 import Likes from '../pages/Likes';
@@ -902,7 +902,7 @@ const AppV2: React.FC = () => {
               <IonLabel>Refreshments</IonLabel>
             </IonTabButton>
             <IonTabButton tab="change" href="/hub">
-              <IonIcon icon={flash} />
+              <IonIcon icon={starOutline} />
               <IonLabel>Hub</IonLabel>
             </IonTabButton>
             <IonTabButton tab="person" href="/me">

@@ -50,6 +50,7 @@ const Settings: React.FC = () => {
   const [fontZoom, setFontZoom] = useState<'auto' | 'default' | 'large' | 'xl' | null>(null);
   const [reduceAnimations, setReduceAnimations] = useState<boolean>(false);
   const [chatOrganizer, setChatOrganizer] = useState<boolean>(true);
+  const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
@@ -398,6 +399,9 @@ const Settings: React.FC = () => {
           return;
         }
         setChatOrganizer(chatOrganizerPref !== 'false');
+        const { value: chatOrganizerShowHiddenPref } = await Preferences.get({ key: 'chat_organizer_show_hidden' });
+        if (cancelled) return;
+        setChatOrganizerShowHidden(chatOrganizerShowHiddenPref === 'true');
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
@@ -604,6 +608,19 @@ const Settings: React.FC = () => {
                   window.dispatchEvent(new CustomEvent('chat_organizer_changed', { detail: val }));
                 }}
                 checked={chatOrganizer}
+              />
+            </IonItem>
+            <IonItem>
+              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show hidden chats in organizer</span></IonLabel>
+              <IonToggle slot="end"
+                disabled={!chatOrganizer}
+                checked={chatOrganizer && chatOrganizerShowHidden}
+                onIonChange={async e => {
+                  const val = e.detail.checked;
+                  setChatOrganizerShowHidden(val);
+                  await Preferences.set({ key: 'chat_organizer_show_hidden', value: String(val) });
+                  window.dispatchEvent(new CustomEvent('chat_organizer_show_hidden_changed', { detail: val }));
+                }}
               />
             </IonItem>
             <IonItem>

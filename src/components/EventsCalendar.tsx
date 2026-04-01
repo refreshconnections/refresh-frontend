@@ -8,9 +8,7 @@ import {
   IonCardTitle,
   IonContent,
   IonIcon,
-  IonItem,
   IonLabel,
-  IonList,
   IonModal,
   IonRow,
   IonSpinner,
@@ -19,6 +17,7 @@ import {
   IonTitle,
   IonHeader,
   IonChip,
+  useIonActionSheet,
   useIonPopover,
   useIonModal,
   useIonRouter,
@@ -27,7 +26,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { calendarNumber, filter as filterIcon, star, starOutline } from 'ionicons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCommentDots } from '@fortawesome/pro-regular-svg-icons/faCommentDots';
+import { faHandWave } from '@fortawesome/pro-solid-svg-icons/faHandWave';
 import moment, { type Moment } from 'moment';
 import type { RefreshEvent } from '../hooks/api/events';
 import { useGetEvents, DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, EventFilters } from '../hooks/api/events';
@@ -36,6 +35,7 @@ import { getAvatarDisplay, isCommunityPlus, onImgError } from '../hooks/utilitie
 import { useSheetModal } from '../hooks/useSheetModal';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 
+import EllipsisMenuButton from './EllipsisMenuButton';
 import CreateEventModal from './CreateEventModal';
 import CommunityProfileModal from './CommunityProfileModal';
 import EventReportModal from './EventReportModal';
@@ -88,6 +88,12 @@ const ATTENDEE_PRECAUTION_LABELS: Record<string, string> = {
   precautions_only: 'Covid conscientious only',
   precautions_preferred: 'Covid conscientious preferred',
   open: 'Open to everyone',
+};
+
+const ATTENDEE_PRECAUTION_COLORS: Record<string, string> = {
+  precautions_only: 'warning',
+  precautions_preferred: 'tertiary',
+  open: 'success',
 };
 
 type EventsCalendarProps = {
@@ -145,6 +151,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     onDismiss: (data?: { submitted?: boolean }) => {
       if (data?.submitted) {
         queryClient.invalidateQueries({ queryKey: ['events'] });
+        queryClient.invalidateQueries({ queryKey: ['submitted-events'] });
       }
       dismissCreateEventModal();
     },
@@ -218,6 +225,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     authorConnect: selectedEvent?.settings_community_profile,
   });
 
+  const [presentEventActionSheet] = useIonActionSheet();
   const [presentEventReport, dismissEventReport] = useIonModal(EventReportModal, {
     eventId: selectedEvent?.id ?? 0,
     eventTitle: selectedEvent?.name ?? 'Event',
@@ -428,28 +436,120 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
               );
             })}
           </div>
-          <div className="calendar-event-list">
+          <div className="calendar-event-cards">
             {eventsLoading ? (
               <IonRow className="ion-justify-content-center">
                 <IonSpinner name="dots" />
               </IonRow>
             ) : eventsForSelectedDate.length ? (
-              <IonList>
-                {eventsForSelectedDate.map((event) => (
-                  <IonItem
-                    key={event.id}
-                    button
-                    detail
-                    className={`calendar-event-item ${selectedEventId === event.id ? 'calendar-event-item--selected' : ''}`}
-                    onClick={() => setSelectedEventId(event.id)}
-                  >
-                    <IonLabel>
-                      <h3>{event.name}</h3>
-                      <p>{moment(event.start_datetime).format('MMM D, h:mm A')}</p>
-                    </IonLabel>
-                  </IonItem>
-                ))}
-              </IonList>
+              eventsForSelectedDate.map((event) => {
+                const isExpanded = selectedEventId === event.id;
+                return (
+                  <IonCard key={event.id} className={`calendar-event-card ${isExpanded ? 'calendar-event-card--expanded' : ''}`}>
+                    <IonCardContent>
+                      <div className="calendar-event-card-toggle-row">
+                        <button
+                          type="button"
+                          className="calendar-event-card-toggle"
+                          onClick={() => setSelectedEventId(event.id)}
+                        >
+                          <span className="calendar-event-card-name">{event.name}</span>
+                          <span className="calendar-event-card-time">
+                            {moment(event.start_datetime).format('MMM D, h:mm A')} – {moment(event.end_datetime).format('h:mm A')}
+                          </span>
+                        </button>
+                        <IonButton
+                          fill="clear"
+                          size="small"
+                          className="calendar-event-star"
+                          onClick={isExpanded ? (selectedEventInterested ? handleUninterestEvent : handleInterestEvent) : undefined}
+                          disabled={interestEvent.isPending || uninterestEvent.isPending}
+                        >
+                          <IonIcon icon={isExpanded && selectedEventInterested ? star : starOutline} color={isExpanded && selectedEventInterested ? 'warning' : 'medium'} />
+                        </IonButton>
+                      </div>
+                      {isExpanded && (
+                        <div className="calendar-event-card-details">
+                          {!eventAnonymous && selectedEvent?.username && (
+                            <IonRow
+                              className="calendar-event-byline"
+                              onClick={() => eventProfilePresent({ cssClass: 'community-profile-modal' })}
+                            >
+                              <IonAvatar className={eventAvatarDisplay.className}>
+                                <img src={eventAvatarDisplay.src} onError={(e) => onImgError(e)} />
+                              </IonAvatar>
+                              <IonText>shared by {selectedEvent.username}</IonText>
+                              {selectedEvent?.can_answer_questions && (
+                                <IonButton
+                                  fill="clear"
+                                  size="small"
+                                  className="calendar-event-host-button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHostPopoverText("I can answer questions about this event! (I'm the host or know the host)");
+                                    presentHostPopover({ event: e.nativeEvent as Event });
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faHandWave} />
+                                </IonButton>
+                              )}
+                            </IonRow>
+                          )}
+                          {selectedEventType && <p className="calendar-event-type">{selectedEventType}</p>}
+                          <IonText className="calendar-event-description">
+                            {selectedEvent!.description || 'No description provided.'}
+                          </IonText>
+                          {selectedEvent!.attendee_precaution_preference ? (
+                            <IonChip color={ATTENDEE_PRECAUTION_COLORS[selectedEvent!.attendee_precaution_preference] ?? 'medium'}>
+                              <IonLabel>{ATTENDEE_PRECAUTION_LABELS[selectedEvent!.attendee_precaution_preference] ?? selectedEvent!.attendee_precaution_preference}</IonLabel>
+                            </IonChip>
+                          ) : null}
+                          {selectedEvent!.in_person_precautions?.length ? (
+                            <div className="calendar-precautions">
+                              {selectedEvent!.in_person_precautions.map((precaution) => (
+                                <IonChip key={precaution} color="medium">
+                                  <IonLabel>{formatPrecautionLabel(precaution)}</IonLabel>
+                                </IonChip>
+                              ))}
+                            </div>
+                          ) : null}
+                          {selectedEvent!.external_registration_required && (
+                            <IonText color="secondary" className="calendar-event-registration">External registration required.</IonText>
+                          )}
+                          {selectedEvent!.image && (
+                            <PhotoProvider bannerVisible={false}>
+                              <PhotoView src={selectedEvent!.image}>
+                                <img src={selectedEvent!.image} alt={selectedEvent!.name} className="calendar-event-image" onError={(e) => onImgError(e)} />
+                              </PhotoView>
+                            </PhotoProvider>
+                          )}
+                          <div className="calendar-event-actions">
+                            {safeExternalLink && (
+                              <IonButton fill="outline" size="small" target="_blank" rel="noreferrer" href={safeExternalLink}>
+                                Learn more
+                              </IonButton>
+                            )}
+                            {selectedEvent!.post && (
+                              <IonButton fill="outline" size="small" onClick={() => { setIsCalendarOpen(false); router.push(`/community/${selectedEvent!.post}`); }}>
+                                View post
+                              </IonButton>
+                            )}
+                          </div>
+                          <EllipsisMenuButton
+                            className="calendar-event-ellipsis-corner"
+                            onClick={() => presentEventActionSheet({
+                              buttons: [
+                                { text: 'Report event', role: 'destructive', handler: () => presentEventReport() },
+                                { text: 'Cancel', role: 'cancel' },
+                              ],
+                            })}
+                          />
+                        </div>
+                      )}
+                    </IonCardContent>
+                  </IonCard>
+                );
+              })
             ) : (
               <IonText color="medium">No events scheduled for this day.</IonText>
             )}
@@ -463,119 +563,6 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
               Filters
             </IonButton>
           </IonRow>
-          {selectedEvent && (
-            <IonCard className="calendar-event-detail">
-              <IonCardContent>
-                <IonCardTitle>{selectedEvent.name}</IonCardTitle>
-                {!eventAnonymous && selectedEvent?.username && (
-                  <IonRow
-                    className="calendar-event-byline"
-                    onClick={() =>
-                      eventProfilePresent({ cssClass: 'community-profile-modal' })
-                    }
-                  >
-                    <IonAvatar className={eventAvatarDisplay.className}>
-                      <img src={eventAvatarDisplay.src} onError={(e) => onImgError(e)} />
-                    </IonAvatar>
-                    <IonText>shared by {selectedEvent.username}</IonText>
-                    {selectedEvent?.can_answer_questions && (
-                      <IonButton
-                        fill="clear"
-                        size="small"
-                        className="calendar-event-host-button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setHostPopoverText(
-                            "I can answer questions about this event! (I'm the host or know the host)"
-                          );
-                          presentHostPopover({ event: event.nativeEvent as Event });
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faCommentDots} />
-                      </IonButton>
-                    )}
-                  </IonRow>
-                )}
-                {selectedEventType && <IonCardSubtitle>{selectedEventType}</IonCardSubtitle>}
-                <IonText color="medium">
-                  {moment(selectedEvent.start_datetime).format('MMMM D, h:mm A')} –{' '}
-                  {moment(selectedEvent.end_datetime).format('h:mm A')}
-                </IonText>
-                <IonText className="calendar-event-description">
-                  {selectedEvent.description || 'No description provided.'}
-                </IonText>
-                {selectedEvent.in_person_precautions?.length ? (
-                  <div className="calendar-precautions">
-                    {selectedEvent.in_person_precautions.map((precaution) => (
-                      <IonChip key={precaution}>
-                        <IonLabel>{formatPrecautionLabel(precaution)}</IonLabel>
-                      </IonChip>
-                    ))}
-                  </div>
-                ) : null}
-                {selectedEvent.attendee_precaution_preference ? (
-                  <IonChip color="secondary">
-                    <IonLabel>{ATTENDEE_PRECAUTION_LABELS[selectedEvent.attendee_precaution_preference] ?? selectedEvent.attendee_precaution_preference}</IonLabel>
-                  </IonChip>
-                ) : null}
-                {selectedEvent.external_registration_required && (
-                  <IonText color="secondary">External registration required.</IonText>
-                )}
-                {selectedEventInterested ? (
-                  <IonButton
-                    fill="outline"
-                    color="warning"
-                    onClick={handleUninterestEvent}
-                    disabled={interestEvent.isPending || uninterestEvent.isPending}
-                  >
-                    <IonIcon icon={star} slot="start" />
-                    Interested
-                  </IonButton>
-                ) : (
-                  <IonButton
-                    fill="outline"
-                    onClick={handleInterestEvent}
-                    disabled={interestEvent.isPending || uninterestEvent.isPending}
-                  >
-                    <IonIcon icon={starOutline} slot="start" />
-                    Interested in this event
-                  </IonButton>
-                )}
-                {safeExternalLink && (
-                  <IonButton fill="outline" target="_blank" rel="noreferrer" href={safeExternalLink}>
-                    Learn more
-                  </IonButton>
-                )}
-                {selectedEvent.post && (
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    onClick={() => {
-                      setIsCalendarOpen(false);
-                      router.push(`/community/${selectedEvent.post}`);
-                    }}
-                  >
-                    View post
-                  </IonButton>
-                )}
-                <IonButton
-                  fill="outline"
-                  size="small"
-                  color="medium"
-                  onClick={() => presentEventReport()}
-                >
-                  Report event
-                </IonButton>
-                {selectedEvent.image && (
-                  <PhotoProvider bannerVisible={false}>
-                    <PhotoView src={selectedEvent.image}>
-                      <img src={selectedEvent.image} alt={selectedEvent.name} className="calendar-event-image" />
-                    </PhotoView>
-                  </PhotoProvider>
-                )}
-              </IonCardContent>
-            </IonCard>
-          )}
         </IonContent>
       </IonModal>
     </>

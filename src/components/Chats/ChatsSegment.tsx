@@ -42,15 +42,30 @@ const ChatsSegment: React.FC<Props> = (props) => {
     const [search, setSearch] = useState<string>("");
     const [activeTab, setActiveTab] = useState<ActiveTab>('all');
     const [chatOrganizerEnabled, setChatOrganizerEnabled] = useState<boolean>(true);
+    const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
 
     useEffect(() => {
         Preferences.get({ key: 'chat_organizer' }).then(({ value }) => {
             setChatOrganizerEnabled(value !== 'false');
         });
+        Preferences.get({ key: 'chat_organizer_show_hidden' }).then(({ value }) => {
+            setChatOrganizerShowHidden(value === 'true');
+        });
         const handler = (e: Event) => setChatOrganizerEnabled((e as CustomEvent<boolean>).detail);
+        const hiddenHandler = (e: Event) => setChatOrganizerShowHidden((e as CustomEvent<boolean>).detail);
         window.addEventListener('chat_organizer_changed', handler);
-        return () => window.removeEventListener('chat_organizer_changed', handler);
+        window.addEventListener('chat_organizer_show_hidden_changed', hiddenHandler);
+        return () => {
+            window.removeEventListener('chat_organizer_changed', handler);
+            window.removeEventListener('chat_organizer_show_hidden_changed', hiddenHandler);
+        };
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'hidden' && !chatOrganizerShowHidden) {
+            setActiveTab('all');
+        }
+    }, [chatOrganizerShowHidden, activeTab]);
 
     const subscriptionLevel = currentUserProfile?.subscription_level;
     const userIsPro = isPro(subscriptionLevel);
@@ -127,7 +142,9 @@ const ChatsSegment: React.FC<Props> = (props) => {
         });
     }
 
-    tabs.push({ key: 'hidden', label: 'Hidden' });
+    if (chatOrganizerShowHidden) {
+        tabs.push({ key: 'hidden', label: 'Hidden' });
+    }
 
     return (
         <>

@@ -11,6 +11,7 @@ const {
   mockDismissPopover,
   mockPush,
   mockInvalidateQueries,
+  mockPresentActionSheet,
   mockPreferencesGet,
   mockPreferencesSet,
   mockSheetPresent,
@@ -24,6 +25,7 @@ const {
   mockDismissPopover: vi.fn(),
   mockPush: vi.fn(),
   mockInvalidateQueries: vi.fn(),
+  mockPresentActionSheet: vi.fn(),
   mockPreferencesGet: vi.fn(),
   mockPreferencesSet: vi.fn(),
   mockSheetPresent: vi.fn(),
@@ -74,6 +76,7 @@ vi.mock('@ionic/react', async () => {
       mockPopoverConfigs.push(props);
       return [mockPresentPopover, mockDismissPopover];
     },
+    useIonActionSheet: () => [mockPresentActionSheet, vi.fn()],
     useIonRouter: () => ({ push: mockPush }),
   };
 });
@@ -223,7 +226,7 @@ describe('EventsCalendar', () => {
   });
 
   it('opens the host popover, profile sheet, report modal, and routes to the linked post', async () => {
-    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+    const { container } = renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
 
     expect(await screen.findByText('Community events')).toBeInTheDocument();
     fireEvent.click(screen.getByText(/shared by alex/i));
@@ -232,7 +235,17 @@ describe('EventsCalendar', () => {
     fireEvent.click(screen.getByTestId('fa-icon'));
     expect(mockPresentPopover).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('Report event'));
+    fireEvent.click(container.querySelector('.calendar-event-ellipsis-corner') as HTMLElement);
+    expect(mockPresentActionSheet).toHaveBeenCalled();
+
+    const reportConfig = mockPresentActionSheet.mock.calls.find(([cfg]) =>
+      cfg?.buttons?.some?.((button: any) => button.text === 'Report event')
+    );
+    expect(reportConfig).toBeTruthy();
+    const reportButton = reportConfig![0].buttons.find((button: any) => button.text === 'Report event');
+    await act(async () => {
+      reportButton.handler();
+    });
     expect(mockPresentModal).toHaveBeenCalled();
 
     fireEvent.click(screen.getByText('View post'));

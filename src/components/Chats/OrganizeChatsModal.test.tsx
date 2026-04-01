@@ -65,7 +65,7 @@ const defaultGroups = {
   group1: [], group2: [], group3: [],
 };
 
-const renderModal = (groupsData = defaultGroups) => {
+const renderModal = (groupsData: any = defaultGroups) => {
   chatGroupsHook.mockReturnValue({ data: groupsData });
   const queryClient = new QueryClient();
   return render(
@@ -197,7 +197,7 @@ describe('OrganizeChatsModal', () => {
     });
   });
 
-  it('toggling hidden off calls updateGroups with group1_hidden: true', async () => {
+  it('toggling hidden off calls updateGroups with group1_hidden: false', async () => {
     renderModal();
 
     const toggle = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -207,7 +207,7 @@ describe('OrganizeChatsModal', () => {
 
     await waitFor(() => {
       expect(updateGroupsMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ group1_hidden: true }),
+        expect.objectContaining({ group1_hidden: false }),
       );
     });
   });

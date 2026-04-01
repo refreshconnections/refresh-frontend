@@ -6,13 +6,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 export function useTopLevelCommentsInf(postId: number, sortByRecentActivity: boolean = false) {
   const getTopCommentsFn = async (pageParam: number) => {
-    let queryUrl = `/api/refreshments/comments/${postId}/top/`;
-    if (sortByRecentActivity) {
-        queryUrl += '?sort=recent_activity'
-    }
-    const response = await apiClient.get(queryUrl, {
-      params: { page: pageParam },
-    });
+    const params: Record<string, string | number> = { page: pageParam };
+    if (sortByRecentActivity) params.sort = 'recent_activity';
+    const response = await apiClient.get(`/api/refreshments/comments/${postId}/top/`, { params });
     return response.data;
   };
 

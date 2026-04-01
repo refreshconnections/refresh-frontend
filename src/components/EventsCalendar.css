@@ -94,27 +94,97 @@
   pointer-events: none;
 }
 
-.refreshments-calendar-modal .calendar-event-list {
-  margin-bottom: 16px;
-}
-
-.refreshments-calendar-modal .calendar-event-item {
-  border-radius: 8px;
+.refreshments-calendar-modal .calendar-event-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 4px;
 }
 
-.refreshments-calendar-modal .calendar-event-item--selected {
-  background: var(--ion-color-step-100);
+.refreshments-calendar-modal .calendar-event-card {
+  margin: 0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  background: #ffffff;
+  position: relative;
 }
 
-.refreshments-calendar-modal .calendar-event-detail {
-  margin-top: 12px;
-  width: calc(100% - 16px);
-  margin-left: auto;
-  margin-right: auto;
-  background: #ffffff;
-  border-radius: 20px;
+.refreshments-calendar-modal .calendar-event-card ion-card-content {
+  padding: 12px 14px;
 }
+
+.calendar-event-card-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-event-card-toggle {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.calendar-event-star {
+  flex-shrink: 0;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  min-height: auto;
+  font-size: 20px;
+}
+
+.calendar-event-card-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ion-color-dark);
+}
+
+.calendar-event-card-time {
+  font-size: 13px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+}
+
+.calendar-event-card-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  padding-bottom: 44px;
+  border-top: 1px solid var(--ion-color-step-100, #f0f0f0);
+  position: relative;
+}
+
+.calendar-event-type {
+  font-weight: 700;
+  font-size: 14px;
+  margin: 4px 0 6px;
+  color: var(--ion-color-dark);
+}
+
+.calendar-event-registration {
+  display: block;
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.calendar-event-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.calendar-event-ellipsis-corner {
+  position: absolute !important;
+  bottom: 4px !important;
+  right: 0 !important;
+}
+
+
 
 .calendar-event-byline {
   display: flex;

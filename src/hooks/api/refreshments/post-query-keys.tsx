@@ -15,7 +15,8 @@ export const postQueryKeys = {
     dynamiccomment: (comment_id: number) => [...postQueryKeys.all, 'comment','dynamic', comment_id],
     commentreplies: (comment_id: number) => [...postQueryKeys.all, 'comment', comment_id, 'commentreplies'],
     notshown: (id: number) => ['notshown', id],
-    topcomments: (postId:number, sortByRecentActivity) =>['top-comments', postId, sortByRecentActivity],
+    topcomments: (postId: number, sortByRecentActivity: boolean) => ['top-comments', postId, sortByRecentActivity],
+    commentSearch: (postId: number, query: string) => ['comment-search', postId, query],
     topcommentReplies: (commentId: number) => ['comments', commentId, 'replies'],
 
   };

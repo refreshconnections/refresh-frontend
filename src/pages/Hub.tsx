@@ -2,9 +2,10 @@ import { IonButton, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, I
 import { useEffect, useMemo, useState } from 'react';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faBoltLightning, faHammer, faPaperPlane, faSparkles } from '@fortawesome/pro-solid-svg-icons';
+import { faArrowRight, faCalendarStar, faComment, faReel, faStar } from '@fortawesome/pro-solid-svg-icons';
 import { useGetInterestedEvents, useGetInterestedPosts } from '../hooks/api/interests';
 import { useGetMegathreads } from '../hooks/api/refreshments/megathreads';
+import { useGetDailyTip } from '../hooks/api/tips';
 import PostSuggestionMini from '../components/PostSuggestionMini';
 import './Page.css';
 import './Hub.css';
@@ -14,10 +15,12 @@ const Hub: React.FC = () => {
   const [interestedEventsPage, setInterestedEventsPage] = useState(1);
   const [displayedInterestedPosts, setDisplayedInterestedPosts] = useState<any[]>([]);
   const [displayedInterestedEvents, setDisplayedInterestedEvents] = useState<any[]>([]);
+  const [showFlowerThanks, setShowFlowerThanks] = useState(false);
 
   const interestedPosts = useGetInterestedPosts(interestedPostsPage).data;
   const interestedEvents = useGetInterestedEvents(interestedEventsPage).data;
   const megathreads = useGetMegathreads('').data ?? [];
+  const dailyTip = useGetDailyTip().data;
 
   useEffect(() => {
     if (!interestedPosts?.results) return;
@@ -36,6 +39,14 @@ const Hub: React.FC = () => {
         : [...prev, ...interestedEvents.results.filter((event) => !prev.some((existing) => existing.id === event.id))]
     ));
   }, [interestedEvents, interestedEventsPage]);
+
+  useEffect(() => {
+    if (!showFlowerThanks) return;
+    const timeout = window.setTimeout(() => {
+      setShowFlowerThanks(false);
+    }, 7000);
+    return () => window.clearTimeout(timeout);
+  }, [showFlowerThanks]);
 
   const upcomingInterestedEvents = useMemo(
     () => displayedInterestedEvents
@@ -84,6 +95,10 @@ const Hub: React.FC = () => {
     return `Posted ${postedMoment.fromNow()}`;
   };
 
+  const handleFlowerClick = () => {
+    setShowFlowerThanks((prev) => !prev);
+  };
+
   return (
     <IonPage>
       <IonContent fullscreen>
@@ -96,11 +111,8 @@ const Hub: React.FC = () => {
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
-                  <FontAwesomeIcon icon={faBoltLightning} /> &nbsp; Upcoming events
+                  <FontAwesomeIcon icon={faCalendarStar} /> &nbsp; Upcoming events
                 </IonCardTitle>
-                <IonNote className="hub-section-note">
-                  Events you marked as interested that are coming up soon.
-                </IonNote>
                 {upcomingInterestedEvents.length ? (
                   <IonList lines="none" className="hub-interest-list">
                     {upcomingInterestedEvents.map((event) => (
@@ -131,21 +143,41 @@ const Hub: React.FC = () => {
             </IonCard>
           </IonCol>
 
-          <IonCol size="12" sizeMd="6">
-            <IonCard className="hub-section-card hub-white-card hub-tips-section-card">
-              <IonCardContent>
-                <IonCardTitle>
-                  <FontAwesomeIcon icon={faHammer} /> &nbsp; Tips
-                </IonCardTitle>
-                <IonCard className="hub-tip-card hub-white-card">
-                  <IonCardContent>
-                    <IonText className="hub-tip-card-title">Tips placeholder</IonText>
-                    <IonNote className="hub-tip-card-copy">
-                      Backend content source still to come.
-                    </IonNote>
-                  </IonCardContent>
-                </IonCard>
-              </IonCardContent>
+          <IonCol size="12" sizeMd="6" className="hub-tips-col">
+              {dailyTip ? (
+                <>
+                  {showFlowerThanks ? (
+                    <button className="hub-tip-flower-chatbubble" type="button" onClick={handleFlowerClick}>
+                      <FontAwesomeIcon icon={faComment} />
+                      <span>Thank you for masking!</span>
+                    </button>
+                  ) : null}
+                  <button className="hub-tip-flower-button" type="button" onClick={handleFlowerClick} aria-label="Show thank you message">
+                    <img className="hub-tip-section-flower" src="../static/img/flower-mask.png" alt="" />
+                  </button>
+                </>
+              ) : null}
+            <IonCard className="hub-section-card hub-tips-section-card">
+              <div>
+                {dailyTip ? (
+                  <IonCard className="hub-tip-card">
+                    <div className="hub-tip-card-header">
+                      <div className="hub-tip-card-header-title">Tip of the Day</div>
+                    </div>
+                    <div className="hub-tip-card-body">
+                      <span className="hub-tip-card-title">{dailyTip.title}</span>
+                      <span className="hub-tip-card-copy">{dailyTip.description}</span>
+                      {dailyTip.link && (
+                        <div className="hub-tip-card-button-row">
+                          <IonButton fill="outline" color="navy" size="small" href={dailyTip.link} target="_blank" rel="noopener noreferrer">
+                            {dailyTip.link_name || 'Learn more'}
+                          </IonButton>
+                        </div>
+                      )}
+                    </div>
+                  </IonCard>
+                ) : null}
+              </div>
             </IonCard>
           </IonCol>
         </IonRow>
@@ -155,11 +187,8 @@ const Hub: React.FC = () => {
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
-                  <FontAwesomeIcon icon={faSparkles} /> &nbsp; Interested posts
+                  <FontAwesomeIcon icon={faStar} /> &nbsp; Posts you're interested in
                 </IonCardTitle>
-                <IonNote className="hub-section-note">
-                  Posts you marked to come back to.
-                </IonNote>
                 {displayedInterestedPosts.length ? (
                   <IonRow className="hub-mini-posts-row">
                     {displayedInterestedPosts.map((post) => (
@@ -192,11 +221,8 @@ const Hub: React.FC = () => {
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
-                  <FontAwesomeIcon icon={faPaperPlane} /> &nbsp; Megathreads
+                  <FontAwesomeIcon icon={faReel} /> &nbsp; Megathreads
                 </IonCardTitle>
-                <IonNote className="hub-section-note">
-                  Ongoing conversations with the most recent activity.
-                </IonNote>
                 {activeMegathreads.length ? (
                   <IonRow className="hub-mini-posts-row">
                     {activeMegathreads.map((thread: any) => (
