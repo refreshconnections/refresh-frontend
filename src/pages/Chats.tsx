@@ -1,4 +1,4 @@
-import { IonBadge, IonButton, IonCol, IonContent, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, RefresherEventDetail } from '@ionic/react';
+import { IonBadge, IonButton, IonCol, IonContent, IonLabel, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, RefresherEventDetail } from '@ionic/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getGroupChatInvites, getGroupChats, getWebsocketUrl } from '../hooks/utilities';
 import './Chats.css';
@@ -48,8 +48,9 @@ const Chats: React.FC = () => {
   // tanstack query
   const currentUserProfile = useGetCurrentProfile().data;
   const currentUserProfileLoading = useGetCurrentProfile().isLoading;
-  const allChats = useGetCurrentUserChats().data
-  const chatsLoading = useGetCurrentUserChats().isLoading
+  const chatsQuery = useGetCurrentUserChats();
+  const allChats = chatsQuery.data
+  const chatsLoading = chatsQuery.isLoading
   const {
     data: paginatedChatsData,
     hasNextPage: chatsHasNextPage,
@@ -57,7 +58,9 @@ const Chats: React.FC = () => {
     fetchNextPage: fetchNextChatsPage,
   } = useGetCurrentUserChatsPaginated();
   const paginatedChats = paginatedChatsData?.pages.flatMap(page => page?.results ?? []) ?? [];
-  const dataFlat = useGetMutualConnections().data
+  const visibleChats = paginatedChats.length ? paginatedChats : (allChats ?? []);
+  const mutualsQuery = useGetMutualConnections();
+  const dataFlat = mutualsQuery.data
   const queryClient = useQueryClient()
 
 
@@ -66,6 +69,12 @@ const Chats: React.FC = () => {
 
 
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
+  const isRefreshingChats = Boolean(
+    !littleLoading &&
+    visibleChats.length > 0 &&
+    dataFlat &&
+    (chatsQuery.isFetching || mutualsQuery.isFetching || chatsIsFetchingNextPage)
+  );
 
   const statuses = useGetStatuses().data;
 
@@ -88,9 +97,10 @@ const Chats: React.FC = () => {
   useEffect(() => {
     console.log("Chats use effect")
 
-    const listen = async () => {
-      App.addListener('resume', async () => {
+    let resumeHandle: { remove: () => void } | null = null;
 
+    const listen = async () => {
+      resumeHandle = await App.addListener('resume', async () => {
         try {
           // Refresh mutuals
           await queryClient.invalidateQueries({ queryKey: ['mutuals'] });
@@ -119,12 +129,13 @@ const Chats: React.FC = () => {
           console.error('Error refreshing chat data on resume:', error);
         }
       });
-    }
-
+    };
 
     listen();
 
-
+    return () => {
+      resumeHandle?.remove();
+    };
   }, []);
 
 
@@ -191,6 +202,11 @@ const Chats: React.FC = () => {
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
           {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
+          {isRefreshingChats ? (
+            <IonRow className="ion-justify-content-center">
+              <IonNote color="medium">Refreshing chats...</IonNote>
+            </IonRow>
+          ) : null}
           <IonRow className="segments">
             <IonCol size="2">
               <IonButton disabled={currSegment == "groups" || dataFlat?.length == 0} onClick={showSearch ? () => setShowSearch(false) : () => setShowSearch(true)}>
@@ -227,7 +243,7 @@ const Chats: React.FC = () => {
               {dataFlat ?
                 <ChatsSegment
                   mutualConnectionsList={dataFlat}
-                  chats={paginatedChats}
+                  chats={visibleChats}
                   currentUserProfile={currentUserProfile}
                   showSearch={showSearch}
                   chatsHasNextPage={!!chatsHasNextPage}

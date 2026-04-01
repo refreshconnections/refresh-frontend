@@ -1,5 +1,27 @@
 import { Preferences } from '@capacitor/preferences';
 
+const TRANSIENT_CACHE_KEYS = [
+  'picks_with_filters',
+  'last_shown_pick',
+  'last_shown_pick_v2',
+  'picks_and_profiles_with_filters',
+  'chats',
+  'radius',
+  'local',
+  'filters',
+  'sort',
+];
+
+const TRANSIENT_CACHE_PREFIXES = [
+  'warm_chats_',
+  'warm_mutuals_',
+  'warm_interested_posts_',
+  'warm_interested_events_',
+  'warm_megathreads_',
+  'warm_daily_tip_',
+  'warm_refreshments_',
+];
+
 // Function to set data with an expiry time
 export const setWithExpiry = async (key, value, ttl) => {
   const expiryTime = Date.now() + ttl;
@@ -70,4 +92,19 @@ export const getWithExpiry = async (key) => {
 export const removeFromCapacitorLocalStorage = async (key) => {
   console.log(`[🗑️ removeFromCapacitorLocalStorage] key: ${key}`);
   await Preferences.remove({ key });
+};
+
+export const clearTransientAppStorage = async () => {
+  for (const key of TRANSIENT_CACHE_KEYS) {
+    await Preferences.remove({ key });
+  }
+
+  const { keys } = await Preferences.keys();
+  const matchingWarmKeys = keys.filter((key) =>
+    TRANSIENT_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
+
+  for (const key of matchingWarmKeys) {
+    await Preferences.remove({ key });
+  }
 };

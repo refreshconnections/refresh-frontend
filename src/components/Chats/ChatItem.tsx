@@ -29,20 +29,22 @@ const ChatItem: React.FC<Props> = (props) => {
     const [handlingDismiss, setHandlingDismiss] = useState(false)
 
 
-    const handleDismiss = () => {
+    const handleDismiss = (options?: { refreshChatList?: boolean }) => {
         setHandlingDismiss(true)
-        queryClient.invalidateQueries({
-            queryKey: chatQueryKeys.all,
-        })
-        queryClient.invalidateQueries({
-            queryKey: chatQueryKeys.paginated,
-        })
         queryClient.invalidateQueries({
             queryKey: ['unread'],
         })
         queryClient.invalidateQueries({
             queryKey: ['chats', 'details', chat?.id],
         })
+        if (options?.refreshChatList) {
+            queryClient.invalidateQueries({
+                queryKey: chatQueryKeys.all,
+            })
+            queryClient.invalidateQueries({
+                queryKey: chatQueryKeys.paginated,
+            })
+        }
         dismiss();
         setHandlingDismiss(false)
     }

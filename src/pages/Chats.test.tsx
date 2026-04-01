@@ -185,6 +185,7 @@ beforeEach(() => {
   mockCurrentUserChats.mockReturnValue({
     data: baseChats,
     isLoading: false,
+    isFetching: false,
   } as any);
   mockPaginatedChats.mockReturnValue({
     data: { pages: [{ results: [{ id: 11 }, { id: 12 }] }] },
@@ -194,6 +195,7 @@ beforeEach(() => {
   } as any);
   mockMutualConnections.mockReturnValue({
     data: [101, 102],
+    isFetching: false,
   } as any);
   mockStatuses.mockReturnValue({ data: [] } as any);
   mockIncomingConnections.mockReturnValue({
@@ -214,6 +216,33 @@ describe('Chats page', () => {
     expect(screen.getByText('mutual-count-2')).toBeInTheDocument();
     expect(screen.getByText('chat-count-2')).toBeInTheDocument();
     expect(screen.getByText('has-next-true')).toBeInTheDocument();
+  });
+
+  it('falls back to the warmed chat list when paginated chats have not loaded yet', async () => {
+    mockPaginatedChats.mockReturnValue({
+      data: undefined,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+    } as any);
+
+    renderChats();
+
+    expect(await screen.findByText('chats-segment')).toBeInTheDocument();
+    expect(screen.getByText('chat-count-4')).toBeInTheDocument();
+    expect(screen.getByText('has-next-false')).toBeInTheDocument();
+  });
+
+  it('shows a small refreshing indicator while fresh chats are loading over warmed data', async () => {
+    mockCurrentUserChats.mockReturnValue({
+      data: baseChats,
+      isLoading: false,
+      isFetching: true,
+    } as any);
+
+    renderChats();
+
+    expect(await screen.findByText('Refreshing chats...')).toBeInTheDocument();
   });
 
   it('toggles search mode when the search button is pressed and mutuals exist', async () => {

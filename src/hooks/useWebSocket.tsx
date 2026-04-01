@@ -342,8 +342,11 @@ export function useWebSocket(onError?: (msg: string) => void) {
             socketRef.current?.close();
         };
 
-        App.addListener("resume", resume);
-        App.addListener("pause", pause);
+        let resumeHandle: { remove: () => void } | null = null;
+        let pauseHandle: { remove: () => void } | null = null;
+
+        App.addListener("resume", resume).then(h => { resumeHandle = h; });
+        App.addListener("pause", pause).then(h => { pauseHandle = h; });
 
         return () => {
             manualCloseRef.current = true;
@@ -352,7 +355,8 @@ export function useWebSocket(onError?: (msg: string) => void) {
             if (retryToastTimerRef.current) clearTimeout(retryToastTimerRef.current);
             socketRef.current?.close();
             socketRef.current = null;
-            App.removeAllListeners();
+            resumeHandle?.remove();
+            pauseHandle?.remove();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // mount once

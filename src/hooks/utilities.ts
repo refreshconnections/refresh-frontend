@@ -4,6 +4,7 @@ import { Preferences } from '@capacitor/preferences';
 import { TextZoom } from "@capacitor/text-zoom"
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
+import { clearTransientAppStorage } from './capacitorPreferences/all';
 
 
 
@@ -1685,6 +1686,7 @@ export async function handleLogoutCommon() {
     }
     // Invalidate every query in the cache
     await Preferences.remove({ key: 'EXPIRY' })
+    await clearTransientAppStorage()
     localStorage.removeItem('token')
     Cookies.remove('sessionid');
     Cookies.remove('csrftoken');

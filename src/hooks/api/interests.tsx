@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './api-client';
 import { postQueryKeys } from './refreshments/post-query-keys';
 import type { RefreshEvent } from './events';
+import { useWarmCachedValue } from '../useWarmCachedValue';
 
 export const interestQueryKeys = {
   posts: ['interests', 'posts'] as const,
@@ -31,7 +32,7 @@ type PaginatedResponse<T> = {
 };
 
 export function useGetInterestedPosts(page = 1) {
-  return useQuery({
+  const query = useQuery({
     queryKey: interestQueryKeys.postsPage(page),
     queryFn: async () => {
       const response = await apiClient.get<PaginatedResponse<InterestedPost>>(`/api/profiles/interested_posts/?page=${page}`);
@@ -39,10 +40,23 @@ export function useGetInterestedPosts(page = 1) {
     },
     enabled: !!localStorage.getItem('token'),
   });
+
+  const { cachedData } = useWarmCachedValue(
+    `warm_interested_posts_page_${page}_v1`,
+    query.data,
+    1000 * 60 * 10,
+    !!localStorage.getItem('token'),
+  );
+
+  return {
+    ...query,
+    data: query.data ?? cachedData,
+    isLoading: query.isLoading && !cachedData,
+  };
 }
 
 export function useGetInterestedEvents(page = 1) {
-  return useQuery({
+  const query = useQuery({
     queryKey: interestQueryKeys.eventsPage(page),
     queryFn: async () => {
       const response = await apiClient.get<PaginatedResponse<RefreshEvent>>(`/api/profiles/interested_events/?page=${page}`);
@@ -50,6 +64,19 @@ export function useGetInterestedEvents(page = 1) {
     },
     enabled: !!localStorage.getItem('token'),
   });
+
+  const { cachedData } = useWarmCachedValue(
+    `warm_interested_events_page_${page}_v1`,
+    query.data,
+    1000 * 60 * 10,
+    !!localStorage.getItem('token'),
+  );
+
+  return {
+    ...query,
+    data: query.data ?? cachedData,
+    isLoading: query.isLoading && !cachedData,
+  };
 }
 
 export function useInterestPost() {

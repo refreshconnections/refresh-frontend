@@ -66,7 +66,7 @@ type Props = {
     pro: boolean;
     settingsAlt: boolean;
     from_name: string;
-    onDismiss: () => void;
+    onDismiss: (options?: { refreshChatList?: boolean }) => void;
 };
 
 interface Recording {
@@ -285,9 +285,7 @@ const TextModal: React.FC<Props> = (props) => {
     }, [uiConnected]);
 
     const retrievedMessages = useMessagesInf(textModalData?.other_user_id)
-
-    const loadingMessagesQuery = useMessagesInf(textModalData?.other_user_id)
-    const loadingMessages = loadingMessagesQuery.isPending && loadingMessagesQuery.fetchStatus === "fetching";
+    const loadingMessages = retrievedMessages.isPending && retrievedMessages.fetchStatus === "fetching";
 
 
     const othersChatSettings = useChatSettings(textModalData?.other_user_id)
@@ -319,6 +317,8 @@ const TextModal: React.FC<Props> = (props) => {
     const [presentPopover, dismissPopover] = useIonPopover(MessageLikePopover, {
         onDidDismiss: () => dismissPopover(),
     });
+
+    const didChangeChatWhileOpenRef = useRef(false);
 
 
 
@@ -360,8 +360,12 @@ const TextModal: React.FC<Props> = (props) => {
 
 
 
+    const closeTextModal = (options?: { refreshChatList?: boolean }) => {
+        onDismiss(options ?? { refreshChatList: didChangeChatWhileOpenRef.current });
+    }
+
     const goBackOut = async () => {
-        onDismiss()
+        closeTextModal()
     }
 
     const scrollToBottom = () => {
@@ -428,6 +432,9 @@ const TextModal: React.FC<Props> = (props) => {
             if (msg.msg_type === 8) {
                 console.log("the message was sent thank goodness")
                 resetMessages();
+                if (msg.sender?.toString() !== currentUserProfile?.user?.toString()) {
+                    didChangeChatWhileOpenRef.current = true;
+                }
                 if (msg.sender === textModalData?.other_user_id) {
                     newMessagePush(
                         [textModalData?.other_user_id.toString()],
@@ -445,7 +452,7 @@ const TextModal: React.FC<Props> = (props) => {
         });
 
         return unsubscribe; // ✅ DO NOT wrap it in another function
-    }, [textModalData?.other_user_id, addListener, send]);
+    }, [textModalData?.other_user_id, currentUserProfile?.user, addListener, send]);
 
 
 
@@ -615,6 +622,7 @@ const TextModal: React.FC<Props> = (props) => {
 
         setMessageInput("");
         addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
 
 
         send(messageData);
@@ -720,9 +728,10 @@ const TextModal: React.FC<Props> = (props) => {
             setImageName(null);
             setRecording({ recording: false, playing: false, audio: null });
             setAudioRef(null);
-            addMessageToFrontOfTheArray(displayMessage);
+        addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
 
-            send(messageData);
+        send(messageData);
 
         } catch (error) {
             console.error("Unexpected error sending file message:", error);
@@ -764,6 +773,7 @@ const TextModal: React.FC<Props> = (props) => {
         setRecording({ recording: false, playing: false, audio: null });
         setAudioRef(null);
         addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
         send(messageData);
     };
 
@@ -1154,7 +1164,7 @@ const TextModal: React.FC<Props> = (props) => {
                                                 size="small"
                                                 fill="outline"
                                                 onClick={() => {
-                                                    onDismiss();
+                                                    closeTextModal({ refreshChatList: false });
                                                     setTimeout(() => {
                                                         if (typeof window !== 'undefined') {
                                                             window.history.pushState({}, "", "/help");

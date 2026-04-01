@@ -18,7 +18,7 @@ const {
   setTextZoom,
   clearStreak,
   removeAllProfilesFromCapacitorStorage,
-  removeFromCapacitorLocalStorage,
+  clearTransientAppStorage,
   invalidateQueries,
   mockPresentAlert,
   mockPresentModal,
@@ -38,7 +38,7 @@ const {
   setTextZoom: vi.fn(),
   clearStreak: vi.fn(),
   removeAllProfilesFromCapacitorStorage: vi.fn(),
-  removeFromCapacitorLocalStorage: vi.fn(),
+  clearTransientAppStorage: vi.fn(),
   invalidateQueries: vi.fn(),
   mockPresentAlert: vi.fn(),
   mockPresentModal: vi.fn(),
@@ -95,7 +95,7 @@ vi.mock('../hooks/utilities', () => ({
 }));
 
 vi.mock('../hooks/capacitorPreferences/all', () => ({
-  removeFromCapacitorLocalStorage: (...args: any[]) => removeFromCapacitorLocalStorage(...args),
+  clearTransientAppStorage: (...args: any[]) => clearTransientAppStorage(...args),
 }));
 
 vi.mock('../hooks/api/profiles/current-profile', () => ({
@@ -215,7 +215,7 @@ beforeEach(() => {
   logoutCurrent.mockResolvedValue(undefined);
   clearStreak.mockResolvedValue(undefined);
   removeAllProfilesFromCapacitorStorage.mockResolvedValue(undefined);
-  removeFromCapacitorLocalStorage.mockResolvedValue(undefined);
+  clearTransientAppStorage.mockResolvedValue(undefined);
   getReduceAnimations.mockResolvedValue(false);
   setReduceAnimationsPref.mockResolvedValue(undefined);
 
@@ -252,6 +252,20 @@ describe('Settings page', () => {
     });
   });
 
+  it('reload app clears transient capacitor cache before reloading', async () => {
+    renderSettings();
+    await screen.findByText('Pro Settings');
+
+    const reloadButton = screen.getByText('Reload app').closest('ion-item')?.querySelector('ion-button') as HTMLElement;
+    fireEvent.click(reloadButton);
+
+    await waitFor(() => {
+      expect(clearTransientAppStorage).toHaveBeenCalled();
+      expect(removeAllProfilesFromCapacitorStorage).toHaveBeenCalled();
+      expect(window.location.reload).toHaveBeenCalled();
+    });
+  });
+
   it('updates a toggle-backed setting when changed', async () => {
     renderSettings();
     await screen.findByText('Pro Settings');
@@ -284,7 +298,7 @@ describe('Settings page', () => {
     expect(mockPresentModal).toHaveBeenCalledTimes(6);
   });
 
-  it('prompts before clearing cached data and clears all expected cache keys on confirm', async () => {
+  it('prompts before clearing cached data and clears transient app storage on confirm', async () => {
     renderSettings();
     await screen.findByText('Clear cache');
 
@@ -297,9 +311,7 @@ describe('Settings page', () => {
       await clearAlert.buttons[1].handler();
     });
 
-    expect(removeFromCapacitorLocalStorage).toHaveBeenCalledWith('picks_with_filters');
-    expect(removeFromCapacitorLocalStorage).toHaveBeenCalledWith('last_shown_pick');
-    expect(removeFromCapacitorLocalStorage).toHaveBeenCalledWith('chats');
+    expect(clearTransientAppStorage).toHaveBeenCalledTimes(1);
     expect(removeAllProfilesFromCapacitorStorage).toHaveBeenCalledTimes(1);
   });
 

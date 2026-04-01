@@ -33,7 +33,7 @@ import EditHiddenContentModal from '../components/EditHiddenContentModal';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import EditChatSettingsModal from '../components/EditChatSettingsModal';
 import EditPushNotifications from '../components/EditPushNotifications';
-import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
+import { clearTransientAppStorage } from '../hooks/capacitorPreferences/all';
 import { faBroomWide, faEnvelope, faEnvelopeCircleCheck } from '@fortawesome/pro-solid-svg-icons';
 import EmailSettingsModal from '../components/EmailSettingsModal';
 import { faEnvelopes } from '@fortawesome/pro-regular-svg-icons';
@@ -103,15 +103,14 @@ const Settings: React.FC = () => {
   };
 
   async function clearCachedData() {
-    await removeFromCapacitorLocalStorage('picks_with_filters')
-    await removeFromCapacitorLocalStorage('last_shown_pick')
-    await removeFromCapacitorLocalStorage('chats')
-    await removeFromCapacitorLocalStorage('radius')
-    await removeFromCapacitorLocalStorage('local')
-    await removeFromCapacitorLocalStorage('filters')
-    await removeFromCapacitorLocalStorage('sort')
+    await clearTransientAppStorage()
     await removeAllProfilesFromCapacitorStorage()
   };
+
+  async function reloadApp() {
+    await clearCachedData();
+    window.location.reload();
+  }
 
   async function handleLogoutAll() {
     const response = await logoutAll()
@@ -730,7 +729,7 @@ const Settings: React.FC = () => {
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">Reload app</IonLabel>
-                <IonButton size="default" slot="end" onClick={() => window.location.reload()}><FontAwesomeIcon icon={faRefresh} /></IonButton>
+                <IonButton size="default" slot="end" onClick={() => reloadApp()}><FontAwesomeIcon icon={faRefresh} /></IonButton>
               </IonItem>
               {data?.paused_profile ?
                 <IonItem>

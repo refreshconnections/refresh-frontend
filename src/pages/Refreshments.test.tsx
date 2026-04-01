@@ -188,6 +188,7 @@ beforeEach(() => {
   mockPosts.mockReturnValue({
     data: [11, 12, 13, 14, 15, 16],
     isLoading: false,
+    isFetching: false,
   } as any);
   mockStatuses.mockReturnValue({ data: [] } as any);
   mockCurrentStreak.mockReturnValue({ data: { streak_count: 3 } } as any);
@@ -243,6 +244,18 @@ describe('Refreshments page', () => {
         })
       );
     });
+  });
+
+  it('shows a small refreshing indicator while fresh posts are loading over warmed data', async () => {
+    mockPosts.mockReturnValue({
+      data: [11, 12, 13, 14, 15, 16],
+      isLoading: false,
+      isFetching: true,
+    } as any);
+
+    renderRefreshments();
+
+    expect(await screen.findByText('Refreshing posts...')).toBeInTheDocument();
   });
 
   it('renders and dismisses the active refreshments alert', async () => {

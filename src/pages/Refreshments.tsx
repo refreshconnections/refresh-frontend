@@ -110,7 +110,8 @@ const Refreshments: React.FC = () => {
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
 
 
-  const { data: posts, isLoading: postsLoading } = useGetPosts(bars, search, local, radius, sort)
+  const postsQuery = useGetPosts(bars, search, local, radius, sort)
+  const { data: posts, isLoading: postsLoading, isFetching: postsFetching } = postsQuery
 
   const [length, setLength] = useState(5)
 
@@ -250,6 +251,7 @@ const Refreshments: React.FC = () => {
     currentUserProfile?.location_point_lat &&
     currentUserProfile?.location_point_long
   ), [local, currentUserProfile]);
+  const isRefreshingPosts = Boolean(!littleLoading && somePosts?.length && postsFetching);
 
 
 
@@ -265,6 +267,11 @@ const Refreshments: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
+        {isRefreshingPosts ? (
+          <IonRow className="ion-justify-content-center">
+            <IonNote color="medium">Refreshing posts...</IonNote>
+          </IonRow>
+        ) : null}
         <IonRow className="filter-buttons">
           <IonButton className="refreshments-control-button" onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
             {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}

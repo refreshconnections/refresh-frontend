@@ -67,6 +67,11 @@ vi.mock('@capacitor/preferences', () => ({
   },
 }));
 
+const clearTransientAppStorage = vi.fn().mockResolvedValue(undefined);
+vi.mock('./capacitorPreferences/all', () => ({
+  clearTransientAppStorage: (...args: any[]) => clearTransientAppStorage(...args),
+}));
+
 // Mock Capacitor core — used by setTextZoom, paintSystemBars, applyRootTextScale
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -1631,6 +1636,12 @@ describe('handleLogoutCommon()', () => {
     axiosGet.mockResolvedValue(makeAxiosResponse({}));
     await handleLogoutCommon();
     expect(vi.mocked(Preferences.remove)).toHaveBeenCalledWith({ key: 'EXPIRY' });
+  });
+
+  it('clears transient capacitor caches during logout', async () => {
+    axiosGet.mockResolvedValue(makeAxiosResponse({}));
+    await handleLogoutCommon();
+    expect(clearTransientAppStorage).toHaveBeenCalled();
   });
 
   it('redirects to / after logout', async () => {
