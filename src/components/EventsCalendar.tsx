@@ -180,6 +180,17 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     return map;
   }, [events]);
 
+  const interestedEventsByDay = useMemo(() => {
+    const set = new Set<string>();
+
+    events.forEach((event) => {
+      if (!event.start_datetime || !event.interested) return;
+      set.add(moment(event.start_datetime).format('YYYY-MM-DD'));
+    });
+
+    return set;
+  }, [events]);
+
   const selectedDayKey = moment(selectedDate).format('YYYY-MM-DD');
   const eventsForSelectedDate = eventsByDay.get(selectedDayKey) ?? [];
   const calendarDays = useMemo(() => buildCalendarDays(calendarMonth), [calendarMonth]);
@@ -407,6 +418,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             ))}
             {displayDays.map((day) => {
               const hasEvents = eventsByDay.has(day.iso);
+              const hasInterestedEvents = interestedEventsByDay.has(day.iso);
               const isSelected = day.iso === selectedDayKey;
               const isAllowedWeek = moment(day.date).isBetween(
                 earliest.clone().startOf('day'),
@@ -431,7 +443,10 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                   onClick={() => (isDisabled ? undefined : handleSelectDay(day.date))}
                   disabled={isDisabled}
                 >
-                  <span>{day.label}</span>
+                  <span className="calendar-day-label">{day.label}</span>
+                  {hasInterestedEvents ? (
+                    <IonIcon className="calendar-day-interest-star" icon={star} />
+                  ) : null}
                 </button>
               );
             })}
@@ -444,6 +459,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             ) : eventsForSelectedDate.length ? (
               eventsForSelectedDate.map((event) => {
                 const isExpanded = selectedEventId === event.id;
+                const eventIsInterested = isExpanded ? selectedEventInterested : Boolean(event.interested);
                 return (
                   <IonCard key={event.id} className={`calendar-event-card ${isExpanded ? 'calendar-event-card--expanded' : ''}`}>
                     <IonCardContent>
@@ -462,10 +478,10 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                           fill="clear"
                           size="small"
                           className="calendar-event-star"
-                          onClick={isExpanded ? (selectedEventInterested ? handleUninterestEvent : handleInterestEvent) : undefined}
+                          onClick={isExpanded ? (eventIsInterested ? handleUninterestEvent : handleInterestEvent) : undefined}
                           disabled={interestEvent.isPending || uninterestEvent.isPending}
                         >
-                          <IonIcon icon={isExpanded && selectedEventInterested ? star : starOutline} color={isExpanded && selectedEventInterested ? 'warning' : 'medium'} />
+                          <IonIcon icon={eventIsInterested ? star : starOutline} color={eventIsInterested ? 'warning' : 'medium'} />
                         </IonButton>
                       </div>
                       {isExpanded && (

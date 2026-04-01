@@ -11,6 +11,7 @@ import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { useGetCommentsNotShownCount } from "../../hooks/api/refreshments/comments-not-shown";
 import { Link } from "react-router-dom";
 import { faThumbtack } from "@fortawesome/pro-solid-svg-icons/faThumbtack";
+import { faReel } from "@fortawesome/pro-solid-svg-icons/faReel";
 import { useGetStaticPostContent } from "../../hooks/api/refreshments/static-post-content";
 import { useGetDynamicPostContent } from "../../hooks/api/refreshments/dynamic-post-content";
 import { useGetSettingsCurrentProfile } from "../../hooks/api/profiles/settings-current-profile";
@@ -137,6 +138,7 @@ const RefreshmentsPost: React.FC<Props> = (props) => {
                                             "primary"}>
                 <IonLabel>
                 {staticContentPost?.pinned? <><FontAwesomeIcon  className="pinned"  title="pinned post" icon={faThumbtack}/> &nbsp; </> : <></> }
+                {staticContentPost?.megathread ? <><FontAwesomeIcon className="pinned" title="megathread" icon={faReel}/> &nbsp; </> : <></>}
                 {staticContentPost?.location} &nbsp;&nbsp;&nbsp;
                 {staticContentPost?.local_only? <><FontAwesomeIcon  className="pinned"  title="local" icon={faLocationDot}/> &nbsp; </> : <></> }
                 {staticContentPost?.category == "science" ? "STEAM" :

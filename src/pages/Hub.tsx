@@ -1,8 +1,9 @@
-import { IonButton, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonItem, IonLabel, IonList, IonNote, IonPage, IonRow, IonText } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonNote, IonPage, IonRow, IonText } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faCalendarStar, faComment, faReel, faStar } from '@fortawesome/pro-solid-svg-icons';
+import { useHistory } from 'react-router';
 import { useGetInterestedEvents, useGetInterestedPosts } from '../hooks/api/interests';
 import { useGetMegathreads } from '../hooks/api/refreshments/megathreads';
 import { useGetDailyTip } from '../hooks/api/tips';
@@ -16,9 +17,12 @@ const Hub: React.FC = () => {
   const [displayedInterestedPosts, setDisplayedInterestedPosts] = useState<any[]>([]);
   const [displayedInterestedEvents, setDisplayedInterestedEvents] = useState<any[]>([]);
   const [showFlowerThanks, setShowFlowerThanks] = useState(false);
+  const history = useHistory();
 
-  const interestedPosts = useGetInterestedPosts(interestedPostsPage).data;
-  const interestedEvents = useGetInterestedEvents(interestedEventsPage).data;
+  const interestedPostsQuery = useGetInterestedPosts(interestedPostsPage);
+  const interestedEventsQuery = useGetInterestedEvents(interestedEventsPage);
+  const interestedPosts = interestedPostsQuery.data;
+  const interestedEvents = interestedEventsQuery.data;
   const megathreads = useGetMegathreads('').data ?? [];
   const dailyTip = useGetDailyTip().data;
 
@@ -41,6 +45,11 @@ const Hub: React.FC = () => {
   }, [interestedEvents, interestedEventsPage]);
 
   useEffect(() => {
+    if (!interestedEvents?.next) return;
+    setInterestedEventsPage((prev) => prev + 1);
+  }, [interestedEvents?.next]);
+
+  useEffect(() => {
     if (!showFlowerThanks) return;
     const timeout = window.setTimeout(() => {
       setShowFlowerThanks(false);
@@ -48,13 +57,34 @@ const Hub: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [showFlowerThanks]);
 
-  const upcomingInterestedEvents = useMemo(
-    () => displayedInterestedEvents
-      .filter((event) => moment(event.start_datetime).isSameOrAfter(moment()))
-      .sort((a, b) => moment(a.start_datetime).valueOf() - moment(b.start_datetime).valueOf())
-      .slice(0, 5),
-    [displayedInterestedEvents]
-  );
+  const upcomingInterestedEvents = useMemo(() => {
+    const now = moment();
+    const twoWeeksOut = moment().add(14, 'days').endOf('day');
+
+    const nextTwoWeeks = displayedInterestedEvents
+      .filter((event) => {
+        const start = moment(event.start_datetime);
+        return start.isValid() && start.isSameOrAfter(now) && start.isSameOrBefore(twoWeeksOut);
+      })
+      .sort((a, b) => moment(a.start_datetime).valueOf() - moment(b.start_datetime).valueOf());
+
+    const todayAndTomorrow = nextTwoWeeks.filter((event) => {
+      const start = moment(event.start_datetime);
+      return start.isSame(now, 'day') || start.isSame(moment(now).add(1, 'day'), 'day');
+    });
+
+    if (todayAndTomorrow.length > 5) {
+      return todayAndTomorrow;
+    }
+
+    const remainingSlots = 5 - todayAndTomorrow.length;
+    const laterEvents = nextTwoWeeks.filter((event) => {
+      const start = moment(event.start_datetime);
+      return !start.isSame(now, 'day') && !start.isSame(moment(now).add(1, 'day'), 'day');
+    });
+
+    return [...todayAndTomorrow, ...laterEvents.slice(0, remainingSlots)];
+  }, [displayedInterestedEvents]);
 
   const activeMegathreads = useMemo(
     () => megathreads.slice(0, 5),
@@ -99,6 +129,22 @@ const Hub: React.FC = () => {
     setShowFlowerThanks((prev) => !prev);
   };
 
+  const getEventDayTag = (startDatetime?: string | null) => {
+    if (!startDatetime) return null;
+    const start = moment(startDatetime);
+    if (!start.isValid()) return null;
+    if (start.isSame(moment(), 'day')) return 'TODAY';
+    if (start.isSame(moment().add(1, 'day'), 'day')) return 'Tomorrow';
+    return null;
+  };
+
+  const getEventDateTimeLabel = (startDatetime?: string | null) => {
+    if (!startDatetime) return '';
+    const start = moment(startDatetime);
+    if (!start.isValid()) return '';
+    return start.format('ddd, MMM D • h:mm A');
+  };
+
   return (
     <IonPage>
       <IonContent fullscreen>
@@ -107,43 +153,50 @@ const Hub: React.FC = () => {
         </IonRow>
 
         <IonRow className="hub-section-row">
-          <IonCol size="12" sizeMd="6">
+          <IonCol size="12">
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
                   <FontAwesomeIcon icon={faCalendarStar} /> &nbsp; Upcoming events
                 </IonCardTitle>
-                {upcomingInterestedEvents.length ? (
-                  <IonList lines="none" className="hub-interest-list">
+                {interestedEventsQuery.isLoading && interestedEventsPage === 1 ? (
+                  <IonNote color="medium">Loading events...</IonNote>
+                ) : upcomingInterestedEvents.length ? (
+                  <div className="hub-events-strip" role="list" aria-label="Upcoming interested events">
                     {upcomingInterestedEvents.map((event) => (
-                      <IonItem
-                        color="white"
+                      <button
+                        type="button"
                         key={event.id}
-                        button
-                        detail
-                        routerLink={`/community?calendarDate=${moment(event.start_datetime).format('YYYY-MM-DD')}`}
+                        className="hub-event-preview"
+                        onClick={() => history.push(`/community?calendarDate=${moment(event.start_datetime).format('YYYY-MM-DD')}`)}
                       >
-                        <IonLabel className="ion-text-wrap">
-                          <h3>{event.name}</h3>
-                          <p>{moment(event.start_datetime).format('MMM D, h:mm A')}</p>
-                          <p>{event.location || event.event_type || 'Community event'}</p>
-                        </IonLabel>
-                      </IonItem>
+                        {getEventDayTag(event.start_datetime) ? (
+                          <span className={`hub-event-tag ${getEventDayTag(event.start_datetime) === 'TODAY' ? 'today' : 'tomorrow'}`}>
+                            {getEventDayTag(event.start_datetime)}
+                          </span>
+                        ) : null}
+                        <span className="hub-event-preview-title">{event.name}</span>
+                        <span className="hub-event-preview-datetime">{getEventDateTimeLabel(event.start_datetime)}</span>
+                      </button>
                     ))}
-                  </IonList>
+                  </div>
                 ) : (
-                  <IonNote color="medium">No upcoming interested events yet.</IonNote>
+                  <div className="hub-empty-state">
+                    <IonNote color="medium" className="hub-empty-state-copy">
+                      Use the Star <FontAwesomeIcon icon={faStar} /> to see events you&apos;re interested in here.
+                    </IonNote>
+                    <div className="hub-empty-state-action">
+                      <IonButton size="small" fill="outline" color="navy" routerLink="/community">
+                        Open calendar
+                      </IonButton>
+                    </div>
+                  </div>
                 )}
-                {interestedEvents?.next ? (
-                  <IonButton size="small" fill="outline" onClick={() => setInterestedEventsPage(interestedEventsPage + 1)}>
-                    See more events
-                  </IonButton>
-                ) : null}
               </IonCardContent>
             </IonCard>
           </IonCol>
 
-          <IonCol size="12" sizeMd="6" className="hub-tips-col">
+          <IonCol size="12" className="hub-tips-col">
               {dailyTip ? (
                 <>
                   {showFlowerThanks ? (
@@ -183,13 +236,15 @@ const Hub: React.FC = () => {
         </IonRow>
 
         <IonRow className="hub-section-row">
-          <IonCol size="12" sizeMd="6">
+          <IonCol size="12">
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
                   <FontAwesomeIcon icon={faStar} /> &nbsp; Posts you're interested in
                 </IonCardTitle>
-                {displayedInterestedPosts.length ? (
+                {interestedPostsQuery.isLoading && interestedPostsPage === 1 ? (
+                  <IonNote color="medium">Loading posts...</IonNote>
+                ) : displayedInterestedPosts.length ? (
                   <IonRow className="hub-mini-posts-row">
                     {displayedInterestedPosts.map((post) => (
                       <IonCol key={post.id} size="12" sizeMd="6">
@@ -206,7 +261,11 @@ const Hub: React.FC = () => {
                     ))}
                   </IonRow>
                 ) : (
-                  <IonNote color="medium">No interested posts yet.</IonNote>
+                  <div className="hub-empty-state">
+                    <IonNote color="medium" className="hub-empty-state-copy">
+                      Use the Star <FontAwesomeIcon icon={faStar} /> to see posts you&apos;re interested in here.
+                    </IonNote>
+                  </div>
                 )}
                 {interestedPosts?.next ? (
                   <IonButton size="small" fill="outline" onClick={() => setInterestedPostsPage(interestedPostsPage + 1)}>
@@ -217,7 +276,7 @@ const Hub: React.FC = () => {
             </IonCard>
           </IonCol>
 
-          <IonCol size="12" sizeMd="6">
+          <IonCol size="12">
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>

@@ -65,12 +65,31 @@
   min-height: 52px;
   padding: 6px 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-weight: 500;
   cursor: pointer;
   position: relative;
+}
+
+.refreshments-calendar-modal .calendar-day-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refreshments-calendar-modal .calendar-day-interest-star {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  transform: translateX(-50%);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--ion-color-warning);
+}
+
+.refreshments-calendar-modal .calendar-day--selected .calendar-day-interest-star {
+  color: var(--ion-color-white);
 }
 
 .refreshments-calendar-modal .calendar-day--not-current {

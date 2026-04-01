@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IonApp } from '@ionic/react';
+import { star, starOutline } from 'ionicons/icons';
 
 const {
   mockPresentModal,
@@ -60,6 +61,7 @@ let mockEvents: any[] = [
     local_only: true,
     profile_image: 'https://example.com/avatar.jpg',
     anonymous: false,
+    interested: true,
   },
 ];
 
@@ -68,6 +70,15 @@ vi.mock('@ionic/react', async () => {
   return {
     ...actual,
     IonModal: ({ isOpen, children, onDidDismiss }: any) => (isOpen ? <div data-testid="calendar-modal">{children}<button onClick={() => onDidDismiss?.()}>dismiss-modal</button></div> : null),
+    IonIcon: ({ icon, color, className, ...props }: any) => (
+      <span
+        data-testid="ion-icon"
+        data-icon={String(icon)}
+        data-color={color ?? ''}
+        className={className}
+        {...props}
+      />
+    ),
     useIonModal: (_component: any, props: any) => {
       mockModalConfigs.push(props);
       return [mockPresentModal, mockDismissModal];
@@ -185,6 +196,7 @@ describe('EventsCalendar', () => {
         local_only: true,
         profile_image: 'https://example.com/avatar.jpg',
         anonymous: false,
+        interested: true,
       },
     ];
     mockPreferencesGet.mockResolvedValue({ value: null });
@@ -303,5 +315,66 @@ describe('EventsCalendar', () => {
     fireEvent.click(screen.getByText('›'));
 
     expect(screen.queryByText(/shared by/i)).not.toBeInTheDocument();
+  });
+
+  it('renders the selected-day interested marker without a hardcoded warning color prop', async () => {
+    mockEvents = [
+      {
+        ...mockEvents[0],
+        id: 21,
+        start_datetime: '2026-04-04T18:00:00.000Z',
+        end_datetime: '2026-04-04T19:00:00.000Z',
+        interested: true,
+      },
+    ];
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-04-04' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+
+    const selectedDay = document.querySelector('.calendar-day--selected') as HTMLElement;
+    expect(selectedDay).toBeTruthy();
+
+    const selectedDayStar = selectedDay.querySelector('.calendar-day-interest-star') as HTMLElement;
+    expect(selectedDayStar).toBeTruthy();
+    expect(selectedDayStar).toHaveAttribute('data-icon', String(star));
+    expect(selectedDayStar).toHaveAttribute('data-color', '');
+  });
+
+  it('shows filled yellow stars for interested events even when a different event card is expanded', async () => {
+    mockEvents = [
+      {
+        ...mockEvents[0],
+        id: 31,
+        name: 'New post',
+        start_datetime: '2026-04-04T09:28:00.000Z',
+        end_datetime: '2026-04-04T10:28:00.000Z',
+        interested: false,
+      },
+      {
+        ...mockEvents[0],
+        id: 32,
+        name: 'Three events',
+        start_datetime: '2026-04-04T16:00:00.000Z',
+        end_datetime: '2026-04-04T18:00:00.000Z',
+        interested: true,
+      },
+    ];
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-04-04' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.getByText('Three events')).toBeInTheDocument();
+
+    const eventCards = Array.from(document.querySelectorAll('.calendar-event-card'));
+    expect(eventCards).toHaveLength(2);
+
+    const firstStar = eventCards[0].querySelector('.calendar-event-star [data-testid="ion-icon"]') as HTMLElement;
+    const secondStar = eventCards[1].querySelector('.calendar-event-star [data-testid="ion-icon"]') as HTMLElement;
+
+    expect(firstStar).toHaveAttribute('data-icon', String(starOutline));
+    expect(firstStar).toHaveAttribute('data-color', 'medium');
+    expect(secondStar).toHaveAttribute('data-icon', String(star));
+    expect(secondStar).toHaveAttribute('data-color', 'warning');
   });
 });
