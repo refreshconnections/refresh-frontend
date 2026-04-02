@@ -1,3 +1,20 @@
+const SHARED_LOCATION_COORDS_COPY = {
+  useLocation: 'Share by device location',
+  chooseCity: 'Share by choosing my city',
+  coordsSaved: 'Coordinates saved. You can edit your location label on the next step.',
+  dontShare: "Don't share my location",
+  confirmPrefix: "So just confirming, you're near ",
+  confirmSuffix: '?',
+  confirmCancel: "Nope, I'll try again.",
+  confirmConfirm: 'Yep',
+  deniedHeader: "Location access isn't enabled.",
+  deniedMessage: 'You can enable location access, choose your city, or continue without sharing.',
+  gpsErrorHeader: "We couldn't get your GPS coordinates.",
+  gpsErrorMessage: 'Try again, choose your city, or continue without sharing.',
+  declineCancel: 'Go back',
+  declineConfirm: 'OK',
+};
+
 export const ONBOARDING_COPY = {
   common: {
     back: 'Back',
@@ -10,9 +27,9 @@ export const ONBOARDING_COPY = {
     welcome: {
       title: 'Welcome to Refresh Connections',
       body:
-        "We're a Covid conscientious community for building friendships, support, and (if you choose) one-on-one connections.",
+        "We are a Covid Conscientious community for friendships, support, and one-on-one connections.",
       primaryCta: "I'm ready to get started",
-      secondaryCta: 'I want to know more first',
+      secondaryCta: 'Tell me more first',
     },
     info: {
       title: 'What to expect',
@@ -20,29 +37,29 @@ export const ONBOARDING_COPY = {
         {
           title: 'Community connections',
           body:
-            "You'll start on the community side of the app--a shared space where members can gather, listen, and join in when they're ready. Here you can join conversations, community check-ins at the Refreshments Bar, and other spaces to share wins, resources, and gatherings that match your comfort level.",
+            "You can start by creating your community profile, which lets you take part in the community side of the app. This is where members gather for shared conversation, support, and discussion in the Refreshments Bar and Calendar.",
         },
         {
           title: 'Personal connections',
           body:
-            "Refresh Connections also has a personal side, where you can discover intentional one-on-one connections. Create a profile that reflects how you approach Covid and what you're looking for, then explore potential matches for friendship, support, or dating. Messaging always requires mutual consent.",
+            "On the personal side of the app, you can discover one-on-one connections for friendship, support, or dating. To do that, you'll create a more detailed personal profile that reflects how you approach Covid and what kinds of connections you're looking for. Messaging always requires mutual consent.",
         },
         {
           title: 'Getting started',
           body:
-            "On the next two screens we'll ask for your mobile number and birthdate. They help keep your account and the community safer. After that, you can start exploring the community—and, if you'd like, fill out a profile so you can join the discovery on the one-on-one connections side of the app.",
+            "On the next two screens, we'll ask for your mobile number and birthdate. These help keep your account secure and support community safety. After that, you can look around and, when you’re ready, create the profiles you want to use.",
         },
       ],
-      continueCta: "Sounds good, let's verify",
+      continueCta: "Let's verify",
     },
     phone: {
       title: 'Verify your mobile number',
-      body: "We'll send a short code by SMS to confirm this number is yours.",
-      placeholder: 'Enter phone number',
+      body: "We'll text you a short code to confirm this number is yours.",
+      placeholder: 'Enter mobile number',
       whyShow: 'Why do you need my phone number?',
       whyHide: 'Hide why we ask',
       whyBody:
-        "We use your mobile number to help secure your account, support community safety by preventing duplicate accounts, and as a second check when you make important account changes. Your number is never shown to other members or used for marketing texts, and how we handle it is explained in our Privacy Policy. Temporary or anonymous numbers can't be used.",
+        "We use your mobile number to help secure your account and support community safety by preventing duplicate accounts. Your number is not shown to other members, and how we handle it is explained in our Privacy Policy. Temporary or anonymous numbers can’t be used.",
       existingPhoneCta: 'Next',
       sendCodeCta: 'Send code',
       invalidError: 'Enter a valid phone number.',
@@ -59,7 +76,7 @@ export const ONBOARDING_COPY = {
       inUse: {
         header: 'Phone number in use',
         message:
-          'This phone number is already associated with another account. Return to the login page and choose "Forgot email / password" to search for another account, or contact help@refreshconnections.com if you deleted a previous account in error.',
+          'This phone number is already associated with another account. Return to the login page and choose "Forgot email / password" to find another account, or contact help@refreshconnections.com if you deleted a previous account in error.',
       },
       tooManyAttempts: {
         header: 'Too many attempts',
@@ -73,12 +90,12 @@ export const ONBOARDING_COPY = {
     birthday: {
       title: 'When is your birthday?',
       body:
-        "We use your birthdate to verify that you're eligible to use Refresh Connections and to support community safety features like age-based filters.",
+        "We use your birthdate to verify that you're eligible to use Refresh Connections, support community safety, and for features like age-based filters.", // TODO
       emptyLabel: 'Choose your birthday',
       whyShow: 'Why do you need my birthday?',
       whyHide: 'Hide why we ask',
       whyBody:
-        "Used for account verification, community safety, and making sure age filters work the way members expect. You won't be able to edit your birthdate yourself later. Your full birthdate isn't shown to other members, and how we handle it is explained in our Privacy Policy.",
+        "Your birthdate is used to confirm eligibility and support age-based filters. To help prevent misuse of age-based features, you won't be able to edit your birthdate yourself later. Your full birthdate is not shown to other members, and how we handle it is explained in our Privacy Policy.",
       saveCta: 'Save birthday',
       confirm: {
         suffix: ' will show as your age. Is this correct?',
@@ -98,19 +115,19 @@ export const ONBOARDING_COPY = {
       title: "You're ready to get started!",
       community: {
         title: 'Set up a community profile',
-        body: 'Join in on conversations at the Refreshments Bar and other shared spaces.',
+        body: 'Join in the discussion and find Covid Conscientious events at the Refreshments Bar and Calendar.',
         cta: 'Start community profile',
       },
       personal: {
         title: 'Set up a personal profile',
         body:
-          "Send Likes and exchange one-on-one messages when you're ready for personal connections.",
+          "Discover one-on-one connections and message them when you're ready.",
         cta: 'Start personal profile',
       },
       explore: {
         title: 'Check things out first',
         body:
-          'Take a look around first. You can always add a community and personal profile later.',
+          "Want to look around before creating a profile? Explore the community side first, then create the profiles you want to use when you're ready.",
         cta: 'Explore the app',
       },
     },
@@ -119,16 +136,19 @@ export const ONBOARDING_COPY = {
     welcome: {
       title: 'Welcome to your community profile',
       withPersonalProfile:
-        'This creates your community identity—your username for posts and comments, plus a photo and any extra details you want to share. Anyone can see this.',
-      withPersonalProfileSecondary:
-        'Since you already have a personal profile, you can also connect 1:1 by turning on Connect from Refreshments.',
+        'Your community profile is how you appear in the Refreshments Bar and Calendar. It includes your Refreshments handle, a photo, and any other details you want to share with the community.',
+      withPersonalProfileSecondary: 
+        'Continue conversations one-on-one with people you meet in the Refreshments Bar by turning on “Connect from Refreshments.”',
       withoutPersonalProfileSecondary:
-        'Later, if you create a personal profile, you can connect 1:1 by turning on Connect from Refreshments.',
+        'Later, you can continue conversations one-on-one with people you meet in the Refreshments Bar by creating a personal profile and turning on “Connect from Refreshments.”',
     },
     username: {
-      title: 'Pick your community username',
-      body: 'Your username appears next to your posts and comments. You can only change it every {days} days.',
-      placeholderFallback: 'yourname',
+      title: 'Choose your Refreshments handle',
+      body: `This is the name that will appear next to your posts and comments in the Refreshments Bar and Calendar. It can be different from your personal profile name.
+
+        You can change your handle every 60 days.
+        `,
+      placeholderFallback: 'yourhandle',
       lockedNote: "You can't change your username yet.",
       requiredToContinue: 'Please choose a username to continue.',
       taken: 'That username is already taken. Try another.',
@@ -136,27 +156,30 @@ export const ONBOARDING_COPY = {
     },
     connect: {
       title: 'Connect from Refreshments',
-      body:
-        'Turn this on to let people discover your personal profile from your community posts and comments.',
+      body: 
+        'Use Connect from Refreshments to invite a member you see at the Refreshments Bar post or Calendar to join you in a one-on-one conversation.',
       toggleLabel: 'Connect from Refreshments',
     },
     photo: {
       title: 'Choose your community photo',
-      withPersonalPhoto: 'Use your personal profile photo or upload a community-only photo.',
-      withoutPersonalPhoto: 'Upload a community-only photo to represent you in the community.',
+      withPersonalPhoto: 'This is the photo people see when they view your community profile from the Refreshments Bar and Calendar. Use your personal profile photo or pick a new one just for the Refreshments community.',
+      withoutPersonalPhoto: 'This is the photo people see when they view your community profile from the Refreshments Bar and Calendar.',
       toggleLabel: 'Use personal profile photo',
       missingPersonalPhoto: 'Add a personal profile photo first to use it here.',
       uploadCta: 'Upload a community photo',
       existingPhotoNote: 'Your current community photo will stay unless you upload a new one.',
     },
     bio: {
-      title: 'Write a community bio',
+      title: 'Your community bio',
       body:
-        'Keep it short—this is what people will see when they click your name on comments and posts.',
+        'This is a brief description of you people see when they open your community profile from your posts or comments in the Refreshments Bar and Calendar.',
     },
     location: {
       title: 'Show your location?',
-      body: 'Share your general location on your community profile.',
+      withSharedCoords:
+        'Choose whether the location that shows on your personal profile is also shown on your community profile.',
+      withoutSharedCoords:
+        "Even though you didn't share your location with the app to see local posts, you can add a general location label to show on your community profile if you'd like.",
       shownPrefix: 'Location shown on your profile: ',
       addLocation: 'Add location',
       editLocation: 'Edit location',
@@ -165,25 +188,24 @@ export const ONBOARDING_COPY = {
     age: {
       title: 'Show your age?',
       body: 'Choose how your age appears on your community profile.',
-      shownPrefix: 'Age shown on your profile: ',
-      hideAge: "Don't show age",
+      shownPrefix: 'Age shown on your community profile: ',
+      hideAge: "(hidden)",
       showExact: 'Show exact age',
       showDecade: 'Show decade only',
       hide: 'Hide age',
     },
     ready: {
-      title: 'Community profile ready!',
-      body: 'You can update any of these choices later in Settings.',
-      finish: 'Finish',
+      title: 'Done!',
+      body: 'Your community profile is ready. You can update these choices later in your Me tab > Profile. You can go ahead and set up your personal profile now too, or explore Refreshments first!',
+      createPersonal: 'Create your personal profile',
+      finish: 'Go to the Refreshments Bar',
     },
   },
   personalProfile: {
     intro: {
       title: 'Create your personal profile',
       bodyPrimary:
-        'Create your personal profile so other members can get to know you one-on-one.',
-      bodySecondary:
-        "You'll need a personal profile to send likes and private messages.",
+        "Your personal profile lets you discover other members, receive Likes, and connect one-on-one.",
       cta: "Let's go",
     },
     logoutConfirm: {
@@ -197,8 +219,8 @@ export const ONBOARDING_COPY = {
     name: {
       title: "What's your name?",
       bodyPrimary:
-        'This is the name (a first name or a nickname) that will be shown on your profile.',
-      bodySecondary: 'We require you to contact support if you need to change your name later.',
+        'This is the name (a first name or a nickname) that will be shown on your personal profile.',
+      bodySecondary: 'It is separate from your Refreshments handle on the community side of the app. If you ever need to change it later, contact support so we can help keep profiles genuine and interactions clear.',
     },
     pronouns: {
       title: 'What are your pronouns?',
@@ -216,36 +238,39 @@ export const ONBOARDING_COPY = {
       ],
     },
     locationCoords: {
-      title: 'Where do you live?',
-      body:
-        'Refresh uses your coordinates to show nearby matches. Your profile shows a location label, and you control how specific it is.',
-      useLocation: 'Use my location',
-      chooseCity: 'Choose my city',
-      coordsSaved: 'Coordinates saved. You can edit your location label on the next step.',
-      dontShare: "Don't share my location",
-      confirmPrefix: "So just confirming, you're near ",
-      confirmSuffix: '?',
-      confirmCancel: "Nope, I'll try again.",
-      confirmConfirm: 'Yep',
-      deniedHeader: "Location access isn't enabled.",
-      deniedMessage: 'You can enable location access, choose your city, or continue without sharing.',
-      gpsErrorHeader: "We couldn't get your GPS coordinates.",
-      gpsErrorMessage: 'Try again, choose your city, or continue without sharing.',
-      declineHeader: "Distance filters won't work without coordinates",
-      declineMessage: "You can still use Refresh, but you won't be able to filter your picks by distance.",
-      declineCancel: 'Go back',
-      declineConfirm: 'OK',
+      personal: {
+        title: 'Turn on Distance Filters',
+        body: `Share your location to power distance filters on the personal side of Refresh Connections and to see local Refreshments Bar posts and Refreshments Calendar events.
+
+            Add your location now to get the most out of Refresh Connections from the start, but this step is optional.`,
+        declineHeader: 'Skip Distance Filters for now?',
+        declineMessage:
+          "You can still use Refresh Connections, but personal-side discovery by location won't work until you add your location.",
+        ...SHARED_LOCATION_COORDS_COPY,
+      },
+      community: {
+        title: 'See local posts and events',
+        body: `Share your location with the app to see posts and events local to you in the Refreshments Bar and Calendar.
+
+        You can also use your location to power distance filtering on the personal side of Refresh Connections if you create a personal profile later.
+
+            Add your location now to get the most out of Refresh Connections from the start, but this step is optional.`,
+        declineHeader: 'Skip location for now?',
+        declineMessage:
+          "You can still use the community side of Refresh Connections, but you won't be able to see local posts and events until you add your location.",
+        ...SHARED_LOCATION_COORDS_COPY,
+      },
     },
     locationLabel: {
-      title: 'Location shown on your profile',
+      title: 'Choose your location label',
       withCoords:
-        "We'll use your location to show nearby matches. This is the location label other members will see.",
+        'This is the general location label that appears on your profiles. It can be vaguer than the location you shared for filtering and local features, and you can update it any time.',
       withoutCoords:
-        'You chose not to share your location with the app, but you can still add a location label to your profile for other members to see.',
+        "Even if you don't share your location for filtering, you can still add a general location label for other members to see.",
       label: 'Location label',
-      placeholder: 'City, region, or neighborhood',
+      placeholder: 'Your city and country',
       note:
-        'You can keep this broad (like a state or country even) or more specific (like your city) - but never share your exact address!',
+        "Since we're an international app, it's helpful to share your country here. Never share your exact address.",
     },
     lookingFor: {
       title: 'What kind of connections are you looking to make?',
@@ -264,10 +289,10 @@ export const ONBOARDING_COPY = {
     genderIdentity: {
       title: 'How do you identify?',
       body:
-        'We use your gender identity to share your profile with potential connections. Choose as many as apply to you.',
+        'These choices can help other members discover your profile. You can choose to show them on your profile, or keep them just for filtering.',
       scrollNote: 'Scroll for all options!',
       subtext:
-        'These choices are used to filter your picks. You can choose to show them on your profile, or keep them just for filtering.',
+        '',
       showOnProfile: 'Show on profile',
       options: [
         ['woman', 'Woman'],
@@ -292,24 +317,23 @@ export const ONBOARDING_COPY = {
     },
     livedExperiences: {
       title: 'Lived experiences',
-      body: 'Choose any that apply. These are used for filtering in picks.',
+      body: 'These choices can help other members discover your profile. You can choose to show them on your profile, or keep them just for filtering.',
       popover:
-        "We're adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.",
-      scrollNote: 'Scroll for all options!',
+        "We're adding future filters. These filters will unlock once enough members opt in.",
+      scrollNote: '',
       subtext: 'You can choose to show these on your profile, or keep them just for filtering.',
       showOnProfile: 'Show on profile',
       options: [
         ['poc', 'POC'],
-        ['spiritual', 'Spiritual'],
         ['neurodivergent', 'Neurodivergent'],
         ['sober', 'Sober'],
       ] as [string, string][],
     },
     covid: {
       title: 'How are you dealing with Covid?',
-      body: 'These will be shown on your profile. You can change these at any time.',
+      body: 'These choices will be shown on your profile. You can change these at any time.',
       noteLabel: 'Anything else you want to share?',
-      notePlaceholder: 'Optional note about your Covid precautions',
+      notePlaceholder: 'Optional note about your Covid approach',
       scrollNote: 'Scroll for all options!',
       sections: {
         home: 'Home:',
@@ -319,8 +343,8 @@ export const ONBOARDING_COPY = {
       },
       options: [
         { value: 18, label: 'I have no routine daily exposures' },
-        { value: 3, label: 'I live with non-covid cautious people' },
-        { value: 8, label: 'I live alone/with others that share my level of covid caution' },
+        { value: 3, label: 'I live with non-Covid cautious people' },
+        { value: 8, label: 'I live alone/with others that share my level of Covid caution' },
         { value: 1, label: 'I work from home' },
         { value: 9, label: 'I go to work/school but always in a high quality mask' },
         { value: 16, label: 'My work requires poor/no masking' },
@@ -339,9 +363,11 @@ export const ONBOARDING_COPY = {
       ],
     },
     profilePic: {
-      title: 'Upload a profile picture!',
+      title: 'Upload a profile photo!',
       body:
-        'Make a good first impression. This is the first thing that will show on your profile. We recommend it be of just you. Remember, your profile needs to include at least one photo that shows your face.',
+        `Front and center on your profile, your photo helps other members get to know the real you.
+
+        A clear face photo is required for all personal profiles on Refresh Connections. We recommend choosing a photo of just you for your first picture.`,
       upload: 'Upload',
       skip: "Don't feel like adding pictures yet?",
     },
@@ -354,11 +380,13 @@ export const ONBOARDING_COPY = {
     bio: {
       title: "You're just about done!",
       body:
-        'Anything else you want to tell people? Fill out the bio section! This is free space for you to say whatever you want about yourself (you know, within reason). Update this at any time. It will be shown front and center on your profile!',
+        `Anything else you want to tell people?
+
+        This is your bio, a space to share more about yourself in your own words. It will appear prominently on your profile, and you can update it at any time.`,
     },
     letsTalkAbout: {
-      title: "Let's talk about",
-      body: 'Choose three prompts and fill them out so people have easy conversation starters.',
+      title: "Let's talk about...",
+      body: "Choose three topics to add to your profile. They make for easy conversation starters.",
       chooseTopics: 'Choose three topics',
       pickThree: 'Pick three',
       options: [
@@ -366,13 +394,13 @@ export const ONBOARDING_COPY = {
         { value: 'hobby', label: 'Hobbies' },
         { value: 'petpeeve', label: 'Pet peeves' },
         { value: 'talent', label: 'Talents' },
-        { value: 'fixation_book', label: 'Favorite book' },
-        { value: 'fixation_tv', label: 'Favorite TV show' },
-        { value: 'fixation_movie', label: 'Favorite movie' },
-        { value: 'fixation_album', label: 'Favorite album' },
-        { value: 'fixation_musicalartist', label: 'Favorite musical artist' },
-        { value: 'fixation_game', label: 'Favorite game' },
-        { value: 'fixation_topic', label: 'Favorite interest/topic' },
+        { value: 'fave_book', label: 'Favorite book' },
+        { value: 'fave_tv', label: 'Favorite TV show' },
+        { value: 'fave_movie', label: 'Favorite movie' },
+        { value: 'fave_album', label: 'Favorite album' },
+        { value: 'fave_musicalartist', label: 'Favorite musical artist' },
+        { value: 'fave_game', label: 'Favorite game' },
+        { value: 'fave_topic', label: 'Favorite topic' },
       ],
     },
     done: {
@@ -380,7 +408,7 @@ export const ONBOARDING_COPY = {
       body: 'Head to the "Me" tab at any time to update or add to your profile!',
       connectTitle: 'Connect from Refreshments',
       connectBody:
-        'Turn this on to let people discover your personal profile from your community posts and comments.',
+        'Use Connect from Refreshments to invite a member you see at the Refreshments Bar post or Calendar to join you in a one-on-one conversation.',
       refreshCta: "Let's Refresh!",
       pausedReview: {
         subHeader:

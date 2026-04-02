@@ -933,7 +933,7 @@ const SelfProfile: React.FC = () => {
                                                                     {[
                                                                         ['man', 'Man'],
                                                                         ['woman', 'Woman'],
-                                                                        ['nb', 'Nonbinary/gender noncomforming'],
+                                                                        ['nb', 'Nonbinary/gender nonconforming'],
                                                                         ['genderfluid', 'Gender Fluid'],
                                                                         ['cis', 'Cis'],
                                                                         ['trans', 'Trans'],

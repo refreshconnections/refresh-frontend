@@ -108,9 +108,6 @@ const OnboardingCardLivedExperiences: React.FC = () => {
             ))}
           </IonList>
           <IonNote className="onboarding-option-note">{copy.scrollNote}</IonNote>
-          <IonText className="onboarding-subtext">
-            {copy.subtext}
-          </IonText>
           <IonItem className="onboarding-toggle-row">
             <IonLabel>{copy.showOnProfile}</IonLabel>
             <IonToggle

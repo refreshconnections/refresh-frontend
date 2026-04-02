@@ -268,8 +268,8 @@ const Refreshments: React.FC = () => {
         </IonRefresher>
         {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         {isRefreshingPosts ? (
-          <IonRow className="ion-justify-content-center">
-            <IonNote color="medium">Refreshing posts...</IonNote>
+          <IonRow className="ion-justify-content-center" data-testid="warm-cache-refresh-indicator">
+            <IonSpinner name="dots" />
           </IonRow>
         ) : null}
         <IonRow className="filter-buttons">

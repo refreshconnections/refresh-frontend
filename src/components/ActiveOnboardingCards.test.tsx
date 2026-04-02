@@ -278,22 +278,29 @@ describe('active onboarding cards', () => {
 
   it('renders the shared location coords card copy', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.title)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.chooseCity)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.title)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity)).toBeInTheDocument();
+  });
+
+  it('renders the community-specific location coords copy', async () => {
+    await renderInApp(<OnboardingCardLocationCoords flow="community" />);
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.community.title)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.community.useLocation)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.community.chooseCity)).toBeInTheDocument();
   });
 
   it('shows the saved-coordinates note and denied-permission alert branch', async () => {
     mockCheckPermissions.mockResolvedValue({ location: 'denied' });
 
     await renderInApp(<OnboardingCardLocationCoords />);
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.coordsSaved)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.coordsSaved)).toBeInTheDocument();
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: ONBOARDING_COPY.cards.locationCoords.deniedHeader,
+        header: ONBOARDING_COPY.cards.locationCoords.personal.deniedHeader,
       })
     );
   });
@@ -301,13 +308,13 @@ describe('active onboarding cards', () => {
   it('opens the city selector and supports declining coordinates', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.chooseCity).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity).closest('ion-button'));
     expect(mockPresentModal).toHaveBeenCalled();
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.dontShare).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.dontShare).closest('ion-button'));
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: ONBOARDING_COPY.cards.locationCoords.declineHeader,
+        header: ONBOARDING_COPY.cards.locationCoords.personal.declineHeader,
       })
     );
   });
@@ -315,7 +322,7 @@ describe('active onboarding cards', () => {
   it('saves coordinates from a selected city after confirming the popup', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.chooseCity).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity).closest('ion-button'));
 
     const citySelectorProps = mockIonModalProps.at(-1);
     await act(async () => {
@@ -338,7 +345,7 @@ describe('active onboarding cards', () => {
   it('does not save coordinates when the city confirmation popup is canceled', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.chooseCity).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity).closest('ion-button'));
 
     const citySelectorProps = mockIonModalProps.at(-1);
     await act(async () => {
@@ -355,7 +362,7 @@ describe('active onboarding cards', () => {
   it('saves coordinates from device location after confirming the popup', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
     const confirmConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
     expect(confirmConfig.header).toContain('New York');
@@ -377,7 +384,7 @@ describe('active onboarding cards', () => {
 
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
     const confirmConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
     expect(confirmConfig.header).toContain('40.713, -74.006');
@@ -388,11 +395,11 @@ describe('active onboarding cards', () => {
 
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: ONBOARDING_COPY.cards.locationCoords.gpsErrorHeader,
+        header: ONBOARDING_COPY.cards.locationCoords.personal.gpsErrorHeader,
       })
     );
   });
@@ -402,11 +409,11 @@ describe('active onboarding cards', () => {
 
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.useLocation).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: ONBOARDING_COPY.cards.locationCoords.gpsErrorHeader,
+        header: ONBOARDING_COPY.cards.locationCoords.personal.gpsErrorHeader,
       })
     );
   });
@@ -414,7 +421,7 @@ describe('active onboarding cards', () => {
   it('advances when the skip-without-location popup is confirmed', async () => {
     await renderInApp(<OnboardingCardLocationCoords />);
 
-    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.dontShare).closest('ion-button'));
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.dontShare).closest('ion-button'));
 
     const declineConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
     await act(async () => {
@@ -448,6 +455,23 @@ describe('active onboarding cards', () => {
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
+  it('prefills the location-label card from the previous step when given an initial label', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      location: '',
+      coordinates_near: '',
+      location_point_lat: null,
+      location_point_long: null,
+    };
+
+    await renderInApp(<OnboardingCardLocationLabel initialLocation="Chicago" />);
+
+    const locationInput = document.querySelector<HTMLElement>('ion-input');
+    expect(locationInput).not.toBeNull();
+    expect(getReactProps(locationInput!)?.value).toBe('Chicago');
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
+  });
+
   it('renders the shared looking-for card copy and options', async () => {
     await renderInApp(<OnboardingCardLookingFor />);
     expect(screen.getByText(ONBOARDING_COPY.cards.lookingFor.title)).toBeInTheDocument();
@@ -458,7 +482,6 @@ describe('active onboarding cards', () => {
   it('renders the shared gender identity card copy and options', async () => {
     await renderInApp(<OnboardingCardGenderIdentity />);
     expect(screen.getByText(ONBOARDING_COPY.cards.genderIdentity.title)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.genderIdentity.subtext)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.genderIdentity.options[0][1])).toBeInTheDocument();
   });
 
@@ -522,7 +545,9 @@ describe('active onboarding cards', () => {
   it('renders the shared bio card copy', async () => {
     await renderInApp(<OnboardingCardBio />);
     expect(screen.getByText(ONBOARDING_COPY.cards.bio.title)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.bio.body)).toBeInTheDocument();
+    expect(
+      screen.getByText((content, node) => node?.textContent === ONBOARDING_COPY.cards.bio.body)
+    ).toBeInTheDocument();
   });
 
   it('renders the shared lets-talk-about card copy and option labels', async () => {

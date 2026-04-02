@@ -794,7 +794,7 @@ export async function editComment(comment_id, text) {
 }
 
 export async function markAllInChatAsRead(sender_id) {
-    const url = `${BASE_URL}/api/profiles/chats/mark_all_messages_in_chat_as_read/`;
+    const url = `${BASE_URL}/api/profiles/chats/mark_all_messages_in_chat_as_read_v2/`;
 
     const data = {
         "sender_id": sender_id

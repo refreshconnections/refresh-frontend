@@ -1032,7 +1032,7 @@ describe('markAllInChatAsRead()', () => {
     axiosFn.mockResolvedValue(makeAxiosResponse({}));
     await markAllInChatAsRead(77);
     const config = axiosFn.mock.calls[0][0];
-    expect(config.url).toContain('/api/profiles/chats/mark_all_messages_in_chat_as_read/');
+    expect(config.url).toContain('/api/profiles/chats/mark_all_messages_in_chat_as_read_v2/');
     expect(config.data).toEqual({ sender_id: 77 });
   });
 });

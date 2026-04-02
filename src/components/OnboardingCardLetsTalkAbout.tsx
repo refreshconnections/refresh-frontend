@@ -25,7 +25,11 @@ import './OnboardingCard.css';
 
 const talkAboutOptions = ONBOARDING_COPY.cards.letsTalkAbout.options;
 
-const OnboardingCardLetsTalkAbout: React.FC = () => {
+type OnboardingCardLetsTalkAboutProps = {
+  onBeforeNext?: () => Promise<void>;
+};
+
+const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = ({ onBeforeNext }) => {
   const copy = ONBOARDING_COPY.cards.letsTalkAbout;
   const swiper = useSwiper();
   const [selected, setSelected] = useState<string[]>([]);
@@ -115,6 +119,9 @@ const OnboardingCardLetsTalkAbout: React.FC = () => {
       return acc;
     }, {} as Record<string, string>);
     await updateCurrentUserProfile(payload);
+    if (onBeforeNext) {
+      await onBeforeNext();
+    }
     swiper.slideNext();
   };
 

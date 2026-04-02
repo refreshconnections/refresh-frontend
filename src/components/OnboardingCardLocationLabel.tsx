@@ -6,7 +6,6 @@ import {
   IonInput,
   IonItem,
   IonLabel,
-  IonNote,
   IonRow,
   IonText,
 } from '@ionic/react';
@@ -18,7 +17,11 @@ import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const OnboardingCardLocationLabel: React.FC = () => {
+type Props = {
+  initialLocation?: string;
+};
+
+const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
   const copy = ONBOARDING_COPY.cards.locationLabel;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
@@ -31,10 +34,11 @@ const OnboardingCardLocationLabel: React.FC = () => {
   useEffect(() => {
     const existingLocation =
       currentProfile?.location ||
+      initialLocation ||
       currentProfile?.coordinates_near ||
       '';
     setLocation(existingLocation);
-  }, [currentProfile?.location, currentProfile?.coordinates_near]);
+  }, [currentProfile?.location, currentProfile?.coordinates_near, initialLocation]);
 
   const saveAndContinue = async () => {
     if (!location.trim()) return;
@@ -50,9 +54,12 @@ const OnboardingCardLocationLabel: React.FC = () => {
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>
-          {hasCoords
-            ? copy.withCoords
-            : copy.withoutCoords}
+          <p style={{ marginBottom: '1rem' }}>
+            {hasCoords
+              ? copy.withCoords
+              : copy.withoutCoords}
+          </p>
+          <p>{copy.note}</p>
         </IonText>
         <IonItem>
           <IonLabel position="stacked">{copy.label}</IonLabel>
@@ -64,7 +71,6 @@ const OnboardingCardLocationLabel: React.FC = () => {
             onIonInput={(event) => setLocation(event.detail.value ?? '')}
           />
         </IonItem>
-        <IonNote>{copy.note}</IonNote>
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>

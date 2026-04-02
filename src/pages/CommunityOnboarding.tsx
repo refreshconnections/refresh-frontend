@@ -36,6 +36,9 @@ import { apiClient } from '../hooks/api/api-client';
 import { updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
 import CroppedImageModal from '../components/CroppedImageModal';
 import EditLocationModal from '../components/EditLocationModal';
+import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
+import PersonalProfile from './PersonalProfile';
+import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardConnectFromRefreshments';
 
 import './OnboardingV2.css';
 import { ONBOARDING_COPY } from '../constants/onboarding';
@@ -62,6 +65,9 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
   const { data: communityProfile, refetch: refetchCommunityProfile } = useGetCommunityProfile();
+  const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
+    onDismiss: () => dismissPersonalProfile(),
+  });
 
   const swiperRef = useRef<any>(null);
   const [swiperReady, setSwiperReady] = useState(false);
@@ -73,6 +79,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
   const [communityBio, setCommunityBio] = useState('');
   const [showLocation, setShowLocation] = useState(false);
+  const [communityLocationLabel, setCommunityLocationLabel] = useState('');
   const [showAgeTier, setShowAgeTier] = useState<AgeTier>('exact');
   const [usePersonalPhoto, setUsePersonalPhoto] = useState(false);
 
@@ -85,11 +92,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [savingAge, setSavingAge] = useState(false);
 
   const hasPersonalProfile = Boolean(currentProfile?.created_profile);
-  const totalSlides = 7 + (hasPersonalProfile ? 1 : 0);
+  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
+  const totalSlides = 7 + (hasPersonalProfile ? 1 : 0) + (!hasSharedLocationCoords ? 1 : 0);
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : '-';
-  const locationLabel = (currentProfile?.location ?? '').trim();
   const personalPhoto = currentProfile?.pic1_main ?? null;
   const communityPhoto = (communityProfile as CommunityProfile | undefined)?.community_profile_pic ?? null;
 
@@ -110,6 +117,20 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     );
     setShowAgeTier((profile.show_age_tier as AgeTier) ?? 'exact');
   }, [communityProfile]);
+
+  useEffect(() => {
+    setHasSharedLocationCoords(
+      Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
+    );
+    setCommunityLocationLabel(
+      (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim()
+    );
+  }, [
+    currentProfile?.location,
+    currentProfile?.coordinates_near,
+    currentProfile?.location_point_lat,
+    currentProfile?.location_point_long,
+  ]);
 
   const canChangeUsername = () => {
     if (!currentProfile?.username_last_updated) return true;
@@ -185,8 +206,28 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   };
 
   const handleLocationNext = async () => {
+    const trimmedLocationLabel = communityLocationLabel.trim();
+    const shouldShowLocation = hasSharedLocationCoords ? showLocation : Boolean(trimmedLocationLabel);
+
+    if (shouldShowLocation && !trimmedLocationLabel) {
+      return;
+    }
+
     setSavingLocation(true);
-    await updateCommunityProfile({ show_location: showLocation });
+    const currentLocation = (currentProfile?.location ?? '').trim();
+    if (trimmedLocationLabel && trimmedLocationLabel !== currentLocation) {
+      await updateCurrentUserProfile({ location: trimmedLocationLabel });
+    }
+    setShowLocation(shouldShowLocation);
+    await updateCommunityProfile({ show_location: shouldShowLocation });
+    setSavingLocation(false);
+    swiperRef.current?.slideNext();
+  };
+
+  const handleLocationSkip = async () => {
+    setSavingLocation(true);
+    setShowLocation(false);
+    await updateCommunityProfile({ show_location: false });
     setSavingLocation(false);
     swiperRef.current?.slideNext();
   };
@@ -263,7 +304,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     onDismiss: handleCropDismiss,
   });
   const [presentLocationModal, dismissLocationModal] = useIonModal(EditLocationModal, {
-    onDismiss: () => dismissLocationModal(),
+    onDismiss: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['current'] });
+      dismissLocationModal();
+    },
   });
 
   return (
@@ -354,33 +398,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
           {hasPersonalProfile && (
             <SwiperSlide>
-              <div className="onboarding-v2__slide">
-                <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
-                  <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                    <IonCardTitle>{copy.connect.title}</IonCardTitle>
-                    <p>{copy.connect.body}</p>
-                    <IonItem lines="none">
-                      <IonLabel>{copy.connect.toggleLabel}</IonLabel>
-                      <IonToggle
-                        slot="end"
-                        checked={Boolean(currentProfile?.settings_community_profile)}
-                        disabled={currentProfile?.paused_profile || currentProfile?.deactivated_profile}
-                        onIonChange={(e) => handleToggleConnect(e.detail.checked)}
-                      />
-                    </IonItem>
-                  </IonCardContent>
-                  <div className="onboarding-v2__card-footer">
-                    <IonRow className="onboarding-v2__nav">
-                      <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                        {ONBOARDING_COPY.common.back}
-                      </IonButton>
-                      <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()}>
-                        {ONBOARDING_COPY.common.next}
-                      </IonButton>
-                    </IonRow>
-                  </div>
-                </IonCard>
-              </div>
+              <OnboardingCardConnectFromRefreshments />
             </SwiperSlide>
           )}
 
@@ -453,6 +471,87 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             </div>
           </SwiperSlide>
 
+          {!hasSharedLocationCoords && (
+            <SwiperSlide>
+              <OnboardingCardLocationCoords
+                flow="community"
+                onCoordsSaved={(localLabel) => {
+                  setHasSharedLocationCoords(true);
+                  setCommunityLocationLabel((prev) => prev || localLabel);
+                }}
+              />
+            </SwiperSlide>
+          )}
+
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
+                <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
+                  <IonCardTitle>{copy.location.title}</IonCardTitle>
+                  <p>
+                    {hasSharedLocationCoords
+                      ? copy.location.withSharedCoords
+                      : copy.location.withoutSharedCoords}
+                  </p>
+                  {hasSharedLocationCoords ? (
+                    <>
+                      <IonText color="medium">
+                        <p style={{ marginTop: 0 }}>
+                          {copy.location.shownPrefix}{communityLocationLabel || '-'}
+                        </p>
+                      </IonText>
+                      <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
+                        {communityLocationLabel ? copy.location.editLocation : copy.location.addLocation}
+                      </IonButton>
+                      <IonItem lines="none">
+                        <IonLabel>{copy.location.toggleLabel}</IonLabel>
+                        <IonToggle
+                          slot="end"
+                          checked={showLocation}
+                          onIonChange={(e) => setShowLocation(e.detail.checked)}
+                        />
+                      </IonItem>
+                    </>
+                  ) : (
+                    <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
+                      <IonInput
+                        value={communityLocationLabel}
+                        placeholder={ONBOARDING_COPY.cards.locationLabel.placeholder}
+                        autoCapitalize="words"
+                        maxlength={40}
+                        onIonInput={(event) => setCommunityLocationLabel(event.detail.value ?? '')}
+                      />
+                    </IonItem>
+                  )}
+                </IonCardContent>
+                <div className="onboarding-v2__card-footer">
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                      {ONBOARDING_COPY.common.back}
+                    </IonButton>
+                    <IonButton
+                      className="onboarding-v2__primary-action"
+                      onClick={handleLocationNext}
+                      disabled={savingLocation || (hasSharedLocationCoords && showLocation && !communityLocationLabel.trim())}
+                    >
+                      <span className={`onboarding-v2__button-label ${savingLocation ? 'loading' : ''}`}>
+                        {ONBOARDING_COPY.common.next}
+                      </span>
+                      {savingLocation && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
+                    </IonButton>
+                  </IonRow>
+                  {!hasSharedLocationCoords && (
+                    <IonRow className="onboarding-v2__nav">
+                      <IonButton fill="clear" size="small" onClick={handleLocationSkip}>
+                        {ONBOARDING_COPY.common.skip}
+                      </IonButton>
+                    </IonRow>
+                  )}
+                </div>
+              </IonCard>
+            </div>
+          </SwiperSlide>
+
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
@@ -484,46 +583,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   <IonRow className="onboarding-v2__nav">
                     <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
                       {ONBOARDING_COPY.common.skip}
-                    </IonButton>
-                  </IonRow>
-                </div>
-              </IonCard>
-            </div>
-          </SwiperSlide>
-
-          <SwiperSlide>
-            <div className="onboarding-v2__slide">
-              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
-                <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-                  <IonCardTitle>{copy.location.title}</IonCardTitle>
-                  <p>{copy.location.body}</p>
-                  <IonText color="medium">
-                    <p style={{ marginTop: 0 }}>
-                      {copy.location.shownPrefix}{locationLabel || '-'}
-                    </p>
-                  </IonText>
-                  <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
-                    {locationLabel ? copy.location.editLocation : copy.location.addLocation}
-                  </IonButton>
-                  <IonItem lines="none">
-                    <IonLabel>{copy.location.toggleLabel}</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={showLocation}
-                      onIonChange={(e) => setShowLocation(e.detail.checked)}
-                    />
-                  </IonItem>
-                </IonCardContent>
-                <div className="onboarding-v2__card-footer">
-                  <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
-                      {ONBOARDING_COPY.common.back}
-                    </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={handleLocationNext} disabled={savingLocation}>
-                      <span className={`onboarding-v2__button-label ${savingLocation ? 'loading' : ''}`}>
-                        {ONBOARDING_COPY.common.next}
-                      </span>
-                      {savingLocation && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
                   </IonRow>
                 </div>
@@ -581,6 +640,15 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>{copy.ready.title}</IonCardTitle>
                   <p>{copy.ready.body}</p>
+                  {!hasPersonalProfile && (
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      onClick={() => presentPersonalProfile()}
+                    >
+                      {copy.ready.createPersonal}
+                    </IonButton>
+                  )}
                   <IonButton
                     expand="block"
                     className="onboarding-v2__primary-action"

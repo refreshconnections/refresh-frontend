@@ -21,8 +21,16 @@ import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const OnboardingCardLocationCoords: React.FC = () => {
-  const copy = ONBOARDING_COPY.cards.locationCoords;
+type Props = {
+  flow?: 'personal' | 'community';
+  onCoordsSaved?: (localLabel: string) => void;
+};
+
+const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCoordsSaved }) => {
+  const copy =
+    flow === 'community'
+      ? ONBOARDING_COPY.cards.locationCoords.community
+      : ONBOARDING_COPY.cards.locationCoords.personal;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [presentAlert] = useIonAlert();
@@ -76,6 +84,7 @@ const OnboardingCardLocationCoords: React.FC = () => {
               coordinates_near: local,
             });
             setCoordsSet(true);
+            onCoordsSaved?.(local);
             if (advanceOnConfirm) {
               swiper.slideNext();
             }
@@ -151,7 +160,9 @@ const OnboardingCardLocationCoords: React.FC = () => {
     <IonCard className="onboarding-slide">
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
-        <IonText>{copy.body}</IonText>
+        <IonText style={{ whiteSpace: 'pre-line' }}>
+          {copy.body}
+        </IonText>
         <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
           <IonButton expand="block" onClick={shareLocation}>
             {copy.useLocation}

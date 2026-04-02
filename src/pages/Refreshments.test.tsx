@@ -253,9 +253,26 @@ describe('Refreshments page', () => {
       isFetching: true,
     } as any);
 
+    const { container } = renderRefreshments();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('warm-cache-refresh-indicator')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="warm-cache-refresh-indicator"] ion-spinner[name="dots"]')).toBeTruthy();
+    });
+  });
+
+  it('keeps warmed posts visible and does not flash the empty state while fresh posts are fetching', async () => {
+    mockPosts.mockReturnValue({
+      data: [11, 12, 13, 14, 15, 16],
+      isLoading: false,
+      isFetching: true,
+    } as any);
+
     renderRefreshments();
 
-    expect(await screen.findByText('Refreshing posts...')).toBeInTheDocument();
+    expect(await screen.findByText('post-card-11')).toBeInTheDocument();
+    expect(screen.getByText('post-card-15')).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing here yet/)).not.toBeInTheDocument();
   });
 
   it('renders and dismisses the active refreshments alert', async () => {

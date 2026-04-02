@@ -240,9 +240,26 @@ describe('Chats page', () => {
       isFetching: true,
     } as any);
 
+    const { container } = renderChats();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('warm-cache-refresh-indicator')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="warm-cache-refresh-indicator"] ion-spinner[name="dots"]')).toBeTruthy();
+    });
+  });
+
+  it('keeps the warmed chats segment visible and does not flash the loading card while fresh chats are fetching', async () => {
+    mockCurrentUserChats.mockReturnValue({
+      data: baseChats,
+      isLoading: false,
+      isFetching: true,
+    } as any);
+
     renderChats();
 
-    expect(await screen.findByText('Refreshing chats...')).toBeInTheDocument();
+    expect(await screen.findByText('chats-segment')).toBeInTheDocument();
+    expect(screen.getByText('chat-count-2')).toBeInTheDocument();
+    expect(screen.queryByText('loading-card')).not.toBeInTheDocument();
   });
 
   it('toggles search mode when the search button is pressed and mutuals exist', async () => {

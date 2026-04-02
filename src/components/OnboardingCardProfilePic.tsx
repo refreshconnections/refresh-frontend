@@ -130,7 +130,7 @@ const OnboardingCardProfilePic: React.FC = () => {
         <IonCardContent>
           <IonCardTitle>{copy.title}</IonCardTitle>
 
-          <IonText>{copy.body}</IonText>
+          <IonText style={{ whiteSpace: 'pre-line' }}>{copy.body}</IonText>
           <IonItem className="no-bottom-line prof" style={{ overflow: "auto" }}>
             {data ?
               <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>

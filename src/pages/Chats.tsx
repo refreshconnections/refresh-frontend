@@ -1,4 +1,4 @@
-import { IonBadge, IonButton, IonCol, IonContent, IonLabel, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, RefresherEventDetail } from '@ionic/react';
+import { IonBadge, IonButton, IonCol, IonContent, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, RefresherEventDetail } from '@ionic/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getGroupChatInvites, getGroupChats, getWebsocketUrl } from '../hooks/utilities';
 import './Chats.css';
@@ -203,8 +203,8 @@ const Chats: React.FC = () => {
           </IonRow>
           {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
           {isRefreshingChats ? (
-            <IonRow className="ion-justify-content-center">
-              <IonNote color="medium">Refreshing chats...</IonNote>
+            <IonRow className="ion-justify-content-center" data-testid="warm-cache-refresh-indicator">
+              <IonSpinner name="dots" />
             </IonRow>
           ) : null}
           <IonRow className="segments">

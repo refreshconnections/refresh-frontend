@@ -55,9 +55,12 @@ const mockMessages: { pages: any[]; hasNextPage: boolean } = {
 };
 
 const mockCurrentUser = {
+  user: 'current-user',
   subscription_level: 'free',
   settings_streak_tracker: false,
 };
+
+const mockRouterPush = vi.fn();
 
 const mockChatSettings = {
   allow_images_global: true,
@@ -92,6 +95,7 @@ vi.mock('@ionic/react', async () => {
   return {
     ...actual,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
+    useIonRouter: () => ({ push: mockRouterPush }),
     useIonModal: (component: any, modalProps: any) => [
       (...args: any[]) => mockPresentModal(component?.name ?? 'AnonymousModal', modalProps, ...args),
       (...args: any[]) => mockDismissModal(...args),
@@ -293,6 +297,7 @@ describe('TextModal', () => {
     mockIsConnected = true;
     mockHasNextPage = false;
     mockOverallUnread = 0;
+    mockCurrentUser.user = 'current-user';
     mockMessages.pages = [{ data: [] }];
     mockMessages.pages[0].count = 0;
     mockYourChatSettings.conversation_starter = false;
@@ -425,6 +430,20 @@ describe('TextModal', () => {
         user_pk: DEFAULT_OTHER_USER_ID,
         message_id: 200,
       });
+    });
+
+    it('does not call push or send a read receipt for a different other user while the modal is open', () => {
+      renderWithClient();
+      const listenerCb = getCapturedListener();
+
+      act(() => {
+        listenerCb({ msg_type: 8, sender: '999', db_id: 201 });
+      });
+
+      expect(newMessagePush).not.toHaveBeenCalled();
+      expect(mockSend).not.toHaveBeenCalledWith(
+        expect.objectContaining({ msg_type: 6 })
+      );
     });
 
     it('calls resetMessages (invalidates queries) for any msg_type 8 regardless of sender', () => {
@@ -782,6 +801,20 @@ describe('TextModal', () => {
 
       mockCurrentUser.settings_streak_tracker = false;
     });
+
+    it('marks the chat list for refresh when dismissing after sending a message from the modal', () => {
+      const { container } = renderWithClient();
+      const textarea = container.querySelector('ion-textarea[name="message_input"]') as HTMLElement;
+      const backIcon = container.querySelector('.message-back') as HTMLElement;
+
+      ionInput(textarea, 'refresh after send');
+
+      const sendBtn = container.querySelector('.message-send[color="tertiary"]') as HTMLElement;
+      fireEvent.click(sendBtn);
+      fireEvent.click(backIcon);
+
+      expect(defaultProps.onDismiss).toHaveBeenCalledWith({ refreshChatList: true });
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -789,12 +822,41 @@ describe('TextModal', () => {
   // -------------------------------------------------------------------------
 
   describe('Back button', () => {
-    it('calls onDismiss when the back button is clicked', () => {
+    it('calls onDismiss with refreshChatList false when the back button is clicked and nothing changed', () => {
       const { container } = renderWithClient();
       const backIcon = container.querySelector('.message-back') as HTMLElement;
       expect(backIcon).toBeTruthy();
       fireEvent.click(backIcon);
       expect(defaultProps.onDismiss).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onDismiss).toHaveBeenCalledWith({ refreshChatList: false });
+    });
+
+    it('calls onDismiss with refreshChatList true after an incoming message from another user while open', () => {
+      const { container } = renderWithClient();
+      const listenerCb = getCapturedListener();
+      const backIcon = container.querySelector('.message-back') as HTMLElement;
+
+      act(() => {
+        listenerCb({ msg_type: 8, sender: '999', db_id: 300 });
+      });
+
+      fireEvent.click(backIcon);
+
+      expect(defaultProps.onDismiss).toHaveBeenCalledWith({ refreshChatList: true });
+    });
+
+    it('keeps refreshChatList false when only our own websocket confirmation arrives', () => {
+      const { container } = renderWithClient();
+      const listenerCb = getCapturedListener();
+      const backIcon = container.querySelector('.message-back') as HTMLElement;
+
+      act(() => {
+        listenerCb({ msg_type: 8, sender: 'current-user', db_id: 301 });
+      });
+
+      fireEvent.click(backIcon);
+
+      expect(defaultProps.onDismiss).toHaveBeenCalledWith({ refreshChatList: false });
     });
   });
 
@@ -887,6 +949,34 @@ describe('TextModal', () => {
 
       fireEvent.click(screen.getByText('Hide Context'));
       expect(screen.queryByText('context:Ask me about mask blocs:Ask me about books')).not.toBeInTheDocument();
+    });
+
+    it('does not show the context helper when the latest row is a system heart message', () => {
+      mockMessages.pages = [{ count: 2, data: [makeMessage({ id: 2 }), makeMessage({ id: -1, text: 'liked this' })] }];
+      mockOtherChatSettings.conversation_starter = true;
+      mockOtherChatSettings.conversation_starter_text = 'Ask me about mask blocs';
+      mockYourChatSettings.conversation_starter = true;
+      mockYourChatSettings.conversation_starter_text = 'Ask me about books';
+
+      renderWithClient();
+
+      expect(screen.queryByText('Need Context?')).not.toBeInTheDocument();
+      expect(screen.queryByText(/context:/)).not.toBeInTheDocument();
+    });
+
+    it('does not show the context helper for longer conversations', () => {
+      mockMessages.pages = [{
+        count: 10,
+        data: [makeMessage({ id: 10 }), makeMessage({ id: 9 }), makeMessage({ id: 8 })],
+      }];
+      mockOtherChatSettings.conversation_starter = true;
+      mockOtherChatSettings.conversation_starter_text = 'Ask me about mask blocs';
+      mockYourChatSettings.conversation_starter = true;
+      mockYourChatSettings.conversation_starter_text = 'Ask me about books';
+
+      renderWithClient();
+
+      expect(screen.queryByText('Need Context?')).not.toBeInTheDocument();
     });
   });
 
@@ -1051,6 +1141,20 @@ describe('TextModal', () => {
       );
     });
 
+    it('navigates to help from the attachments info modal callback', () => {
+      const { container } = renderWithClient();
+
+      fireEvent.click(container.querySelector('.message-attachments') as HTMLElement);
+      fireEvent.click(container.querySelector('.attachment-buttons ion-button[fill="outline"]') as HTMLElement);
+
+      const modalProps = mockPresentModal.mock.calls.at(-1)?.[1];
+      expect(modalProps?.onNavigate).toEqual(expect.any(Function));
+
+      modalProps.onNavigate('/help');
+
+      expect(mockRouterPush).toHaveBeenCalledWith('/help');
+    });
+
     it('confirms and unsends an eligible outgoing message', async () => {
       mockMessages.pages = [{
         count: 1,
@@ -1090,7 +1194,7 @@ describe('TextModal', () => {
       });
 
       await waitFor(() => {
-        expect(defaultProps.onDismiss).toHaveBeenCalled();
+        expect(defaultProps.onDismiss).toHaveBeenCalledWith({ refreshChatList: false });
       });
       await waitFor(() => {
         expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/help');

@@ -10,7 +10,8 @@ import {
   useIonAlert,
   useIonModal,
 } from '@ionic/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import './Page.css';
 import './Onboarding.css';
@@ -37,7 +38,10 @@ import { handleLogoutCommon, setFontSizePref, setTextZoom, setThemePref, updateC
 import StayPausedModal from '../components/StayPausedModal';
 import OnboardingCardPronouns from '../components/OnboardingCardPronouns';
 import OnboardingCardLivedExperiences from '../components/OnboardingCardLivedExperiences';
+import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardConnectFromRefreshments';
+import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { Preferences } from '@capacitor/preferences';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 
@@ -51,10 +55,17 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
     onDismiss: () => stayPausedDismiss(),
   });
+  const queryClient = useQueryClient();
   const swiperRef = useRef<any>(null);
   const currentProfile = useGetCurrentProfile().data;
-  const showConnectToggle = !currentProfile?.created_profile;
+  const moderation = useGetCurrentModeration().data;
+  const { data: communityProfile } = useGetCommunityProfile();
+  const hasCommunityProfile = Boolean(communityProfile);
+  const showConnectToggle = !hasCommunityProfile && !currentProfile?.created_profile;
   const SLIDE_KEY = 'personal_profile_onboarding_slide';
+  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
+  const [locationLabelDraft, setLocationLabelDraft] = useState('');
+  const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
 
   const SwiperButtonPrev = ({ children }) => {
     const swiper = useSwiper();
@@ -78,6 +89,20 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
 
     setThemeandFont();
   }, []);
+
+  useEffect(() => {
+    setHasSharedLocationCoords(
+      Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
+    );
+    setLocationLabelDraft(
+      (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim()
+    );
+  }, [
+    currentProfile?.location,
+    currentProfile?.coordinates_near,
+    currentProfile?.location_point_lat,
+    currentProfile?.location_point_long,
+  ]);
 
   useEffect(() => {
     const restoreSlide = async () => {
@@ -122,6 +147,22 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     window.location.pathname = '/community';
   };
 
+  const ensureProfileCreatedBeforeConnect = async () => {
+    if (!hasCommunityProfile || currentProfile?.created_profile || hasCreatedProfileForConnectStep) {
+      return;
+    }
+
+    await updateCurrentUserProfile({
+      created_profile: true,
+      paused_profile: moderation?.paused_on_creation ? true : false,
+      location_last_updated: null,
+      romance_gender_last_updated: null,
+      gender_last_updated: null,
+    });
+    setHasCreatedProfileForConnectStep(true);
+    await queryClient.invalidateQueries({ queryKey: ['current'] });
+  };
+
   return (
     <IonPage>
       <IonContent className="ignore-keyboard ">
@@ -153,9 +194,6 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                 <IonText style={{ textAlign: 'center' }}>
                   <h2>{copy.intro.bodyPrimary}</h2>
                 </IonText>
-                <IonText style={{ textAlign: 'center' }}>
-                  <h2>{copy.intro.bodySecondary}</h2>
-                </IonText>
               </IonCardContent>
               <IonRow className="onboarding-slide-buttons">
                 <SwiperButtonNext>{copy.intro.cta}</SwiperButtonNext>
@@ -169,11 +207,18 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           <SwiperSlide>
             <OnboardingCardPronouns />
           </SwiperSlide>
+          {!hasSharedLocationCoords && (
+            <SwiperSlide>
+              <OnboardingCardLocationCoords
+                onCoordsSaved={(localLabel) => {
+                  setHasSharedLocationCoords(true);
+                  setLocationLabelDraft((prev) => prev || localLabel);
+                }}
+              />
+            </SwiperSlide>
+          )}
           <SwiperSlide>
-            <OnboardingCardLocationCoords />
-          </SwiperSlide>
-          <SwiperSlide>
-            <OnboardingCardLocationLabel />
+            <OnboardingCardLocationLabel initialLocation={locationLabelDraft} />
           </SwiperSlide>
           <SwiperSlide>
             <OnboardingCardLookingFor />
@@ -198,8 +243,13 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
             <OnboardingCardBio />
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLetsTalkAbout />
+            <OnboardingCardLetsTalkAbout onBeforeNext={ensureProfileCreatedBeforeConnect} />
           </SwiperSlide>
+          {hasCommunityProfile && (
+            <SwiperSlide>
+              <OnboardingCardConnectFromRefreshments />
+            </SwiperSlide>
+          )}
           <SwiperSlide>
             <OnboardingCardDone showConnectToggle={showConnectToggle} />
           </SwiperSlide>

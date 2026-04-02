@@ -104,6 +104,9 @@ let mockCommunityProfile: any = {
   use_personal_profile_picture: true,
   show_age_tier: 'exact',
 };
+let mockModeration: any = {
+  paused_on_creation: false,
+};
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
@@ -192,6 +195,10 @@ vi.mock('../hooks/api/eligibility', () => ({
 
 vi.mock('../hooks/api/profiles/current-profile', () => ({
   useGetCurrentProfile: () => ({ data: mockCurrentProfile }),
+}));
+
+vi.mock('../hooks/api/profiles/current-moderation', () => ({
+  useGetCurrentModeration: () => ({ data: mockModeration }),
 }));
 
 vi.mock('../hooks/api/profiles/community-profile', () => ({
@@ -608,6 +615,8 @@ describe('active onboarding pages', () => {
       ...mockCurrentProfile,
       created_profile: false,
       pic1_main: null,
+      location_point_lat: null,
+      location_point_long: null,
       location: '',
     };
     mockCommunityProfile = {
@@ -620,10 +629,51 @@ describe('active onboarding pages', () => {
     expect(
       screen.getByText(ONBOARDING_COPY.communityOnboarding.welcome.withoutPersonalProfileSecondary)
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)
+    ).toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.connect.title)).not.toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.photo.withoutPersonalPhoto)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.addLocation)).toBeInTheDocument();
+    expect(
+      screen.getByText((content, node) => node?.textContent === ONBOARDING_COPY.communityOnboarding.photo.withoutPersonalPhoto)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
+    expect(screen.getAllByText(ONBOARDING_COPY.common.skip).length).toBeGreaterThan(0);
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal)).toBeInTheDocument();
     expect(screen.getByAltText('Community profile placeholder')).toBeInTheDocument();
+  });
+
+  it('shows the shared-personal-location copy in community onboarding when coordinates already exist', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    expect(
+      screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withSharedCoords)
+    ).toBeInTheDocument();
+    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal)).not.toBeInTheDocument();
+  });
+
+  it('shows the community location-sharing step when a personal profile exists but shared coordinates do not', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: null,
+      location_point_long: null,
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.title).length).toBeGreaterThan(0);
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
   });
 
   it('renders the locked-username and age-hidden community branches', () => {
@@ -641,8 +691,8 @@ describe('active onboarding pages', () => {
     renderInApp(<CommunityOnboarding />);
 
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.username.lockedNote)).toBeInTheDocument();
-    expect(screen.getByText(/Age shown on your profile:/)).toHaveTextContent(
-      `Age shown on your profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
+    expect(screen.getByText(/Age shown on your community profile:/)).toHaveTextContent(
+      `Age shown on your community profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
     );
   });
 
@@ -747,13 +797,15 @@ describe('active onboarding pages', () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
       created_profile: true,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
     };
 
     renderInApp(<CommunityOnboarding />);
 
     const bioTextarea = document.querySelector('ion-textarea') as HTMLElement;
     fireEvent(bioTextarea, new CustomEvent('ionInput', { detail: { value: '  New community bio  ' }, bubbles: true }));
-    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[4]);
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[5]);
 
     await waitFor(() => {
       expect(mockApiPatch).toHaveBeenCalledWith('/api/profiles/community_profile/', {
@@ -765,7 +817,7 @@ describe('active onboarding pages', () => {
       document.querySelectorAll('ion-toggle')[2] as HTMLElement,
       new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true })
     );
-    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[5]);
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[4]);
 
     await waitFor(() => {
       expect(mockApiPatch).toHaveBeenCalledWith('/api/profiles/community_profile/', {
@@ -806,6 +858,8 @@ describe('active onboarding pages', () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
       created_profile: true,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
     };
 
     renderInApp(<CommunityOnboarding />);
@@ -817,15 +871,62 @@ describe('active onboarding pages', () => {
       document.querySelectorAll('ion-toggle')[1] as HTMLElement,
       new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true })
     );
-    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[2]);
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[4]);
 
     fireEvent(
       document.querySelector('ion-radio-group') as HTMLElement,
       new CustomEvent('ionChange', { detail: { value: 'decade' }, bubbles: true })
     );
-    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[3]);
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[6]);
 
-    expect(screen.getByText(/Age shown on your profile:/)).toHaveTextContent('30s');
+    expect(screen.getByText(/Age shown on your community profile:/)).toHaveTextContent('30s');
+  });
+
+  it('auto-enables community location display when a label is added without shared coordinates', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: null,
+      location_point_long: null,
+      location: '',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    const locationInputs = document.querySelectorAll<HTMLElement>('ion-input');
+    const locationInput = locationInputs[1];
+    expect(locationInput).toBeDefined();
+    fireEvent(locationInput!, new CustomEvent('ionInput', { detail: { value: 'Chicago, IL, USA' }, bubbles: true }));
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[4]);
+
+    await waitFor(() => {
+      expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ location: 'Chicago, IL, USA' });
+    });
+    await waitFor(() => {
+      expect(mockApiPatch).toHaveBeenCalledWith('/api/profiles/community_profile/', {
+        show_location: true,
+      });
+    });
+  });
+
+  it('keeps community location display off when the optional no-coords label step is skipped', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: null,
+      location_point_long: null,
+      location: '',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.skip)[1]);
+
+    await waitFor(() => {
+      expect(mockApiPatch).toHaveBeenCalledWith('/api/profiles/community_profile/', {
+        show_location: false,
+      });
+    });
   });
 
   it('renders the active personal profile intro copy from the shared constants', () => {
@@ -833,9 +934,41 @@ describe('active onboarding pages', () => {
 
     expect(screen.getByText(ONBOARDING_COPY.personalProfile.intro.title)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.personalProfile.intro.bodyPrimary)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.personalProfile.intro.bodySecondary)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.personalProfile.intro.cta)).toBeInTheDocument();
     expect(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]).toBeInTheDocument();
+  });
+
+  it('shows the connect from refreshments slide in personal onboarding when a community profile already exists', () => {
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.title).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.toggleLabel).length).toBeGreaterThan(0);
+  });
+
+  it('includes the location-sharing card in personal onboarding when shared coordinates do not exist', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      location_point_lat: null,
+      location_point_long: null,
+    };
+
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
+  });
+
+  it('skips the location-sharing card in personal onboarding when shared coordinates already exist', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
+    };
+
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
   });
 
   it('shows the finish-later branch on personal profile and not the connect toggle card mock', () => {
