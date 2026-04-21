@@ -539,7 +539,7 @@ describe('getAvatarDisplay()', () => {
   it('uses the refresh-avatar class and placeholder src when no profileImage', () => {
     const result = getAvatarDisplay({ profileImage: null });
     expect(result.className).toBe('refresh-avatar');
-    expect(result.src).toBe('../static/img/refresh-flower-blue.png');
+    expect(result.src).toBe('../static/img/navynobordervector.png');
     expect(result.hasImage).toBe(false);
     expect(result.showConnectBorder).toBe(false);
   });

@@ -5,8 +5,9 @@ import PropTypes from 'prop-types';
 import axios from "axios";
 // import myConfig from "../../configs";
 // import { ToastContainer, toast } from "react-toastify";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonModal, IonButtons, IonNote, IonAlert, IonRow, IonCheckbox, IonText } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonModal, IonButtons, IonNote, IonAlert, IonRow, IonCheckbox, IonText } from '@ionic/react';
 import Cookies from 'js-cookie';
+import BoxedStackedInput from './BoxedStackedInput';
 
 var BASE_URL = process.env.BASE_URL
 if (!process.env.BASE_URL) {
@@ -114,27 +115,32 @@ const RegisterModal: React.FC = () => {
                 console.log("Registration didn't work.");
                 console.log(error.response.data)
                 const errorsList: string[] = []
-                if (error.response.data["email"]?.length > 0) {
-                    error.response.data["email"].forEach((element: any) => {
+                const responseData = error?.response?.data;
+
+                if (responseData?.["email"]?.length > 0) {
+                    responseData["email"].forEach((element: any) => {
                         errorsList.push("Email: " + element["message"])
                     })
                 }
-                if (error.response.data["name"]?.length > 0) {
-                    error.response.data["name"].forEach((element: any) => {
+                if (responseData?.["name"]?.length > 0) {
+                    responseData["name"].forEach((element: any) => {
                         errorsList.push("Name: " + element["message"])
                     })
                 }
-                if (error.response.data["password"]?.length > 0) {
-                    error.response.data["password"].forEach((element: any) => {
+                if (responseData?.["password"]?.length > 0) {
+                    responseData["password"].forEach((element: any) => {
                         errorsList.push("Password: " + element["message"])
                     })
                 }
-                else if (error.response.data["confirmPassword"]?.length > 0) {
-                    error.response.data["confirmPassword"].forEach((element: any) => {
+                if (responseData?.["confirmPassword"]?.length > 0) {
+                    responseData["confirmPassword"].forEach((element: any) => {
                         errorsList.push("Confirm Password: " + element["message"])
                     })
                 }
-                else {
+                if (!errorsList.length && typeof responseData === 'string' && responseData.trim()) {
+                    errorsList.push(responseData.trim())
+                }
+                if (!errorsList.length) {
                     errorsList.push("Something went wrong.")
                 }
                 setErrors(errorsList)
@@ -162,54 +168,49 @@ const RegisterModal: React.FC = () => {
                     message="Check your email for a link to validate before you can log in."
                     buttons={['OK']}
                 />
-                <form className="ion-padding" onSubmit={handleRegister}>
-                    <IonItem>
-                        <IonInput label="Email"
-                            labelPlacement="floating"
-                            value={email}
-                            name="email"
-                            onIonInput={e => setEmail(e.detail.value!)}
-                            placeholder="email@example.com"
-                            type="email" />
-                    </IonItem>
-                    <IonItem>
-                        <IonInput label="First name"
-                            labelPlacement="floating"
-                            value={first_name}
-                            name="first name"
-                            autoCapitalize='words'
-                            onIonInput={e => setFirstName(e.detail.value!)}
-                            placeholder="First name"
-                            type="text" />
-                    </IonItem>
-                    <IonItem>
-                        <IonInput label="Last name"
-                            labelPlacement="floating"
-                            value={last_name}
-                            name="last name"
-                            autoCapitalize='words'
-                            onIonInput={e => setLastName(e.detail.value!)}
-                            placeholder="Last name"
-                            type="text" />
-                    </IonItem>
-                    <IonItem>
-                        <IonInput label="Password"
-                            labelPlacement="floating"
-                            value={password}
-                            name="password"
-                            onIonInput={e => setPassword(e.detail.value!)}
-                            placeholder="Password"
-                            type="password" />
-                    </IonItem>
-                    <IonItem>
-                        <IonInput label="Confirm Password"
-                            labelPlacement="floating"
-                            value={confirmPassword}
-                            name="password"
-                            onIonInput={e => setConfirmPassword(e.detail.value!)}
-                            placeholder="Password"
-                            type="password" />
-                    </IonItem>
+                <form className="ion-padding register-modal-form" onSubmit={handleRegister}>
+                    <BoxedStackedInput
+                        label="Email"
+                        value={email}
+                        name="email"
+                        onIonInput={e => setEmail(e.detail.value!)}
+                        placeholder="email@example.com"
+                        type="email"
+                    />
+                    <BoxedStackedInput
+                        label="First name"
+                        value={first_name}
+                        name="first name"
+                        autocapitalize="words"
+                        onIonInput={e => setFirstName(e.detail.value!)}
+                        placeholder="First name"
+                        type="text"
+                    />
+                    <BoxedStackedInput
+                        label="Last name"
+                        value={last_name}
+                        name="last name"
+                        autocapitalize="words"
+                        onIonInput={e => setLastName(e.detail.value!)}
+                        placeholder="Last name"
+                        type="text"
+                    />
+                    <BoxedStackedInput
+                        label="Password"
+                        value={password}
+                        name="password"
+                        onIonInput={e => setPassword(e.detail.value!)}
+                        placeholder="Password"
+                        type="password"
+                    />
+                    <BoxedStackedInput
+                        label="Confirm Password"
+                        value={confirmPassword}
+                        name="password"
+                        onIonInput={e => setConfirmPassword(e.detail.value!)}
+                        placeholder="Password"
+                        type="password"
+                    />
                     <IonItem className="terms">
                         <IonCheckbox slot="start" onIonChange={e => setAgreedToTerms(e.detail.checked)}></IonCheckbox>
                         <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions</a> and <a href="https://refreshconnections.com/privacy">Privacy Policy</a>.</IonText>

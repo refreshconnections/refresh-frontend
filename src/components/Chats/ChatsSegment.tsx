@@ -18,13 +18,13 @@ import './Chats.css';
 import { useGetMutualConnectionsFiltered } from "../../hooks/api/profiles/mutual-connections-filtered";
 import NewChatItem from "./NewChatItem";
 import { useChatGroups } from "../../hooks/api/chats/chat-groups";
-import { useNearbyMutualConnections } from "../../hooks/api/chats/nearby-mutual-connections";
+import { useLocalMutualConnections } from "../../hooks/api/chats/local-mutual-connections";
 import { useGetHiddenChats } from "../../hooks/api/chats/hidden-chats";
 import { useFilteredChats } from "../../hooks/api/chats/filtered-chats";
 import OrganizeChatsModal from "./OrganizeChatsModal";
 import { isPersonalPlus, isPro } from "../../hooks/utilities";
 
-type ActiveTab = 'all' | 'nearby' | 'hidden' | 'group1' | 'group2' | 'group3';
+type ActiveTab = 'all' | 'local' | 'hidden' | 'group1' | 'group2' | 'group3';
 
 type Props = {
     mutualConnectionsList: number[],
@@ -73,7 +73,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
 
     const searchedChats = useGetMutualConnectionsFiltered(search).data;
     const { data: groupsData } = useChatGroups();
-    const { data: nearbyIds } = useNearbyMutualConnections();
+    const { data: localIds } = useLocalMutualConnections();
     const {
         data: hiddenChatsData,
         isFetchingNextPage: hiddenIsFetchingNextPage,
@@ -88,7 +88,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
     const group3Ids = groupsData?.group3?.map(m => m.id) ?? [];
 
     const getFilterIds = (): number[] | null => {
-        if (activeTab === 'nearby') return nearbyIds ?? [];
+        if (activeTab === 'local') return localIds ?? [];
         if (activeTab === 'group1') return group1Ids;
         if (activeTab === 'group2') return group2Ids;
         if (activeTab === 'group3') return group3Ids;
@@ -117,11 +117,11 @@ const ChatsSegment: React.FC<Props> = (props) => {
     });
     const presentUpsellAlert = useUpsellAlert();
 
-    // Build tab list — order: All, Nearby, named lists, Hidden, address-book chip
+    // Build tab list — order: All, Local, named lists, Hidden, address-book chip
     type TabDef = { key: ActiveTab; label: string };
     const tabs: TabDef[] = [{ key: 'all', label: 'All' }];
-    if (nearbyIds !== null && nearbyIds !== undefined && nearbyIds.length > 0) {
-        tabs.push({ key: 'nearby', label: 'Nearby' });
+    if (localIds !== null && localIds !== undefined && localIds.length > 0) {
+        tabs.push({ key: 'local', label: 'Local' });
     }
 
     if (userIsPersonalPlus && groupsData) {
@@ -214,6 +214,11 @@ const ChatsSegment: React.FC<Props> = (props) => {
                             {/* Hidden tab */}
                             {activeTab === 'hidden' &&
                                 <>
+                                    {hiddenChatsData && hiddenChats.length === 0 ? (
+                                        <IonRow className="ion-justify-content-center ion-padding">
+                                            <IonText color="medium">Chats you hide will appear here.</IonText>
+                                        </IonRow>
+                                    ) : (
                                     <IonList id="wl" lines="full">
                                         {hiddenChats.map((e: any) => (
                                             <li key={e.other_user_id}>
@@ -223,6 +228,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
                                             </li>
                                         ))}
                                     </IonList>
+                                    )}
                                     {hiddenHasNextPage &&
                                         <IonRow className="ion-justify-content-center">
                                             <IonButton size="small" fill="outline" color="navy" onClick={() => fetchHiddenNextPage()} disabled={hiddenIsFetchingNextPage}>
@@ -247,7 +253,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
                                 </>
                             }
 
-                            {/* Nearby / custom list tabs: fetch on demand */}
+                            {/* Local / custom list tabs: fetch on demand */}
                             {activeTab !== 'all' && activeTab !== 'hidden' &&
                                 <>
                                     {filteredIsFetching && filteredChats.length === 0 ? (
@@ -275,7 +281,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
                     <img alt="Flower gif" src="../static/img/refresh-icon@3x.png" style={{ width: "50%" }} />
                     <IonText style={{ textAlign: "center" }}>
                         <br /><br />
-                        Connect with others in Picks and Likes to start Chats!
+                        Connect with others in Discovery and Likes to start Chats!
                     </IonText>
                 </IonRow>
             }

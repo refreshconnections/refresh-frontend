@@ -15,6 +15,10 @@ ion-row.surrounding-room {
   overflow: visible;
 }
 
+.hub-first-section-row {
+  margin-top: 12px;
+}
+
 .hub-section-row ion-col {
   overflow: visible;
 }
@@ -204,11 +208,21 @@ ion-row.surrounding-room {
   row-gap: 6px;
 }
 
+.hub-section-action-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
 .hub-mini-post {
   cursor: pointer;
   margin-left: 0;
   margin-right: 0;
   box-shadow: none;
+}
+
+.hub-mini-post-skeleton {
+  cursor: default;
 }
 
 .hub-events-strip {
@@ -219,6 +233,11 @@ ion-row.surrounding-room {
   margin: 0 -4px;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+}
+
+.hub-event-preview-skeleton {
+  cursor: default;
+  align-items: flex-start;
 }
 
 .hub-events-strip::-webkit-scrollbar {
@@ -279,6 +298,42 @@ ion-row.surrounding-room {
   font-size: 12px;
   line-height: 1.3;
   color: var(--ion-color-medium);
+}
+
+.hub-event-preview-modal {
+  width: 100%;
+  max-width: none;
+}
+
+.hub-modal-list {
+  row-gap: 8px;
+}
+
+.hub-modal-section + .hub-modal-section {
+  margin-top: 20px;
+}
+
+.hub-modal-section-title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ion-color-navy);
+}
+
+.hub-modal-section-note {
+  display: block;
+  line-height: 1.35;
+  padding-bottom: 10px;
+}
+
+.hub-modal-events-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.hub-modal-loading-row {
+  padding: 10px 0 18px;
 }
 
 .hub-empty-state {

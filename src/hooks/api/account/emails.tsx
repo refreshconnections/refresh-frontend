@@ -23,13 +23,14 @@ type SetSecondaryVars = {
 type ApproveSmsVars = { code: string };
 type SwapVars = { current_password: string };
 
-export function useEmailStatus() {
+export function useEmailStatus(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: accountEmailKeys.status,
     queryFn: async () => {
       const res = await apiClient.get<StatusResp>('/account/email_status/');
       return res.data;
     },
+    enabled: !!localStorage.getItem('token') && (options?.enabled ?? true),
   });
 }
 

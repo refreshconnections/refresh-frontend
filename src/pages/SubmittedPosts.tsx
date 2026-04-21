@@ -487,6 +487,12 @@ const SubmittedPosts: React.FC = () => {
                     <IonText className="preview-value">{selectedEvent.external_link}</IonText>
                   </IonItem>
                 )}
+                {(selectedEvent?.status ?? 'pending').toLowerCase() !== 'pending' && typeof selectedEvent?.interested_count === 'number' && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Interested count</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.interested_count}</IonText>
+                  </IonItem>
+                )}
                 {selectedEvent?.description && (
                   <IonItem color="white" lines="none">
                     <IonLabel position="stacked">Description</IonLabel>

@@ -9,6 +9,7 @@ ion-modal.like-message-alert-modal::part(content) {
   display: flex;
   flex-direction: column;
   height: 65vh;
+  transition: height 0.25s ease, top 0.25s ease, transform 0.25s ease;
 }
 
 /* Expand modal when keyboard is open */
@@ -137,6 +138,18 @@ ion-modal.like-message-alert-modal .toolbar-title {
   flex-direction: column;
   transition: opacity 0.3s ease;
   overflow: scroll;
+}
+
+.modal-collapsible {
+  transition: opacity 0.2s ease, max-height 0.25s ease;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.modal-collapsible--hidden {
+  opacity: 0;
+  max-height: 0;
+  pointer-events: none;
 }
 
 .floating-send-button {

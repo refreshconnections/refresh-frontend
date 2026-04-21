@@ -108,3 +108,42 @@ ion-textarea::part(counter) {
 .age-verification-gate__card ion-button {
   margin-top: 12px;
 }
+
+.startup-timeout-screen {
+  --background: var(--ion-color-light, #f7f7ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.startup-timeout-screen__inner {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.startup-timeout-screen__card {
+  width: min(480px, 100%);
+  margin: 0;
+  text-align: center;
+  box-shadow: none;
+  border-radius: 20px;
+}
+
+.startup-timeout-screen__card ion-card-content {
+  padding: 28px 24px;
+}
+
+.startup-timeout-screen__card h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.startup-timeout-screen__card p {
+  margin: 0 0 18px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}

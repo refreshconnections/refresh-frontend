@@ -2,7 +2,6 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { IonApp } from '@ionic/react';
 
 const {
   appAddListener,
@@ -160,11 +159,9 @@ const renderChats = () => {
   const queryClient = new QueryClient();
 
   return render(
-    <IonApp>
-      <QueryClientProvider client={queryClient}>
-        <Chats />
-      </QueryClientProvider>
-    </IonApp>
+    <QueryClientProvider client={queryClient}>
+      <Chats />
+    </QueryClientProvider>
   );
 };
 

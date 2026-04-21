@@ -23,7 +23,7 @@ const {
 }));
 
 let mockGlobalProfile: any = {
-  registrationDate: '2020-01-01T00:00:00.000Z',
+  registrationDate: '',
   username: 'alex',
   preferred_name: 'Alex',
   subscription_level: 'free',
@@ -45,6 +45,8 @@ let mockSubmissionSummary: any = {
   },
 };
 let mockSuggestions: any[] = [];
+
+const daysAgoIso = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
@@ -278,7 +280,7 @@ describe('CreatePostModal', () => {
     vi.clearAllMocks();
     mockModalConfigs.length = 0;
     mockGlobalProfile = {
-      registrationDate: '2020-01-01T00:00:00.000Z',
+      registrationDate: daysAgoIso(30),
       username: 'alex',
       preferred_name: 'Alex',
       subscription_level: 'free',
@@ -302,7 +304,7 @@ describe('CreatePostModal', () => {
   it('shows the age gate for new accounts', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      registrationDate: '2026-03-25T00:00:00.000Z',
+      registrationDate: daysAgoIso(7),
     };
 
     renderModal();
@@ -471,9 +473,10 @@ describe('CreatePostModal', () => {
     const { container } = renderModal();
 
     await fillBasicPostFields(container, 'events');
-    await setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'virtual_only');
+    await setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'in_person_only');
     await setIonInput(getItemControl(container, 'Event start', 'ion-input'), '2099-07-20T18:00');
     await setIonInput(getItemControl(container, 'Event end', 'ion-input'), '2099-07-20T19:00');
+    await setIonSelect(getItemControl(container, 'Who is this event for?', 'ion-select'), 'precautions_preferred');
     await setIonCheckbox(getItemControl(container, 'I understand.', 'ion-checkbox'), true);
 
     fireEvent.click(screen.getByText('Submit Post'));
@@ -484,7 +487,8 @@ describe('CreatePostModal', () => {
         description: 'Sharing details with the community.',
         start_datetime: '2099-07-20T18:00',
         end_datetime: '2099-07-20T19:00',
-        event_type: 'virtual_only',
+        event_type: 'in_person_only',
+        attendee_precaution_preference: 'precautions_preferred',
         post: 42,
       }));
     });
@@ -743,16 +747,17 @@ describe('CreatePostModal', () => {
     });
   });
 
-  it('opens the age-gate upgrade flow for new accounts', () => {
+  it('opens the age-gate upgrade flow for new accounts and dismisses the modal', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      registrationDate: '2026-03-25T00:00:00.000Z',
+      registrationDate: daysAgoIso(7),
     };
 
-    renderModal();
+    const { onDismiss } = renderModal();
 
-    fireEvent.click(screen.getByText('Upgrade'));
+    fireEvent.click(screen.getByRole('button', { name: 'Upgrade' }));
 
+    expect(onDismiss).toHaveBeenCalled();
     expect(window.location.pathname).toBe('/store');
   });
 });

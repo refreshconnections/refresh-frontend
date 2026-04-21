@@ -25,3 +25,23 @@ ion-button.profile-save-button {
     color: var(--ion-color-medium)
 }
 
+ion-content.page-with-warm-cache-indicator {
+    position: relative;
+}
+
+ion-row.warm-cache-refresh-indicator {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 124px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    pointer-events: none;
+}
+
+ion-row.warm-cache-refresh-indicator ion-spinner {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}

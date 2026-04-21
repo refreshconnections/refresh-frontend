@@ -11,7 +11,7 @@ export const chatQueryKeys = {
     messages: (id: number) => ['chats', 'messages', id],
     settings: (id: number) => ['chats', 'settings', id],
     groups: ['chats', 'groups'],
-    nearby: ['chats', 'nearby'],
+    local: ['chats', 'local'],
     filtered: (userIds: number[]) => ['chats', 'filtered', ...userIds],
     accepting: (id: number) => ['chats', 'messages', 'accepting', id],
     unread: ['unread']

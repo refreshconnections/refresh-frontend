@@ -13,9 +13,9 @@ const {
   mockCommunityBlockMigration,
   mockRemoveFromHiddenDialogs,
   mockRemoveCommunityBlocked,
-  mockApiGet,
   mockFetchNextPage,
   mockUseGetHiddenChats,
+  mockUseSearchCommunityBlocked,
 } = vi.hoisted(() => ({
   mockPresentAlert: vi.fn(),
   mockPresentModal: vi.fn(),
@@ -25,9 +25,9 @@ const {
   mockCommunityBlockMigration: vi.fn(),
   mockRemoveFromHiddenDialogs: vi.fn(),
   mockRemoveCommunityBlocked: vi.fn(),
-  mockApiGet: vi.fn(),
   mockFetchNextPage: vi.fn(),
   mockUseGetHiddenChats: vi.fn(),
+  mockUseSearchCommunityBlocked: vi.fn(),
 }));
 
 let mockProfile: any = {
@@ -42,6 +42,7 @@ let mockProfileDetailsById: Record<number, any> = {
   7: { name: 'Sam' },
   8: { name: 'Jamie' },
 };
+let mockCommunityBlockedSearchResult: any;
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
@@ -99,9 +100,14 @@ vi.mock('../hooks/api/profiles/details', () => ({
   useProfileDetails: (userId: number) => ({ data: mockProfileDetailsById[userId] }),
 }));
 
-vi.mock('../hooks/api/api-client', () => ({
-  apiClient: {
-    get: (...args: any[]) => mockApiGet(...args),
+vi.mock('../hooks/api/profiles/community-blocked-search', () => ({
+  useSearchCommunityBlocked: (...args: any[]) => {
+    mockUseSearchCommunityBlocked(...args);
+    return mockCommunityBlockedSearchResult ?? {
+      data: [],
+      isLoading: false,
+      isFetching: false,
+    };
   },
 }));
 
@@ -141,11 +147,13 @@ describe('EditHiddenContentModal', () => {
       7: { name: 'Sam' },
       8: { name: 'Jamie' },
     };
-    mockApiGet.mockResolvedValue({
+    mockCommunityBlockedSearchResult = {
       data: [
         { user_id: 44, username: 'blockeduser', name: 'Blocked User' },
       ],
-    });
+      isLoading: false,
+      isFetching: false,
+    };
     mockClearHiddenSomething.mockResolvedValue(undefined);
     mockCommunityBlockMigration.mockResolvedValue(undefined);
     mockRemoveFromHiddenDialogs.mockResolvedValue(undefined);
@@ -229,14 +237,14 @@ describe('EditHiddenContentModal', () => {
     fireEvent(communityInput, new CustomEvent('ionInput', { detail: { value: 'blocked' }, bubbles: true }));
 
     expect(await screen.findByText('@blockeduser')).toBeInTheDocument();
-    expect(mockApiGet).toHaveBeenCalledWith('/api/profiles/community_blocked/search/', { params: { q: 'blocked' } });
+    expect(mockUseSearchCommunityBlocked).toHaveBeenLastCalledWith('blocked', true);
 
     fireEvent.click(screen.getByText('Remove'));
     await waitFor(() => {
       expect(mockRemoveCommunityBlocked).toHaveBeenCalledWith(44);
     });
 
-    fireEvent.click(screen.getByText('What is the difference between community and personal blocks?'));
+    fireEvent.click(screen.getByText('What is the difference between Personal Blocks and Full Community Blocks?'));
     expect(mockPresentModal).toHaveBeenCalled();
   });
 
@@ -248,7 +256,7 @@ describe('EditHiddenContentModal', () => {
 
     expect(await screen.findByText('Enter at least 4 characters, or an exact match')).toBeInTheDocument();
     await waitFor(() => {
-      expect(mockApiGet).toHaveBeenCalledWith('/api/profiles/community_blocked/search/', { params: { q: 'abc' } });
+      expect(mockUseSearchCommunityBlocked).toHaveBeenLastCalledWith('abc', true);
     });
   });
 });

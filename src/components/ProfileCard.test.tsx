@@ -15,6 +15,7 @@ vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     useIonPopover: () => [mockPresentPopover, vi.fn()],
   };
 });
@@ -59,7 +60,7 @@ const baseCardData = {
   pronouns: 'they/them',
   location: 'Brooklyn, NY',
   bio: 'Masked and looking for community.',
-  registrationDate: '2026-03-25T12:00:00.000Z',
+  registrationDate: '2026-04-12T12:00:00.000Z',
   pic1_main: '/img/1.jpg',
   pic1_main_alt: 'Primary alt text',
   pic2: '/img/2.jpg',

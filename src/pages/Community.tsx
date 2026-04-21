@@ -349,7 +349,7 @@ const Community: React.FC = () => {
           Preferences.set({ key: 'community_block_migration_shown', value: 'true' });
         }}
       />
-      <IonContent>
+      <IonContent className="page-with-warm-cache-indicator">
 
         <IonRow className="page-title">
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show"/>
@@ -386,7 +386,11 @@ const Community: React.FC = () => {
             </IonCol>
           </IonRow>
         ) : null}
-        {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
+        {littleLoading ? (
+          <IonRow className="ion-justify-content-center warm-cache-refresh-indicator">
+            <IonSpinner name="dots"></IonSpinner>
+          </IonRow>
+        ) : <></>}
         <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">
             <FontAwesomeIcon icon={faBarsFilter} />

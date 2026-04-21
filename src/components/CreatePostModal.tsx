@@ -17,7 +17,7 @@ import { faImage } from "@fortawesome/pro-solid-svg-icons/faImage";
 import { faTrash } from "@fortawesome/pro-solid-svg-icons/faTrash";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
-import { faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
+import { faCirclePlus, faLightbulb, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
 import { useGetCurrentModeration } from "../hooks/api/profiles/current-moderation";
 import { useGetSubmissionSummary } from "../hooks/api/refreshments/submission-summary";
@@ -29,6 +29,11 @@ import ContactDetailsPopover from "./ContactDetailsPopover";
 import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
 import PostSuggestionMini from "./PostSuggestionMini";
 
+const ATTENDEE_PRECAUTION_OPTIONS = [
+    { value: 'precautions_only', label: 'Covid conscientious only' },
+    { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
+    { value: 'open', label: 'Open to everyone' },
+];
 
 
 
@@ -75,6 +80,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const queryClient = useQueryClient();
     const navigateTo = (path: string) => {
         if (typeof window === 'undefined') return;
+        onDismiss();
         window.history.pushState({}, "", path);
         window.dispatchEvent(new PopStateEvent("popstate"));
     };
@@ -151,6 +157,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [eventStart, setEventStart] = useState<string>("");
     const [eventEnd, setEventEnd] = useState<string>("");
     const [eventType, setEventType] = useState<string>("");
+    const [attendeePrecautionPreference, setAttendeePrecautionPreference] = useState<string | null>(null);
     const [eventWarning, setEventWarning] = useState<string[] | null>(null);
     const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
     const [recurrenceCount, setRecurrenceCount] = useState(1);
@@ -594,6 +601,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 include_profile: includeProfile ? 'true' : 'false',
                 anonymous: byline === "Anonymous" ? 'true' : 'false',
                 event_type: eventType || (local ? 'in_person_only' : 'virtual_only'),
+                attendee_precaution_preference: attendeePrecautionPreference || null,
                 post: announcementId,
                 external_link: link || null,
                 recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
@@ -984,7 +992,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                     <>
                         <IonCard className="ion-padding limited ion-text-center">
                             <p>All users can submit 2 posts a month.</p>
-                            <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
+                            <IonText color="medium"><FontAwesomeIcon icon={faCirclePlus} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
                         </IonCard>
                         {hasPreviousSubmissions && (
                             <IonRow className="ion-justify-content-center">
@@ -1021,7 +1029,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     placeholder="Required"
                                     onIonInput={e => setTitle(e.detail.value!)}
                                     type="text"
-                                    autoCapitalize='words'
+                                    autocapitalize='words'
                                 />
                             </IonItem>
                             <IonItem color="white" lines="none">
@@ -1094,7 +1102,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         <IonInput value={locationLabel} onIonInput={e => setLocationLabel(e.detail.value!)}
                                             type="text"
                                             placeholder="What the post labels as the location"
-                                            autoCapitalize='words'
+                                            autocapitalize='words'
                                             name='locationlabel' />
                                     </IonItem>
                                 </>
@@ -1148,10 +1156,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     }}
                                 />
                             </IonItem>
-                            <IonItem color="white" lines="none">
-                                <IonLabel position="stacked">
-                                    Event end<span className="required-star">*</span>
-                                </IonLabel>
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">
+                                        Event end<span className="required-star">*</span>
+                                    </IonLabel>
                                 <IonInput
                                     type="datetime-local"
                                     step="900"
@@ -1169,6 +1177,22 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     }}
                                 />
                             </IonItem>
+                            {eventType && (
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">Who is this event for?</IonLabel>
+                                    <IonSelect
+                                        value={attendeePrecautionPreference ?? ""}
+                                        placeholder="Optional"
+                                        onIonChange={(e) => setAttendeePrecautionPreference(e.detail.value || null)}
+                                    >
+                                        {ATTENDEE_PRECAUTION_OPTIONS.map((option) => (
+                                            <IonSelectOption key={option.value} value={option.value}>
+                                                {option.label}
+                                            </IonSelectOption>
+                                        ))}
+                                    </IonSelect>
+                                </IonItem>
+                            )}
                             {dateErrors.length > 0 && (
                                 <IonItem color="white" lines="none">
                                     <IonText color="danger">{dateErrors[0]}</IonText>
@@ -1191,6 +1215,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             placeholder="Write your post here..."
                                             onIonInput={(e) => setContent(e.detail.value ?? "")}
                                             counter={true}
+                                            autocapitalize='sentences'
+                                            autoCorrect='on'
                                         />
                                     </IonItem>
                                 </IonCard>
@@ -1232,6 +1258,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 placeholder="Add suggested content warnings here."
                                                 onIonInput={e => setSensitiveDescription(e.detail.value!)}
                                                 rows={3}
+                                                autocapitalize='sentences'
+                                                autoCorrect='on'
                                             />
                                         </IonItem>
                                     }
@@ -1293,10 +1321,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 {bar === "events" && (
                                     <IonCard>
                                         <IonItem color="white" lines="none">
-                                            <IonLabel position="stacked">
-                                                Repeat
-                                                <FontAwesomeIcon style={{ marginLeft: "6px" }} color="var(--ion-color-medium)" icon={faStar} />
-                                            </IonLabel>
+                                                <IonLabel position="stacked">
+                                                    Repeat
+                                                <FontAwesomeIcon style={{ marginLeft: "6px" }} color="var(--ion-color-medium)" icon={faCirclePlus} />
+                                                </IonLabel>
                                             <IonSelect
                                                 value={recurrenceType}
                                                 onIonChange={(e) => handleRecurrenceChange(e.detail.value ?? "none")}
@@ -1485,6 +1513,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={content ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        autocapitalize='sentences'
+                                                                        autoCorrect='on'
                                                                         onIonChange={(event) => {
                                                                             setContent(event.detail.value ?? "");
                                                                         }}
@@ -1503,6 +1533,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={recurrenceDescriptions[descriptionIndex] ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        autocapitalize='sentences'
+                                                                        autoCorrect='on'
                                                                         onIonChange={(event) => {
                                                                             const nextDescriptions = [...recurrenceDescriptions];
                                                                             nextDescriptions[descriptionIndex] = event.detail.value ?? "";
@@ -1638,6 +1670,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                 nextDescriptions[index] = event.detail.value ?? "";
                                                                 setRecurrenceDescriptions(nextDescriptions);
                                                             }}
+                                                            autocapitalize='sentences'
+                                                            autoCorrect='on'
                                                         />
                                                     )}
                                                     {expandedExternalLinks[index] && (
@@ -1739,7 +1773,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         ) : null}
                                         {mentionsOneToOne ? (
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-medium" }}>
-                                                Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Picks and filters!
+                                                Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Discovery and filters!
                                             </p>
                                         ) : null}
                                     </IonRow>
@@ -1765,7 +1799,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         disabled={afterSendWait || imageLoading}
                                         onClick={handleSaveDraft}
                                     >
-                                        <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                                        <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
                                         Save draft
                                     </IonButton>
                                 )}

@@ -1,4 +1,6 @@
 
+// DEPRECATED — do not touch this file. AppV2.tsx is the active app shell.
+
 import {
   IonAlert,
   IonApp,
@@ -638,7 +640,7 @@ const App: React.FC = () => {
           <IonTabBar slot="bottom">
             <IonTabButton tab="picks" href="/picks">
               <IonIcon icon={flowerIcon} />
-              <IonLabel>Picks</IonLabel>
+              <IonLabel>Discovery</IonLabel>
             </IonTabButton>
             <IonTabButton tab="chat" href="/chats">
               {chatBadgeCount > 0 ?

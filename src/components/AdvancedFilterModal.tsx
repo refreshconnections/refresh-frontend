@@ -8,7 +8,7 @@ import './AdvancedFilterModal.css'
 import EditLocationModal from "./EditLocationModal";
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 import { useQueryClient } from "@tanstack/react-query";
-import { faStar, faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
+import { faCirclePlus, faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { removeFromCapacitorLocalStorage } from "../hooks/capacitorPreferences/all";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
@@ -465,7 +465,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const whatGenderSexualityNot = async () => {
     presentGenderSexualityNotAlert({
-      header: "Anyone you don't want to see in your Picks?",
+      header: "Anyone you don't want to see in Discovery?",
       subHeader: 'Choose one',
       buttons: [
         {
@@ -674,7 +674,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const whatDistance = async () => {
     presentDistanceAlert({
-      header: 'What is the farthest away your Picks should be?',
+      header: 'What is the farthest away profiles in Discovery should be?',
       subHeader: '(in kilometers)',
       buttons: [
         {
@@ -1173,7 +1173,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           <IonAccordion disabled={!isPersonalPlus(currentProfileData?.subscription_level)}>
             <IonItem slot="header" lines="none">
               <IonLabel className="side">
-                <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
+                <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /></h3>
                 {(keywordFilter == null || keywordFilter == "") && (keywordExcludeFilter == null || keywordExcludeFilter == "") ?
                   <p>Talking about any topic</p>
                   : keywordFilter && keywordFilter !== "" ?
@@ -1389,7 +1389,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
                     {anyOrAll == "all" ?
                       <IonText color="danger" className="ion-text-wrap">
-                        <p>Remember: searching by "all" results in far fewer Picks!</p>
+                        <p>Remember: searching by "all" results in far fewer Discovery results!</p>
 
                       </IonText> : <></>}
                     <IonText className="ion-padding ion-text-wrap">
@@ -1498,7 +1498,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                     <h3>
                       {genderSexualityNot
                         ? "I am not looking for anyone who identifies as:"
-                        : "Anyone you don’t want to see in your Picks?"}
+                        : "Anyone you don’t want to see in Discovery?"}
                     </h3>
                     <p>
                       {genderSexualityNot

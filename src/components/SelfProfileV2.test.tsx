@@ -544,4 +544,64 @@ describe('SelfProfileV2', () => {
       pic2: null,
     });
   });
+
+  it('edits a photo caption in the larger modal editor', async () => {
+    renderSelfProfile();
+
+    fireEvent.click(screen.getByText('Photos'));
+    fireEvent.click(screen.getByText('Second caption').closest('ion-item') as HTMLElement);
+
+    const actionSheet = mockPresentActionSheet.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      await actionSheet.buttons.find((button: any) => button.text === 'Edit caption').handler();
+    });
+
+    expect(screen.getByText('Edit caption')).toBeInTheDocument();
+
+    const textarea = document.querySelector('ion-textarea') as HTMLElement;
+    fireEvent(
+      textarea,
+      new CustomEvent('ionInput', { detail: { value: 'Could use a buddy for this!' }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        pic2_caption: 'Could use a buddy for this!',
+      });
+    });
+  });
+
+  it('edits photo alt text in the larger modal editor', async () => {
+    renderSelfProfile();
+
+    fireEvent.click(screen.getByText('Photos'));
+    fireEvent.click(screen.getByText('Second caption').closest('ion-item') as HTMLElement);
+
+    const actionSheet = mockPresentActionSheet.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      await actionSheet.buttons.find((button: any) => button.text === 'Edit alt text').handler();
+    });
+
+    expect(screen.getByText('Edit alt text')).toBeInTheDocument();
+
+    const textarea = document.querySelector('ion-textarea') as HTMLElement;
+    fireEvent(
+      textarea,
+      new CustomEvent('ionInput', { detail: { value: 'Me smiling outside with a blue sky behind me.' }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        pic2_alt: 'Me smiling outside with a blue sky behind me.',
+      });
+    });
+  });
 });

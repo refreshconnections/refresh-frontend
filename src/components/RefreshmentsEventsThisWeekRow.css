@@ -1,0 +1,71 @@
+.refreshments-events-this-week {
+  padding: 6px 12px 4px;
+}
+
+.refreshments-events-this-week-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 2px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.refreshments-events-this-week-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.refreshments-events-this-week-card {
+  flex: 0 0 124px;
+  min-width: 124px;
+  max-width: 124px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 10px 11px;
+  border: 1px solid var(--ion-color-step-150, #e3e3ef);
+  border-radius: 12px;
+  background: var(--ion-color-white, #fff);
+  color: var(--ion-color-navy, #2a2a9c);
+  text-align: left;
+  scroll-snap-align: start;
+}
+
+.refreshments-events-this-week-card-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.refreshments-events-this-week-card-date {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+}
+
+.refreshments-events-this-week-card-star {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.refreshments-events-this-week-card-title {
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ion-color-navy, #2a2a9c);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.refreshments-events-this-week-card-time {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ion-color-medium);
+}

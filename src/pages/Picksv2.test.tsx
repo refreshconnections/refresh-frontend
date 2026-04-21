@@ -53,6 +53,7 @@ vi.mock('@ionic/react', async () => {
 
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
     useIonModal: (component: any, props: any) => {
       mockIonModalCalls.push({ component, props });
@@ -262,7 +263,7 @@ describe('Picksv2', () => {
     expect(await screen.findByText('loading-card')).toBeInTheDocument();
   });
 
-  it('prompts the user to create a personal profile before browsing picks', async () => {
+  it('prompts the user to create a personal profile before browsing discovery', async () => {
     mockCurrentProfile.mockReturnValue({
       data: { ...baseProfile, created_profile: false },
       isLoading: false,
@@ -271,7 +272,7 @@ describe('Picksv2', () => {
     renderPicks();
 
     expect(
-      await screen.findByText('You’ll need a personal profile before browsing Picks.')
+      await screen.findByText('You’ll need a personal profile before browsing Discovery.')
     ).toBeInTheDocument();
     expect(screen.getByText('Create personal profile')).toBeInTheDocument();
   });
@@ -284,7 +285,7 @@ describe('Picksv2', () => {
 
     renderPicks();
 
-    expect(await screen.findByText('cant-access-Picks')).toBeInTheDocument();
+    expect(await screen.findByText('cant-access-Discovery')).toBeInTheDocument();
   });
 
   it('shows an error state and retries picks fetching', async () => {
@@ -298,7 +299,7 @@ describe('Picksv2', () => {
 
     renderPicks();
 
-    expect(screen.getByText('Couldn’t load picks')).toBeInTheDocument();
+    expect(screen.getByText('Couldn’t load Discovery')).toBeInTheDocument();
 
     fireEvent.click(getButtonByText('Try again') ?? screen.getByText('Try again'));
 
@@ -322,7 +323,7 @@ describe('Picksv2', () => {
     expect(screen.getByText('Adjust Your Filters')).toBeInTheDocument();
 
     fireEvent.click(
-      getButtonByText('Refresh your Picks') ?? screen.getByText('Refresh your Picks')
+      getButtonByText('Discover new connections') ?? screen.getByText('Discover new connections')
     );
 
     await waitFor(() => {
@@ -508,7 +509,7 @@ describe('Picksv2', () => {
         {
           page: 'picks',
           active: true,
-          header: 'Picks update',
+          header: 'Discovery update',
           message: 'Fresh matches are available now.',
           expirationDateTime: '2099-01-01T00:00:00.000Z',
         },
@@ -518,7 +519,7 @@ describe('Picksv2', () => {
     renderPicks();
 
     expect(await screen.findByText('status-toast')).toBeInTheDocument();
-    expect(screen.getByText('Picks update')).toBeInTheDocument();
+    expect(screen.getByText('Discovery update')).toBeInTheDocument();
     expect(screen.getByText('Fresh matches are available now.')).toBeInTheDocument();
   });
 

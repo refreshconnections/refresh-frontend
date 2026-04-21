@@ -10,10 +10,11 @@ import {
     IonAccordionGroup,
     IonAccordion,
     IonItem,
-    IonLabel
+    IonLabel,
+    useIonRouter,
 } from '@ionic/react';
 import Linkify from 'react-linkify';
-import { openExternalUrl } from '../../hooks/utilities';
+import { getInternalAppPath, openExternalUrl } from '../../hooks/utilities';
 
 
 import './ModerationNote.css';
@@ -33,6 +34,16 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
     moderationIconOnly,
     moderationNoteLonger,
 }) => {
+    const router = useIonRouter();
+    const openAppOrExternalUrl = (url: string) => {
+        const internalPath = getInternalAppPath(url);
+        if (internalPath) {
+            router.push(internalPath);
+            return;
+        }
+        openExternalUrl(url);
+    };
+
     const ModalContent: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
         <IonContent className="ion-padding">
             <IonRow>
@@ -45,8 +56,8 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                     </div>
                 </IonCol>
             </IonRow>
-            <p className="moderation-note-main"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNote}</Linkify></p>
-            <p className="moderation-note-longer css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNoteLonger}</Linkify></p>
+            <p className="moderation-note-main"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNote}</Linkify></p>
+            <p className="moderation-note-longer css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNoteLonger}</Linkify></p>
             <IonAccordionGroup className="moderation-accordion" expand="compact">
                 <IonAccordion value="how" >
                     <IonItem slot="header" lines="none" className="acc-header">

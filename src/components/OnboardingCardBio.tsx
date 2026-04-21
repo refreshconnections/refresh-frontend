@@ -52,7 +52,7 @@ const OnboardingCardBio: React.FC = () => {
 
 
   return (
-    <IonCard className="onboarding-slide ">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>{copy.body}</IonText>
@@ -63,15 +63,18 @@ const OnboardingCardBio: React.FC = () => {
             placeholder=""
             maxlength={400}
             counter
-            autoGrow={true} 
-            autoCapitalize='sentences'
+            autoGrow={true}
+            autocapitalize='sentences'
+            autoCorrect='on'
             />
         </IonItem>
-        <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
-        <IonButton disabled={bio == null || bio.length < 5} onClick={updateProfile} >{ONBOARDING_COPY.common.next}</IonButton>
-      </IonRow>
       </IonCardContent>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" disabled={bio == null || bio.length < 5} onClick={updateProfile}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   )
 };

@@ -195,3 +195,7 @@ ion-list.refreshments-list {
   margin-top: 10pt;
   margin-bottom: 20pt;
 }
+
+ion-list.refreshments-list.refreshments-list--after-events {
+  margin-top: 0;
+}

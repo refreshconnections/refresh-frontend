@@ -154,6 +154,7 @@ import OnboardingCardProfilePic from './OnboardingCardProfilePic';
 import OnboardingCardPictures from './OnboardingCardPictures';
 import OnboardingCardBio from './OnboardingCardBio';
 import OnboardingCardLetsTalkAbout from './OnboardingCardLetsTalkAbout';
+import OnboardingCardConnectFromRefreshments from './OnboardingCardConnectFromRefreshments';
 import OnboardingCardDone from './OnboardingCardDone';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 
@@ -215,7 +216,9 @@ describe('active onboarding cards', () => {
     mockGetCurrentPositionSmart.mockResolvedValue({
       coords: { latitude: 40.7128, longitude: -74.006 },
     });
-    mockReverseGeocode.mockResolvedValue({ addresses: [{ locality: 'New York' }] });
+    mockReverseGeocode.mockResolvedValue({
+      addresses: [{ locality: 'New York', countryName: 'United States' }],
+    });
     mockCurrentProfileState.value = {
       name: 'Alex',
       nickname: 'Alex',
@@ -320,7 +323,8 @@ describe('active onboarding cards', () => {
   });
 
   it('saves coordinates from a selected city after confirming the popup', async () => {
-    await renderInApp(<OnboardingCardLocationCoords />);
+    const onCoordsSaved = vi.fn();
+    await renderInApp(<OnboardingCardLocationCoords onCoordsSaved={onCoordsSaved} />);
 
     await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity).closest('ion-button'));
 
@@ -337,9 +341,10 @@ describe('active onboarding cards', () => {
     expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
       location_point_long: -87.6298,
       location_point_lat: 41.8781,
-      coordinates_near: 'Chicago',
+      coordinates_near: 'Chicago, United States',
     });
-    expect(sharedSwiper.slideNext).toHaveBeenCalled();
+    expect(onCoordsSaved).toHaveBeenCalledWith('Chicago, United States');
+    expect(sharedSwiper.slideNext).not.toHaveBeenCalled();
   });
 
   it('does not save coordinates when the city confirmation popup is canceled', async () => {
@@ -360,7 +365,8 @@ describe('active onboarding cards', () => {
   });
 
   it('saves coordinates from device location after confirming the popup', async () => {
-    await renderInApp(<OnboardingCardLocationCoords />);
+    const onCoordsSaved = vi.fn();
+    await renderInApp(<OnboardingCardLocationCoords onCoordsSaved={onCoordsSaved} />);
 
     await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.useLocation).closest('ion-button'));
 
@@ -374,9 +380,10 @@ describe('active onboarding cards', () => {
     expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
       location_point_long: -74.006,
       location_point_lat: 40.7128,
-      coordinates_near: 'New York',
+      coordinates_near: 'New York, United States',
     });
-    expect(sharedSwiper.slideNext).toHaveBeenCalled();
+    expect(onCoordsSaved).toHaveBeenCalledWith('New York, United States');
+    expect(sharedSwiper.slideNext).not.toHaveBeenCalled();
   });
 
   it('falls back to raw coordinates when reverse geocoding has no locality', async () => {
@@ -477,6 +484,7 @@ describe('active onboarding cards', () => {
     expect(screen.getByText(ONBOARDING_COPY.cards.lookingFor.title)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.lookingFor.options[0].label)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.lookingFor.scrollNote)).toBeInTheDocument();
+    expect(screen.queryByText('Virtual Connection Only')).not.toBeInTheDocument();
   });
 
   it('renders the shared gender identity card copy and options', async () => {
@@ -497,6 +505,8 @@ describe('active onboarding cards', () => {
     expect(screen.getByText(ONBOARDING_COPY.cards.covid.title)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.covid.sections.home)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.covid.noteLabel)).toBeInTheDocument();
+    expect(ONBOARDING_COPY.cards.covid.notePlaceholder).toBe('Optional');
+    expect(document.querySelector('ion-input')).toHaveAttribute('auto-correct', 'on');
   });
 
   it('renders the shared profile photo card copy', async () => {
@@ -548,41 +558,53 @@ describe('active onboarding cards', () => {
     expect(
       screen.getByText((content, node) => node?.textContent === ONBOARDING_COPY.cards.bio.body)
     ).toBeInTheDocument();
+    expect(document.querySelector('ion-textarea')).toHaveAttribute('auto-correct', 'on');
   });
 
   it('renders the shared lets-talk-about card copy and option labels', async () => {
+    const firstLetsTalkValue = ONBOARDING_COPY.cards.letsTalkAbout.options[0].value;
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      [firstLetsTalkValue]: 'Outdoors with masks on.',
+    };
+
     await renderInApp(<OnboardingCardLetsTalkAbout />);
     expect(screen.getByText(ONBOARDING_COPY.cards.letsTalkAbout.title)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.letsTalkAbout.chooseTopics)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.letsTalkAbout.pickThree)).toBeInTheDocument();
+    expect(screen.getAllByText(ONBOARDING_COPY.cards.letsTalkAbout.options[0].label).length).toBeGreaterThan(0);
+    expect(document.querySelector('ion-input')).toHaveAttribute('auto-correct', 'on');
   });
 
   it('renders the shared done card copy', async () => {
     await renderInApp(<OnboardingCardDone />);
     expect(screen.getByText(ONBOARDING_COPY.cards.done.title)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.done.connectTitle)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.done.refreshCta)).toBeInTheDocument();
   });
 
-  it('supports the connect toggle and the paused-on-creation alert path', async () => {
+  it('renders the shared connect-from-refreshments card copy and toggle', async () => {
+    await renderInApp(<OnboardingCardConnectFromRefreshments />);
+
+    expect(
+      screen.getByRole('heading', { name: ONBOARDING_COPY.communityOnboarding.connect.title })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.toggleLabel).length).toBeGreaterThan(0);
+  });
+
+  it('supports the connect toggle on the shared card and the paused-on-creation alert path', async () => {
     mockModerationState.value = { paused_on_creation: true };
 
-    await renderInApp(<OnboardingCardDone />);
+    await renderInApp(<OnboardingCardConnectFromRefreshments />);
 
     const toggle = document.querySelector('ion-toggle') as HTMLElement;
     await triggerIonChange(toggle, { checked: false });
     expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ settings_community_profile: false });
 
+    await renderInApp(<OnboardingCardDone />);
     await clickElement(screen.getByText(ONBOARDING_COPY.cards.done.refreshCta).closest('ion-button'));
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         subHeader: ONBOARDING_COPY.cards.done.pausedReview.subHeader,
       })
     );
-  });
-
-  it('can hide the connect toggle when the card is used in that branch', async () => {
-    await renderInApp(<OnboardingCardDone showConnectToggle={false} />);
-    expect(screen.queryByText(ONBOARDING_COPY.cards.done.connectTitle)).not.toBeInTheDocument();
   });
 });

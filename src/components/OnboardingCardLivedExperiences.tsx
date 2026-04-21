@@ -73,7 +73,7 @@ const OnboardingCardLivedExperiences: React.FC = () => {
   };
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="w-checkboxes">
         <IonCardTitle className="onboarding-title-row">
           <span>{copy.title}</span>
@@ -117,11 +117,13 @@ const OnboardingCardLivedExperiences: React.FC = () => {
             />
           </IonItem>
         </div>
-        <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
-          <IonButton onClick={updateProfile} disabled={selected.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
-        </IonRow>
       </IonCardContent>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={selected.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

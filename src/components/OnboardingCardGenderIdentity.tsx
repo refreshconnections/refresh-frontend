@@ -76,8 +76,7 @@ const OnboardingCardGenderIdentity: React.FC = () => {
 
 
   return (
-    <>
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="w-checkboxes">
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>{copy.body}</IonText>
@@ -103,19 +102,14 @@ const OnboardingCardGenderIdentity: React.FC = () => {
             />
           </IonItem>
         </div>
-        
-        <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
-          <IonButton onClick={updateProfile} disabled={gS.length == 0 ? true : false}>{ONBOARDING_COPY.common.next}</IonButton>
-        </IonRow>
-        
       </IonCardContent>
-      
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={gS.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
-    {/* <IonRow class="notyet">
-    <IonButton fill="clear" onClick={() => stayPausedOpen()}>I don't want to create a profile yet.</IonButton>
-  </IonRow> */}
-  </>
   )
 };
 export default OnboardingCardGenderIdentity;

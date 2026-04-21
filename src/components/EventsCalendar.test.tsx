@@ -19,6 +19,8 @@ const {
   mockSheetDismiss,
   mockModalConfigs,
   mockPopoverConfigs,
+  mockGetShowInterestedCountPref,
+  mockGetHideInterestedCountOnMySubmissionsPref,
 } = vi.hoisted(() => ({
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
@@ -33,11 +35,13 @@ const {
   mockSheetDismiss: vi.fn(),
   mockModalConfigs: [] as any[],
   mockPopoverConfigs: [] as any[],
+  mockGetShowInterestedCountPref: vi.fn(),
+  mockGetHideInterestedCountOnMySubmissionsPref: vi.fn(),
 }));
 
 let mockEventsLoading = false;
 let mockProfile: any = {
-  subscription_level: 'community_plus',
+  subscription_level: 'communityplus',
   settings_community_profile: true,
 };
 let mockEvents: any[] = [
@@ -62,6 +66,7 @@ let mockEvents: any[] = [
     profile_image: 'https://example.com/avatar.jpg',
     anonymous: false,
     interested: true,
+    interested_count: 4,
   },
 ];
 
@@ -124,7 +129,7 @@ vi.mock('../hooks/utilities', () => ({
     src: 'https://example.com/avatar.jpg',
     className: 'avatar-ok',
   })),
-  isCommunityPlus: vi.fn((level?: string) => level === 'community_plus' || level === 'pro'),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'pro'),
   onImgError: vi.fn(),
 }));
 
@@ -137,6 +142,13 @@ vi.mock('@capacitor/preferences', () => ({
     get: (...args: any[]) => mockPreferencesGet(...args),
     set: (...args: any[]) => mockPreferencesSet(...args),
   },
+}));
+
+vi.mock('../hooks/capacitorPreferences/interested-counts', () => ({
+  getShowInterestedCountPref: (...args: any[]) => mockGetShowInterestedCountPref(...args),
+  getHideInterestedCountOnMySubmissionsPref: (...args: any[]) => mockGetHideInterestedCountOnMySubmissionsPref(...args),
+  SHOW_INTERESTED_COUNT_CHANGED_EVENT: 'show_interested_count_changed',
+  HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT: 'hide_interested_count_on_my_submissions_changed',
 }));
 
 vi.mock('@fortawesome/react-fontawesome', () => ({
@@ -172,8 +184,9 @@ describe('EventsCalendar', () => {
     mockPopoverConfigs.length = 0;
     mockEventsLoading = false;
     mockProfile = {
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
       settings_community_profile: true,
+      user: 9,
     };
     mockEvents = [
       {
@@ -197,22 +210,79 @@ describe('EventsCalendar', () => {
         profile_image: 'https://example.com/avatar.jpg',
         anonymous: false,
         interested: true,
+        interested_count: 4,
       },
     ];
     mockPreferencesGet.mockResolvedValue({ value: null });
     mockPreferencesSet.mockResolvedValue(undefined);
+    mockGetShowInterestedCountPref.mockResolvedValue(true);
+    mockGetHideInterestedCountOnMySubmissionsPref.mockResolvedValue(false);
   });
 
   it('opens the calendar, loads saved filters, and renders selected event details', async () => {
     renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', onAutoOpenHandled: vi.fn() });
 
     expect(await screen.findByText('Community events')).toBeInTheDocument();
-    expect(mockPreferencesGet).toHaveBeenCalledTimes(3);
+    expect(mockPreferencesGet).toHaveBeenCalledWith({ key: 'events_calendar_view_mode' });
     expect(screen.getAllByText('Clean air picnic').length).toBeGreaterThan(0);
     expect(screen.getByText('Bring filters and snacks.')).toBeInTheDocument();
     expect(screen.getByText('Masks Required')).toBeInTheDocument();
     expect(screen.getByText('Covid conscientious only')).toBeInTheDocument();
     expect(screen.getByText('External registration required.')).toBeInTheDocument();
+  });
+
+  it('loads the saved week view mode from Capacitor preferences', async () => {
+    mockPreferencesGet.mockImplementation(({ key }: { key: string }) => {
+      if (key === 'events_calendar_view_mode') {
+        return Promise.resolve({ value: 'week' });
+      }
+      return Promise.resolve({ value: null });
+    });
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', onAutoOpenHandled: vi.fn() });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    const weekButton = screen.getByText('Week').closest('ion-button');
+    const monthButton = screen.getByText('Month').closest('ion-button');
+    await waitFor(() => {
+      expect(weekButton).toHaveAttribute('fill', 'solid');
+      expect(monthButton).toHaveAttribute('fill', 'outline');
+    });
+  });
+
+  it('preselects the requested event when auto-opened from another surface', async () => {
+    mockEvents = [
+      {
+        id: 11,
+        name: 'Clean air picnic',
+        start_datetime: '2026-03-29T18:00:00.000Z',
+        end_datetime: '2026-03-29T19:00:00.000Z',
+        description: 'Bring filters and snacks.',
+        event_type: 'in_person_only',
+        username: 'alex',
+        user: 12,
+        settings_community_profile: true,
+        anonymous: false,
+      },
+      {
+        id: 22,
+        name: 'Fresh air walk',
+        start_datetime: '2026-03-29T20:00:00.000Z',
+        end_datetime: '2026-03-29T21:00:00.000Z',
+        description: 'Sunset walk together.',
+        event_type: 'in_person_only',
+        username: 'sam',
+        user: 13,
+        settings_community_profile: true,
+        anonymous: false,
+      },
+    ];
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', initialEventId: 22, onAutoOpenHandled: vi.fn() });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.getByText('Sunset walk together.')).toBeInTheDocument();
+    expect(screen.queryByText('Bring filters and snacks.')).not.toBeInTheDocument();
   });
 
   it('opens the add-event and filters modals, and persists filters on dismiss', async () => {
@@ -234,7 +304,8 @@ describe('EventsCalendar', () => {
       });
     });
 
-    expect(mockPreferencesSet).toHaveBeenCalledTimes(3);
+    expect(mockPreferencesSet).toHaveBeenCalledTimes(4);
+    expect(mockPreferencesSet).toHaveBeenCalledWith({ key: 'events_calendar_view_mode', value: 'month' });
   });
 
   it('opens the host popover, profile sheet, report modal, and routes to the linked post', async () => {
@@ -377,4 +448,24 @@ describe('EventsCalendar', () => {
     expect(secondStar).toHaveAttribute('data-icon', String(star));
     expect(secondStar).toHaveAttribute('data-color', 'warning');
   });
+
+  it('shows the interested count for Community+ users when more than three people are interested', async () => {
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.getByTestId('event-interest-count-11')).toHaveTextContent('4');
+  });
+
+  it('hides the interested count for non-premium users', async () => {
+    mockProfile = {
+      subscription_level: 'none',
+      settings_community_profile: true,
+    };
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-interest-count-11')).not.toBeInTheDocument();
+  });
+
 });

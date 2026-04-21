@@ -29,13 +29,16 @@ import CitySelectorModal from './CitySelectorModal';
 import { containsGoogleDocLink, containsLinkShortener, containsPii, eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
-import { faStar } from '@fortawesome/pro-solid-svg-icons/faStar';
+import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import SubmissionAgeGateCard from './SubmissionAgeGateCard';
 import CreatePostModal from './CreatePostModal';
 import { informationCircleOutline } from 'ionicons/icons';
+import BoxedStackedInput from './BoxedStackedInput';
+import BoxedStackedSelect from './BoxedStackedSelect';
+import BoxedStackedTextarea from './BoxedStackedTextarea';
 
 import './CreateEventModal.css';
 
@@ -84,8 +87,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const router = useIonRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [startDatetime, setStartDatetime] = useState('');
-  const [endDatetime, setEndDatetime] = useState('');
   const [location, setLocation] = useState('');
   const [locationLabel, setLocationLabel] = useState('');
   const [lat, setLat] = useState<number | null>(null);
@@ -142,6 +143,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [imageAlt, setImageAlt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
   const [recurrenceCount, setRecurrenceCount] = useState(1);
@@ -221,6 +223,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       : moment().add(7, 'days').hour(20).minute(0).second(0);
     return base.format('YYYY-MM-DDTHH:mm');
   }, [selectedDate]);
+  const defaultEndDatetime = useMemo(
+    () => moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    [defaultStartDatetime]
+  );
+  const [startDatetime, setStartDatetime] = useState(defaultStartDatetime);
+  const [endDatetime, setEndDatetime] = useState(defaultEndDatetime);
 
   const normalizeDatetime = (value: string) => {
     if (!value) return value;
@@ -580,7 +588,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         await eventUploadPhoto({ image: imageData }, eventId);
       }
 
-      onDismiss?.({ submitted: true });
+      setShowSuccessAlert(true);
     } catch (err) {
       console.error('Unable to create event', err);
       setError('Unable to submit event right now.');
@@ -591,6 +599,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
 
   const handleCancel = () => {
     onDismiss?.();
+  };
+
+  const handleSuccessAlertDismiss = () => {
+    setShowSuccessAlert(false);
+    onDismiss?.({ submitted: true });
   };
 
   const handlePrecautionsChange = (event: CustomEvent) => {
@@ -725,181 +738,182 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
           <>
         <IonList>
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">
+            <BoxedStackedInput
+              label={
+                <>
                 Event name<span className="required-star">*</span>
-              </IonLabel>
-              <IonInput value={name} onIonInput={(event) => setName(event.detail.value ?? '')} />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="stacked">
-                Description<span className="required-star">*</span>
-              </IonLabel>
-            <IonTextarea
-              value={description}
-              onIonInput={(event) => setDescription(event.detail.value ?? '')}
-              rows={4}
+                </>
+              }
+              value={name}
+              name="event_name"
+              onIonInput={(event) => setName(event.detail.value ?? '')}
             />
-            </IonItem>
+            <BoxedStackedTextarea
+              label={
+                <>
+                Description<span className="required-star">*</span>
+                </>
+              }
+              value={description}
+              autoGrow
+              onIonInput={(event) => setDescription(event.detail.value ?? '')}
+            />
           </div>
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">
+            <BoxedStackedInput
+              label={
+                <>
                 Start<span className="required-star">*</span>
-              </IonLabel>
-              <IonInput
-                type="datetime-local"
-                step="900"
-                value={startDatetime}
-                onIonChange={(event) => setStartDatetime(normalizeDatetime(event.detail.value ?? ''))}
-                onIonFocus={() => {
-                  if (!startDatetime) {
-                    setStartDatetime(defaultStartDatetime);
-                  }
-                }}
-              />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="stacked">
+                </>
+              }
+              type="datetime-local"
+              step="900"
+              value={startDatetime}
+              name="start_datetime"
+              onIonChange={(event) => setStartDatetime(normalizeDatetime(event.detail.value ?? ''))}
+              onIonFocus={() => {
+                if (!startDatetime) {
+                  setStartDatetime(defaultStartDatetime);
+                }
+              }}
+            />
+            <BoxedStackedInput
+              label={
+                <>
                 End<span className="required-star">*</span>
-              </IonLabel>
-              <IonInput
-                type="datetime-local"
-                step="900"
-                value={endDatetime}
-                onIonChange={(event) => setEndDatetime(normalizeDatetime(event.detail.value ?? ''))}
-                onIonFocus={() => {
-                  if (endDatetime) return;
-                  if (startDatetime) {
-                    const next = moment(startDatetime).add(1, 'hour').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
-                    setEndDatetime(next);
-                  } else {
-                    const next = moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
-                    setEndDatetime(next);
-                  }
-                }}
-              />
-            </IonItem>
+                </>
+              }
+              type="datetime-local"
+              step="900"
+              value={endDatetime}
+              name="end_datetime"
+              onIonChange={(event) => setEndDatetime(normalizeDatetime(event.detail.value ?? ''))}
+              onIonFocus={() => {
+                if (endDatetime) return;
+                if (startDatetime) {
+                  const next = moment(startDatetime).add(1, 'hour').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
+                  setEndDatetime(next);
+                } else {
+                  const next = moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+                  setEndDatetime(next);
+                }
+              }}
+            />
           </div>
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">
+            <BoxedStackedSelect
+              label={
+                <>
                 Event type<span className="required-star">*</span>
-              </IonLabel>
-              <IonSelect value={eventType} onIonChange={(event) => setEventType(event.detail.value ?? '')}>
-                <IonSelectOption value="" disabled>
-                  Pick an event type
+                </>
+              }
+              value={eventType}
+              onIonChange={(event) => setEventType(event.detail.value ?? '')}
+            >
+              <IonSelectOption value="" disabled>
+                Pick an event type
+              </IonSelectOption>
+              {EVENT_TYPE_CHOICES.map((choice) => (
+                <IonSelectOption key={choice.value} value={choice.value}>
+                  {choice.label}
                 </IonSelectOption>
-                {EVENT_TYPE_CHOICES.map((choice) => (
-                  <IonSelectOption key={choice.value} value={choice.value}>
-                    {choice.label}
+              ))}
+            </BoxedStackedSelect>
+            {eventType && (
+              <BoxedStackedSelect
+                label="Who is this event for?"
+                value={attendeePrecautionPreference ?? ''}
+                placeholder="Optional"
+                onIonChange={(e) => setAttendeePrecautionPreference(e.detail.value || null)}
+              >
+                {ATTENDEE_PRECAUTION_OPTIONS.map((option) => (
+                  <IonSelectOption key={option.value} value={option.value}>
+                    {option.label}
                   </IonSelectOption>
                 ))}
-              </IonSelect>
-            </IonItem>
+              </BoxedStackedSelect>
+            )}
             {eventType && eventType !== 'virtual_only' && (
               <>
-                <IonItem>
-                  <IonLabel position="stacked">In-person precautions</IonLabel>
-                  <IonSelect
-                    value={precautions}
-                    multiple
-                    interface="popover"
-                    onIonChange={handlePrecautionsChange}
-                  >
-                    {PRECAUTION_OPTIONS.map((option) => (
-                      <IonSelectOption key={option.value} value={option.value}>
-                        {option.label}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
-                <IonItem>
-                  <IonLabel position="stacked">Who is this event for?</IonLabel>
-                  <IonSelect
-                    value={attendeePrecautionPreference ?? ''}
-                    placeholder="Optional"
-                    onIonChange={(e) => setAttendeePrecautionPreference(e.detail.value || null)}
-                  >
-                    {ATTENDEE_PRECAUTION_OPTIONS.map((option) => (
-                      <IonSelectOption key={option.value} value={option.value}>
-                        {option.label}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
-                <IonItem color="white" lines="none">
-                  <IonLabel position="stacked">Nearby City</IonLabel>
-                  <IonInput
-                    value={location}
-                    placeholder="Click to select"
-                    readonly
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openCitySelector();
-                    }}
-                  />
-                </IonItem>
-                <IonItem color="white" lines="none">
-                  <IonLabel position="stacked" className="ion-text-wrap">
-                    <p>Location label</p>
-                    {location && (
-                      <p style={{ color: 'var(--ion-color-medium)' }}>
-                        Change this if you'd like the event to show something different than the city.
-                      </p>
-                    )}
-                  </IonLabel>
-                  <IonInput
-                    value={locationLabel}
-                    onIonInput={(e) => setLocationLabel(e.detail.value ?? '')}
-                    type="text"
-                    placeholder="What the event labels as the location"
-                    autoCapitalize="words"
-                    name="locationlabel"
-                  />
-                </IonItem>
+                <BoxedStackedSelect
+                  label="In-person precautions"
+                  value={precautions}
+                  multiple
+                  interface="popover"
+                  onIonChange={handlePrecautionsChange}
+                >
+                  {PRECAUTION_OPTIONS.map((option) => (
+                    <IonSelectOption key={option.value} value={option.value}>
+                      {option.label}
+                    </IonSelectOption>
+                  ))}
+                </BoxedStackedSelect>
+                <BoxedStackedInput
+                  label="Nearby City"
+                  value={location}
+                  name="nearby_city"
+                  placeholder="Click to select"
+                  readonly
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCitySelector();
+                  }}
+                />
+                <BoxedStackedInput
+                  label={location
+                    ? (
+                      <>
+                        <span>Location label</span>
+                        <IonText color="medium" className="boxed-field-helper">
+                          Change this if you'd like the event to show something different than the city.
+                        </IonText>
+                      </>
+                    )
+                    : 'Location label'}
+                  value={locationLabel}
+                  onIonInput={(e) => setLocationLabel(e.detail.value ?? '')}
+                  type="text"
+                  placeholder="What the event labels as the location"
+                  autocapitalize="words"
+                  name="locationlabel"
+                />
               </>
             )}
           </div>
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">Post as</IonLabel>
-              <IonSelect
-                value={postingIdentity}
-                onIonChange={(event) => setPostingIdentity(event.detail.value ?? 'anonymous')}
-              >
-                {globalProfile?.username && (
-                  <IonSelectOption value={globalProfile.username}>
-                    {globalProfile.preferred_name
-                      ? `${globalProfile.preferred_name} (${globalProfile.username})`
-                      : globalProfile.username}
-                  </IonSelectOption>
-                )}
-                <IonSelectOption value="anonymous">Anonymous</IonSelectOption>
-              </IonSelect>
-            </IonItem>
-            <IonItem>
-              <IonLabel position="stacked">
-                Are you the host or do you know the host? Can you answer questions?
-              </IonLabel>
-              <IonSelect
-                value={canAnswerQuestions === null ? undefined : canAnswerQuestions ? 'yes' : 'no'}
-                placeholder="Select yes or no"
-                disabled={postingIdentity === 'anonymous'}
-                onIonChange={(event) => {
-                  setCanAnswerQuestionsTouched(true);
-                  setCanAnswerQuestions(event.detail.value === 'yes');
-                }}
-              >
-                <IonSelectOption value="yes">Yes</IonSelectOption>
-                <IonSelectOption value="no">No</IonSelectOption>
-              </IonSelect>
-            </IonItem>
+            <BoxedStackedSelect
+              label="Post as"
+              value={postingIdentity}
+              onIonChange={(event) => setPostingIdentity(event.detail.value ?? 'anonymous')}
+            >
+              {globalProfile?.username && (
+                <IonSelectOption value={globalProfile.username}>
+                  {globalProfile.preferred_name
+                    ? `${globalProfile.preferred_name} (${globalProfile.username})`
+                    : globalProfile.username}
+                </IonSelectOption>
+              )}
+              <IonSelectOption value="anonymous">Anonymous</IonSelectOption>
+            </BoxedStackedSelect>
+            <BoxedStackedSelect
+              label="Are you the host or do you know the host, and can you answer questions about this event?"
+              value={canAnswerQuestions === null ? undefined : canAnswerQuestions ? 'yes' : 'no'}
+              placeholder="Select yes or no"
+              disabled={postingIdentity === 'anonymous'}
+              onIonChange={(event) => {
+                setCanAnswerQuestionsTouched(true);
+                setCanAnswerQuestions(event.detail.value === 'yes');
+              }}
+            >
+              <IonSelectOption value="yes">Yes</IonSelectOption>
+              <IonSelectOption value="no">No</IonSelectOption>
+            </BoxedStackedSelect>
             {postingIdentity !== 'anonymous' && (
-              <IonItem>
-                <IonLabel position="stacked">
-                  Is it okay to highlight this event in the Refreshments Bar feed (posts or curated event lists)? We won’t share this off the app.
+              <BoxedStackedSelect
+                label={
+                  <>
+                  Is it okay to highlight this event in the Refreshments Bar feed (posts or curated event lists)?
                   <IonButton
                     fill="clear"
                     size="small"
@@ -908,33 +922,30 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                   >
                     <IonIcon icon={informationCircleOutline} />
                   </IonButton>
-                </IonLabel>
-                <IonSelect
-                  value={allowedAsPostInFeed === null ? undefined : allowedAsPostInFeed ? 'yes' : 'no'}
-                  placeholder="Select yes or no"
-                  onIonChange={(event) => {
-                    setAllowedAsPostInFeedTouched(true);
-                    setAllowedAsPostInFeed(event.detail.value === 'yes');
-                  }}
-                >
-                  <IonSelectOption value="yes">Yes</IonSelectOption>
-                  <IonSelectOption value="no">No</IonSelectOption>
-                </IonSelect>
-              </IonItem>
+                  </>
+                }
+                value={allowedAsPostInFeed === null ? undefined : allowedAsPostInFeed ? 'yes' : 'no'}
+                placeholder="Select yes or no"
+                onIonChange={(event) => {
+                  setAllowedAsPostInFeedTouched(true);
+                  setAllowedAsPostInFeed(event.detail.value === 'yes');
+                }}
+              >
+                <IonSelectOption value="yes">Yes</IonSelectOption>
+                <IonSelectOption value="no">No</IonSelectOption>
+              </BoxedStackedSelect>
             )}
             <IonItem>
               <IonLabel>Sensitive</IonLabel>
               <IonCheckbox slot="end" checked={sensitive} onIonChange={(event) => setSensitive(event.detail.checked)} />
             </IonItem>
             {sensitive ? (
-              <IonItem>
-                <IonLabel position="stacked">Sensitive description</IonLabel>
-                <IonTextarea
-                  value={sensitiveDescription}
-                  onIonChange={(event) => setSensitiveDescription(event.detail.value ?? '')}
-                  rows={2}
-                />
-              </IonItem>
+              <BoxedStackedTextarea
+                label="Sensitive description"
+                value={sensitiveDescription}
+                rows={2}
+                onIonChange={(event) => setSensitiveDescription(event.detail.value ?? '')}
+              />
             ) : null}
             <IonItem>
               <IonLabel>External registration required</IonLabel>
@@ -946,10 +957,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonItem>
           </div>
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">External link</IonLabel>
-              <IonInput value={externalLink} onIonInput={(event) => setExternalLink(event.detail.value ?? '')} />
-            </IonItem>
+            <BoxedStackedInput
+              label="External link"
+              value={externalLink}
+              name="external_link"
+              onIonInput={(event) => setExternalLink(event.detail.value ?? '')}
+            />
             <IonItem color="white" lines="none">
               <IonLabel>Photo (optional)</IonLabel>
               {imageData ? (
@@ -981,38 +994,40 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonItem>
           ) : null}
           {imageData ? (
-            <IonItem color="white" lines="none">
-              <IonLabel position="stacked">Image alt text (optional)</IonLabel>
-              <IonInput value={imageAlt} onIonChange={(event) => setImageAlt(event.detail.value ?? '')} />
-            </IonItem>
+            <BoxedStackedInput
+              label="Image alt text (optional)"
+              value={imageAlt}
+              name="image_alt"
+              onIonChange={(event) => setImageAlt(event.detail.value ?? '')}
+            />
           ) : null}
           <div className="create-event-section">
-            <IonItem>
-              <IonLabel position="stacked">
+            <BoxedStackedSelect
+              label={
+                <>
                 Repeat
-                <FontAwesomeIcon style={{ marginLeft: '6px' }} color="var(--ion-color-medium)" icon={faStar} />
-              </IonLabel>
-              <IonSelect
-                value={recurrenceType}
-                disabled={!canUseRecurring}
-                onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'none')}
-              >
-                <IonSelectOption value="none">Does not repeat</IonSelectOption>
-                <IonSelectOption value="daily">Daily</IonSelectOption>
-                <IonSelectOption value="weekly">Weekly</IonSelectOption>
-                <IonSelectOption value="monthly">Monthly</IonSelectOption>
-                <IonSelectOption value="custom">Custom dates</IonSelectOption>
-              </IonSelect>
+                <FontAwesomeIcon style={{ marginLeft: '6px' }} color="var(--ion-color-medium)" icon={faCirclePlus} />
+                </>
+              }
+              value={recurrenceType}
+              disabled={!canUseRecurring}
+              onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'none')}
+            >
+              <IonSelectOption value="none">Does not repeat</IonSelectOption>
+              <IonSelectOption value="daily">Daily</IonSelectOption>
+              <IonSelectOption value="weekly">Weekly</IonSelectOption>
+              <IonSelectOption value="monthly">Monthly</IonSelectOption>
+              <IonSelectOption value="custom">Custom dates</IonSelectOption>
+            </BoxedStackedSelect>
               {!canUseRecurring && (
                 <IonText color="medium" className="recurring-note">
                   Recurring events are available for Community+ and Pro members.
                 </IonText>
               )}
-            </IonItem>
             {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && (
               <IonItem>
                 <IonLabel position="stacked">How many recurring dates?</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                <div className="recurrence-count-controls">
                   <IonButton
                     fill="outline"
                     onClick={() => setRecurrenceCount((prev) => Math.max(prev - 1, 2))}
@@ -1033,8 +1048,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             )}
             {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && displayDates.length > 0 && (
               <>
-                <IonItem lines="none">
-                  <IonText color="medium">
+                <IonItem lines="none" className="recurrence-heading-item">
+                  <IonText className="recurrence-heading-text">
                     Dates (auto-generated) • Your time zone
                   </IonText>
                 </IonItem>
@@ -1042,14 +1057,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                   const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') && index === 0;
                   const descriptionIndex = isBaseDate ? -1 : index - 1;
                   return (
-                  <IonItem key={`recurrence-date-${dateValue}-${index}`} lines="none">
-                    <div style={{ width: '100%' }}>
-                      <div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                  <IonItem key={`recurrence-date-${dateValue}-${index}`} lines="none" className="recurrence-date-item">
+                    <div className="recurrence-date-card">
+                      <div className="recurrence-date-header">
+                        <div className="recurrence-date-copy">
+                          <IonText color="medium" className="recurrence-date-kicker">
+                            {isBaseDate ? 'Original date' : `Extra date ${index}`}
+                          </IonText>
+                          <div className="recurrence-date-title">
                             {moment(dateValue).format('ddd, MMM D')}
                           </div>
-                          <div style={{ fontSize: '14px' }}>
+                          <div className="recurrence-date-time">
                             {moment(dateValue).format('h:mm A')}
                             {baseDurationMinutes > 0 && (
                               <> – {recurrenceEndDates[descriptionIndex]
@@ -1058,7 +1076,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                             )}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                        <div className="recurrence-action-row">
                           {!isBaseDate && (
                             <IonButton
                               fill="clear"
@@ -1106,7 +1124,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         </div>
                       </div>
                       {!isBaseDate && expandedDateEdits[index] && (
-                        <div style={{ marginTop: '8px' }}>
+                        <div className="recurrence-editor">
                           <IonInput
                             type="datetime-local"
                             step="900"
@@ -1164,7 +1182,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                             );
                           })()}
                           {dateValue && (
-                            <IonText color="medium" style={{ marginTop: '6px' }}>
+                            <IonText color="medium" className="recurrence-end-note">
                               Ends at {recurrenceEndDates[descriptionIndex]
                                 ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
                                 : formatEndTime(dateValue)}
@@ -1173,12 +1191,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         </div>
                       )}
                       {isBaseDate && !baseDescriptionExpanded && description && (
-                        <IonText color="medium">
-                          <p style={{ marginTop: '8px' }}>{description}</p>
+                        <IonText color="medium" className="recurrence-description-preview">
+                          <p>{description}</p>
                         </IonText>
                       )}
                       {isBaseDate && baseDescriptionExpanded && (
-                        <div style={{ marginTop: '8px' }}>
+                        <div className="recurrence-editor">
                           <IonTextarea
                             value={description ?? ''}
                             placeholder="Defaults to the main description unless you change it"
@@ -1196,7 +1214,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         </div>
                       )}
                       {!isBaseDate && expandedDescriptions[descriptionIndex] && (
-                        <div style={{ marginTop: '8px' }}>
+                        <div className="recurrence-editor">
                           <IonTextarea
                             value={recurrenceDescriptions[descriptionIndex] ?? ''}
                             placeholder="Defaults to the main description unless you change it"
@@ -1220,7 +1238,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         </div>
                       )}
                       {!isBaseDate && expandedExternalLinks[descriptionIndex] && (
-                        <div style={{ marginTop: '8px' }}>
+                        <div className="recurrence-editor">
                           <IonInput
                             value={recurrenceExternalLinks[descriptionIndex] ?? externalLink}
                             placeholder="Add a link for this date (optional)"
@@ -1241,7 +1259,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             {canUseRecurring && recurrenceType === 'custom' && (
               <>
                 {recurrenceCustomDates.map((dateValue, index) => (
-                  <IonItem key={`custom-date-${index}`}>
+                  <IonItem key={`custom-date-${index}`} className="recurrence-custom-item">
                     <IonLabel position="stacked">Extra date {index + 1}</IonLabel>
                     <IonInput
                       type="datetime-local"
@@ -1292,13 +1310,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                       );
                     })()}
                     {dateValue && (
-                      <IonText color="medium" style={{ marginTop: '6px' }}>
+                      <IonText color="medium" className="recurrence-end-note">
                         Ends at {recurrenceEndDates[index]
                           ? moment(recurrenceEndDates[index]).format('h:mm A')
                           : formatEndTime(dateValue)}
                       </IonText>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="recurrence-action-row">
                       <IonButton
                         fill="clear"
                         onClick={() =>
@@ -1383,6 +1401,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               </>
             )}
           </div>
+          <IonAlert
+            isOpen={showSuccessAlert}
+            header="Your event has been submitted and is now pending approval!"
+            subHeader="Check on your event submissions in your Me tab > Activity."
+            buttons={['OK']}
+            onDidDismiss={handleSuccessAlertDismiss}
+          />
           <IonAlert
             isOpen={showRecurringUpgrade}
             header="Recurring events"

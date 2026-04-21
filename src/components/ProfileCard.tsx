@@ -394,18 +394,18 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                         {cardData.covid_precautions.includes(4) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull;  I'm immunocompromised/have a high-risk health condition</h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(7) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I only leave home/outdoors for medically necessary reasons</h2></IonLabel></IonItem> : null}
 
-                                        <IonItem> <IonLabel><p>Work / School:</p> </IonLabel> </IonItem>
+                                        {(cardData.covid_precautions.includes(1) || cardData.covid_precautions.includes(9) || cardData.covid_precautions.includes(16)) ? <IonItem> <IonLabel><p>Work / School:</p> </IonLabel> </IonItem> : null}
                                         {cardData.covid_precautions.includes(1) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I work from home </h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(9) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I go to work/school but always in a high quality mask </h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(16) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; My work requires poor/no masking </h2></IonLabel></IonItem> : null}
 
-                                        <IonItem> <IonLabel><p>Home:</p> </IonLabel> </IonItem>
+                                        {(cardData.covid_precautions.includes(18) || cardData.covid_precautions.includes(8) || cardData.covid_precautions.includes(3) || cardData.covid_precautions.includes(11)) ? <IonItem> <IonLabel><p>Home:</p> </IonLabel> </IonItem> : null}
                                         {cardData.covid_precautions.includes(18) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I have no routine daily exposures </h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(8) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I live alone/with others who share my level of Covid caution</h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(3) ? <IonItem><IonLabel className="ion-text-wrap wrap"><h2> &bull;  I live with non-Covid cautious people </h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(11) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I use air purifiers and HEPA filters</h2></IonLabel></IonItem> : null}
 
-                                        <IonItem> <IonLabel><p>Play:</p> </IonLabel> </IonItem>
+                                        {(cardData.covid_precautions.includes(15) || cardData.covid_precautions.includes(2) || cardData.covid_precautions.includes(5) || cardData.covid_precautions.includes(6) || cardData.covid_precautions.includes(12) || cardData.covid_precautions.includes(13) || cardData.covid_precautions.includes(14)) ? <IonItem> <IonLabel><p>Play:</p> </IonLabel> </IonItem> : null}
                                         {cardData.covid_precautions.includes(15) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I do takeout from restaurants</h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(2) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I eat outdoors at restaurants with good airflow and spacing</h2></IonLabel></IonItem> : null}
                                         {cardData.covid_precautions.includes(5) ? <IonItem><IonLabel className="ion-text-wrap"><h2> &bull; I attend outdoor events</h2></IonLabel></IonItem> : null}

@@ -16,6 +16,8 @@ const {
   sidenoteComment,
   unlikeComment,
   communityProfilePresent,
+  mockPush,
+  openExternalUrl,
 } = vi.hoisted(() => ({
   authorSidenoteComment: vi.fn(),
   editComment: vi.fn(),
@@ -28,6 +30,8 @@ const {
   sidenoteComment: vi.fn(),
   unlikeComment: vi.fn(),
   communityProfilePresent: vi.fn(),
+  mockPush: vi.fn(),
+  openExternalUrl: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => {
@@ -37,6 +41,7 @@ vi.mock('@ionic/react', async () => {
     ...actual,
     useIonModal: () => [mockPresentModal, mockDismissModal],
     useIonAlert: () => [mockPresentAlert, vi.fn()],
+    useIonRouter: () => ({ push: mockPush }),
   };
 });
 
@@ -55,7 +60,19 @@ vi.mock('../../hooks/utilities', () => ({
   increaseStreak: vi.fn(),
   likeComment: (...args: any[]) => likeComment(...args),
   onImgError: vi.fn(),
-  openExternalUrl: vi.fn(),
+  openExternalUrl: (...args: any[]) => openExternalUrl(...args),
+  getInternalAppPath: vi.fn((url: string) => {
+    if (!url) {
+      return null;
+    }
+    if (url.startsWith('/')) {
+      return url;
+    }
+    if (url.startsWith('https://refreshconnections.com/')) {
+      return url.replace('https://refreshconnections.com', '');
+    }
+    return null;
+  }),
   removeComment: (...args: any[]) => removeComment(...args),
   sidenoteComment: (...args: any[]) => sidenoteComment(...args),
   unlikeComment: (...args: any[]) => unlikeComment(...args),
@@ -638,5 +655,16 @@ describe('CommentItem interactions', () => {
     await clickIonicElement(screen.getByText('Anonymous'));
 
     expect(communityProfilePresent).not.toHaveBeenCalled();
+  });
+
+  it('routes internal links in comment text in-app', async () => {
+    renderComment({
+      text: 'See https://refreshconnections.com/community/123 for context',
+    });
+
+    fireEvent.click(await screen.findByText('https://refreshconnections.com/community/123'));
+
+    expect(mockPush).toHaveBeenCalledWith('/community/123');
+    expect(openExternalUrl).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { IonApp } from '@ionic/react';
 
 const {
@@ -29,6 +29,10 @@ const {
   mockApiGet,
   mockAgeVerificationProps,
   mockWindowOpen,
+  mockKeyboardAddListener,
+  mockKeyboardGetResizeMode,
+  mockKeyboardSetResizeMode,
+  keyboardListeners,
   sharedSwiper,
 } = vi.hoisted(() => ({
   mockCompleteOnboardingMutate: vi.fn(),
@@ -56,6 +60,10 @@ const {
   mockApiGet: vi.fn(),
   mockAgeVerificationProps: [] as any[],
   mockWindowOpen: vi.fn(),
+  mockKeyboardAddListener: vi.fn(),
+  mockKeyboardGetResizeMode: vi.fn().mockResolvedValue({ mode: 'native' }),
+  mockKeyboardSetResizeMode: vi.fn().mockResolvedValue(undefined),
+  keyboardListeners: {} as Record<string, (...args: any[]) => void>,
   sharedSwiper: {
     slideTo: vi.fn(),
     slideNext: vi.fn(),
@@ -74,6 +82,10 @@ class MockIntersectionObserver {
 
 vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 vi.stubGlobal('open', mockWindowOpen);
+Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+  configurable: true,
+  value: vi.fn(),
+});
 
 let mockGlobalProfile: any = {
   birth_date: null,
@@ -112,6 +124,7 @@ vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     IonDatetime: ({
       children: _children,
       preferWheel: _preferWheel,
@@ -237,6 +250,25 @@ vi.mock('@capacitor/browser', () => ({
   Browser: { open: (...args: any[]) => mockBrowserOpen(...args) },
 }));
 
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: vi.fn().mockReturnValue(true),
+    getPlatform: vi.fn().mockReturnValue('ios'),
+  },
+}));
+
+vi.mock('@capacitor/keyboard', () => ({
+  KeyboardResize: {
+    Ionic: 'ionic',
+    Native: 'native',
+  },
+  Keyboard: {
+    addListener: (...args: any[]) => mockKeyboardAddListener(...args),
+    getResizeMode: (...args: any[]) => mockKeyboardGetResizeMode(...args),
+    setResizeMode: (...args: any[]) => mockKeyboardSetResizeMode(...args),
+  },
+}));
+
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     set: (...args: any[]) => mockPreferencesSet(...args),
@@ -256,6 +288,19 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 vi.mock('../hooks/utilities', () => ({
+  getPrimaryOrderedPhoto: (profile: any) => {
+    if (!profile) return null;
+    const keys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const preferredOrder = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+      ? profile.photo_order
+      : keys;
+    const existing = keys.filter((key) => Boolean(profile[key]));
+    const ordered = [
+      ...preferredOrder.filter((key: string) => existing.includes(key)),
+      ...existing.filter((key) => !preferredOrder.includes(key)),
+    ];
+    return ordered[0] ? profile[ordered[0]] : null;
+  },
   checkVerificationCode: (...args: any[]) => mockCheckVerificationCode(...args),
   handleLogoutCommon: (...args: any[]) => mockHandleLogoutCommon(...args),
   sendPhoneVerification: (...args: any[]) => mockSendPhoneVerification(...args),
@@ -343,6 +388,17 @@ const renderInApp = (ui: React.ReactNode) => render(<IonApp>{ui}</IonApp>);
 describe('active onboarding pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.keys(keyboardListeners).forEach((key) => delete keyboardListeners[key]);
+    mockKeyboardAddListener.mockImplementation(async (eventName: string, listener: (...args: any[]) => void) => {
+      keyboardListeners[eventName] = listener;
+      return {
+        remove: vi.fn(() => {
+          delete keyboardListeners[eventName];
+        }),
+      };
+    });
+    mockKeyboardGetResizeMode.mockResolvedValue({ mode: 'native' });
+    mockKeyboardSetResizeMode.mockResolvedValue(undefined);
     sharedSwiper.slideTo.mockClear();
     sharedSwiper.slideNext.mockClear();
     sharedSwiper.slidePrev.mockClear();
@@ -420,12 +476,20 @@ describe('active onboarding pages', () => {
     expect(screen.getByText('age-verification-flow')).toBeInTheDocument();
   });
 
-  it('supports the onboarding branch actions from the ready slide', () => {
+  it('supports the onboarding branch actions from the ready slide', async () => {
     renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.personal.cta));
-    expect(mockCompleteOnboardingMutate).toHaveBeenCalled();
-    expect(mockPresentModal).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockPresentModal).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.explore.cta));
+    await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(2);
+    });
+    expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.welcome.secondaryCta));
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
@@ -442,6 +506,39 @@ describe('active onboarding pages', () => {
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.phone.whyShow));
     expect(screen.getByText(ONBOARDING_COPY.onboardingV2.phone.whyBody)).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.onboardingV2.phone.sendCodeCta)).not.toBeInTheDocument();
+    expect(document.querySelector('ion-input')?.getAttribute('disabled')).not.toBeNull();
+    expect(document.querySelector('ion-input')?.getAttribute('value')).toBe('+•••••••••12');
+    expect(screen.getByText('You have already verified your phone number.')).toBeInTheDocument();
+  });
+
+  it('lifts the OnboardingV2 layout when the mobile keyboard opens', async () => {
+    renderInApp(<OnboardingV2 />);
+
+    const content = document.querySelector('ion-content');
+    expect(content).not.toHaveClass('onboarding-v2__content--keyboard-open');
+    await waitFor(() => expect(mockKeyboardAddListener).toHaveBeenCalled());
+
+    await act(async () => {
+      keyboardListeners.keyboardWillShow?.({ keyboardHeight: 280 });
+    });
+
+    expect(content).toHaveClass('onboarding-v2__content--keyboard-open');
+    expect(content).toHaveStyle('--onboarding-keyboard-offset: 280px');
+    expect(mockKeyboardSetResizeMode).toHaveBeenCalledWith({ mode: 'ionic' });
+  });
+
+  it('applies the same keyboard-safe layout in CommunityOnboarding', async () => {
+    renderInApp(<CommunityOnboarding />);
+
+    const content = document.querySelector('ion-content');
+    await waitFor(() => expect(mockKeyboardAddListener).toHaveBeenCalled());
+
+    await act(async () => {
+      keyboardListeners.keyboardWillShow?.({ keyboardHeight: 220 });
+    });
+
+    expect(content).toHaveClass('onboarding-v2__content--keyboard-open');
+    expect(content).toHaveStyle('--onboarding-keyboard-offset: 220px');
   });
 
   it('routes logout actions through the shared logout helper', () => {
@@ -640,7 +737,7 @@ describe('active onboarding pages', () => {
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
     expect(screen.getAllByText(ONBOARDING_COPY.common.skip).length).toBeGreaterThan(0);
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal)).toBeInTheDocument();
-    expect(screen.getByAltText('Community profile placeholder')).toBeInTheDocument();
+    expect(screen.getByAltText('Refreshments profile placeholder')).toBeInTheDocument();
   });
 
   it('shows the shared-personal-location copy in community onboarding when coordinates already exist', () => {
@@ -691,8 +788,8 @@ describe('active onboarding pages', () => {
     renderInApp(<CommunityOnboarding />);
 
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.username.lockedNote)).toBeInTheDocument();
-    expect(screen.getByText(/Age shown on your community profile:/)).toHaveTextContent(
-      `Age shown on your community profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
+    expect(screen.getByText(/Age shown on your Refreshments profile:/)).toHaveTextContent(
+      `Age shown on your Refreshments profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
     );
   });
 
@@ -739,12 +836,14 @@ describe('active onboarding pages', () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
       created_profile: true,
+      onboarded: false,
     };
 
     renderInApp(<CommunityOnboarding onDismiss={onDismiss} />);
 
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]);
     await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
       expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ paused_profile: true, settings_community_profile: false });
     });
     await waitFor(() => {
@@ -791,6 +890,44 @@ describe('active onboarding pages', () => {
       });
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-profile'] });
+  });
+
+  it('enables next on the community photo step when a personal photo is in use', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      pic1_main: '/personal.png',
+    };
+    mockCommunityProfile = {
+      ...mockCommunityProfile,
+      community_profile_pic: null,
+      use_personal_profile_picture: true,
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    const photoCard = screen.getByText(ONBOARDING_COPY.communityOnboarding.photo.uploadCta).closest('ion-card');
+    const photoNextButton = within(photoCard as HTMLElement).getByText(ONBOARDING_COPY.common.next).closest('ion-button');
+    expect(photoNextButton).toHaveAttribute('disabled', 'false');
+  });
+
+  it('disables next on the community photo step when there is no selected photo', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      pic1_main: '/personal.png',
+    };
+    mockCommunityProfile = {
+      ...mockCommunityProfile,
+      community_profile_pic: null,
+      use_personal_profile_picture: false,
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    const photoCard = screen.getByText(ONBOARDING_COPY.communityOnboarding.photo.uploadCta).closest('ion-card');
+    const photoNextButton = within(photoCard as HTMLElement).getByText(ONBOARDING_COPY.common.next).closest('ion-button');
+    expect(photoNextButton).toHaveAttribute('disabled');
   });
 
   it('saves the bio, location, and age selections through the community profile patch helper', async () => {
@@ -879,7 +1016,7 @@ describe('active onboarding pages', () => {
     );
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[6]);
 
-    expect(screen.getByText(/Age shown on your community profile:/)).toHaveTextContent('30s');
+    expect(screen.getByText(/Age shown on your Refreshments profile:/)).toHaveTextContent('30s');
   });
 
   it('auto-enables community location display when a label is added without shared coordinates', async () => {
@@ -943,6 +1080,27 @@ describe('active onboarding pages', () => {
 
     expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.title).length).toBeGreaterThan(0);
     expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.toggleLabel).length).toBeGreaterThan(0);
+  });
+
+  it('completes onboarding before personal finish later when onboarded is still false', async () => {
+    const onDismiss = vi.fn();
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      onboarded: false,
+    };
+
+    renderInApp(<PersonalProfile onDismiss={onDismiss} />);
+
+    fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]);
+
+    await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
+        paused_profile: true,
+        settings_community_profile: false,
+      });
+      expect(onDismiss).toHaveBeenCalled();
+    });
   });
 
   it('includes the location-sharing card in personal onboarding when shared coordinates do not exist', () => {

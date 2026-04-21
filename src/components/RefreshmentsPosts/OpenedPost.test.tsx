@@ -21,6 +21,8 @@ const {
   mockDismissModal,
   communityProfilePresent,
   invalidateQueries,
+  mockGetShowInterestedCountPref,
+  mockGetHideInterestedCountOnMySubmissionsPref,
 } = vi.hoisted(() => ({
   routerPush: vi.fn(),
   routerGoBack: vi.fn(),
@@ -38,6 +40,8 @@ const {
   mockDismissModal: vi.fn(),
   communityProfilePresent: vi.fn(),
   invalidateQueries: vi.fn(),
+  mockGetShowInterestedCountPref: vi.fn(),
+  mockGetHideInterestedCountOnMySubmissionsPref: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => {
@@ -90,8 +94,21 @@ vi.mock('../../hooks/utilities', () => ({
     className: 'avatar',
   })),
   increaseStreak: (...args: any[]) => increaseStreak(...args),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'pro'),
   likeAnnouncement: (...args: any[]) => likeAnnouncement(...args),
   onImgError: vi.fn(),
+  getInternalAppPath: vi.fn((url: string) => {
+    if (!url) {
+      return null;
+    }
+    if (url.startsWith('/')) {
+      return url;
+    }
+    if (url.startsWith('https://refreshconnections.com/')) {
+      return url.replace('https://refreshconnections.com', '');
+    }
+    return null;
+  }),
   openExternalUrl: (...args: any[]) => openExternalUrl(...args),
   unlikeAnnouncement: (...args: any[]) => unlikeAnnouncement(...args),
 }));
@@ -156,6 +173,13 @@ vi.mock('../ContactDetailsPopover', () => ({
   default: () => <div>contact-details-popover</div>,
 }));
 
+vi.mock('../../hooks/capacitorPreferences/interested-counts', () => ({
+  getShowInterestedCountPref: (...args: any[]) => mockGetShowInterestedCountPref(...args),
+  getHideInterestedCountOnMySubmissionsPref: (...args: any[]) => mockGetHideInterestedCountOnMySubmissionsPref(...args),
+  SHOW_INTERESTED_COUNT_CHANGED_EVENT: 'show_interested_count_changed',
+  HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT: 'hide_interested_count_on_my_submissions_changed',
+}));
+
 import OpenedPost from './OpenedPost';
 import { useGetCommentsNotShownCount } from '../../hooks/api/refreshments/comments-not-shown';
 import { useGetComments } from '../../hooks/api/refreshments/comments';
@@ -203,8 +227,8 @@ const staticPost = {
   closed: false,
   event: {
     name: 'Picnic meetup',
-    start_datetime: '2026-04-10T17:30:00.000Z',
-    end_datetime: '2026-04-10T19:00:00.000Z',
+    start_datetime: '2099-04-10T17:30:00.000Z',
+    end_datetime: '2099-04-10T19:00:00.000Z',
     location: 'Prospect Park',
     description: 'Come hang out.',
     external_link: 'https://example.com/event',
@@ -255,9 +279,11 @@ beforeEach(() => {
     isLoading: false,
   } as any);
   mockGlobalProfile.mockReturnValue({
-    data: { user: 9, username: 'alex', deactivated_profile: false, paused_profile: false },
+    data: { user: 9, username: 'alex', deactivated_profile: false, paused_profile: false, subscription_level: 'communityplus' },
     isLoading: false,
   } as any);
+  mockGetShowInterestedCountPref.mockResolvedValue(true);
+  mockGetHideInterestedCountOnMySubmissionsPref.mockResolvedValue(false);
   mockStaticPostContent.mockReturnValue({
     data: staticPost,
     isLoading: false,
@@ -279,13 +305,13 @@ describe('OpenedPost', () => {
   it('renders event details and routes to the calendar date when selected', () => {
     const { container } = renderOpenedPost();
 
-    expect(screen.getByText('Event details')).toBeInTheDocument();
     expect(screen.getByText('Picnic meetup')).toBeInTheDocument();
+    expect(screen.getByText('Apr 10, 5:30 PM – 7:00 PM')).toBeInTheDocument();
     expect(screen.getByText(/Prospect Park/)).toBeInTheDocument();
 
     fireEvent.click(container.querySelector('.opened-post-event') as HTMLElement);
 
-    expect(routerPush).toHaveBeenCalledWith('/community?calendarDate=2026-04-10');
+    expect(routerPush).toHaveBeenCalledWith('/community?calendarDate=2099-04-10');
   });
 
   it('opens the external event link from the event card', async () => {
@@ -294,6 +320,24 @@ describe('OpenedPost', () => {
     fireEvent.click(await screen.findByText('Learn more'));
 
     expect(openExternalUrl).toHaveBeenCalledWith('https://example.com/event');
+  });
+
+  it('routes internal markdown links inside the post body in-app', async () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...staticPost,
+        markdown: true,
+        content: '[Go to post](/community/123)',
+      },
+      isLoading: false,
+    } as any);
+
+    renderOpenedPost();
+
+    fireEvent.click(await screen.findByText('Go to post'));
+
+    expect(routerPush).toHaveBeenCalledWith('/community/123');
+    expect(openExternalUrl).not.toHaveBeenCalled();
   });
 
   it('submits a new top-level comment and clears the composer', async () => {
@@ -341,6 +385,56 @@ describe('OpenedPost', () => {
 
     await waitFor(() => {
       expect(unlikeAnnouncement).toHaveBeenCalledWith('42');
+    });
+  });
+
+  it('shows the interested count on the opened post for Community+ users when more than three people are interested', () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...staticPost,
+        interested_count: 5,
+      },
+      isLoading: false,
+    } as any);
+
+    renderOpenedPost();
+
+    expect(screen.getByTestId('opened-post-interest-count')).toHaveTextContent('5');
+  });
+
+  it('hides the interested count on the opened post for non-premium users', () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...staticPost,
+        interested_count: 5,
+      },
+      isLoading: false,
+    } as any);
+    mockGlobalProfile.mockReturnValue({
+      data: { user: 9, username: 'alex', deactivated_profile: false, paused_profile: false, subscription_level: 'none' },
+      isLoading: false,
+    } as any);
+
+    renderOpenedPost();
+
+    expect(screen.queryByTestId('opened-post-interest-count')).not.toBeInTheDocument();
+  });
+
+  it('hides the interested count on your own submission when that local preference is on', async () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...staticPost,
+        user: 9,
+        interested_count: 5,
+      },
+      isLoading: false,
+    } as any);
+    mockGetHideInterestedCountOnMySubmissionsPref.mockResolvedValue(true);
+
+    renderOpenedPost();
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('opened-post-interest-count')).not.toBeInTheDocument();
     });
   });
 
@@ -469,7 +563,7 @@ describe('OpenedPost', () => {
     renderOpenedPost();
 
     expect(
-      await screen.findByText('Create a community profile to post a comment')
+      await screen.findByText('Create a Refreshments profile to post a comment')
     ).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Leave a comment')).not.toBeInTheDocument();
   });
@@ -666,7 +760,31 @@ describe('OpenedPost', () => {
 
     fireEvent.keyDown(container.querySelector('.opened-post-event') as HTMLElement, { key: 'Enter' });
 
-    expect(routerPush).toHaveBeenCalledWith('/community?calendarDate=2026-04-10');
+    expect(routerPush).toHaveBeenCalledWith('/community?calendarDate=2099-04-10');
+  });
+
+  it('does not open the calendar for events that ended more than a week ago', () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...staticPost,
+        event: {
+          ...staticPost.event,
+          start_datetime: '2000-04-01T17:30:00.000Z',
+          end_datetime: '2000-04-01T19:00:00.000Z',
+        },
+      },
+      isLoading: false,
+    } as any);
+
+    const { container } = renderOpenedPost();
+    const eventCard = container.querySelector('.opened-post-event') as HTMLElement;
+
+    fireEvent.click(eventCard);
+    fireEvent.keyDown(eventCard, { key: 'Enter' });
+
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(eventCard.getAttribute('role')).toBeNull();
+    expect(eventCard.getAttribute('tabindex')).toBe('-1');
   });
 
   it('toggles sidenotes from the post action sheet when hidden comments exist', async () => {

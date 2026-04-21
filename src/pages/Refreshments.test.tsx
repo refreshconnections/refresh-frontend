@@ -7,6 +7,7 @@ import { IonApp } from '@ionic/react';
 const {
   dismissNotification,
   preferencesGet,
+  preferencesSet,
   queryInvalidate,
   historyReplace,
   mockRouterPush,
@@ -16,6 +17,7 @@ const {
 } = vi.hoisted(() => ({
   dismissNotification: vi.fn(),
   preferencesGet: vi.fn(),
+  preferencesSet: vi.fn(),
   queryInvalidate: vi.fn(),
   historyReplace: vi.fn(),
   mockRouterPush: vi.fn(),
@@ -23,6 +25,8 @@ const {
   mockDismissModal: vi.fn(),
   presentUpsellAlert: vi.fn(),
 }));
+
+let mockEvents: any[] = [];
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
@@ -41,6 +45,7 @@ vi.mock('@ionic/react', async () => {
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     get: preferencesGet,
+    set: preferencesSet,
   },
 }));
 
@@ -61,6 +66,20 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('../hooks/api/refreshments/posts', () => ({
   useGetPosts: vi.fn(),
+}));
+
+vi.mock('../hooks/api/events', () => ({
+  DEFAULT_EVENT_FILTERS: {
+    eventTypes: ['all'],
+    attendeePrecautionPreferences: ['all'],
+    inPersonPrecautions: ['all'],
+  },
+  EVENT_FILTER_PREF_KEYS: {
+    eventTypes: 'event_types',
+    attendeePrecautionPreferences: 'attendee_precaution_preferences',
+    inPersonPrecautions: 'in_person_precautions',
+  },
+  useGetEvents: vi.fn(() => ({ data: mockEvents })),
 }));
 
 vi.mock('../hooks/api/status', () => ({
@@ -117,16 +136,39 @@ vi.mock('../components/StatusToast', () => ({
 }));
 
 vi.mock('../components/EventsCalendar', () => ({
-  default: ({ initialDate, openOnLoad, onAutoOpenHandled, renderTrigger }: any) => (
+  default: ({ initialDate, initialEventId, openOnLoad, onAutoOpenHandled, renderTrigger }: any) => (
     <div>
       {renderTrigger(() => onAutoOpenHandled?.())}
-      <div>calendar:{initialDate ?? 'none'}:{String(openOnLoad)}</div>
+      <div>calendar:{initialDate ?? 'none'}:{String(initialEventId ?? 'none')}:{String(openOnLoad)}</div>
     </div>
   ),
 }));
 
 vi.mock('../components/RefreshmentsPosts/RefreshmentsPost', () => ({
   default: ({ post_id }: { post_id: number }) => <div>post-card-{post_id}</div>,
+}));
+
+vi.mock('../components/CommunityBlockMigrationModal', () => ({
+  default: ({ isOpen, onDismiss }: { isOpen: boolean; onDismiss: () => void }) => (
+    isOpen ? <button onClick={onDismiss}>migration-modal-open</button> : null
+  ),
+}));
+
+vi.mock('../components/RefreshmentsEventsThisWeekRow', () => ({
+  default: ({ events, onSelectEvent }: { events: Array<{ id: number; name: string }>; onSelectEvent: (event: any) => void }) => (
+    <div>
+      {events.map((event) => (
+        <button key={event.id} onClick={() => onSelectEvent(event)}>
+          {event.name}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock('../hooks/capacitorPreferences/events-this-week-row', () => ({
+  SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT: 'show-events-this-week-row-changed',
+  getShowEventsThisWeekRowPref: vi.fn(async () => true),
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -148,6 +190,7 @@ import { useGetSettingsCurrentProfile } from '../hooks/api/profiles/settings-cur
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetSiteSettings } from '../hooks/api/sitesettings';
 import { useGetRecentNotifications } from '../hooks/api/profiles/recent-notifications';
+import { useGetEvents } from '../hooks/api/events';
 
 const mockPosts = vi.mocked(useGetPosts);
 const mockStatuses = vi.mocked(useGetStatuses);
@@ -157,6 +200,7 @@ const mockSettingsProfile = vi.mocked(useGetSettingsCurrentProfile);
 const mockCurrentProfile = vi.mocked(useGetCurrentProfile);
 const mockSiteSettings = vi.mocked(useGetSiteSettings);
 const mockNotifications = vi.mocked(useGetRecentNotifications);
+const mockUseGetEvents = vi.mocked(useGetEvents);
 
 const renderRefreshments = () => {
   const queryClient = new QueryClient();
@@ -184,6 +228,7 @@ beforeEach(() => {
   });
 
   preferencesGet.mockResolvedValue({ value: null });
+  preferencesSet.mockResolvedValue(undefined);
 
   mockPosts.mockReturnValue({
     data: [11, 12, 13, 14, 15, 16],
@@ -201,12 +246,14 @@ beforeEach(() => {
     isLoading: false,
   } as any);
   mockCurrentProfile.mockReturnValue({
-    data: { location_point_lat: 40.7, location_point_long: -73.9 },
+    data: { location_point_lat: 40.7, location_point_long: -73.9, blocked_connections: [], community_blocked: [] },
   } as any);
   mockSiteSettings.mockReturnValue({
     data: { allow_free_users_to_submit_posts: false },
   } as any);
   mockNotifications.mockReturnValue({ data: [] } as any);
+  mockEvents = [];
+  mockUseGetEvents.mockReturnValue({ data: mockEvents } as any);
 });
 
 describe('Refreshments page', () => {
@@ -340,5 +387,52 @@ describe('Refreshments page', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('passes the selected event id into the calendar when an events-row card is clicked', async () => {
+    mockEvents = [
+      {
+        id: 77,
+        name: 'Masked meetup',
+        start_datetime: '2026-04-19T18:00:00.000Z',
+        end_datetime: '2026-04-19T19:00:00.000Z',
+        interested: false,
+      },
+    ];
+    mockUseGetEvents.mockReturnValue({ data: mockEvents } as any);
+
+    renderRefreshments();
+
+    fireEvent.click(await screen.findByText('Masked meetup'));
+
+    expect(historyReplace).toHaveBeenCalledWith({
+      pathname: '/refreshments',
+      search: 'calendarDate=2026-04-19&calendarEventId=77',
+    });
+    expect(screen.getByText('calendar:2026-04-19:77:true')).toBeInTheDocument();
+  });
+
+  it('shows the community block migration popup on the active page when eligible', async () => {
+    mockCurrentProfile.mockReturnValue({
+      data: {
+        location_point_lat: 40.7,
+        location_point_long: -73.9,
+        blocked_connections: [2],
+        community_blocked: [],
+      },
+    } as any);
+
+    renderRefreshments();
+
+    expect(await screen.findByText('migration-modal-open')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('migration-modal-open'));
+
+    await waitFor(() => {
+      expect(preferencesSet).toHaveBeenCalledWith({
+        key: 'community_block_migration_shown',
+        value: 'true',
+      });
+    });
   });
 });

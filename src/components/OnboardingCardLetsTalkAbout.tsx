@@ -4,7 +4,6 @@ import {
   IonCardContent,
   IonCardTitle,
   IonCheckbox,
-  IonInput,
   IonItem,
   IonIcon,
   IonLabel,
@@ -20,6 +19,7 @@ import { chevronDownOutline } from 'ionicons/icons';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './OnboardingCard.css';
 
@@ -126,7 +126,7 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
   };
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="talkabouts">
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>{copy.body}</IonText>
@@ -135,7 +135,10 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
           button
           detail={false}
           onClick={(event) =>
-            presentTopicsPopover({ event: event.nativeEvent as Event })
+            presentTopicsPopover({
+              event: event.nativeEvent as Event,
+              cssClass: 'talkabout-topics-popover',
+            })
           }
         >
           <IonLabel position="stacked">{copy.chooseTopics}</IonLabel>
@@ -147,28 +150,32 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
 
         <div className="talkabout-selections">
           {selectedOptions.map((option) => (
-            <IonItem key={option.value}>
-              <IonLabel position="stacked">{option.label}</IonLabel>
-              <IonInput
+            <div key={option.value} className="talkabout-answer-item">
+              <BoxedStackedInput
+                label={option.label}
                 value={values[option.value] ?? ''}
+                name={option.value}
                 onIonInput={(event) =>
                   setValues((prev) => ({ ...prev, [option.value]: event.detail.value ?? '' }))
                 }
-                maxlength={90}
-                autoCapitalize="sentences"
+                type="text"
+                autocapitalize="sentences"
+                autoCorrect="on"
               />
-            </IonItem>
+            </div>
           ))}
         </div>
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          {ONBOARDING_COPY.common.back}
-        </IonButton>
-        <IonButton onClick={updateProfile} disabled={!canContinue}>
-          {ONBOARDING_COPY.common.next}
-        </IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={!canContinue}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

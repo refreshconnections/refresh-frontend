@@ -492,7 +492,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
             {(currentUserProfile?.location_point_long !== null && currentUserProfile?.location_point_lat !== null) ?
 
               <IonRow className="with-button" style={{ paddingTop: "50pt" }}>
-                <IonText><p>The coordinates we use to filter your Picks by distance show that you are near:</p></IonText>
+                <IonText><p>The coordinates we use to filter Discovery by distance show that you are near:</p></IonText>
 
                 <IonItem style={{ width: "100%" }}>
                   <IonInput

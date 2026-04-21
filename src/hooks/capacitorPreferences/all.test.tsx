@@ -19,19 +19,30 @@ describe('clearTransientAppStorage', () => {
     vi.clearAllMocks();
     preferencesKeys.mockResolvedValue({
       keys: [
+        'picks_with_filters',
+        'last_shown_pick',
+        'last_shown_pick_v2',
+        'picks_and_profiles_with_filters',
+        'chats',
         'warm_chats_v1',
-        'warm_mutuals_v1',
-        'warm_interested_posts_page_1_v1',
-        'warm_interested_events_page_1_v1',
-        'warm_megathreads_all_v1',
-        'warm_daily_tip_v1',
         'warm_refreshments_all_none_local_any_recent_v1',
+        'profile-123',
+        'profile-456',
+        'show_interested_count',
+        'theme',
+        'textzoom',
+        'radius',
+        'local',
+        'filters',
+        'sort',
+        'event_filter_type',
+        'EXPIRY',
         'unrelated_key',
       ],
     });
   });
 
-  it('removes known transient keys and all warm-cache-prefixed keys', async () => {
+  it('removes cache keys while preserving preferences and other saved local state', async () => {
     await clearTransientAppStorage();
 
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'picks_with_filters' });
@@ -39,18 +50,20 @@ describe('clearTransientAppStorage', () => {
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'last_shown_pick_v2' });
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'picks_and_profiles_with_filters' });
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'chats' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'radius' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'local' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'filters' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'sort' });
-
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_chats_v1' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_mutuals_v1' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_interested_posts_page_1_v1' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_interested_events_page_1_v1' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_megathreads_all_v1' });
-    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_daily_tip_v1' });
     expect(preferencesRemove).toHaveBeenCalledWith({ key: 'warm_refreshments_all_none_local_any_recent_v1' });
+    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'profile-123' });
+    expect(preferencesRemove).toHaveBeenCalledWith({ key: 'profile-456' });
+
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'EXPIRY' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'theme' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'textzoom' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'show_interested_count' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'radius' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'local' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'filters' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'sort' });
+    expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'event_filter_type' });
     expect(preferencesRemove).not.toHaveBeenCalledWith({ key: 'unrelated_key' });
   });
 });

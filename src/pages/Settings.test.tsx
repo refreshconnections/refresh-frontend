@@ -9,7 +9,14 @@ const {
   preferencesSet,
   preferencesRemove,
   preferencesClear,
+  getShowInterestedCountPref,
+  setShowInterestedCountPref,
+  getHideInterestedCountOnMySubmissionsPref,
+  setHideInterestedCountOnMySubmissionsPref,
+  getShowEventsThisWeekRowPref,
+  setShowEventsThisWeekRowPref,
   updateCurrentUserProfile,
+  updateCurrentUserChatSettings,
   logoutAll,
   logoutCurrent,
   applyThemeFromPref,
@@ -20,11 +27,13 @@ const {
   removeAllProfilesFromCapacitorStorage,
   clearTransientAppStorage,
   invalidateQueries,
+  clearQueryCache,
   mockPresentAlert,
   mockPresentModal,
   mockDismissModal,
   getReduceAnimations,
   setReduceAnimationsPref,
+  mockIonRouterPush,
 } = vi.hoisted(() => ({
   preferencesGet: vi.fn(),
   preferencesRemove: vi.fn(),
@@ -40,12 +49,21 @@ const {
   removeAllProfilesFromCapacitorStorage: vi.fn(),
   clearTransientAppStorage: vi.fn(),
   invalidateQueries: vi.fn(),
+  clearQueryCache: vi.fn(),
   mockPresentAlert: vi.fn(),
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
   getReduceAnimations: vi.fn(),
   setReduceAnimationsPref: vi.fn(),
+  mockIonRouterPush: vi.fn(),
   preferencesSet: vi.fn(),
+  getShowInterestedCountPref: vi.fn(),
+  setShowInterestedCountPref: vi.fn(),
+  getHideInterestedCountOnMySubmissionsPref: vi.fn(),
+  setHideInterestedCountOnMySubmissionsPref: vi.fn(),
+  getShowEventsThisWeekRowPref: vi.fn(),
+  setShowEventsThisWeekRowPref: vi.fn(),
+  updateCurrentUserChatSettings: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => {
@@ -55,6 +73,7 @@ vi.mock('@ionic/react', async () => {
     ...actual,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
     useIonModal: () => [mockPresentModal, mockDismissModal],
+    useIonRouter: () => ({ push: mockIonRouterPush }),
   };
 });
 
@@ -81,10 +100,12 @@ vi.mock('onesignal-cordova-plugin', () => ({}));
 
 vi.mock('../hooks/utilities', () => ({
   updateCurrentUserProfile: (...args: any[]) => updateCurrentUserProfile(...args),
+  updateCurrentUserChatSettings: (...args: any[]) => updateCurrentUserChatSettings(...args),
   logoutAll: (...args: any[]) => logoutAll(...args),
   logoutCurrent: (...args: any[]) => logoutCurrent(...args),
   applyThemeFromPref: (...args: any[]) => applyThemeFromPref(...args),
   setThemePref: (...args: any[]) => setThemePref(...args),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'pro'),
   isMobile: vi.fn(() => false),
   setFontSizePref: (...args: any[]) => setFontSizePref(...args),
   setTextZoom: (...args: any[]) => setTextZoom(...args),
@@ -96,6 +117,21 @@ vi.mock('../hooks/utilities', () => ({
 
 vi.mock('../hooks/capacitorPreferences/all', () => ({
   clearTransientAppStorage: (...args: any[]) => clearTransientAppStorage(...args),
+}));
+
+vi.mock('../hooks/capacitorPreferences/interested-counts', () => ({
+  getShowInterestedCountPref: (...args: any[]) => getShowInterestedCountPref(...args),
+  setShowInterestedCountPref: (...args: any[]) => setShowInterestedCountPref(...args),
+  getHideInterestedCountOnMySubmissionsPref: (...args: any[]) => getHideInterestedCountOnMySubmissionsPref(...args),
+  setHideInterestedCountOnMySubmissionsPref: (...args: any[]) => setHideInterestedCountOnMySubmissionsPref(...args),
+  SHOW_INTERESTED_COUNT_CHANGED_EVENT: 'show_interested_count_changed',
+  HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT: 'hide_interested_count_on_my_submissions_changed',
+}));
+
+vi.mock('../hooks/capacitorPreferences/events-this-week-row', () => ({
+  getShowEventsThisWeekRowPref: (...args: any[]) => getShowEventsThisWeekRowPref(...args),
+  setShowEventsThisWeekRowPref: (...args: any[]) => setShowEventsThisWeekRowPref(...args),
+  SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT: 'show_events_this_week_row_changed',
 }));
 
 vi.mock('../hooks/api/profiles/current-profile', () => ({
@@ -110,6 +146,10 @@ vi.mock('../hooks/api/status', () => ({
   useGetStatuses: vi.fn(),
 }));
 
+vi.mock('../hooks/api/chats/chat-settings', () => ({
+  useChatSettings: vi.fn(),
+}));
+
 vi.mock('../components/DeleteModal', () => ({
   default: () => <div>delete-modal</div>,
 }));
@@ -120,10 +160,6 @@ vi.mock('../components/ChangePasswordModal', () => ({
 
 vi.mock('../components/EditHiddenContentModal', () => ({
   default: () => <div>edit-hidden-content-modal</div>,
-}));
-
-vi.mock('../components/EditChatSettingsModal', () => ({
-  default: () => <div>edit-chat-settings-modal</div>,
 }));
 
 vi.mock('../components/EditPushNotifications', () => ({
@@ -151,6 +187,7 @@ vi.mock('@tanstack/react-query', async () => {
     ...actual,
     useQueryClient: () => ({
       invalidateQueries: (...args: any[]) => invalidateQueries(...args),
+      clear: (...args: any[]) => clearQueryCache(...args),
     }),
   };
 });
@@ -159,10 +196,12 @@ import Settings from './Settings';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import { useGetStatuses } from '../hooks/api/status';
+import { useChatSettings } from '../hooks/api/chats/chat-settings';
 
 const mockCurrentProfile = vi.mocked(useGetCurrentProfile);
 const mockModeration = vi.mocked(useGetCurrentModeration);
 const mockStatuses = vi.mocked(useGetStatuses);
+const mockChatSettings = vi.mocked(useChatSettings);
 
 const baseProfile = {
   subscription_level: 'pro',
@@ -216,8 +255,17 @@ beforeEach(() => {
   clearStreak.mockResolvedValue(undefined);
   removeAllProfilesFromCapacitorStorage.mockResolvedValue(undefined);
   clearTransientAppStorage.mockResolvedValue(undefined);
+  clearQueryCache.mockImplementation(() => undefined);
   getReduceAnimations.mockResolvedValue(false);
   setReduceAnimationsPref.mockResolvedValue(undefined);
+  getShowInterestedCountPref.mockResolvedValue(true);
+  setShowInterestedCountPref.mockResolvedValue(undefined);
+  getHideInterestedCountOnMySubmissionsPref.mockResolvedValue(false);
+  setHideInterestedCountOnMySubmissionsPref.mockResolvedValue(undefined);
+  getShowEventsThisWeekRowPref.mockResolvedValue(true);
+  setShowEventsThisWeekRowPref.mockResolvedValue(undefined);
+  updateCurrentUserChatSettings.mockResolvedValue(undefined);
+  mockIonRouterPush.mockReset();
 
   Object.defineProperty(window, 'location', {
     configurable: true,
@@ -236,13 +284,99 @@ beforeEach(() => {
     },
   } as any);
   mockStatuses.mockReturnValue({ data: [] } as any);
+  mockChatSettings.mockReturnValue({
+    data: {
+      allow_images_global: true,
+      allow_audio_global: false,
+      conversation_starter: false,
+      conversation_starter_text: null,
+    },
+  } as any);
 });
 
 describe('Settings page', () => {
+  it('renders the support with pro card and routes to plans', async () => {
+    renderSettings();
+
+    expect(await screen.findByText('Thanks for supporting Refresh Connections with Pro')).toBeInTheDocument();
+    expect(screen.getByText('Includes Community+, Personal+, and extra Pro tools')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Thanks for supporting Refresh Connections with Pro'));
+
+    expect(
+      screen.getByText('Refresh Connections is member-supported, with paid levels that help sustain the app while adding extra control and organization across its community and personal sides.')
+    ).toBeInTheDocument();
+    const supportCard = screen.getByText('Thanks for supporting Refresh Connections with Pro').closest('ion-card');
+    expect(supportCard).toBeTruthy();
+    const supportParagraphs = (supportCard as HTMLElement).querySelectorAll('p');
+    expect(supportParagraphs[1]?.textContent).toContain('Settings marked with');
+    expect(supportParagraphs[1]?.textContent).toContain('are available with a paid level. Tap the icon to learn more and see plans.');
+
+    fireEvent.click(screen.getByText('See plans'));
+
+    expect(mockIonRouterPush).toHaveBeenCalledWith('/store');
+  });
+
+  it('shows the non-pro support title for non-pro members', async () => {
+    mockCurrentProfile.mockReturnValue({
+      data: { ...baseProfile, subscription_level: 'none' },
+    } as any);
+
+    renderSettings();
+
+    expect(await screen.findByText('Support with Pro')).toBeInTheDocument();
+    expect(screen.queryByText('Thanks for supporting Refresh Connections with Pro')).not.toBeInTheDocument();
+  });
+
+  it('shows an upsell alert when a locked premium icon is clicked', async () => {
+    mockCurrentProfile.mockReturnValue({
+      data: { ...baseProfile, subscription_level: 'none' },
+    } as any);
+
+    renderSettings();
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'See plans' }))[0]);
+
+    expect(mockPresentAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        header: 'Get Pro!',
+        buttons: expect.arrayContaining([
+          expect.objectContaining({ text: 'Back' }),
+          expect.objectContaining({ text: 'Store' }),
+        ]),
+      })
+    );
+  });
+
+  it('routes to the store from the upsell alert store button', async () => {
+    mockCurrentProfile.mockReturnValue({
+      data: { ...baseProfile, subscription_level: 'none' },
+    } as any);
+
+    renderSettings();
+
+    fireEvent.click((await screen.findAllByRole('button', { name: 'See plans' }))[0]);
+
+    const alertConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      await alertConfig.buttons[1].handler();
+    });
+
+    expect(mockIonRouterPush).toHaveBeenCalledWith('/store');
+  });
+
+  it('does not render a clickable premium icon button for settings the user already has', async () => {
+    renderSettings();
+
+    await screen.findByText('Thanks for supporting Refresh Connections with Pro');
+
+    expect(screen.queryAllByRole('button', { name: 'See plans' }).length).toBe(1);
+  });
+
   it('loads saved theme and font preferences on mount', async () => {
     renderSettings();
 
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
     expect(preferencesGet).toHaveBeenCalledWith({ key: 'theme' });
     expect(preferencesGet).toHaveBeenCalledWith({ key: 'textzoom' });
@@ -254,23 +388,24 @@ describe('Settings page', () => {
 
   it('reload app clears transient capacitor cache before reloading', async () => {
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
-    const reloadButton = screen.getByText('Reload app').closest('ion-item')?.querySelector('ion-button') as HTMLElement;
+    const reloadButton = screen.getByText('Reload App').closest('ion-item')?.querySelector('ion-button') as HTMLElement;
     fireEvent.click(reloadButton);
 
     await waitFor(() => {
       expect(clearTransientAppStorage).toHaveBeenCalled();
       expect(removeAllProfilesFromCapacitorStorage).toHaveBeenCalled();
+      expect(clearQueryCache).toHaveBeenCalled();
       expect(window.location.reload).toHaveBeenCalled();
     });
   });
 
   it('updates a toggle-backed setting when changed', async () => {
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
-    const newMessageToggle = screen.getByText('New message count').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    const newMessageToggle = screen.getByText('Show Exact Unread Message Counts').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
     fireEvent(
       newMessageToggle,
       new CustomEvent('ionChange', {
@@ -284,25 +419,60 @@ describe('Settings page', () => {
     });
   });
 
-  it('opens the hidden content, push notifications, chat settings, email, password, and delete modals', async () => {
+  it('updates the local interested count preference when changed', async () => {
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
+
+    const interestedCountToggle = screen.getByText('Show Interested Counts Everywhere').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    fireEvent(
+      interestedCountToggle,
+      new CustomEvent('ionChange', {
+        detail: { checked: false },
+        bubbles: true,
+      })
+    );
+
+    await waitFor(() => {
+      expect(setShowInterestedCountPref).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('updates the local show interested count on my submissions preference when changed', async () => {
+    renderSettings();
+    await screen.findByText('App Preferences');
+
+    const toggle = screen.getByText('Show Interested Counts on My Submissions').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    fireEvent(
+      toggle,
+      new CustomEvent('ionChange', {
+        detail: { checked: true },
+        bubbles: true,
+      })
+    );
+
+    await waitFor(() => {
+      expect(setHideInterestedCountOnMySubmissionsPref).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('opens the hidden content, push notifications, email, password, and delete modals', async () => {
+    renderSettings();
+    await screen.findByText('App Preferences');
 
     fireEvent.click(screen.getAllByText('Edit')[0]);
     fireEvent.click(screen.getAllByText('Edit')[1]);
-    fireEvent.click(screen.getAllByText('Edit')[2]);
-    fireEvent.click(screen.getByText('Change/Add Email').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
-    fireEvent.click(screen.getByText('Change password').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
-    fireEvent.click(screen.getByText('Delete your account').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Add or Change Email').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Change Password').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Delete Account').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
-    expect(mockPresentModal).toHaveBeenCalledTimes(6);
+    expect(mockPresentModal).toHaveBeenCalledTimes(5);
   });
 
   it('prompts before clearing cached data and clears transient app storage on confirm', async () => {
     renderSettings();
-    await screen.findByText('Clear cache');
+    await screen.findByText('Clear Cached Data');
 
-    fireEvent.click(screen.getByText('Clear cache').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Clear Cached Data').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     const clearAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
     expect(clearAlert.header).toContain('clear your cached data');
@@ -313,6 +483,7 @@ describe('Settings page', () => {
 
     expect(clearTransientAppStorage).toHaveBeenCalledTimes(1);
     expect(removeAllProfilesFromCapacitorStorage).toHaveBeenCalledTimes(1);
+    expect(clearQueryCache).toHaveBeenCalledTimes(1);
   });
 
   it('logs out only this device and clears local storage state', async () => {
@@ -320,9 +491,9 @@ describe('Settings page', () => {
     const clearSpy = vi.spyOn(Storage.prototype, 'clear');
 
     renderSettings();
-    await screen.findByText('Logout just this device');
+    await screen.findByText('Log Out of This Device');
 
-    fireEvent.click(screen.getByText('Logout just this device').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Log Out of This Device').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     await waitFor(() => {
       expect(logoutCurrent).toHaveBeenCalledTimes(1);
@@ -338,9 +509,9 @@ describe('Settings page', () => {
     const clearSpy = vi.spyOn(Storage.prototype, 'clear');
 
     renderSettings();
-    await screen.findByText('Logout on all devices');
+    await screen.findByText('Log Out of All Devices');
 
-    fireEvent.click(screen.getByText('Logout on all devices').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Log Out of All Devices').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     await waitFor(() => {
       expect(logoutAll).toHaveBeenCalledTimes(1);
@@ -371,9 +542,9 @@ describe('Settings page', () => {
 
   it('prompts before pausing a profile', async () => {
     renderSettings();
-    await screen.findByText('Pause profile');
+    await screen.findByText('Pause Profile');
 
-    fireEvent.click(screen.getByText('Pause profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Pause Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -384,9 +555,9 @@ describe('Settings page', () => {
 
   it('confirms and pauses a profile', async () => {
     renderSettings();
-    await screen.findByText('Pause profile');
+    await screen.findByText('Pause Profile');
 
-    fireEvent.click(screen.getByText('Pause profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Pause Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     const pauseAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
 
@@ -499,7 +670,7 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
     expect(screen.queryByText('status-toast')).not.toBeInTheDocument();
   });
@@ -515,27 +686,27 @@ describe('Settings page', () => {
     });
 
     expect(rendered!.container.querySelector('.page-title img[alt="settings"]')).toBeTruthy();
-    expect(screen.queryByText('Pro Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('App Preferences')).not.toBeInTheDocument();
   });
 
   it('reads the reduce-animations preference on mount', async () => {
     getReduceAnimations.mockResolvedValue(true);
 
     const { container } = renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
     await waitFor(() => {
       expect(getReduceAnimations).toHaveBeenCalled();
-      const toggle = screen.getByText('Reduce animations').closest('ion-item')?.querySelector('ion-toggle') as any;
+      const toggle = screen.getByText('Reduce Animations').closest('ion-item')?.querySelector('ion-toggle') as any;
       expect(toggle.checked).toBe(true);
     });
   });
 
   it('saves the reduce-animations preference when the toggle is changed', async () => {
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
-    const toggle = screen.getByText('Reduce animations').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    const toggle = screen.getByText('Reduce Animations').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
     fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
 
     await waitFor(() => {
@@ -545,7 +716,7 @@ describe('Settings page', () => {
 
   it('updates theme and font size preferences when selects change', async () => {
     const { container } = renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
     const selects = Array.from(container.querySelectorAll('ion-select')) as HTMLElement[];
     const themeSelect = selects.find((node) => node.getAttribute('label') === 'Theme') as HTMLElement;
@@ -568,9 +739,9 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Track your streak');
+    await screen.findByText('Track Your Streak');
 
-    const toggle = screen.getByText('Track your streak').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    const toggle = screen.getByText('Track Your Streak').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
     fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
 
     await waitFor(() => {
@@ -580,9 +751,9 @@ describe('Settings page', () => {
 
   it('chat organizer toggle is checked by default when preference is not set', async () => {
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
-    const toggle = screen.getByText('Chat organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement & { checked?: boolean };
+    const toggle = screen.getByText('Show Chat Organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement & { checked?: boolean };
     expect(toggle).toBeTruthy();
     // Default state is checked (true) since pref is null
     expect(toggle.checked).not.toBe(false);
@@ -593,10 +764,10 @@ describe('Settings page', () => {
     preferencesGet.mockResolvedValue({ value: 'false' });
 
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
     await waitFor(() => {
-      const toggle = screen.getByText('Chat organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement & { checked?: boolean };
+      const toggle = screen.getByText('Show Chat Organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement & { checked?: boolean };
       expect(toggle.checked).toBe(false);
     });
   });
@@ -607,9 +778,9 @@ describe('Settings page', () => {
     window.addEventListener('chat_organizer_changed', handler);
 
     renderSettings();
-    await screen.findByText('Pro Settings');
+    await screen.findByText('App Preferences');
 
-    const toggle = screen.getByText('Chat organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    const toggle = screen.getByText('Show Chat Organizer').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
     fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true }));
 
     await waitFor(() => {
@@ -618,5 +789,41 @@ describe('Settings page', () => {
     });
 
     window.removeEventListener('chat_organizer_changed', handler);
+  });
+
+  it('updates the events-this-week local preference when changed', async () => {
+    renderSettings();
+    await screen.findByText('Refreshments Community');
+
+    const toggle = screen.getByText('Show Events This Week Row').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true }));
+
+    await waitFor(() => {
+      expect(setShowEventsThisWeekRowPref).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('updates inline chat media preferences', async () => {
+    renderSettings();
+    await screen.findByText('Chats');
+
+    const toggle = screen.getByText('Receive Images').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true }));
+
+    await waitFor(() => {
+      expect(updateCurrentUserChatSettings).toHaveBeenCalledWith({ allow_images_global: false });
+    });
+  });
+
+  it('updates the conversation starter preference inline', async () => {
+    renderSettings();
+    await screen.findByText('Chats');
+
+    const toggle = screen.getByText('Show Conversation Starter').closest('ion-item')?.querySelector('ion-toggle') as HTMLElement;
+    fireEvent(toggle, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
+
+    await waitFor(() => {
+      expect(updateCurrentUserChatSettings).toHaveBeenCalledWith({ conversation_starter: true });
+    });
   });
 });

@@ -24,6 +24,11 @@ import {
   IonReorder,
   IonReorderGroup,
   IonThumbnail,
+  IonModal,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
   useIonActionSheet,
   useIonModal,
   useIonAlert,
@@ -139,6 +144,9 @@ const SelfProfileV2: React.FC = () => {
   const [photoEditImage, setPhotoEditImage] = useState<any>(null);
   const [photoEditName, setPhotoEditName] = useState<string | null>(null);
   const [photoEditField, setPhotoEditField] = useState<string | null>(null);
+  const [photoTextEditor, setPhotoTextEditor] = useState<{ photoKey: string; mode: 'caption' | 'alt' } | null>(null);
+  const [photoTextValue, setPhotoTextValue] = useState('');
+  const [expandedPhotoMeta, setExpandedPhotoMeta] = useState<Record<string, boolean>>({});
 
   const [editing, setEditing] = useState<Record<keyof SimpleFormState, boolean>>({
     pronouns: false,
@@ -529,7 +537,7 @@ const SelfProfileV2: React.FC = () => {
     "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
 
   const showOnProfileInfoText =
-    "These choices are used when other members filter their Picks. You can also choose whether or not to show them on your profile.";
+    "These choices are used when other members filter Discovery. You can also choose whether or not to show them on your profile.";
 
   const ShowOnProfilePopover = () => (
     <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
@@ -684,6 +692,8 @@ const SelfProfileV2: React.FC = () => {
                 placeholder={`Update your ${fieldLabels[fieldKey].label}`}
                 autoGrow
                 rows={4}
+                autocapitalize='sentences'
+                autoCorrect='on'
               />
             ) : (
               <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
@@ -833,97 +843,34 @@ const SelfProfileV2: React.FC = () => {
 
   const getPhotoAltText = (key: string) => currentUserProfile?.[`${key}_alt`] || '';
 
-  const openAltTextAlert = async (photoKey: string) => {
-    presentShowContactSupportAlert({
-      header: `Add alt text`,
-      subHeader: 'This description is used by screen readers and shown to help others understand your photo.',
-      inputs: [
-        {
-          name: 'description',
-          type: 'text',
-          placeholder: 'Add alt text',
-          value: currentUserProfile?.[`${photoKey}_alt`] || '',
-        },
-      ],
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const value = (data?.description || '').slice(0, 300);
-            await updateCurrentUserProfile({ [`${photoKey}_alt`]: value });
-            refreshProfile();
-          },
-        },
-      ],
-    });
+  const isPhotoMetaLong = (photoKey: string) => {
+    const caption = getPhotoCaption(photoKey);
+    const alt = getPhotoAltText(photoKey);
+    return caption.length > 36 || alt.length > 120;
   };
 
-  const openCustomCaptionAlert = async (photoKey: string) => {
-    const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
-    presentShowContactSupportAlert({
-      header: 'Add your own caption',
-      message: '',
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const value = (data?.description || '').slice(0, 30);
-            await updateCurrentUserProfile({ [`${photoKey}_caption`]: value });
-            refreshProfile();
-          },
-        },
-      ],
-      inputs: [
-        {
-          name: 'description',
-          type: 'text',
-          placeholder: 'Add custom caption',
-          value: currentCaption,
-          attributes: { maxlength: 30 },
-        },
-      ],
-    } as any);
+  const openPhotoTextEditor = (photoKey: string, mode: 'caption' | 'alt') => {
+    setPhotoTextEditor({ photoKey, mode });
+    setPhotoTextValue(
+      mode === 'caption'
+        ? currentUserProfile?.[`${photoKey}_caption`] || ''
+        : currentUserProfile?.[`${photoKey}_alt`] || ''
+    );
   };
 
-  const openCaptionAlert = async (photoKey: string) => {
-    const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
-    presentPhotoAlert({
-      header: 'Edit caption',
-      message: '',
-      inputs: [
-        ...captionOptions.map(option => ({
-          type: 'radio',
-          name: 'caption',
-          label: option === '' ? '(No caption)' : option,
-          value: option,
-          checked: option === currentCaption,
-        })),
-        {
-          type: 'radio',
-          name: 'caption',
-          label: '(Write your own)',
-          value: '__custom__',
-          checked: currentCaption && !captionOptions.includes(currentCaption),
-        },
-      ],
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const selected = data?.caption ?? data;
-            if (selected === '__custom__') {
-              setTimeout(() => openCustomCaptionAlert(photoKey), 250);
-              return;
-            }
-            await updateCurrentUserProfile({ [`${photoKey}_caption`]: selected ?? '' });
-            refreshProfile();
-          },
-        },
-      ],
-    } as any);
+  const closePhotoTextEditor = () => {
+    setPhotoTextEditor(null);
+    setPhotoTextValue('');
+  };
+
+  const savePhotoTextEditor = async () => {
+    if (!photoTextEditor) return;
+    const { photoKey, mode } = photoTextEditor;
+    const fieldName = `${photoKey}_${mode === 'caption' ? 'caption' : 'alt'}`;
+    const maxLength = mode === 'caption' ? 32 : 300;
+    await updateCurrentUserProfile({ [fieldName]: photoTextValue.slice(0, maxLength) });
+    refreshProfile();
+    closePhotoTextEditor();
   };
 
   const replacePhoto = async (photoKey: string, photoLabel: string) => {
@@ -969,13 +916,13 @@ const SelfProfileV2: React.FC = () => {
           ? [
               {
                 text: 'Edit caption',
-                handler: () => openCaptionAlert(photoKey),
+                handler: () => openPhotoTextEditor(photoKey, 'caption'),
               },
             ]
           : []),
         {
           text: 'Edit alt text',
-          handler: () => openAltTextAlert(photoKey),
+          handler: () => openPhotoTextEditor(photoKey, 'alt'),
         },
         {
           text: 'Delete photo',
@@ -1015,6 +962,84 @@ const SelfProfileV2: React.FC = () => {
 
   return (
     <div className="self-profile-v2">
+      <IonModal isOpen={Boolean(photoTextEditor)} onDidDismiss={closePhotoTextEditor}>
+        <IonHeader>
+          <IonToolbar className="modal-title">
+            <IonTitle>{photoTextEditor?.mode === 'caption' ? 'Edit caption' : 'Edit alt text'}</IonTitle>
+            <IonButtons slot="start">
+              <IonButton onClick={closePhotoTextEditor}>Cancel</IonButton>
+            </IonButtons>
+            <IonButtons slot="end">
+              <IonButton onClick={savePhotoTextEditor}>Save</IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          {photoTextEditor?.mode === 'caption' ? (
+            <>
+              <IonText color="medium">
+                <p>Pick one of ours or write your own.</p>
+              </IonText>
+              <div className="photo-caption-presets">
+                <IonButton
+                  size="small"
+                  fill={!captionOptions.filter(option => option !== '').includes(photoTextValue) ? 'solid' : 'outline'}
+                  onClick={() => setPhotoTextValue('')}
+                >
+                  (None or write your own)
+                </IonButton>
+                {captionOptions
+                  .filter(option => option !== '')
+                  .map(option => (
+                    <IonButton
+                      key={option}
+                      size="small"
+                      fill={photoTextValue === option ? 'solid' : 'outline'}
+                      onClick={() => setPhotoTextValue(option)}
+                    >
+                      {option}
+                    </IonButton>
+                  ))}
+              </div>
+              <IonItem lines="none" className="photo-text-editor-field">
+                <IonTextarea
+                  value={photoTextValue}
+                  autoGrow
+                  maxlength={32}
+                  counter
+                  placeholder="Add a custom caption"
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 32))}
+                />
+              </IonItem>
+            </>
+          ) : (
+            <>
+              <IonText color="medium">
+                <p>This description is used by screen readers and shown to help others understand your photo.</p>
+              </IonText>
+              <IonItem lines="none" className="photo-text-editor-field">
+                <IonTextarea
+                  value={photoTextValue}
+                  autoGrow
+                  maxlength={300}
+                  counter
+                  placeholder="Add alt text"
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 300))}
+                />
+              </IonItem>
+            </>
+          )}
+          <div className="photo-text-editor-actions">
+            <IonButton
+              fill="clear"
+              color="medium"
+              onClick={() => setPhotoTextValue('')}
+            >
+              Clear
+            </IonButton>
+          </div>
+        </IonContent>
+      </IonModal>
       <IonGrid>
         <IonRow className="preview-row">
           <IonCol className="ion-text-center">
@@ -1030,7 +1055,7 @@ const SelfProfileV2: React.FC = () => {
           </IonCol>
         </IonRow>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="basics">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1079,7 +1104,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup value={photosAccordionValue} onIonChange={ev => setPhotosAccordionValue(ev.detail.value as string | undefined)}>
+        <IonAccordionGroup className="profile-accordion-group" value={photosAccordionValue} onIonChange={ev => setPhotosAccordionValue(ev.detail.value as string | undefined)}>
           <IonAccordion value="photos">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1134,14 +1159,29 @@ const SelfProfileV2: React.FC = () => {
                       <IonThumbnail slot="start" style={{ width: '96px', height: '96px' }}>
                         <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} onError={onImgError} />
                       </IonThumbnail>
-                      <IonLabel>
-                        {getPhotoCaption(key) ? (
-                          <IonText color="dark">
-                            <p>{getPhotoCaption(key)}</p>
-                          </IonText>
-                        ) : null}
-                        {getPhotoAltText(key) ? <p>Alt: {getPhotoAltText(key)}</p> : null}
+                      <IonLabel className="photo-meta-label">
+                        <div className={`photo-meta-preview${expandedPhotoMeta[key] ? ' expanded' : ''}`}>
+                          {getPhotoCaption(key) ? (
+                            <IonText color="dark">
+                              <p className="photo-meta-caption">{getPhotoCaption(key)}</p>
+                            </IonText>
+                          ) : null}
+                          {getPhotoAltText(key) ? <p className="photo-meta-alt">Alt: {getPhotoAltText(key)}</p> : null}
+                        </div>
                         {!getPhotoCaption(key) && !getPhotoAltText(key) ? <p className="placeholder">Add a caption or alt text</p> : null}
+                        {isPhotoMetaLong(key) ? (
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            className="photo-meta-toggle"
+                            onClick={event => {
+                              event.stopPropagation();
+                              setExpandedPhotoMeta(prev => ({ ...prev, [key]: !prev[key] }));
+                            }}
+                          >
+                            {expandedPhotoMeta[key] ? 'Show less' : 'Show more'}
+                          </IonButton>
+                        ) : null}
                       </IonLabel>
                       <IonReorder slot="end" />
                     </IonItem>
@@ -1176,7 +1216,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="lookingFor">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1218,7 +1258,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="genderSexuality">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1289,7 +1329,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="livedExperiences">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1362,7 +1402,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="covidBehaviors">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1420,7 +1460,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="talk">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1439,7 +1479,7 @@ const SelfProfileV2: React.FC = () => {
                       {favoriteKeys.map(key => (
                         <EditableField key={key} fieldKey={key} />
                       ))}
-                      <SectionHeader title="Fixations" />
+                      <SectionHeader title="Current Interests" />
                       {fixationKeys.map(key => (
                         <EditableField key={key} fieldKey={key} />
                       ))}

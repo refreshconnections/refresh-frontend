@@ -3,6 +3,7 @@
   --padding-end: 0;
   --padding-top: 0;
   --padding-bottom: 0;
+  --onboarding-keyboard-offset: 0px;
   --background: var(--ion-background-color, #ffffff);
   background: var(--ion-background-color, #ffffff);
   padding-top: env(safe-area-inset-top, 0px);
@@ -10,6 +11,10 @@
 
 .onboarding-v2__swiper {
   min-height: 100vh;
+}
+
+.onboarding-v2__content--keyboard-open .onboarding-v2__swiper {
+  min-height: calc(100vh - var(--onboarding-keyboard-offset, 0px));
 }
 
 .onboarding-v2__slide {
@@ -22,6 +27,18 @@
     clamp(24px, 6vw, 72px)
     calc(clamp(40px, 10vh, 120px) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+
+.onboarding-v2__content--keyboard-open .onboarding-v2__slide {
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding-top: calc(clamp(16px, 8vh, 48px) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(24px + var(--onboarding-keyboard-offset, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
+.onboarding-v2__slide--tight-top {
+  justify-content: flex-start;
+  padding-top: calc(clamp(20px, 8vh, 72px) + env(safe-area-inset-top, 0px));
 }
 
 .onboarding-v2__info {
@@ -61,6 +78,10 @@
   --padding-end: clamp(24px, 6vw, 72px);
 }
 
+.onboarding-v2__content--keyboard-open .onboarding-v2__welcome-wrapper {
+  --padding-bottom: calc(32px + var(--onboarding-keyboard-offset, 0px));
+}
+
 .onboarding-v2__welcome-scroll {
   padding-bottom: 120px;
 }
@@ -71,6 +92,10 @@
   border-radius: 24px;
   background: var(--ion-background-color, #ffffff);
   color: var(--ion-text-color, #000000);
+}
+
+.onboarding-v2__content--keyboard-open .onboarding-v2__card {
+  margin-top: 0;
 }
 
 .onboarding-v2__card--shallow {
@@ -88,6 +113,18 @@
 
 .onboarding-v2__card-body--tight {
   gap: 12px;
+}
+
+.onboarding-v2__connect-card-body {
+  gap: 18px;
+}
+
+.onboarding-v2__connect-body-break {
+  margin: 8px 0 0;
+}
+
+.onboarding-v2__connect-toggle {
+  margin-top: 2px;
 }
 
 .onboarding-v2__welcome {
@@ -154,6 +191,34 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.onboarding-v2__input--card {
+  --background: var(--ion-color-white, #fff);
+  --border-color: rgba(31, 31, 61, 0.18);
+  --border-width: 1px;
+  --border-style: solid;
+  --inner-border-width: 0;
+  --border-radius: 16px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --inner-padding-top: 4px;
+  --inner-padding-bottom: 8px;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+  --highlight-height: 0;
+  --min-height: 0;
+}
+
+.onboarding-v2__input--card ion-input {
+  --padding-top: 8px;
+  --padding-bottom: 2px;
+}
+
+.onboarding-v2__input--card ion-textarea {
+  width: 100%;
+  --padding-top: 8px;
+  --padding-bottom: 2px;
 }
 
 .onboarding-v2__error {
@@ -266,22 +331,63 @@
   margin-top: 24px;
 }
 
-.onboarding-v2__input {
+.onboarding-v2__input-wrapper .boxed-stacked-input--phone {
   margin-top: 16px;
-  border: 1px solid var(--ion-color-medium, #ccc);
-  --background: var(--ion-color-white);
+}
+
+.onboarding-v2__photo-toggle,
+.onboarding-v2__photo-preview-list,
+.onboarding-v2__photo-preview-item {
+  --background: var(--ion-color-white, #ffffff);
+  background: var(--ion-color-white, #ffffff);
+}
+
+.onboarding-v2__photo-preview-list {
+  margin: 0;
+  padding: 0;
+}
+
+.onboarding-v2__photo-preview-item {
+  justify-content: center;
+  padding-inline-start: 0;
+  --inner-padding-end: 0;
+}
+
+.onboarding-v2__photo-preview-frame {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.onboarding-v2__photo-preview-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ion-color-white, #ffffff);
+}
+
+.onboarding-v2__photo-preview-image--placeholder {
+  filter: grayscale(1);
+  object-fit: contain;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.onboarding-v2__choice-group {
+  margin-top: 16px;
+  border: 1px solid var(--ion-color-dark, #000000);
   border-radius: 12px;
+  background: var(--ion-color-white, #ffffff);
   padding: 8px 12px;
 }
 
-.onboarding-v2__input .PhoneInput,
-.onboarding-v2__input .PhoneInputInput {
+.onboarding-v2__choice-item {
+  --background: var(--ion-color-white, #ffffff);
+  background: var(--ion-color-white, #ffffff);
+  --inner-border-width: 0;
   border: none;
-  background: #ffffff;
-}
-
-.onboarding-v2__input .PhoneInput {
-  width: 100%;
+  border-radius: 8px;
 }
 
 .onboarding-v2__ready IonButton + IonButton {

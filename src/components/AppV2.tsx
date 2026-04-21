@@ -3,10 +3,13 @@ import {
   IonAlert,
   IonApp,
   IonBadge,
+  IonCard,
+  IonCardContent,
   IonContent,
   IonButton,
   IonIcon,
   IonLabel,
+  IonPage,
   IonRouterOutlet,
   IonRow,
   IonTabBar,
@@ -97,11 +100,12 @@ import { useChatSettings } from '../hooks/api/chats/chat-settings';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useGetSettingsCurrentProfile } from '../hooks/api/profiles/settings-current-profile';
-import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
 import { useMultipleAccountsCheck } from '../hooks/api/profiles/multiple_accounts_check';
 import MultipleAccountsDetected from '../pages/MultipleAccountsDetected';
 import { IconPop } from './IconPop';
+import StreakSaverAlert, { StreakSaverAlertState } from './StreakSaverAlert';
 import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
@@ -114,6 +118,8 @@ import { consumeAgeCheckQuery } from '../utils/age-verification';
 import { apiClient } from '../hooks/api';
 import { useYotiCallbackListener, YotiCallbackPayload } from '../hooks/useYotiCallbackListener';
 import Loading from '../pages/Loading';
+import { shouldShowPrimaryOnboardingScreen, shouldShowOnboardingForProfile } from './app-shell-routing';
+import { useEmailStatus } from '../hooks/api/account/emails';
 
 
 
@@ -130,6 +136,119 @@ const CommunityPostRoute: React.FC = () => {
   }
 
   return <OpenedPost />;
+};
+
+type TabsShellProps = {
+  chatBadgeCount: number;
+};
+
+const TabsShell: React.FC<TabsShellProps> = ({ chatBadgeCount }) => {
+  const location = useLocation();
+  const hideTabs = location.pathname === '/community-onboarding';
+
+  return (
+    <IonTabs>
+      <IonRouterOutlet>
+          <Route path="/picks">
+            <Picksv2 />
+          </Route>
+          <Route path="/likes">
+            <Likes />
+          </Route>
+          <Route path="/chats">
+            <Chats />
+          </Route>
+          <Route path="/communityold">
+            <Community />
+          </Route>
+          <Route exact path="/community">
+            <Refreshments />
+          </Route>
+          <Route exact path="/community-onboarding">
+            <CommunityOnboarding />
+          </Route>
+          <Route exact path="/community/submitted">
+            <SubmittedPosts />
+          </Route>
+          <Route exact path="/community/submitted/:id">
+            <SubmittedPostPreview />
+          </Route>
+          <Route exact path="/community/:id">
+            <CommunityPostRoute />
+          </Route>
+          <Route path="/me">
+            <Me />
+          </Route>
+          <Route path="/profile">
+            <Profile />
+          </Route>
+          <Route path="/store">
+            <Store />
+          </Route>
+          <Route path="/settings">
+            <Settings />
+          </Route>
+          <Route path="/help">
+            <Help />
+          </Route>
+          <Route path="/tutorial">
+            <Tutorial />
+          </Route>
+          <Route path="/faqs">
+            <FAQs />
+          </Route>
+          <Route path="/tips">
+            <Tips />
+          </Route>
+          <Route path="/construction">
+            <Construction />
+          </Route>
+          <Route exact path="/hub">
+            <Hub />
+          </Route>
+          <Route exact path="/change">
+            <Change />
+          </Route>
+          <Route path="/change/emailbuilder/:id">
+            <EmailBuilderDetails />
+          </Route>
+          <Route path="/change/other/:id">
+            <OtherDetails />
+          </Route>
+          <Route path="/activity">
+            <Activity />
+          </Route>
+          <Redirect exact from="/" to="/community" />
+      </IonRouterOutlet>
+      {!hideTabs && (
+        <IonTabBar slot="bottom">
+          <IonTabButton tab="picks" href="/picks">
+            <IonIcon icon={flowerIcon} />
+            <IonLabel>Discovery</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="chat" href="/chats">
+            {chatBadgeCount > 0 ?
+              <IonBadge color="danger">{chatBadgeCount}</IonBadge>
+              : <></>}
+            <IonIcon icon={chatbubble} />
+            <IonLabel>Chats</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="community" href="/community">
+            <IonIcon icon={cafe} />
+            <IonLabel>Refreshments</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="change" href="/hub">
+            <IonIcon icon={starOutline} />
+            <IonLabel>Hub</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="person" href="/me">
+            <IonIcon icon={personIcon} />
+            <IonLabel>Me</IonLabel>
+          </IonTabButton>
+        </IonTabBar>
+      )}
+    </IonTabs>
+  );
 };
 
 // For PWA Camera 
@@ -187,11 +306,11 @@ const AppV2: React.FC = () => {
   const [inAppPurchasesReady, setInAppPurchasesReady] = useState(false);
 
   const [showIssueAlert, setShowIssueAlert] = useState(false);
-  const [streakSaverAlert, setStreakSaverAlert] = useState<{ preBreak: number; savers: number } | null>(null);
-  const [showOnboard, setShowOnboard] = useState(false);
+  const [streakSaverAlert, setStreakSaverAlert] = useState<StreakSaverAlertState | null>(null);
   const [showRequireVersionUpdate, setShowRequireVersionUpdate] = useState(false);
   const [multipleAccountsDetected, setShowMultipleAccountsDetected] = useState(false);
   const [linkInstallComplete, setLinkInstallComplete] = useState(false);
+  const [showStartupTimeout, setShowStartupTimeout] = useState(false);
   const initialAgeResult = useMemo(() => consumeAgeCheckQuery(), []);
   const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
   const [lastYotiSessionId, setLastYotiSessionId] = useState<string | null>(null);
@@ -206,10 +325,12 @@ const AppV2: React.FC = () => {
   const queryClient = useQueryClient()
   const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
+  const { data: communityProfile, isLoading: communityProfileLoading } = useGetCommunityProfile(undefined, loggedin);
 
   const { data: eligibilityStatus, isLoading: eligibilityStatusLoading } = useEligibilityStatus(
     loggedin
   );
+  const { data: emailStatus, isLoading: emailStatusLoading } = useEmailStatus({ enabled: loggedin });
   const completeAgeVerification = useCompleteAgeVerification({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
@@ -226,8 +347,6 @@ const AppV2: React.FC = () => {
   const { data: chats, refetch: refetchChats } = useGetCurrentUserChats();
   const minVersion = useGetMinimumVersion()
 
-  //Get rid of this later 
-  const currentUserProfile = useGetCurrentProfile().data;
   const current_settings = useChatSettings().data;
 
 
@@ -262,22 +381,6 @@ const AppV2: React.FC = () => {
 
   // const paths = ['/community', '/change', '/chats', '/picks', '/me', '/profile']
 
-  const checkOnboarded = async () => {
-    console.log("Gotta check if the user is onboarded")
-    try {
-      if (globalCurrentProfile?.onboarded === false) {
-        setShowOnboard(true)
-      }
-    } catch (e) {
-      console.log("Onboarding check failed.", e)
-      if ((e as any)?.response?.status !== 503) {
-        setShowIssueAlert(true)
-      } else {
-        setMaintenance(true)
-      }
-    }
-  }
-
   useEffect(() => {
     const foregroundDisplay = (event: any) => {
       event.preventDefault();
@@ -301,7 +404,11 @@ const AppV2: React.FC = () => {
           if (settingsCurrentProfile?.settings_streak_tracker) {
             const result = await checkForBrokenStreak();
             if (result?.data?.broken === 'true' && result?.data?.savers > 0 && result?.data?.streak_pre_break) {
-              setStreakSaverAlert({ preBreak: result.data.streak_pre_break, savers: result.data.savers });
+              setStreakSaverAlert({
+                preBreak: result.data.streak_pre_break,
+                savers: result.data.savers,
+                recoveryCost: result.data.recovery_cost ?? null,
+              });
             }
           }
           console.log("resume")
@@ -318,11 +425,15 @@ const AppV2: React.FC = () => {
       OneSignal.Notifications.addEventListener("foregroundWillDisplay", foregroundDisplay);
     }
 
+    const reduceAnimationsHandler = (e: Event) => setReduceAnimations((e as CustomEvent<boolean>).detail);
+    window.addEventListener('reduce_animations_changed', reduceAnimationsHandler);
+
     return () => {
       resumeListener?.remove?.();
       if (isMobile()) {
         OneSignal.Notifications.removeEventListener("foregroundWillDisplay", foregroundDisplay);
       }
+      window.removeEventListener('reduce_animations_changed', reduceAnimationsHandler);
     };
  }, [
     applyThemeFromPref,
@@ -372,7 +483,7 @@ const AppV2: React.FC = () => {
   useEffect(() => {
 
     if (globalCurrentProfile) {
-      if (!globalCurrentProfile?.onboarded && hasMultipleAccounts) {
+      if (shouldShowOnboardingForProfile(globalCurrentProfile, emailStatus) && hasMultipleAccounts) {
         setShowMultipleAccountsDetected(true);
       } else {
         // If they *have* finished onboarding, never show multiple accounts warning
@@ -380,7 +491,7 @@ const AppV2: React.FC = () => {
       }
     }
 
-  }, [hasMultipleAccounts, globalCurrentProfile]);
+  }, [hasMultipleAccounts, globalCurrentProfile, emailStatus]);
 
 
   useEffect(() => {
@@ -393,8 +504,26 @@ const AppV2: React.FC = () => {
       })
     }
 
+    const prefetchChatOrganizerData = () => {
+      queryClient.prefetchQuery({
+        queryKey: ['chats', 'groups'],
+        queryFn: async () => {
+          const response = await apiClient.get('/api/profiles/chat_groups/');
+          return response.data;
+        },
+      });
+      queryClient.prefetchQuery({
+        queryKey: ['chats', 'local'],
+        queryFn: async () => {
+          const response = await apiClient.get('/api/profiles/local_mutual_connections/');
+          return response.data;
+        },
+      });
+    }
+
     if (chats) {
       prefetchOngoingChatProfiles();
+      prefetchChatOrganizerData();
     }
 
     const badgeCount = async () => {
@@ -459,7 +588,11 @@ const AppV2: React.FC = () => {
             setLoggedin(true)
             const brokenResult = await checkForBrokenStreak();
             if (brokenResult?.data?.broken === 'true' && brokenResult?.data?.savers > 0 && brokenResult?.data?.streak_pre_break) {
-              setStreakSaverAlert({ preBreak: brokenResult.data.streak_pre_break, savers: brokenResult.data.savers });
+              setStreakSaverAlert({
+                preBreak: brokenResult.data.streak_pre_break,
+                savers: brokenResult.data.savers,
+                recoveryCost: brokenResult.data.recovery_cost ?? null,
+              });
             }
 
           }
@@ -484,7 +617,6 @@ const AppV2: React.FC = () => {
     setLoading(true)
 
     if (loggedin && !window.location.pathname.includes('/construction')) {
-      checkOnboarded()
       queryClient.prefetchQuery({ queryKey: ['limits'], queryFn: getLimitsFn });
 
     }
@@ -492,7 +624,7 @@ const AppV2: React.FC = () => {
     setLoading(false)
 
 
-  }, [loggedin, globalCurrentProfile?.onboarded]);
+  }, [loggedin, queryClient]);
 
   useEffect(() => {
     if (
@@ -610,13 +742,38 @@ const AppV2: React.FC = () => {
   }, [eligibilityStatus?.failed_result]);
 
   const stillCheckingInfo =
-    loading || !authReady || globalIsLoading || settingsIsLoading || eligibilityStatusLoading;
+    loading || !authReady || globalIsLoading || settingsIsLoading || communityProfileLoading || eligibilityStatusLoading || (loggedin && emailStatusLoading);
+  const shouldShowOnboarding =
+    loggedin &&
+    shouldShowPrimaryOnboardingScreen(
+      window.location.pathname,
+      globalCurrentProfile,
+      emailStatus,
+      Boolean(communityProfile)
+    );
   const needsAgeVerificationGate =
     loggedin &&
-    !showOnboard &&
+    !shouldShowOnboarding &&
     (eligibilityStatus?.needs_age_verification ||
       eligibilityStatus?.failed_result ||
       Boolean(ageCheckState));
+
+  useEffect(() => {
+    if (!stillCheckingInfo) {
+      setShowStartupTimeout(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setShowStartupTimeout(true);
+    }, 15000);
+
+    return () => window.clearTimeout(timeout);
+  }, [stillCheckingInfo]);
+
+  const retryStartup = () => {
+    window.location.reload();
+  };
 
   const startAgeVerification = async () => {
       setLaunchingYoti(true);
@@ -734,6 +891,28 @@ const AppV2: React.FC = () => {
   };
 
   if (stillCheckingInfo) {
+    if (showStartupTimeout) {
+      return (
+        <IonApp>
+          <IonPage>
+            <IonContent fullscreen className="startup-timeout-screen">
+              <div className="startup-timeout-screen__inner">
+                <IonCard className="startup-timeout-screen__card">
+                  <IonCardContent>
+                    <h1>Oops</h1>
+                    <p>The app is taking too long to load right now.</p>
+                    <IonButton expand="block" onClick={retryStartup}>
+                      Try again
+                    </IonButton>
+                  </IonCardContent>
+                </IonCard>
+              </div>
+            </IonContent>
+          </IonPage>
+        </IonApp>
+      );
+    }
+
     return (
       <IonApp>
           <Loading />
@@ -769,7 +948,7 @@ const AppV2: React.FC = () => {
     );
   }
 
-  if (showOnboard) {
+  if (shouldShowOnboarding) {
     return (
       <IonApp>
         <OnboardingV2 />
@@ -806,119 +985,10 @@ const AppV2: React.FC = () => {
     );
   }
 
-  const TabsShell: React.FC = () => {
-    const location = useLocation();
-    const hideTabs = location.pathname === '/community-onboarding';
-
-    return (
-      <IonTabs>
-        <IonRouterOutlet>
-            <Route path="/picks">
-              <Picksv2 />
-            </Route>
-            <Route path="/likes">
-              <Likes />
-            </Route>
-            <Route path="/chats">
-              <Chats />
-            </Route>
-            <Route path="/communityold">
-              <Community />
-            </Route>
-            <Route exact path="/community">
-              <Refreshments />
-            </Route>
-            <Route exact path="/community-onboarding">
-              <CommunityOnboarding />
-            </Route>
-            <Route exact path="/community/submitted">
-              <SubmittedPosts />
-            </Route>
-            <Route exact path="/community/submitted/:id">
-              <SubmittedPostPreview />
-            </Route>
-            <Route exact path="/community/:id">
-              <CommunityPostRoute />
-            </Route>
-            <Route path="/me">
-              <Me />
-            </Route>
-            <Route path="/profile">
-              <Profile />
-            </Route>
-            <Route path="/store">
-              <Store />
-            </Route>
-            <Route path="/settings">
-              <Settings />
-            </Route>
-            <Route path="/help">
-              <Help />
-            </Route>
-            <Route path="/tutorial">
-              <Tutorial />
-            </Route>
-            <Route path="/faqs">
-              <FAQs />
-            </Route>
-            <Route path="/tips">
-              <Tips />
-            </Route>
-            <Route path="/construction">
-              <Construction />
-            </Route>
-            <Route exact path="/hub">
-              <Hub />
-            </Route>
-            <Route exact path="/change">
-              <Change />
-            </Route>
-            <Route path="/change/emailbuilder/:id">
-              <EmailBuilderDetails />
-            </Route>
-            <Route path="/change/other/:id">
-              <OtherDetails />
-            </Route>
-            <Route path="/activity">
-              <Activity />
-            </Route>
-            <Redirect exact from="/" to="/community" />
-        </IonRouterOutlet>
-        {!hideTabs && (
-          <IonTabBar slot="bottom">
-            <IonTabButton tab="picks" href="/picks">
-              <IonIcon icon={flowerIcon} />
-              <IonLabel>Picks</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="chat" href="/chats">
-              {chatBadgeCount > 0 ?
-                <IonBadge color="danger">{chatBadgeCount}</IonBadge>
-                : <></>}
-              <IonIcon icon={chatbubble} />
-              <IonLabel>Chats</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="community" href="/community">
-              <IonIcon icon={cafe} />
-              <IonLabel>Refreshments</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="change" href="/hub">
-              <IonIcon icon={starOutline} />
-              <IonLabel>Hub</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="person" href="/me">
-              <IonIcon icon={personIcon} />
-              <IonLabel>Me</IonLabel>
-            </IonTabButton>
-          </IonTabBar>
-        )}
-      </IonTabs>
-    );
-  };
-
   return (
     <IonApp>
       <IonReactRouter>
-        <TabsShell />
+        <TabsShell chatBadgeCount={chatBadgeCount} />
       </IonReactRouter>
       <IonAlert
         isOpen={showIssueAlert}
@@ -926,25 +996,17 @@ const AppV2: React.FC = () => {
         onDidDismiss={() => handleLogoutCommon()}
         buttons={['Ok']}
       />
-      <IonAlert
-        isOpen={!!streakSaverAlert}
-        header="Your streak broke!"
-        message={streakSaverAlert ? `Your ${streakSaverAlert.preBreak}-day streak broke. You have ${streakSaverAlert.savers} streak saver${streakSaverAlert.savers === 1 ? '' : 's'} — restore it now?` : ''}
-        onDidDismiss={() => setStreakSaverAlert(null)}
-        buttons={[
-          { text: 'Maybe later', role: 'cancel' },
-          {
-            text: 'Restore streak',
-            handler: async () => {
-              try {
-                await recoverStreak();
-                queryClient.invalidateQueries({ queryKey: ['streak'] });
-              } catch (e) {
-                console.log('streak recovery failed', e);
-              }
-            },
-          },
-        ]}
+      <StreakSaverAlert
+        alert={streakSaverAlert}
+        onDismiss={() => setStreakSaverAlert(null)}
+        onRestore={async () => {
+          try {
+            await recoverStreak();
+            queryClient.invalidateQueries({ queryKey: ['streak'] });
+          } catch (e) {
+            console.log('streak recovery failed', e);
+          }
+        }}
       />
       <IonToast
         isOpen={streakOpen}

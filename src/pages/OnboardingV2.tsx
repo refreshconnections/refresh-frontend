@@ -17,9 +17,9 @@ import {
 import { IonDatetime, IonDatetimeButton, IonModal } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 import moment from 'moment';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import BoxedStackedPhoneInput from '../components/BoxedStackedPhoneInput';
+import BoxedStackedInput from '../components/BoxedStackedInput';
 import { Pagination } from 'swiper';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import 'swiper/css';
@@ -48,6 +48,7 @@ import {
 import './OnboardingV2.css';
 import PersonalProfile from './PersonalProfile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 const WelcomeSlide: React.FC = () => {
   const swiper = useSwiper();
@@ -156,6 +157,14 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
   const [presentAlert] = useIonAlert();
   const [presentError] = useIonAlert();
   const copy = ONBOARDING_COPY.onboardingV2.phone;
+  const maskedExistingPhone = useMemo(() => {
+    if (!existingPhone) return '';
+    const digits = existingPhone.replace(/\D/g, '');
+    if (!digits) return existingPhone;
+    const lastTwo = digits.slice(-2);
+    const maskedPrefix = `${digits.slice(0, -2)}`.replace(/\d/g, '•');
+    return existingPhone.trim().startsWith('+') ? `+${maskedPrefix}${lastTwo}` : `${maskedPrefix}${lastTwo}`;
+  }, [existingPhone]);
 
   useEffect(() => {
     setPhone(existingPhone ?? undefined);
@@ -232,19 +241,28 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
           <IonCardTitle>{copy.title}</IonCardTitle>
           <p>{copy.body}</p>
           <div className="onboarding-v2__input-wrapper">
-            <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
-              {loading ? (
-                <IonSpinner />
-              ) : (
-                <PhoneInput
-                  placeholder={copy.placeholder}
-                  defaultCountry="US"
-                  value={phone}
-                  onChange={setPhone}
-                  disabled={Boolean(existingPhone)}
+            {loading ? (
+              <IonSpinner />
+            ) : existingPhone ? (
+              <>
+                <BoxedStackedInput
+                  label="Phone number"
+                  value={maskedExistingPhone}
+                  name="phone-number"
+                  disabled
                 />
-              )}
-            </IonItem>
+                <IonNote className="onboarding-v2__error">
+                  You have already verified your phone number.
+                </IonNote>
+              </>
+            ) : (
+              <BoxedStackedPhoneInput
+                label="Phone number"
+                placeholder={copy.placeholder}
+                value={phone}
+                onChange={setPhone}
+              />
+            )}
             {error && (
               <IonNote color="danger" className="onboarding-v2__error">
                 {error}
@@ -512,14 +530,12 @@ type ReadySlideProps = {
   ) => void;
   isCompleting: boolean;
   onStartPersonalProfile: () => void;
-  onMarkOnboarded: () => void;
 };
 
 const ReadySlide: React.FC<ReadySlideProps> = ({
   onFinish,
   isCompleting,
   onStartPersonalProfile,
-  onMarkOnboarded,
 }) => {
   const copy = ONBOARDING_COPY.onboardingV2.ready;
   return (
@@ -534,10 +550,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
               <IonButton
                 expand="block"
                 disabled={isCompleting}
-                onClick={(event) => {
-                  onMarkOnboarded?.();
-                  onFinish('/community-onboarding', event);
-                }}
+                onClick={(event) => onFinish('/community-onboarding', event)}
               >
                 {isCompleting ? <IonSpinner name="dots" /> : copy.community.cta}
               </IonButton>
@@ -549,10 +562,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
             <IonButton
               expand="block"
               disabled={isCompleting}
-              onClick={() => {
-                onMarkOnboarded?.();
-                onStartPersonalProfile();
-              }}
+              onClick={onStartPersonalProfile}
             >
               {isCompleting ? <IonSpinner name="dots" /> : copy.personal.cta}
             </IonButton>
@@ -564,10 +574,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
                 expand="block"
                 fill="outline"
                 disabled={isCompleting}
-                onClick={(event) => {
-                  onMarkOnboarded?.();
-                  onFinish('/community', event);
-                }}
+                onClick={(event) => onFinish('/community', event)}
               >
                 {isCompleting ? <IonSpinner name="dots" /> : copy.explore.cta}
               </IonButton>
@@ -581,6 +588,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
 
 const OnboardingV2: React.FC = () => {
   const queryClient = useQueryClient();
+  const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const { data: globalCurrentProfile } = useGetGlobalAppCurrentProfile();
   const { data: emailStatus, isLoading: emailStatusLoading } = useEmailStatus();
   const { data: eligibilityStatus } = useEligibilityStatus(true);
@@ -597,9 +605,6 @@ const OnboardingV2: React.FC = () => {
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
     onDismiss: () => dismissPersonalProfile(),
   });
-  const handleStartPersonalProfile = () => {
-    presentPersonalProfile();
-  };
   useEffect(() => {
     if (eligibilityStatus?.failed_result) {
       setAgeCheckState('failed');
@@ -624,12 +629,6 @@ const OnboardingV2: React.FC = () => {
       await Preferences.set({ key: 'ONBOARDED', value: 'true' });
     }
   });
-  const markOnboarded = useCallback(() => {
-    if (completeOnboarding.isPending) {
-      return;
-    }
-    completeOnboarding.mutate();
-  }, [completeOnboarding]);
   const completeAgeVerification = useCompleteAgeVerification({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
@@ -693,20 +692,32 @@ const OnboardingV2: React.FC = () => {
     }
   }, [ageCheckState, needsAgeVerification, completeAgeVerification]);
 
-  const handleFinish = async (
-    destination: string,
-    event?: React.MouseEvent<HTMLIonButtonElement>
-  ) => {
-    event?.preventDefault();
+  const completeOnboardingAndProceed = useCallback(async (afterComplete: () => void) => {
     if (completeOnboarding.isPending) return;
     try {
       await completeOnboarding.mutateAsync();
     } catch (error) {
       console.error('Failed to complete onboarding', error);
     } finally {
-      window.location.href = destination;
+      afterComplete();
     }
+  }, [completeOnboarding]);
+
+  const handleFinish = async (
+    destination: string,
+    event?: React.MouseEvent<HTMLIonButtonElement>
+  ) => {
+    event?.preventDefault();
+    await completeOnboardingAndProceed(() => {
+      window.location.href = destination;
+    });
   };
+
+  const handleStartPersonalProfile = useCallback(async () => {
+    await completeOnboardingAndProceed(() => {
+      presentPersonalProfile();
+    });
+  }, [completeOnboardingAndProceed, presentPersonalProfile]);
 
   const handleTargetSlide = (index: number) => {
     if (!swiperRef.current) return;
@@ -825,7 +836,10 @@ const OnboardingV2: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="onboarding-v2__content">
+      <IonContent
+        className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
+        style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
+      >
           <Swiper
             modules={[Pagination]}
             pagination={{ clickable: true }}
@@ -891,7 +905,6 @@ const OnboardingV2: React.FC = () => {
               onFinish={handleFinish}
               isCompleting={completeOnboarding.isPending}
               onStartPersonalProfile={handleStartPersonalProfile}
-              onMarkOnboarded={markOnboarded}
             />
           </SwiperSlide>
           <SwiperSlide>

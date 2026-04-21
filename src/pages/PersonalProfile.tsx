@@ -10,19 +10,19 @@ import {
   useIonAlert,
   useIonModal,
 } from '@ionic/react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 
 import './Page.css';
+import './OnboardingV2.css';
 import './Onboarding.css';
 import '../components/OnboardingCard.css';
 
-import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/effect-cards';
-import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { Navigation, Pagination, Scrollbar } from 'swiper';
+import { Pagination } from 'swiper';
 import OnboardingCardGenderIdentity from '../components/OnboardingCardGenderIdentity';
 import OnboardingCardDone from '../components/OnboardingCardDone';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
@@ -44,6 +44,7 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { Preferences } from '@capacitor/preferences';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 type PersonalProfileProps = {
   onDismiss?: () => void;
@@ -51,34 +52,26 @@ type PersonalProfileProps = {
 
 const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const copy = ONBOARDING_COPY.personalProfile;
+  const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const [confirmLogout] = useIonAlert();
   const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
     onDismiss: () => stayPausedDismiss(),
   });
   const queryClient = useQueryClient();
+  const completeOnboarding = useCompleteOnboarding({
+    onSuccess: async () => {
+      await Preferences.set({ key: 'ONBOARDED', value: 'true' });
+    },
+  });
   const swiperRef = useRef<any>(null);
   const currentProfile = useGetCurrentProfile().data;
   const moderation = useGetCurrentModeration().data;
   const { data: communityProfile } = useGetCommunityProfile();
   const hasCommunityProfile = Boolean(communityProfile);
-  const showConnectToggle = !hasCommunityProfile && !currentProfile?.created_profile;
   const SLIDE_KEY = 'personal_profile_onboarding_slide';
   const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
   const [locationLabelDraft, setLocationLabelDraft] = useState('');
   const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
-
-  const SwiperButtonPrev = ({ children }) => {
-    const swiper = useSwiper();
-    return (
-      <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-        {children}
-      </IonButton>
-    );
-  };
-  const SwiperButtonNext = ({ children }) => {
-    const swiper = useSwiper();
-    return <IonButton onClick={() => swiper.slideNext()}>{children}</IonButton>;
-  };
 
   useEffect(() => {
     const setThemeandFont = async () => {
@@ -139,6 +132,9 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   };
 
   const handleFinishLater = async () => {
+    if (currentProfile?.onboarded !== true) {
+      await completeOnboarding.mutateAsync();
+    }
     await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
     if (onDismiss) {
       onDismiss();
@@ -165,13 +161,16 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
 
   return (
     <IonPage>
-      <IonContent className="ignore-keyboard ">
+      <IonContent
+        className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
+        style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
+      >
         <Swiper
-          modules={[Navigation, Pagination]}
-          pagination={{ type: 'progressbar' }}
+          modules={[Pagination]}
+          pagination={{ clickable: false }}
           centeredSlides
           allowTouchMove={false}
-          className="onboarding"
+          className="onboarding-v2__swiper"
           onSwiper={(swiperInstance) => {
             swiperRef.current = swiperInstance;
           }}
@@ -184,91 +183,128 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           }}
         >
           <SwiperSlide>
-              <IonCard className="onboarding-slide" style={{ overflow: 'scroll', position: 'relative', height: '95vh' }}>
-                <IonCardContent style={{ padding: '20px' }}>
-              <IonCardTitle style={{ fontSize: '26px' }}>{copy.intro.title}</IonCardTitle>
-                <img
-                  src="../static/img/flower-mask.png"
-                  style={{ width: '50%', alignSelf: 'center', margin: '30pt' }}
-                />
-                <IonText style={{ textAlign: 'center' }}>
-                  <h2>{copy.intro.bodyPrimary}</h2>
-                </IonText>
-              </IonCardContent>
-              <IonRow className="onboarding-slide-buttons">
-                <SwiperButtonNext>{copy.intro.cta}</SwiperButtonNext>
-              </IonRow>
-            </IonCard>
+            <div className="onboarding-v2__slide">
+              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
+                <IonCardContent>
+                  <IonCardTitle>{copy.intro.title}</IonCardTitle>
+                  <img
+                    src="../static/img/flower-mask.png"
+                    style={{ width: 'min(220px, 50%)', alignSelf: 'center', margin: '24px auto' }}
+                  />
+                  <IonText style={{ textAlign: 'center' }}>
+                    <h2>{copy.intro.bodyPrimary}</h2>
+                  </IonText>
+                </IonCardContent>
+                <div className="onboarding-v2__card-footer">
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton
+                      className="onboarding-v2__primary-action"
+                      onClick={() => swiperRef.current?.slideNext()}
+                    >
+                      {copy.intro.cta}
+                    </IonButton>
+                  </IonRow>
+                </div>
+              </IonCard>
+            </div>
           </SwiperSlide>
 
           <SwiperSlide>
-            <OnboardingCardName />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardName />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardPronouns />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardPronouns />
+            </div>
           </SwiperSlide>
           {!hasSharedLocationCoords && (
             <SwiperSlide>
-              <OnboardingCardLocationCoords
-                onCoordsSaved={(localLabel) => {
-                  setHasSharedLocationCoords(true);
-                  setLocationLabelDraft((prev) => prev || localLabel);
-                }}
-              />
+              <div className="onboarding-v2__slide onboarding-v2__slide--tight-top">
+                <OnboardingCardLocationCoords
+                  onCoordsSaved={(localLabel) => {
+                    setHasSharedLocationCoords(true);
+                    setLocationLabelDraft((prev) => prev || localLabel);
+                  }}
+                />
+              </div>
             </SwiperSlide>
           )}
           <SwiperSlide>
-            <OnboardingCardLocationLabel initialLocation={locationLabelDraft} />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLocationLabel initialLocation={locationLabelDraft} />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLookingFor />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLookingFor />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardGenderIdentity />
-          </SwiperSlide>
-
-          <SwiperSlide>
-            <OnboardingCardLivedExperiences />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardGenderIdentity />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardCovid />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLivedExperiences />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardProfilePic />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardCovid />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardPictures />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardProfilePic />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardBio />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardPictures />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLetsTalkAbout onBeforeNext={ensureProfileCreatedBeforeConnect} />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardBio />
+            </div>
+          </SwiperSlide>
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLetsTalkAbout onBeforeNext={ensureProfileCreatedBeforeConnect} />
+            </div>
           </SwiperSlide>
           {hasCommunityProfile && (
             <SwiperSlide>
+              {/* OnboardingCardConnectFromRefreshments renders its own onboarding-v2__slide wrapper */}
               <OnboardingCardConnectFromRefreshments />
             </SwiperSlide>
           )}
           <SwiperSlide>
-            <OnboardingCardDone showConnectToggle={showConnectToggle} />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardDone />
+            </div>
           </SwiperSlide>
         </Swiper>
-        <IonButton
-          size="small"
-          fill="clear"
-          style={{
-            position: 'fixed',
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '90%',
-            zIndex: 5,
-          }}
-          onClick={handleFinishLater}
-        >
-          {ONBOARDING_COPY.common.finishLater}
-        </IonButton>
+        {!keyboardOpen && (
+          <IonButton
+            size="small"
+            fill="clear"
+            style={{
+              position: 'fixed',
+              bottom: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '90%',
+              zIndex: 5,
+            }}
+            onClick={handleFinishLater}
+          >
+            {ONBOARDING_COPY.common.finishLater}
+          </IonButton>
+        )}
       </IonContent>
     </IonPage>
   );

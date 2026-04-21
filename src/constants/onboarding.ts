@@ -37,7 +37,7 @@ export const ONBOARDING_COPY = {
         {
           title: 'Community connections',
           body:
-            "You can start by creating your community profile, which lets you take part in the community side of the app. This is where members gather for shared conversation, support, and discussion in the Refreshments Bar and Calendar.",
+            "You can start by creating your Refreshments profile, which lets you take part in the community side of the app. This is where members gather for shared conversation, support, and discussion in the Refreshments Bar and Calendar.",
         },
         {
           title: 'Personal connections',
@@ -114,9 +114,9 @@ export const ONBOARDING_COPY = {
     ready: {
       title: "You're ready to get started!",
       community: {
-        title: 'Set up a community profile',
+        title: 'Set up a Refreshments profile',
         body: 'Join in the discussion and find Covid Conscientious events at the Refreshments Bar and Calendar.',
-        cta: 'Start community profile',
+        cta: 'Start Refreshments profile',
       },
       personal: {
         title: 'Set up a personal profile',
@@ -134,9 +134,9 @@ export const ONBOARDING_COPY = {
   },
   communityOnboarding: {
     welcome: {
-      title: 'Welcome to your community profile',
+      title: 'Welcome to your Refreshments profile',
       withPersonalProfile:
-        'Your community profile is how you appear in the Refreshments Bar and Calendar. It includes your Refreshments handle, a photo, and any other details you want to share with the community.',
+        'Your Refreshments profile is how you appear in the Refreshments Bar and Calendar. It includes your Refreshments handle, a photo, and any other details you want to share with the community.',
       withPersonalProfileSecondary: 
         'Continue conversations one-on-one with people you meet in the Refreshments Bar by turning on “Connect from Refreshments.”',
       withoutPersonalProfileSecondary:
@@ -149,37 +149,37 @@ export const ONBOARDING_COPY = {
         You can change your handle every 60 days.
         `,
       placeholderFallback: 'yourhandle',
-      lockedNote: "You can't change your username yet.",
+      lockedNote: "You can't change your handle yet.",
       requiredToContinue: 'Please choose a username to continue.',
       taken: 'That username is already taken. Try another.',
       requiredToFinish: 'Please choose a username to finish.',
     },
     connect: {
-      title: 'Connect from Refreshments',
+      title: 'Find connection in the community',
       body: 
-        'Use Connect from Refreshments to invite a member you see at the Refreshments Bar post or Calendar to join you in a one-on-one conversation.',
-      toggleLabel: 'Connect from Refreshments',
+        `See someone at the Refreshments Bar or in the Refreshments Calendar you'd like to know better? 
+        Turn on Connect from Refreshments to view profiles and send Likes from the community side of Refresh Connections. If the Like is mutual, you can start a one-on-one conversation.`,
+      toggleLabel: 'Enable Connect from Refreshments',
     },
     photo: {
-      title: 'Choose your community photo',
-      withPersonalPhoto: 'This is the photo people see when they view your community profile from the Refreshments Bar and Calendar. Use your personal profile photo or pick a new one just for the Refreshments community.',
-      withoutPersonalPhoto: 'This is the photo people see when they view your community profile from the Refreshments Bar and Calendar.',
+      title: 'Choose your Refreshments profile photo',
+      withPersonalPhoto: 'This is the photo people see when they view your Refreshments profile from the Refreshments Bar and Calendar. Use your personal profile photo or pick a new one just for the Refreshments community.',
+      withoutPersonalPhoto: 'This is the photo people see when they view your Refreshments profile from the Refreshments Bar and Calendar.',
       toggleLabel: 'Use personal profile photo',
       missingPersonalPhoto: 'Add a personal profile photo first to use it here.',
-      uploadCta: 'Upload a community photo',
-      existingPhotoNote: 'Your current community photo will stay unless you upload a new one.',
+      uploadCta: 'Upload a Refreshments profile photo',
     },
     bio: {
-      title: 'Your community bio',
+      title: 'Your Refreshments bio',
       body:
-        'This is a brief description of you people see when they open your community profile from your posts or comments in the Refreshments Bar and Calendar.',
+        'This is a brief description people see when they open your Refreshments profile from your posts or comments in the Refreshments Bar and Calendar.',
     },
     location: {
       title: 'Show your location?',
       withSharedCoords:
-        'Choose whether the location that shows on your personal profile is also shown on your community profile.',
+        'Choose whether the location that shows on your personal profile is also shown on your Refreshments profile.',
       withoutSharedCoords:
-        "Even though you didn't share your location with the app to see local posts, you can add a general location label to show on your community profile if you'd like.",
+        "Even though you didn't share your location with the app to see local posts, you can add a general location label to show on your Refreshments profile if you'd like.",
       shownPrefix: 'Location shown on your profile: ',
       addLocation: 'Add location',
       editLocation: 'Edit location',
@@ -187,8 +187,8 @@ export const ONBOARDING_COPY = {
     },
     age: {
       title: 'Show your age?',
-      body: 'Choose how your age appears on your community profile.',
-      shownPrefix: 'Age shown on your community profile: ',
+      body: 'Choose how your age appears on your Refreshments profile.',
+      shownPrefix: 'Age shown on your Refreshments profile: ',
       hideAge: "(hidden)",
       showExact: 'Show exact age',
       showDecade: 'Show decade only',
@@ -196,7 +196,7 @@ export const ONBOARDING_COPY = {
     },
     ready: {
       title: 'Done!',
-      body: 'Your community profile is ready. You can update these choices later in your Me tab > Profile. You can go ahead and set up your personal profile now too, or explore Refreshments first!',
+      body: 'Your Refreshments profile is ready. You can update these choices later in your Me tab > Profile. You can go ahead and set up your personal profile now too, or explore Refreshments first!',
       createPersonal: 'Create your personal profile',
       finish: 'Go to the Refreshments Bar',
     },
@@ -280,7 +280,6 @@ export const ONBOARDING_COPY = {
         { value: 'friendship', label: 'Friendships' },
         { value: 'romance', label: 'Romance' },
         { value: 'virtual connection', label: 'Virtual Connection' },
-        { value: 'virtual only', label: 'Virtual Connection Only' },
         { value: 'job', label: 'Job' },
         { value: 'housing', label: 'Housing / roommate' },
         { value: 'families', label: 'Families' },
@@ -333,7 +332,7 @@ export const ONBOARDING_COPY = {
       title: 'How are you dealing with Covid?',
       body: 'These choices will be shown on your profile. You can change these at any time.',
       noteLabel: 'Anything else you want to share?',
-      notePlaceholder: 'Optional note about your Covid approach',
+      notePlaceholder: 'Optional',
       scrollNote: 'Scroll for all options!',
       sections: {
         home: 'Home:',

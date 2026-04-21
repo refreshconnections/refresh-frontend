@@ -26,6 +26,23 @@ type Props = {
   onCoordsSaved?: (localLabel: string) => void;
 };
 
+const buildLocationLabel = (address?: Record<string, any>, fallback?: string) => {
+  const parts = [
+    fallback,
+    address?.administrativeArea,
+    address?.countryName || address?.countryCode,
+  ].filter((part, index, arr) => {
+    if (!part) return false;
+    return arr.indexOf(part) === index;
+  });
+
+  if (parts.length > 0) {
+    return parts.join(', ');
+  }
+
+  return fallback ?? '';
+};
+
 const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCoordsSaved }) => {
   const copy =
     flow === 'community'
@@ -48,7 +65,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: async (selectedCity?: City) => {
       if (selectedCity) {
-        await confirmLocationAlert(selectedCity.lat, selectedCity.lng, selectedCity.name, true);
+        await confirmLocationAlert(selectedCity.lat, selectedCity.lng, selectedCity.name);
       }
       dismissCitySelector();
     },
@@ -58,18 +75,15 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
     presentCitySelector();
   };
 
-  const confirmLocationAlert = async (
-    lat: number,
-    long: number,
-    cityLabel?: string,
-    advanceOnConfirm?: boolean
-  ) => {
+  const confirmLocationAlert = async (lat: number, long: number, cityLabel?: string) => {
     const reverseOptions = { latitude: lat, longitude: long };
     const address = await NativeGeocoder.reverseGeocode(reverseOptions);
-    const local =
+    const firstAddress = address?.addresses?.[0];
+    const fallbackLabel =
       cityLabel ||
-      address?.addresses?.[0]?.locality ||
+      firstAddress?.locality ||
       `${lat.toFixed(3)}, ${long.toFixed(3)}`;
+    const local = buildLocationLabel(firstAddress, fallbackLabel) || fallbackLabel;
 
     presentConfirm({
       header: `${copy.confirmPrefix}${local}${copy.confirmSuffix}`,
@@ -85,9 +99,6 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
             });
             setCoordsSet(true);
             onCoordsSaved?.(local);
-            if (advanceOnConfirm) {
-              swiper.slideNext();
-            }
           },
         },
       ],
@@ -124,8 +135,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
       await confirmLocationAlert(
         coordinates.coords.latitude,
         coordinates.coords.longitude,
-        undefined,
-        true
+        undefined
       );
     } catch (err) {
       await presentAlert({

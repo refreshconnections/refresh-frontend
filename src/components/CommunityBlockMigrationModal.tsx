@@ -15,8 +15,8 @@ const CommunityBlockMigrationModal: React.FC<Props> = ({ isOpen, onDismiss }) =>
   return (
     <IonAlert
       isOpen={isOpen}
-      header="Full community blocks are here"
-      message="You can now add a full community block on top of a personal block — hiding each other's posts and comments in the Refreshments Bar. Want to upgrade all your existing personal blocks to full community blocks?"
+      header="Full blocks are here"
+      message="You can now add a full block on top of a personal block. This also hides each other’s posts and comments in the Refreshments Bar, in addition to the personal side.\n\nWould you like to convert your existing personal blocks to full blocks?"
       buttons={[
         {
           text: 'Not now',
@@ -24,7 +24,7 @@ const CommunityBlockMigrationModal: React.FC<Props> = ({ isOpen, onDismiss }) =>
           handler: onDismiss,
         },
         {
-          text: 'Yes, upgrade all',
+          text: 'Yes, convert all',
           handler: async () => {
             await communityBlockMigration();
             queryClient.invalidateQueries({ queryKey: userQueryKeys.current });

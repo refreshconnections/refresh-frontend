@@ -276,14 +276,14 @@ const Profile: React.FC = () => {
               <IonCardContent className="ion-justify-content-center" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <img alt="refresh" src="../static/img/flower-mask.png" style={{ width: '40%', alignSelf: 'center' }} />
                 <IonText className="ion-text-center">
-                  <p style={{ marginTop: 0 }}>Finish your personal profile to unlock Picks and show up in the community.</p>
+                  <p style={{ marginTop: 0 }}>Finish your personal profile to unlock Discovery and show up in the community.</p>
                 </IonText>
                 <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
                   Create personal profile
                 </IonButton>
                 {!data?.username ? (
                   <IonButton onClick={() => presentCommunityOnboarding()} expand="block" color="navy">
-                    Create community profile
+                    Create Refreshments profile
                   </IonButton>
                 ) : null}
                 <IonButton onClick={() => presentLocationModal()} expand="block" fill="outline" color="medium">

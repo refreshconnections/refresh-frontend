@@ -38,7 +38,7 @@ import { postQueryKeys } from '../hooks/api/refreshments';
 import { annQueryKeys } from '../hooks/api/announcements-take-1/ann-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
 import { informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPostPreview.css';
 import { ModerationCopy } from '../enums/moderation';
@@ -77,6 +77,7 @@ type SubmittedPost = {
   moderator_edit_or_rejection_reason?: string;
   markdown?: boolean;
   hide_status_author?: string;
+  interested_count?: number | null;
 };
 
 type RouteParams = {
@@ -576,7 +577,7 @@ const SubmittedPostPreview: React.FC = () => {
                   placeholder="Required"
                   onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
                   type="text"
-                  autoCapitalize="words"
+                  autocapitalize="words"
                 />
               ) : (
                 <IonText className="preview-value">{post?.title || '-'}</IonText>
@@ -654,6 +655,12 @@ const SubmittedPostPreview: React.FC = () => {
                 )}
               </IonItem>
             )}
+            {typeof post?.interested_count === 'number' && (
+              <IonItem color="white" lines="none">
+                <IonLabel position="stacked">Interested count</IonLabel>
+                <IonText className="preview-value">{post.interested_count}</IonText>
+              </IonItem>
+            )}
             {post?.sensitive && (
               <IonItem color="white" lines="none">
                 <IonLabel position="stacked">Sensitive Content</IonLabel>
@@ -669,6 +676,8 @@ const SubmittedPostPreview: React.FC = () => {
                   <IonTextarea
                     value={draftContent}
                     autoGrow
+                    autocapitalize='sentences'
+                    autoCorrect='on'
                     maxlength={2000}
                     style={{ minHeight: '120px' }}
                     placeholder="Write your post here..."
@@ -691,7 +700,7 @@ const SubmittedPostPreview: React.FC = () => {
         {allowInlineEdit && isDraft && (
           <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
             <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
-              <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+              <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
               Save draft
             </IonButton>
             <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>
@@ -816,7 +825,7 @@ const SubmittedPostPreview: React.FC = () => {
                     placeholder="Required"
                     onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
                     type="text"
-                    autoCapitalize="words"
+                    autocapitalize="words"
                   />
                 </IonItem>
                 <IonItem color="white" lines="none">
@@ -941,7 +950,7 @@ const SubmittedPostPreview: React.FC = () => {
                 {isDraft ? (
                   <>
                     <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
-                      <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                      <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
                       Save draft
                     </IonButton>
                     <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>

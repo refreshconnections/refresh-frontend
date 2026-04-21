@@ -197,6 +197,18 @@ describe('OrganizeChatsModal', () => {
     });
   });
 
+  it('renders member rows with the standard member-row item', () => {
+    renderModal({
+      ...defaultGroups,
+      group1: [
+        { id: 5, name: 'Carol', pic1_main: null },
+        { id: 6, name: 'Dave', pic1_main: null },
+      ],
+    });
+
+    expect(screen.getAllByTestId('organize-chats-member-row')).toHaveLength(2);
+  });
+
   it('toggling hidden off calls updateGroups with group1_hidden: false', async () => {
     renderModal();
 
@@ -248,6 +260,12 @@ describe('OrganizeChatsModal', () => {
     });
 
     expect(screen.queryByText('Add a list')).not.toBeInTheDocument();
+  });
+
+  it('uses the updated add-to-section search prompt', () => {
+    renderModal();
+
+    expect(screen.getByText('Search for additional chats to add to this section')).toBeInTheDocument();
   });
 
   it('delete list prompts for confirmation and clears name and members on confirm', async () => {

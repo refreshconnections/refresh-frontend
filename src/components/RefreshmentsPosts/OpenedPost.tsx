@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, getInternalAppPath, increaseStreak, isCommunityPlus, likeAnnouncement, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
 import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
@@ -40,8 +40,15 @@ import debounce from "lodash.debounce";
 import { useGetCurrentModeration } from "../../hooks/api/profiles/current-moderation";
 import Poll from "./Polls/Poll";
 import ContactDetailsPopover from "../ContactDetailsPopover";
+import RefreshmentsEventDetails from "../RefreshmentsEventDetails";
 import moment from "moment";
 import { useInterestPost, useUninterestPost } from "../../hooks/api/interests";
+import {
+    getHideInterestedCountOnMySubmissionsPref,
+    getShowInterestedCountPref,
+    HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT,
+    SHOW_INTERESTED_COUNT_CHANGED_EVENT,
+} from "../../hooks/capacitorPreferences/interested-counts";
 
 type Comment = {
     id: number;
@@ -116,6 +123,9 @@ const OpenedPost: React.FC = () => {
     const [liked, setLiked] = useState<boolean>(false)
     const [likedLength, setLikedLength] = useState(0)
     const [interested, setInterested] = useState<boolean>(false)
+    const [interestedCount, setInterestedCount] = useState(0)
+    const [showInterestedCountPref, setShowInterestedCountPrefState] = useState(true)
+    const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState(false)
 
     const [showSidenotes, setShowSidenotes] = useState<boolean>(false)
 
@@ -136,13 +146,40 @@ const OpenedPost: React.FC = () => {
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
     const interestPost = useInterestPost();
     const uninterestPost = useUninterestPost();
+    const canViewInterestedCount = isCommunityPlus(globalCurrentProfile?.subscription_level) && showInterestedCountPref;
+    const isOwnSubmission = staticContentPost?.user != null && staticContentPost.user === globalCurrentProfile?.user;
+    const shouldShowInterestedCount = canViewInterestedCount && interestedCount > 3 && !(hideInterestedCountOnMySubmissions && isOwnSubmission);
+    const normalizeInterestedCount = (value: unknown) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
 
     const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
     const approvedEventForPost = staticContentPost?.event ?? null;
+    const eventCalendarAnchor = approvedEventForPost?.end_datetime ?? approvedEventForPost?.start_datetime ?? null;
+    const isPastEvent = Boolean(
+        eventCalendarAnchor &&
+        moment(eventCalendarAnchor).isValid() &&
+        moment(eventCalendarAnchor).isBefore(moment())
+    );
+    const canOpenEventCalendar = Boolean(
+        approvedEventForPost?.start_datetime &&
+        eventCalendarAnchor &&
+        moment(eventCalendarAnchor).isValid() &&
+        moment(eventCalendarAnchor).isSameOrAfter(moment().subtract(7, 'days'))
+    );
     const handleOpenEventCalendar = () => {
-        if (!approvedEventForPost?.start_datetime) return;
+        if (!canOpenEventCalendar || !approvedEventForPost?.start_datetime) return;
         const dateParam = moment(approvedEventForPost.start_datetime).format('YYYY-MM-DD');
         router.push(`/community?calendarDate=${dateParam}`);
+    };
+    const openAppOrExternalUrl = (url: string) => {
+        const internalPath = getInternalAppPath(url);
+        if (internalPath) {
+            router.push(internalPath);
+            return;
+        }
+        openExternalUrl(url);
     };
 
 
@@ -354,21 +391,71 @@ const OpenedPost: React.FC = () => {
         setInterested(Boolean(dynamicContentPost?.interested))
     }, [dynamicContentPost?.interested])
 
+    useEffect(() => {
+        setInterestedCount(normalizeInterestedCount(staticContentPost?.interested_count))
+    }, [staticContentPost?.interested_count])
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const syncPrefs = async () => {
+            const [showInterestedCount, hideOnMySubmissions] = await Promise.all([
+                getShowInterestedCountPref(),
+                getHideInterestedCountOnMySubmissionsPref(),
+            ]);
+            if (cancelled) {
+                return;
+            }
+            setShowInterestedCountPrefState(showInterestedCount);
+            setHideInterestedCountOnMySubmissions(hideOnMySubmissions);
+        };
+
+        const handleShowInterestedCountChanged = (event: Event) => {
+            setShowInterestedCountPrefState(Boolean((event as CustomEvent<boolean>).detail));
+        };
+
+        const handleHideOnMySubmissionsChanged = (event: Event) => {
+            setHideInterestedCountOnMySubmissions(Boolean((event as CustomEvent<boolean>).detail));
+        };
+
+        syncPrefs();
+        window.addEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
+        window.addEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+
+        return () => {
+            cancelled = true;
+            window.removeEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
+            window.removeEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+        };
+    }, []);
+
     const markInterested = async () => {
+        const previousInterested = interested
+        const previousCount = interestedCount
         setInterested(true)
+        if (!previousInterested) {
+            setInterestedCount(previousCount + 1)
+        }
         try {
             await interestPost.mutateAsync(parseInt(id))
         } catch (error) {
-            setInterested(false)
+            setInterested(previousInterested)
+            setInterestedCount(previousCount)
         }
     }
 
     const unmarkInterested = async () => {
+        const previousInterested = interested
+        const previousCount = interestedCount
         setInterested(false)
+        if (previousInterested) {
+            setInterestedCount(Math.max(0, previousCount - 1))
+        }
         try {
             await uninterestPost.mutateAsync(parseInt(id))
         } catch (error) {
-            setInterested(true)
+            setInterested(previousInterested)
+            setInterestedCount(previousCount)
         }
     }
 
@@ -658,7 +745,7 @@ const OpenedPost: React.FC = () => {
 
                                 {hasDisclaimer && (
                                 <IonCol size="12">
-                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>
                                     <IonText color="medium" className="ion-text-center">
                                         <FontAwesomeIcon icon={faCircleExclamation} /> &nbsp;
                                         {staticContentPost!.disclaimer}
@@ -673,53 +760,51 @@ const OpenedPost: React.FC = () => {
                                 {staticContentPost?.poll && 
                                 <Poll id={staticContentPost?.poll}/>}
                                 {staticContentPost?.markdown ?
-                                    <Markdown components={{ a: ({ href, children }) => <a onClick={(e) => { e.preventDefault(); openExternalUrl(href ?? ''); }} style={{ cursor: 'pointer' }}>{children}</a> }}>{staticContentPost?.content}</Markdown>
+                                    <Markdown components={{ a: ({ href, children }) => <a onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href ?? ''); }} style={{ cursor: 'pointer' }}>{children}</a> }}>{staticContentPost?.content}</Markdown>
                                     : staticContentPost?.content
                                 }
                             </IonCardContent>
                             {approvedEventForPost && (
                                 <IonCard
-                                    className="opened-post-event"
-                                    onClick={handleOpenEventCalendar}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(event) => {
+                                    className={`opened-post-event calendar-event-card calendar-event-card--expanded ${canOpenEventCalendar ? 'opened-post-event--clickable' : 'opened-post-event--stale'}`}
+                                    onClick={canOpenEventCalendar ? handleOpenEventCalendar : undefined}
+                                    role={canOpenEventCalendar ? "button" : undefined}
+                                    tabIndex={canOpenEventCalendar ? 0 : -1}
+                                    onKeyDown={canOpenEventCalendar ? (event) => {
                                         if (event.key === 'Enter' || event.key === ' ') {
                                             event.preventDefault();
                                             handleOpenEventCalendar();
                                         }
-                                    }}
+                                    } : undefined}
                                 >
                                     <IonCardContent>
-                                        <IonCardTitle>Event details</IonCardTitle>
-                                        {approvedEventForPost.name && (
-                                            <IonText className="opened-post-event-name">
-                                                {approvedEventForPost.name}
-                                            </IonText>
-                                        )}
-                                        <IonText color="medium">
-                                            {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
-                                            {moment(approvedEventForPost.end_datetime).format('h:mm A')}
-                                        </IonText>
-                                        {approvedEventForPost.location && (
-                                            <IonText className="opened-post-event-line">
-                                                <strong>Location:</strong> {approvedEventForPost.location}
-                                            </IonText>
-                                        )}
-                                        {approvedEventForPost.description && (
-                                            <IonText className="opened-post-event-line">
-                                                {approvedEventForPost.description}
-                                            </IonText>
-                                        )}
-                                        {approvedEventForPost.external_link && (
-                                            <IonButton
-                                                fill="outline"
-                                                size="small"
-                                                onClick={() => openExternalUrl(approvedEventForPost.external_link)}
-                                            >
-                                                Learn more
-                                            </IonButton>
-                                        )}
+                                        <div className="calendar-event-card-toggle-row">
+                                            <div className="calendar-event-card-toggle">
+                                                {approvedEventForPost.name && (
+                                                    <span className="calendar-event-card-name">
+                                                        {approvedEventForPost.name}
+                                                    </span>
+                                                )}
+                                                <span className="calendar-event-card-time">
+                                                    {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
+                                                    {moment(approvedEventForPost.end_datetime).format('h:mm A')}
+                                                </span>
+                                            </div>
+                                            {isPastEvent ? (
+                                                <span className="event-status-badge">Past event</span>
+                                            ) : null}
+                                        </div>
+                                        <RefreshmentsEventDetails
+                                            event={approvedEventForPost}
+                                            anonymous={eventAnonymous}
+                                            avatarDisplay={eventAvatarDisplay}
+                                            onProfilePresent={!eventAnonymous && approvedEventForPost?.user
+                                                ? () => communityProfilePresent({ cssClass: 'community-profile-modal' })
+                                                : undefined}
+                                            onExternalLinkClick={approvedEventForPost.external_link
+                                                ? () => openExternalUrl(approvedEventForPost.external_link!)
+                                                : undefined}
+                                        />
                                     </IonCardContent>
                                 </IonCard>
                             )}
@@ -765,12 +850,15 @@ const OpenedPost: React.FC = () => {
                                                 <IonIcon icon={starOutline} />
                                             </IonButton>
                                         )}
+                                        {shouldShowInterestedCount ? (
+                                            <IonText data-testid="opened-post-interest-count">{interestedCount}</IonText>
+                                        ) : null}
                                     </IonRow>
                                 </IonCol>
                             </IonRow>
                             {staticContentPost?.comment_instructions ?
                                 <IonRow className="comment-instructions-note">
-                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
                                 </IonRow>
                                 : <></>}
                             {!staticContentPost?.comments_deactivated &&
@@ -895,7 +983,7 @@ const OpenedPost: React.FC = () => {
                                                                             ? "Your account needs to be reviewed before you can comment."
                                                                             : "Leave a comment"
                                                 }
-                                                autoCapitalize='sentences'
+                                                autocapitalize='sentences'
                                             />
                                         </IonItem>
                                     </IonCol>
@@ -940,7 +1028,7 @@ const OpenedPost: React.FC = () => {
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">
                                     <IonButton routerLink="/community-onboarding" color="tertiary">
-                                        Create a community profile to post a comment
+                                        Create a Refreshments profile to post a comment
                                     </IonButton>
                                 </IonRow>}
                         </IonFooter>

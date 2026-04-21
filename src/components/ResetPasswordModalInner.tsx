@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from 'prop-types';
 import axios from "axios";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonLabel, IonInput, IonCheckbox, IonButton, IonItem, IonRow, IonModal, IonButtons, IonNote, IonAlert, useIonRouter } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonModal, IonButtons, IonNote, IonAlert, useIonRouter } from '@ionic/react';
 import Cookies from 'js-cookie';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './ResetPasswordModalInner.css'
 
@@ -99,21 +100,21 @@ const ResetPasswordModalInner: React.FC<OpenResetModalInterface> = ({setResetPas
                       }]}
                 />
                 <form className="ion-padding" onSubmit={handleRegister}>
-                <IonItem>
-                        <IonLabel position="floating">New Password</IonLabel>
-                        <IonInput value={newpassword}
-                            name="newpassword"
-                            onIonInput={e => setNewPassword(e.detail.value!)}
-                            type="password" />
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel position="floating">New Password (again)</IonLabel>
-                        <IonInput value={newpassword2}
-                            name="newpassword2"
-                            onIonInput={e => setNewPassword2(e.detail.value!)}
-                            placeholder="Repeat your new password"
-                            type="password" />
-                    </IonItem>
+                    <BoxedStackedInput
+                        label="New password"
+                        value={newpassword}
+                        name="newpassword"
+                        onIonInput={e => setNewPassword(e.detail.value!)}
+                        type="password"
+                    />
+                    <BoxedStackedInput
+                        label="New password (again)"
+                        value={newpassword2}
+                        name="newpassword2"
+                        onIonInput={e => setNewPassword2(e.detail.value!)}
+                        placeholder="Repeat your new password"
+                        type="password"
+                    />
                     <IonButton className="ion-margin-top" type="submit" expand="block">
                         Change password
                     </IonButton>

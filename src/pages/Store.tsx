@@ -18,7 +18,7 @@ import { Purchases, PURCHASES_ERROR_CODE, PurchasesOfferings } from '@revenuecat
 import { useQueryClient } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/pro-solid-svg-icons';
+import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons';
 
 function SubscriptionMessage({ subscriptionLevel }: { subscriptionLevel: string | null }) {
     const isSubscribed = subscriptionLevel && subscriptionLevel !== "none";
@@ -45,7 +45,7 @@ function SubscriptionMessage({ subscriptionLevel }: { subscriptionLevel: string 
 
   return (
     <IonCard color="navy" className="ion-padding" style={{ textAlign: "center", borderRadius: "16px" }}>
-        <FontAwesomeIcon icon={faStar} style={{ fontSize: '36px', color: 'var(--ion-color-primary)', marginTop: "15pt" }} />
+        <FontAwesomeIcon icon={faCirclePlus} style={{ fontSize: '36px', color: 'var(--ion-color-primary)', marginTop: "15pt" }} />
 
       <IonCardHeader>
 
@@ -159,7 +159,7 @@ const Store: React.FC = () => {
                     textAlign: 'center',
                     margin: '10pt 15pt 10pt 15pt',
                 }}>
-                     <FontAwesomeIcon icon={faStar} /> {header}
+                     <FontAwesomeIcon icon={faCirclePlus} /> {header}
                 </p>
                 </IonRow>
 

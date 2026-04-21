@@ -1,32 +1,9 @@
 import React from 'react';
 import {
     IonButton,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonIcon,
-    IonPage,
     useIonActionSheet,
-    useIonModal,
 } from '@ionic/react';
-import { chevronBackOutline } from 'ionicons/icons';
-
-const GuidelinesModal: React.FC<{ url: string; onDismiss: () => void }> = ({ url, onDismiss }) => (
-    <IonPage>
-        <IonContent>
-            <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
-                <IonFabButton color="light" onClick={onDismiss}>
-                    <IonIcon icon={chevronBackOutline} />
-                </IonFabButton>
-            </IonFab>
-            <iframe
-                title="guidelines"
-                src={url}
-                style={{ height: '100%', width: '100%', border: 'none' }}
-            />
-        </IonContent>
-    </IonPage>
-);
+import { openExternalUrl } from '../hooks/utilities';
 
 interface Props {
     label?: string;
@@ -43,26 +20,13 @@ const GuidelinesButton: React.FC<Props> = ({
 }) => {
     const [presentActionSheet] = useIonActionSheet();
 
-    const [presentMechanics, dismissMechanics] = useIonModal(GuidelinesModal, {
-        url: 'https://refreshconnections.com/mechanics',
-        onDismiss: () => dismissMechanics(),
-    });
-    const [presentLanguage, dismissLanguage] = useIonModal(GuidelinesModal, {
-        url: 'https://refreshconnections.com/language',
-        onDismiss: () => dismissLanguage(),
-    });
-    const [presentSteam, dismissSteam] = useIonModal(GuidelinesModal, {
-        url: 'https://refreshconnections.com/steam',
-        onDismiss: () => dismissSteam(),
-    });
-
     const openPicker = () => {
         presentActionSheet({
             header: 'Guidelines',
             buttons: [
-                ...(includeMechanics ? [{ text: 'Community posting mechanics', handler: () => presentMechanics() }] : []),
-                { text: 'Language guide', handler: () => presentLanguage() },
-                { text: 'STEAM principles', handler: () => presentSteam() },
+                ...(includeMechanics ? [{ text: 'Refreshments posting mechanics', handler: () => openExternalUrl('https://refreshconnections.com/mechanics') }] : []),
+                { text: 'Language', handler: () => openExternalUrl('https://refreshconnections.com/language') },
+                { text: 'STEAM', handler: () => openExternalUrl('https://refreshconnections.com/steam') },
                 { text: 'Cancel', role: 'cancel' },
             ],
         });

@@ -1,0 +1,59 @@
+.boxed-stacked-input {
+  --background: var(--ion-color-white, #fff);
+  --border-color: rgba(31, 31, 61, 0.18);
+  --border-width: 1px;
+  --border-style: solid;
+  --inner-border-width: 0;
+  --border-radius: 16px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --inner-padding-top: 4px;
+  --inner-padding-bottom: 8px;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+  --highlight-height: 0;
+  --min-height: 0;
+}
+
+.boxed-stacked-input--phone {
+  background: var(--ion-color-white, #fff);
+  border: 1px solid rgba(31, 31, 61, 0.18);
+  border-radius: 16px;
+  padding: 10px 14px 12px;
+}
+
+.boxed-stacked-input__label {
+  color: var(--ion-color-medium-shade, #6c6f8a);
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+}
+
+.boxed-stacked-input ion-input {
+  --padding-top: 0;
+  --padding-bottom: 2px;
+}
+
+.boxed-stacked-input--select ion-select,
+.boxed-stacked-input--textarea ion-textarea {
+  width: 100%;
+  --padding-top: 0;
+  --padding-bottom: 2px;
+}
+
+.boxed-stacked-input--select ion-select::part(text) {
+  white-space: normal;
+}
+
+.boxed-stacked-input__phone,
+.boxed-stacked-input__phone .PhoneInputInput {
+  background: var(--ion-color-white, #fff);
+  border: none;
+}
+
+.boxed-stacked-input__phone {
+  width: 100%;
+}
+
+.boxed-stacked-input__phone .PhoneInputInput:focus {
+  outline: none;
+}

@@ -98,12 +98,14 @@ const ProfileUpdateFields: React.FC<Props> = ({
                                     <IonLabel className="ion-text-wrap">Can I change my location myself?</IonLabel>
                                 </IonItem>
                                 <div className="ion-padding" slot="content">
-                                    Traveling or moving around? With <IonRouterLink routerLink="/store"><span style={{ fontWeight: 'bold' }}>Pro</span></IonRouterLink>, you can update your location whenever you'd like — no need to contact us. <IonRouterLink routerLink="/store"><span style={{ fontWeight: 'bold' }}>Plus</span></IonRouterLink> lets you update once a day. Otherwise, you can update your location once every 60 days.
+                                    Need to change your location while traveling? With Refresh <IonRouterLink routerLink="/store"><span style={{ fontWeight: 'bold' }}>Pro</span></IonRouterLink>, 
+                                    you can update it anytime. With Refresh <IonRouterLink routerLink="/store"><span style={{ fontWeight: 'bold' }}>Plus</span></IonRouterLink>  you can update once a day.
+                                    Without a paid plan, location updates are available every 60 days.
                                 </div>
                             </IonAccordion>
                         </IonAccordionGroup>
                         <IonRow className="ion-padding ion-justify-content-center top-border">
-                            <IonText className="ion-text-center">Need a one-time update? We've got you — just select your city below!</IonText>
+                            <IonText className="ion-text-center">Need a one-time update? We've got you — just select your city below and let us know!</IonText>
                         </IonRow>
                     </div>
                     <IonItem className="input">

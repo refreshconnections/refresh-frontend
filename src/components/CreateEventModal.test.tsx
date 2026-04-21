@@ -25,7 +25,7 @@ const {
 }));
 
 let mockGlobalProfile: any = {
-  registrationDate: '2020-01-01T00:00:00.000Z',
+  registrationDate: '',
   username: 'alex',
   preferred_name: 'Alex',
   subscription_level: 'free',
@@ -34,15 +34,18 @@ let mockModeration: any = {
   paused_on_creation: false,
 };
 
+const daysAgoIso = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
 
   return {
     ...actual,
-    IonAlert: ({ isOpen, header, message, buttons, onDidDismiss }: any) =>
+    IonAlert: ({ isOpen, header, subHeader, message, buttons, onDidDismiss }: any) =>
       isOpen ? (
         <div data-testid="ion-alert">
           {header && <div>{header}</div>}
+          {subHeader && <div>{subHeader}</div>}
           {message && <div>{message}</div>}
           {(buttons ?? []).map((button: any, index: number) => {
             if (typeof button === 'string') {
@@ -209,7 +212,7 @@ describe('CreateEventModal', () => {
     vi.clearAllMocks();
     mockModalConfigs.length = 0;
     mockGlobalProfile = {
-      registrationDate: '2020-01-01T00:00:00.000Z',
+      registrationDate: daysAgoIso(30),
       username: 'alex',
       preferred_name: 'Alex',
       subscription_level: 'free',
@@ -222,7 +225,7 @@ describe('CreateEventModal', () => {
   it('shows the age gate for new accounts and routes to the store on upgrade', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      registrationDate: '2026-03-25T00:00:00.000Z',
+      registrationDate: daysAgoIso(7),
     };
 
     renderModal();
@@ -273,7 +276,7 @@ describe('CreateEventModal', () => {
     expect(await screen.findByText('Please choose whether you can answer questions about this event.')).toBeInTheDocument();
 
     setIonSelect(
-      getItemControl(container, 'Are you the host or do you know the host? Can you answer questions?', 'ion-select'),
+      getItemControl(container, 'Are you the host or do you know the host, and can you answer questions about this event?', 'ion-select'),
       'yes'
     );
     fireEvent.click(screen.getByText('Submit event'));
@@ -383,7 +386,7 @@ describe('CreateEventModal', () => {
     });
   });
 
-  it('allows an address in location label and submits it as the event location', async () => {
+  it('allows an address in location label, then shows the pending-approval alert before dismissing', async () => {
     const { container, onDismiss } = renderModal();
 
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
@@ -410,6 +413,8 @@ describe('CreateEventModal', () => {
       }));
     });
     expect(screen.queryByText('Events cannot contain private personal contact information. Please remove phone numbers or emails.')).not.toBeInTheDocument();
+    expect(await screen.findByText('Your event has been submitted and is now pending approval!')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('OK'));
     expect(onDismiss).toHaveBeenCalledWith({ submitted: true });
   });
 
@@ -445,7 +450,7 @@ describe('CreateEventModal', () => {
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
     setIonSelect(getItemControl(container, 'Post as', 'ion-select'), 'alex');
     setIonSelect(
-      getItemControl(container, 'Are you the host or do you know the host? Can you answer questions?', 'ion-select'),
+      getItemControl(container, 'Are you the host or do you know the host, and can you answer questions about this event?', 'ion-select'),
       'yes'
     );
     setIonSelect(
@@ -496,7 +501,7 @@ describe('CreateEventModal', () => {
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
     setIonSelect(getItemControl(container, 'Post as', 'ion-select'), 'alex');
     setIonSelect(
-      getItemControl(container, 'Are you the host or do you know the host? Can you answer questions?', 'ion-select'),
+      getItemControl(container, 'Are you the host or do you know the host, and can you answer questions about this event?', 'ion-select'),
       'yes'
     );
     setIonSelect(
@@ -515,7 +520,7 @@ describe('CreateEventModal', () => {
     });
   });
 
-  it('submits a valid anonymous event payload and dismisses with submitted state', async () => {
+  it('submits a valid anonymous event payload and dismisses after the pending-approval alert closes', async () => {
     const { container, onDismiss } = renderModal();
 
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
@@ -534,6 +539,8 @@ describe('CreateEventModal', () => {
         event_type: 'virtual_only',
       }));
     });
+    expect(await screen.findByText('Your event has been submitted and is now pending approval!')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('OK'));
     expect(onDismiss).toHaveBeenCalledWith({ submitted: true });
   });
 
@@ -576,6 +583,8 @@ describe('CreateEventModal', () => {
         expect(mockApiPost).toHaveBeenCalledTimes(1);
       });
       expect(mockEventUploadPhoto).toHaveBeenCalledWith({ image: fileReaderResult }, 77);
+      expect(await screen.findByText('Your event has been submitted and is now pending approval!')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('OK'));
       expect(onDismiss).toHaveBeenCalledWith({ submitted: true });
     } finally {
       vi.stubGlobal('FileReader', originalFileReader as any);

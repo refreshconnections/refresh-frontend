@@ -5,6 +5,7 @@ import {
   IonCard,
   IonCardContent,
   IonCol,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
@@ -16,7 +17,8 @@ import {
   IonToggle,
   useIonModal,
 } from '@ionic/react';
-import React, { useEffect, useState } from 'react';
+import { informationCircleOutline } from 'ionicons/icons';
+import React, { useEffect, useRef, useState } from 'react';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import Resizer from 'react-image-file-resizer';
 import { decode } from 'base64-arraybuffer';
@@ -25,7 +27,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { apiClient } from '../hooks/api/api-client';
-import { normalizeLocalMediaUrl, onImgError, updateCurrentUserProfile, uploadCommunityProfilePhoto } from '../hooks/utilities';
+import { getPrimaryOrderedPhoto, normalizeLocalMediaUrl, onImgError, updateCurrentUserProfile, uploadCommunityProfilePhoto } from '../hooks/utilities';
 import CroppedImageModal from './CroppedImageModal';
 import EditUsernameModal from './EditUsernameModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
@@ -52,32 +54,51 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const [imageName, setImageName] = useState<string | null>(null);
   const [picDb, setPicDb] = useState<string>('community_profile_pic');
 
-  const personalPhoto = normalizeLocalMediaUrl(currentProfile?.pic1_main) ?? null;
+  const personalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(currentProfile)) ?? null;
   const communityPhoto = normalizeLocalMediaUrl(communityProfile?.community_profile_pic) ?? null;
-  const previewPhoto = usePersonalPhoto ? personalPhoto : (communityPhoto || personalPhoto);
-  const photoButtonLabel = communityPhoto ? 'Change community photo' : 'Upload community photo';
+  const previewPhoto = usePersonalPhoto ? personalPhoto : communityPhoto;
+  const photoButtonLabel = communityPhoto ? 'Change Refreshments profile photo' : 'Upload Refreshments profile photo';
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
-  const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : 'Decade';
+  const isTeen = ageNumber !== null && ageNumber < 20;
+  const ageDecade = ageNumber !== null ? (isTeen ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : 'Decade';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : 'Exact age';
   const displayUsername = currentProfile?.username ?? communityProfile?.username ?? '';
   const hasPersonalPhoto = Boolean(personalPhoto);
   const hasLocation = Boolean(currentProfile?.location);
   const showLocationChecked = hasLocation ? showLocation : false;
-  const forcePersonalPhoto = Boolean(connectFromRefreshments && !communityPhoto);
-  const personalPhotoToggleChecked = hasPersonalPhoto ? (forcePersonalPhoto ? true : usePersonalPhoto) : false;
-  const personalPhotoToggleDisabled = !hasPersonalPhoto || forcePersonalPhoto;
+  const personalPhotoToggleChecked = hasPersonalPhoto ? usePersonalPhoto : false;
+  const personalPhotoToggleDisabled = !hasPersonalPhoto;
+  const communityFallbackPhoto = '../static/img/navynobordervector.png';
+  const displayPhoto = previewPhoto || communityFallbackPhoto;
+  const isFallbackPhoto = !previewPhoto;
 
   useEffect(() => {
     if (!communityProfile) return;
     setCommunityBio(communityProfile.community_bio ?? '');
     setShowLocation(Boolean(communityProfile.show_location));
-    setShowAgeTier(communityProfile.show_age_tier ?? 'exact');
+    const savedTier = communityProfile.show_age_tier ?? 'exact';
+    if (isTeen && savedTier === 'decade') {
+      setShowAgeTier('exact');
+      updateCommunityProfile({ show_age_tier: 'exact' });
+    } else {
+      setShowAgeTier(savedTier);
+    }
     setUsePersonalPhoto(communityProfile.use_personal_profile_picture ?? true);
   }, [communityProfile]);
 
   useEffect(() => {
     setConnectFromRefreshments(Boolean(currentProfile?.settings_community_profile));
   }, [currentProfile?.settings_community_profile]);
+
+  const bioTextareaRef = useRef<HTMLIonTextareaElement | null>(null);
+
+  useEffect(() => {
+    if (editingBio) {
+      setTimeout(() => {
+        bioTextareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
+  }, [editingBio]);
 
   const updateCommunityProfile = async (payload: Record<string, any>) => {
     await apiClient.patch('/api/profiles/community_profile/', payload);
@@ -106,7 +127,12 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   };
 
   const handleSaveBio = async () => {
-    await updateCommunityProfile({ community_bio: communityBio.trim() });
+    await updateCommunityProfile({ community_bio: communityBio.replace(/[\r\n]+/g, ' ').trim() });
+    setEditingBio(false);
+  };
+
+  const handleCancelBio = () => {
+    setCommunityBio(communityProfile?.community_bio ?? '');
     setEditingBio(false);
   };
 
@@ -173,15 +199,26 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                 <img
-                  alt="Community profile"
-                  src={previewPhoto || '../static/img/refresh-flower-blue.png'}
+                  alt="Refreshments profile"
+                  src={displayPhoto}
                   onError={(e) => onImgError(e)}
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    objectFit: isFallbackPhoto ? 'contain' : 'cover',
+                    padding: isFallbackPhoto ? '16px' : 0,
+                    boxSizing: 'border-box',
+                    background: 'var(--ion-color-white)',
+                    filter: isFallbackPhoto ? 'grayscale(1)' : 'none',
+                    border: connectFromRefreshments ? '2px solid var(--ion-color-primary)' : 'none',
+                  }}
                 />
               </div>
             </IonItem>
-            <IonItem lines="none" className="community-profile-item">
+            <IonItem lines="none" className="community-profile-item community-username-item">
               <IonLabel>
-                <p>Refreshments username:</p>
+                <p>Refreshments handle:</p>
                 <h2>{displayUsername}</h2>
               </IonLabel>
               <IonButton size="small" color="primary" fill="outline" className="edit-button" onClick={() => usernamePresent()}>
@@ -200,44 +237,66 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             </div>
             {!hasPersonalPhoto && (
               <IonText color="medium" className="community-subtitle">
-                Once you've uploaded a profile pic, you can choose to use that as your community profile picture too.
+                Once you've uploaded a profile pic, you can choose to use that as your Refreshments profile picture too.
               </IonText>
             )}
             <IonButton expand="block" color="tertiary" onClick={updatePicture}>
               {photoButtonLabel}
             </IonButton>
 
-            <div className="field-header">
-              <p>Community bio</p>
-              <IonButton
-                size="small"
-                fill="outline"
-                color="primary"
-                onClick={() => setEditingBio((prev) => !prev)}
-              >
-                {editingBio ? 'Cancel' : 'Edit'}
-              </IonButton>
-            </div>
-            {editingBio ? (
-              <div className="choice-editor">
-                <IonList lines="none">
-                  <IonItem lines="none" className="community-bio-item">
-                    <IonTextarea
-                      value={communityBio}
-                      autoGrow
-                      maxlength={180}
-                      counter
-                      onIonInput={(e) => setCommunityBio(e.detail.value ?? '')}
-                    />
-                  </IonItem>
-                  <IonButton expand="block" onClick={handleSaveBio}>Save bio</IonButton>
-                </IonList>
+            <IonItem className={`card-field community-bio-field ${editingBio ? 'editing' : ''}`} lines="none">
+              <div className="editing-section">
+                <div className="field-header">
+                  <p>Refreshments bio</p>
+                  {!editingBio && (
+                    <div className="field-actions">
+                      <IonButton
+                        size="small"
+                        fill="outline"
+                        color="primary"
+                        className={`edit-button ${communityBio ? '' : 'blank-edit'}`}
+                        onClick={() => setEditingBio(true)}
+                      >
+                        Edit
+                      </IonButton>
+                    </div>
+                  )}
+                </div>
+
+                {editingBio ? (
+                  <IonTextarea
+                    ref={bioTextareaRef}
+                    value={communityBio}
+                    autoGrow
+                    rows={4}
+                    maxlength={180}
+                    counter
+                    placeholder="Update your Refreshments bio"
+                    onIonInput={(e) => setCommunityBio((e.detail.value ?? '').replace(/[\r\n]+/g, ' '))}
+                  />
+                ) : (
+                  <h2>
+                    {communityBio ? communityBio : <span className="community-bio-placeholder community-bio-empty">Add a short Refreshments bio.</span>}
+                  </h2>
+                )}
+
+                {editingBio && (
+                  <div className="field-actions editing-actions">
+                    {!!communityBio && (
+                      <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setCommunityBio('')} type="button">
+                        Clear
+                      </IonButton>
+                    )}
+                    <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={handleCancelBio} type="button">
+                      Cancel
+                    </IonButton>
+                    <IonButton className="save-button" size="small" color="success" onClick={handleSaveBio}>
+                      Save
+                    </IonButton>
+                  </div>
+                )}
               </div>
-            ) : (
-              <p className={`placeholder community-bio-placeholder ${communityBio ? 'community-bio-text' : 'community-bio-empty'}`}>
-                {communityBio ? communityBio : 'Add a short community bio.'}
-              </p>
-            )}
+            </IonItem>
 
             <div className="field-header">
               <p>Show location</p>
@@ -250,12 +309,15 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             </div>
             {!hasLocation && (
               <IonText color="medium" className="community-subtitle">
-                Once you've added a location, you can choose to share that on your community profile.
+                Once you've added a location, you can choose to share that on your Refreshments profile.
               </IonText>
             )}
 
-            <div className="field-header">
-              <p>Connect from Refreshments</p>
+            <IonItem lines="none" className="community-toggle-item community-profile-item">
+              <IonLabel className="ion-text-wrap">
+                <p>Connect from Refreshments</p>
+                <p className="community-subtitle">Turn this on to let people discover your personal profile from your Refreshments posts and comments.</p>
+              </IonLabel>
               <IonToggle
                 slot="end"
                 checked={connectFromRefreshments}
@@ -263,10 +325,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                 onIonChange={(e) => handleToggleConnectFromRefreshments(e.detail.checked)}
                 onClick={(e) => e.stopPropagation()}
               />
-            </div>
-            <IonText color="medium" className="community-subtitle">
-              Turn this on to let people discover your personal profile from your community posts and comments.
-            </IonText>
+            </IonItem>
 
             <IonItem lines="none" className="community-age-item">
               <IonLabel>
@@ -279,9 +338,15 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                 onIonChange={(e) => handleAgeTierChange(e.detail.value)}
               >
                 <IonSelectOption value="exact">{ageLabel}</IonSelectOption>
-                <IonSelectOption value="decade">{ageDecade}</IonSelectOption>
+                {!isTeen && <IonSelectOption value="decade">{ageDecade}</IonSelectOption>}
                 <IonSelectOption value="none">Don't show age</IonSelectOption>
               </IonSelect>
+            </IonItem>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+              <IonIcon slot="start" icon={informationCircleOutline} color="navy" style={{ marginInlineEnd: '8px', fontSize: '18px' }} />
+              <IonLabel color="navy" className="ion-text-wrap" style={{ fontSize: '0.85rem' }}>
+                Changes to your Refreshments profile may take a few minutes to appear in Refreshments.
+              </IonLabel>
             </IonItem>
           </IonCardContent>
         </IonCard>
@@ -298,11 +363,11 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   }
 
   return (
-    <IonAccordionGroup>
+    <IonAccordionGroup className="profile-accordion-group">
       <IonAccordion value="communityProfile">
         <IonItem slot="header" lines="none" className="accordion-header">
           <IonLabel>
-            <h2>Community Profile</h2>
+            <h2>Refreshments profile</h2>
           </IonLabel>
         </IonItem>
         <IonCardContent slot="content" className="no-padding-cc accordion-body">

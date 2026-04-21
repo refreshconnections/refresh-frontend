@@ -2,19 +2,18 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { IonApp } from '@ionic/react';
 
 const {
   filteredMutualsHook,
   chatGroupsHook,
-  nearbyHook,
+  localHook,
   hiddenChatsHook,
   filteredChatsHook,
   preferencesGet,
 } = vi.hoisted(() => ({
   filteredMutualsHook: vi.fn(),
   chatGroupsHook: vi.fn(),
-  nearbyHook: vi.fn(),
+  localHook: vi.fn(),
   hiddenChatsHook: vi.fn(),
   filteredChatsHook: vi.fn(),
   preferencesGet: vi.fn(),
@@ -36,8 +35,8 @@ vi.mock('../../hooks/api/chats/chat-groups', () => ({
   useChatGroups: (...args: any[]) => chatGroupsHook(...args),
 }));
 
-vi.mock('../../hooks/api/chats/nearby-mutual-connections', () => ({
-  useNearbyMutualConnections: (...args: any[]) => nearbyHook(...args),
+vi.mock('../../hooks/api/chats/local-mutual-connections', () => ({
+  useLocalMutualConnections: (...args: any[]) => localHook(...args),
 }));
 
 vi.mock('../../hooks/api/chats/hidden-chats', () => ({
@@ -83,20 +82,18 @@ const defaultGroups = {
 const renderSegment = (props: Partial<React.ComponentProps<typeof ChatsSegment>> = {}) => {
   const queryClient = new QueryClient();
   return render(
-    <IonApp>
-      <QueryClientProvider client={queryClient}>
-        <ChatsSegment
-          mutualConnectionsList={[1, 2]}
-          chats={[{ id: 11, other_user_id: '42', name: 'Alice', pic1_main: null }]}
-          currentUserProfile={{ blocked_connections: [], subscription_level: 'free' }}
-          showSearch={false}
-          chatsHasNextPage={false}
-          chatsIsFetchingNextPage={false}
-          onLoadMoreChats={vi.fn()}
-          {...props}
-        />
-      </QueryClientProvider>
-    </IonApp>
+    <QueryClientProvider client={queryClient}>
+      <ChatsSegment
+        mutualConnectionsList={[1, 2]}
+        chats={[{ id: 11, other_user_id: '42', name: 'Alice', pic1_main: null }]}
+        currentUserProfile={{ blocked_connections: [], subscription_level: 'free' }}
+        showSearch={false}
+        chatsHasNextPage={false}
+        chatsIsFetchingNextPage={false}
+        onLoadMoreChats={vi.fn()}
+        {...props}
+      />
+    </QueryClientProvider>
   );
 };
 
@@ -115,7 +112,7 @@ beforeEach(() => {
   preferencesGet.mockResolvedValue({ value: null });
   filteredMutualsHook.mockReturnValue({ data: [7, 8] });
   chatGroupsHook.mockReturnValue({ data: defaultGroups });
-  nearbyHook.mockReturnValue({ data: null });
+  localHook.mockReturnValue({ data: null });
   hiddenChatsHook.mockReturnValue({
     data: undefined,
     isFetchingNextPage: false,
@@ -136,7 +133,7 @@ describe('ChatsSegment', () => {
   it('shows the empty-state CTA when there are no mutual connections', async () => {
     renderSegment({ mutualConnectionsList: [] });
 
-    expect(await screen.findByText('Connect with others in Picks and Likes to start Chats!')).toBeInTheDocument();
+    expect(await screen.findByText('Connect with others in Discovery and Likes to start Chats!')).toBeInTheDocument();
   });
 
   it('renders search results when search is visible and a query is entered', async () => {
@@ -216,27 +213,27 @@ describe('ChatsSegment tab system', () => {
     expect(await screen.findByText('All')).toBeInTheDocument();
   });
 
-  it('shows a Nearby chip when nearbyIds has entries', async () => {
-    nearbyHook.mockReturnValue({ data: [101, 102] });
+  it('shows a Local chip when localIds has entries', async () => {
+    localHook.mockReturnValue({ data: [101, 102] });
     renderSegment();
 
-    expect(await screen.findByText('Nearby')).toBeInTheDocument();
+    expect(await screen.findByText('Local')).toBeInTheDocument();
   });
 
-  it('does not show a Nearby chip when nearbyIds is empty', async () => {
-    nearbyHook.mockReturnValue({ data: [] });
+  it('does not show a Local chip when localIds is empty', async () => {
+    localHook.mockReturnValue({ data: [] });
     renderSegment();
 
     await screen.findByText('All');
-    expect(screen.queryByText('Nearby')).not.toBeInTheDocument();
+    expect(screen.queryByText('Local')).not.toBeInTheDocument();
   });
 
-  it('does not show a Nearby chip when nearbyIds is null', async () => {
-    nearbyHook.mockReturnValue({ data: null });
+  it('does not show a Local chip when localIds is null', async () => {
+    localHook.mockReturnValue({ data: null });
     renderSegment();
 
     await screen.findByText('All');
-    expect(screen.queryByText('Nearby')).not.toBeInTheDocument();
+    expect(screen.queryByText('Local')).not.toBeInTheDocument();
   });
 
   it('shows a custom list chip for personalplus users when the list has members and is not hidden', async () => {

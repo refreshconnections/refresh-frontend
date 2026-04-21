@@ -103,7 +103,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
   <IonPage>
     <IonHeader>
         <IonToolbar className="modal-title">
-            <IonTitle>{currentUserProfile?.username? "Edit": "Create"} Your Username</IonTitle>
+            <IonTitle>{currentUserProfile?.username? "Edit": "Create"} Your Handle</IonTitle>
             <IonButtons slot="end">
                 <IonButton onClick={onDismiss}>Done</IonButton>
             </IonButtons>
@@ -112,9 +112,9 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
     <IonContent className="create-post">
     <IonCard  className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>Want to {currentUserProfile?.username? "change": "create"} your Refreshments username?</IonCardTitle>
-            <IonText>Your username keeps your preferred first name hidden at the Refreshments Bar, but know that anyone who can see your profile can also see your username.</IonText>
-            <p> You can only change your username every 60 days.</p>
+        <IonCardTitle>Want to {currentUserProfile?.username? "change": "create"} your Refreshments handle?</IonCardTitle>
+            <IonText>Your handle keeps your preferred first name hidden at the Refreshments Bar, but know that anyone who can see your profile can also see your handle.</IonText>
+            <p> You can only change your handle every 60 days.</p>
             <IonItem >
             <IonInput value={username}
                             name="username"
@@ -134,7 +134,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
       <IonButton disabled={username == null} onClick={updateUsernameHandler}>Update</IonButton>
       </>
       :
-      <IonText>You cannot change your username at this time.</IonText>}
+      <IonText>You cannot change your handle at this time.</IonText>}
       <br/><br/>
       {currentUserProfile?.created_profile && (
         <>

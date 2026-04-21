@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IonApp } from '@ionic/react';
+import { DEFAULT_EVENT_FILTERS } from '../hooks/api/events';
 
 const {
   preferencesGet,
@@ -31,6 +32,7 @@ vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
     useIonModal: (_component: any, modalProps: any) => [
       () => mockPresentModal(modalProps),
@@ -205,7 +207,11 @@ describe('RefreshmentsFiltersModal', () => {
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'local', value: 'on' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'sort', value: 'comment' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'filters', value: 'mingle,families,events' });
-      expect(onDismiss).toHaveBeenCalledWith('mingle,families,events', true, 77, 'comment');
+      expect(onDismiss).toHaveBeenCalledWith('mingle,families,events', true, 77, 'comment', {
+        eventTypes: ['online'],
+        attendeePrecautionPreferences: ['masked'],
+        inPersonPrecautions: ['outdoors'],
+      });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'event_filter_type', value: 'online' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'event_filter_attendee_precaution', value: 'masked' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'event_filter_in_person_precautions', value: 'outdoors' });
@@ -233,7 +239,7 @@ describe('RefreshmentsFiltersModal', () => {
     await waitFor(() => {
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'local', value: 'off' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'filters', value: 'mingle' });
-      expect(onDismiss).toHaveBeenCalledWith('mingle', false, 45, 'recent');
+      expect(onDismiss).toHaveBeenCalledWith('mingle', false, 45, 'recent', DEFAULT_EVENT_FILTERS);
     });
   });
 
@@ -289,7 +295,7 @@ describe('RefreshmentsFiltersModal', () => {
     await waitFor(() => {
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'sort', value: 'liked' });
       expect(preferencesSet).toHaveBeenCalledWith({ key: 'filters', value: 'all' });
-      expect(onDismiss).toHaveBeenCalledWith('all', false, 45, 'liked');
+      expect(onDismiss).toHaveBeenCalledWith('all', false, 45, 'liked', DEFAULT_EVENT_FILTERS);
     });
   });
 

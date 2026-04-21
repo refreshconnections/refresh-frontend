@@ -98,6 +98,9 @@ const Picksv2: React.FC = () => {
 
   useEffect(() => {
     getReduceAnimations().then(setReduceAnimations);
+    const handler = (e: Event) => setReduceAnimations((e as CustomEvent<boolean>).detail);
+    window.addEventListener('reduce_animations_changed', handler);
+    return () => window.removeEventListener('reduce_animations_changed', handler);
   }, []);
 
   useEffect(() => {
@@ -488,14 +491,14 @@ const Picksv2: React.FC = () => {
       <IonPage>
         <IonContent>
           <IonRow className="page-title bigger">
-            <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+            <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
           </IonRow>
           <IonCard className="prelaunch">
             <IonCardTitle style={{ fontWeight: 'normal' }}>
-              You’ll need a personal profile before browsing Picks.
+              You’ll need a personal profile before browsing Discovery.
             </IonCardTitle>
             <IonCardContent>
-              <p style={{ marginTop: 0 }}>Finish setting up your profile to unlock Picks and start making one-on-one connections.</p>
+              <p style={{ marginTop: 0 }}>Finish setting up your profile to unlock Discovery and start making one-on-one connections.</p>
               <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
                 Create personal profile
               </IonButton>
@@ -511,9 +514,9 @@ const Picksv2: React.FC = () => {
       <IonPage>
         <IonContent>
           <IonRow className="page-title bigger">
-            <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+            <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
           </IonRow>
-          <CantAccessCard tabName="Picks" />
+          <CantAccessCard tabName="Discovery" />
         </IonContent>
       </IonPage>
     );
@@ -547,7 +550,7 @@ const Picksv2: React.FC = () => {
                     Filter anytime.
                   </div>
                   <IonText>
-                    Filters are always available at the top or bottom of this page.
+                    Filters are always available by scrolling to the top or bottom of this page. 
                   </IonText>
                   <IonRow className="picks-filters-dialog-actions">
                     <IonButton
@@ -578,7 +581,7 @@ const Picksv2: React.FC = () => {
           </div>
         ) : picksError ? (
           <IonCard className="error">
-            <IonCardTitle>Couldn’t load picks</IonCardTitle>
+            <IonCardTitle>Couldn’t load Discovery</IonCardTitle>
             <IonCardContent>
               <IonButton onClick={() => picksRefetch()} color="primary">
                 Try again
@@ -588,7 +591,7 @@ const Picksv2: React.FC = () => {
         ) : noProfiles ? (
           <>
             <IonRow className="page-title bigger">
-              <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+              <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
             </IonRow>
             <IonCard className="prelaunch">
               <IonCardTitle style={{ fontWeight: "normal" }}>
@@ -620,7 +623,7 @@ const Picksv2: React.FC = () => {
                   onClick={extraTimeWithRefetch}
                   disabled={buttonLoading}
                 >
-                  {buttonLoading ? "Refreshing..." : "Refresh your Picks"}
+                  {buttonLoading ? "Refreshing..." : "Discover new connections"}
                 </IonButton>
               </IonRow>
             </IonCard>

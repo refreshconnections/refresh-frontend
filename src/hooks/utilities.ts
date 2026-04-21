@@ -2182,12 +2182,31 @@ type AvatarConfig = {
   placeholderSrc?: string;
 };
 
+export function getPrimaryOrderedPhoto(profile: any) {
+  if (!profile) {
+    return null;
+  }
+
+  const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+  const preferredOrder = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+    ? profile.photo_order
+    : photoKeys;
+  const existingPhotos = photoKeys.filter((key) => Boolean(profile[key]));
+  const orderedPhotos = [
+    ...preferredOrder.filter((key: string) => existingPhotos.includes(key)),
+    ...existingPhotos.filter((key) => !preferredOrder.includes(key)),
+  ];
+  const primaryPhotoKey = orderedPhotos[0];
+
+  return primaryPhotoKey ? profile[primaryPhotoKey] : null;
+}
+
 export function getAvatarDisplay({
   profileImage,
   viewerConnect,
   authorConnect,
   includeBylineClass = false,
-  placeholderSrc = '../static/img/refresh-flower-blue.png',
+  placeholderSrc = '../static/img/navynobordervector.png',
 }: AvatarConfig) {
   const hasImage = Boolean(profileImage);
   const showConnectBorder = Boolean(viewerConnect && authorConnect && hasImage);
@@ -2822,6 +2841,29 @@ export function containsGoogleDocLink(input) {
 
 export async function openExternalUrl(url: string) {
     await Browser.open({ url });
+}
+
+export function getInternalAppPath(url: string): string | null {
+    if (!url) {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url, window.location.origin);
+        const isSameOrigin = parsed.origin === window.location.origin;
+
+        if (!isSameOrigin) {
+            return null;
+        }
+
+        if (!parsed.pathname.startsWith('/')) {
+            return null;
+        }
+
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+        return null;
+    }
 }
 
 // Version 3: July 6 2025

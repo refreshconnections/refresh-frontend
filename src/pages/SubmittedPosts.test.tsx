@@ -67,6 +67,7 @@ vi.mock('../hooks/api/submitted-events', () => ({
               id: 21,
               name: 'Pending event',
               status: 'pending',
+              interested_count: 7,
               start_datetime: '2099-07-20T18:00:00.000Z',
               end_datetime: '2099-07-20T19:00:00.000Z',
               description: 'Pending moderation',
@@ -163,11 +164,14 @@ describe('SubmittedPosts', () => {
     fireEvent.click(screen.getByText('Events'));
 
     expect(await screen.findByText('Pending event')).toBeInTheDocument();
+    expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Approved event'));
     expect(mockPush).toHaveBeenCalledWith('/community?calendarDate=2099-07-21');
 
     fireEvent.click(screen.getByText('Pending event'));
     expect(await screen.findByText('Event details')).toBeInTheDocument();
+    expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
+    expect(screen.queryByText('7')).not.toBeInTheDocument();
     fireEvent.click(document.querySelector('.info-button') as HTMLElement);
     expect(screen.getByText('Moderator review takes a few days.')).toBeInTheDocument();
   });

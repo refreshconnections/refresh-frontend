@@ -26,6 +26,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import Resizer from 'react-image-file-resizer';
 import { decode } from 'base64-arraybuffer';
@@ -33,7 +34,7 @@ import { decode } from 'base64-arraybuffer';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { apiClient } from '../hooks/api/api-client';
-import { updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
+import { getPrimaryOrderedPhoto, updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
 import CroppedImageModal from '../components/CroppedImageModal';
 import EditLocationModal from '../components/EditLocationModal';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
@@ -42,6 +43,8 @@ import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardC
 
 import './OnboardingV2.css';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import { Preferences } from '@capacitor/preferences';
+import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 const USERNAME_CHANGE_WINDOW_DAYS = 60;
 
@@ -61,8 +64,14 @@ type CommunityOnboardingProps = {
 
 const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) => {
   const copy = ONBOARDING_COPY.communityOnboarding;
+  const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const router = useIonRouter();
   const queryClient = useQueryClient();
+  const completeOnboarding = useCompleteOnboarding({
+    onSuccess: async () => {
+      await Preferences.set({ key: 'ONBOARDED', value: 'true' });
+    },
+  });
   const { data: currentProfile } = useGetCurrentProfile();
   const { data: communityProfile, refetch: refetchCommunityProfile } = useGetCommunityProfile();
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
@@ -97,13 +106,35 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : '-';
-  const personalPhoto = currentProfile?.pic1_main ?? null;
+  const personalPhoto = getPrimaryOrderedPhoto(currentProfile);
   const communityPhoto = (communityProfile as CommunityProfile | undefined)?.community_profile_pic ?? null;
 
   const hasPersonalPhoto = Boolean(personalPhoto);
   const previewPhoto = usePersonalPhoto && personalPhoto
     ? personalPhoto
     : communityPhoto;
+  const canContinueFromPhoto = Boolean(previewPhoto);
+
+  const slideNext = () => {
+    const swiper = swiperRef.current?.swiper ?? swiperRef.current;
+    if (swiper && !swiper.destroyed) {
+      swiper.slideNext();
+    }
+  };
+
+  const slidePrev = () => {
+    const swiper = swiperRef.current?.swiper ?? swiperRef.current;
+    if (swiper && !swiper.destroyed) {
+      swiper.slidePrev();
+    }
+  };
+
+  const slideTo = (index: number, speed?: number) => {
+    const swiper = swiperRef.current?.swiper ?? swiperRef.current;
+    if (swiper && !swiper.destroyed) {
+      swiper.slideTo(index, speed);
+    }
+  };
 
   useEffect(() => {
     if (!communityProfile) return;
@@ -146,7 +177,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setUsernameError(null);
 
     if (currentProfile?.username && (!username || username === currentProfile.username)) {
-      swiperRef.current?.slideNext();
+      slideNext();
       return;
     }
 
@@ -160,7 +191,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     if (response?.status === 204) {
       await queryClient.invalidateQueries({ queryKey: ['current'] });
       await queryClient.invalidateQueries({ queryKey: ['global-current'] });
-      swiperRef.current?.slideNext();
+      slideNext();
     } else {
       setUsernameError(copy.username.taken);
     }
@@ -172,13 +203,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     await queryClient.invalidateQueries({ queryKey: ['community-profile'] });
   };
 
-  const handleToggleConnect = async (checked: boolean) => {
-    await updateCurrentUserProfile({ settings_community_profile: checked });
-    await queryClient.invalidateQueries({ queryKey: ['current'] });
-    await queryClient.invalidateQueries({ queryKey: ['global-current'] });
-  };
-
   const handleFinishLater = async () => {
+    if (currentProfile?.onboarded !== true) {
+      await completeOnboarding.mutateAsync();
+    }
     await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
     await queryClient.invalidateQueries({ queryKey: ['current'] });
     await queryClient.invalidateQueries({ queryKey: ['global-current'] });
@@ -202,7 +230,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setSavingBio(true);
     await updateCommunityProfile({ community_bio: communityBio.trim() });
     setSavingBio(false);
-    swiperRef.current?.slideNext();
+    slideNext();
   };
 
   const handleLocationNext = async () => {
@@ -221,7 +249,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setShowLocation(shouldShowLocation);
     await updateCommunityProfile({ show_location: shouldShowLocation });
     setSavingLocation(false);
-    swiperRef.current?.slideNext();
+    slideNext();
   };
 
   const handleLocationSkip = async () => {
@@ -229,20 +257,20 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setShowLocation(false);
     await updateCommunityProfile({ show_location: false });
     setSavingLocation(false);
-    swiperRef.current?.slideNext();
+    slideNext();
   };
 
   const handleAgeNext = async () => {
     setSavingAge(true);
     await updateCommunityProfile({ show_age_tier: showAgeTier });
     setSavingAge(false);
-    swiperRef.current?.slideNext();
+    slideNext();
   };
 
   const handleFinish = async () => {
     if (!currentProfile?.username) {
       setUsernameError(copy.username.requiredToFinish);
-      swiperRef.current?.slideTo(0, 0);
+      slideTo(0, 0);
       return;
     }
 
@@ -312,7 +340,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
   return (
     <IonPage>
-      <IonContent className="onboarding-v2__content">
+      <IonContent
+        className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
+        style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
+      >
         <Swiper
           modules={[Pagination]}
           pagination={{ clickable: false }}
@@ -342,7 +373,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   <IonRow className="onboarding-v2__nav">
                     <IonButton
                       className="onboarding-v2__primary-action"
-                      onClick={() => swiperRef.current?.slideNext()}
+                      onClick={slideNext}
                     >
                       {ONBOARDING_COPY.common.next}
                     </IonButton>
@@ -413,7 +444,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       : copy.photo.withoutPersonalPhoto}
                   </p>
                   {hasPersonalPhoto && (
-                    <IonItem lines="none">
+                    <IonItem lines="none" className="onboarding-v2__photo-toggle">
                       <IonLabel>{copy.photo.toggleLabel}</IonLabel>
                       <IonToggle
                         slot="end"
@@ -422,22 +453,24 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       />
                     </IonItem>
                   )}
-                  <IonList lines="none">
-                    <IonItem lines="none">
+                  <IonList lines="none" className="onboarding-v2__photo-preview-list">
+                    <IonItem lines="none" className="onboarding-v2__photo-preview-item">
+                      <div className="onboarding-v2__photo-preview-frame">
                       {previewPhoto ? (
                         <img
-                          alt="Community profile"
+                          alt="Refreshments profile"
                           src={previewPhoto}
                           onError={(e) => onImgError(e)}
-                          style={{ width: '120px', height: '120px', borderRadius: '16px', objectFit: 'cover' }}
+                          className="onboarding-v2__photo-preview-image"
                         />
                       ) : (
                         <img
-                          alt="Community profile placeholder"
-                          src={"../static/img/null.png"}
-                          style={{ width: '120px', height: '120px', borderRadius: '16px', objectFit: 'cover' }}
+                          alt="Refreshments profile placeholder"
+                          src={"../static/img/navynobordervector.png"}
+                          className="onboarding-v2__photo-preview-image onboarding-v2__photo-preview-image--placeholder"
                         />
                       )}
+                      </div>
                     </IonItem>
                   </IonList>
                   {usePersonalPhoto && !personalPhoto && (
@@ -448,21 +481,22 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   <IonButton expand="block" color="tertiary" onClick={updatePicture}>
                     {copy.photo.uploadCta}
                   </IonButton>
-                  {communityPhoto && !usePersonalPhoto && (
-                    <IonText color="medium">{copy.photo.existingPhotoNote}</IonText>
-                  )}
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                    <IonButton fill="outline" onClick={slidePrev}>
                       {ONBOARDING_COPY.common.back}
                     </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={() => swiperRef.current?.slideNext()} disabled>
+                    <IonButton
+                      className="onboarding-v2__primary-action"
+                      onClick={slideNext}
+                      disabled={!canContinueFromPhoto}
+                    >
                       {ONBOARDING_COPY.common.next}
                     </IonButton>
                   </IonRow>
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
+                    <IonButton fill="clear" size="small" onClick={slideNext}>
                       {ONBOARDING_COPY.common.skip}
                     </IonButton>
                   </IonRow>
@@ -473,13 +507,15 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
           {!hasSharedLocationCoords && (
             <SwiperSlide>
-              <OnboardingCardLocationCoords
-                flow="community"
-                onCoordsSaved={(localLabel) => {
-                  setHasSharedLocationCoords(true);
-                  setCommunityLocationLabel((prev) => prev || localLabel);
-                }}
-              />
+              <div className="onboarding-v2__slide onboarding-v2__slide--tight-top">
+                <OnboardingCardLocationCoords
+                  flow="community"
+                  onCoordsSaved={(localLabel) => {
+                    setHasSharedLocationCoords(true);
+                    setCommunityLocationLabel((prev) => prev || localLabel);
+                  }}
+                />
+              </div>
             </SwiperSlide>
           )}
 
@@ -503,7 +539,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
                         {communityLocationLabel ? copy.location.editLocation : copy.location.addLocation}
                       </IonButton>
-                      <IonItem lines="none">
+                      <IonItem lines="none" className="onboarding-v2__photo-toggle">
                         <IonLabel>{copy.location.toggleLabel}</IonLabel>
                         <IonToggle
                           slot="end"
@@ -517,7 +553,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       <IonInput
                         value={communityLocationLabel}
                         placeholder={ONBOARDING_COPY.cards.locationLabel.placeholder}
-                        autoCapitalize="words"
+                        autocapitalize="words"
                         maxlength={40}
                         onIonInput={(event) => setCommunityLocationLabel(event.detail.value ?? '')}
                       />
@@ -526,7 +562,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                    <IonButton fill="outline" onClick={slidePrev}>
                       {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton
@@ -564,16 +600,18 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       autoGrow
                       maxlength={180}
                       counter
+                      autocapitalize='sentences'
+                      autoCorrect='on'
                       onIonInput={(e) => setCommunityBio(e.detail.value ?? '')}
                     />
                   </IonItem>
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                    <IonButton fill="outline" onClick={slidePrev}>
                       {ONBOARDING_COPY.common.back}
                     </IonButton>
-                    <IonButton className="onboarding-v2__primary-action" onClick={handleBioNext} disabled>
+                    <IonButton className="onboarding-v2__primary-action" onClick={handleBioNext} disabled={communityBio.length < 3 || savingBio}>
                       <span className={`onboarding-v2__button-label ${savingBio ? 'loading' : ''}`}>
                         {ONBOARDING_COPY.common.next}
                       </span>
@@ -581,7 +619,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                     </IonButton>
                   </IonRow>
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="clear" size="small" onClick={() => swiperRef.current?.slideNext()}>
+                    <IonButton fill="clear" size="small" onClick={slideNext}>
                       {ONBOARDING_COPY.common.skip}
                     </IonButton>
                   </IonRow>
@@ -602,24 +640,25 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       {showAgeTier === 'none' ? copy.age.hideAge : showAgeTier === 'decade' ? ageDecade : ageLabel}
                     </p>
                   </IonText>
-                  <IonRadioGroup value={showAgeTier} onIonChange={(e) => setShowAgeTier(e.detail.value)}>
-                    <IonItem lines="none">
-                      <IonLabel>{copy.age.showExact}</IonLabel>
-                      <IonRadio slot="start" value="exact" />
+                  <IonRadioGroup
+                    className="onboarding-v2__choice-group"
+                    value={showAgeTier}
+                    onIonChange={(e) => setShowAgeTier(e.detail.value)}
+                  >
+                    <IonItem lines="none" className="onboarding-v2__choice-item">
+                      <IonRadio value="exact" labelPlacement="start">{copy.age.showExact}</IonRadio>
                     </IonItem>
-                    <IonItem lines="none">
-                      <IonLabel>{copy.age.showDecade}</IonLabel>
-                      <IonRadio slot="start" value="decade" />
+                    <IonItem lines="none" className="onboarding-v2__choice-item">
+                      <IonRadio value="decade" labelPlacement="start">{copy.age.showDecade}</IonRadio>
                     </IonItem>
-                    <IonItem lines="none">
-                      <IonLabel>{copy.age.hide}</IonLabel>
-                      <IonRadio slot="start" value="none" />
+                    <IonItem lines="none" className="onboarding-v2__choice-item">
+                      <IonRadio value="none" labelPlacement="start">{copy.age.hide}</IonRadio>
                     </IonItem>
                   </IonRadioGroup>
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
                   <IonRow className="onboarding-v2__nav">
-                    <IonButton fill="outline" onClick={() => swiperRef.current?.slidePrev()}>
+                    <IonButton fill="outline" onClick={slidePrev}>
                       {ONBOARDING_COPY.common.back}
                     </IonButton>
                     <IonButton className="onboarding-v2__primary-action" onClick={handleAgeNext} disabled={savingAge}>
@@ -661,7 +700,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             </div>
           </SwiperSlide>
         </Swiper>
-        {activeSlideIndex < totalSlides - 1 && (
+        {activeSlideIndex < totalSlides - 1 && !keyboardOpen && (
           <IonButton
             size="small"
             fill="clear"

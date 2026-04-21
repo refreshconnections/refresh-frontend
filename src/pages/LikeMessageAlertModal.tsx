@@ -50,15 +50,17 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
     if (isMobile()) {
       Keyboard.addListener('keyboardWillShow', () => {
         setKeyboardOpen(true);
+        document.querySelector('ion-modal.like-message-alert-modal')?.classList.add('keyboard-open');
       });
       Keyboard.addListener('keyboardWillHide', () => {
         setKeyboardOpen(false);
+        document.querySelector('ion-modal.like-message-alert-modal')?.classList.remove('keyboard-open');
       });
     }
 
     return () => {
       if (isMobile()) {
-        Keyboard.removeAllListeners(); // ✅ works everywhere
+        Keyboard.removeAllListeners();
       }
     };
   }, []);
@@ -84,14 +86,14 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
         </IonHeader>
 
           <div className="modal-body">
-            {!keyboardOpen &&
+            <div className={`modal-collapsible${keyboardOpen ? ' modal-collapsible--hidden' : ''}`}>
               <IonText>
                 <p style={{fontSize: "10pt"}}>
                   Get the conversation started by sending a message with your Like to{' '}
                   <strong>{connectionName}</strong>!
                 </p>
               </IonText>
-            }
+            </div>
 
             <IonItem lines="none" className="textarea-item">
               <IonTextarea
@@ -99,6 +101,9 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
                 placeholder={`Write a message to ${connectionName}`}
                 maxlength={maxChars}
                 autoGrow
+                autocapitalize="sentences"
+                autoCorrect="on"
+                spellcheck
                 onIonInput={(e) => setMessage(e.detail.value ?? '')}
                 rows={3}
               />
@@ -108,7 +113,7 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
               {message.length} / {maxChars}
             </IonText>
           </div>
-          {!keyboardOpen && (
+          <div className={`modal-collapsible modal-footer-collapsible${keyboardOpen ? ' modal-collapsible--hidden' : ''}`}>
             <IonFooter className="ion-padding modal-footer">
               <IonRow>
                 <IonCol>
@@ -134,7 +139,7 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
                 </IonButton>
               </IonRow>
             </IonFooter>
-          )}
+          </div>
         </div>
       </IonContent>
       {keyboardOpen && !isSendDisabled && (

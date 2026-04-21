@@ -98,7 +98,7 @@ const EditRomanceGenderModal: React.FC<Props> = (props) => {
         <IonCard className="onboarding-slide">
           <IonCardContent>
             <IonCardTitle>Who should we show to you when you filter by romance?</IonCardTitle>
-            <IonText>We don't show your gender preference on your profile and only use it when others filter their Picks by Romance <FontAwesomeIcon icon={faHeart} />.</IonText>
+            <IonText>We don't show your gender preference on your profile and only use it when others filter their Discovery by Romance <FontAwesomeIcon icon={faHeart} />.</IonText>
             <IonText>You can share more in "More gender and sexuality info" part of the profile. </IonText>
             <p> You can only update the gender(s) you are attracted to every 60 days.</p>
             <IonItem>

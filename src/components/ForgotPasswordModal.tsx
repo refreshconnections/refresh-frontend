@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 
 import axios from "axios";
 // import myConfig from "../../configs";
 // import { ToastContainer, toast } from "react-toastify";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonLabel, IonInput, IonCheckbox, IonButton, IonItem, IonRow, IonModal, IonButtons, IonNote, IonAlert, IonFooter, IonText, IonSegment, IonSegmentButton, useIonModal } from '@ionic/react';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonButton, IonModal, IonButtons, IonNote, IonAlert, IonFooter, IonText, IonSegment, IonSegmentButton, useIonModal } from '@ionic/react';
 import Cookies from 'js-cookie';
-import PhoneInput from 'react-phone-number-input'
+import BoxedStackedInput from './BoxedStackedInput';
+import BoxedStackedPhoneInput from './BoxedStackedPhoneInput';
 
 
 import './ForgotPasswordModal.css'
@@ -140,15 +141,14 @@ const ForgotPasswordModal: React.FC = () => {
                 </div>
                 {identifierType == "email" ?
                     <form className="ion-padding" onSubmit={handleSendEmail} key="email">
-                        <IonItem>
-                            {/* <IonLabel position="floating">Email</IonLabel> */}
-                            <IonInput labelPlacement="floating"
-                                label="Email" value={email}
-                                placeholder="example@email.com"
-                                name="email"
-                                onIonInput={e => setEmail(e.detail.value!)}
-                                type="email" />
-                        </IonItem>
+                        <BoxedStackedInput
+                            label="Email"
+                            value={email}
+                            name="email"
+                            onIonInput={e => setEmail(e.detail.value!)}
+                            placeholder="example@email.com"
+                            type="email"
+                        />
                         <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!email || !email.includes('@')}>
                             Send password-reset email
                         </IonButton>
@@ -157,15 +157,12 @@ const ForgotPasswordModal: React.FC = () => {
                     </form>
                     :
                     <form className="ion-padding" key="form">
-                        <IonItem className="forgot-email-reset">
-                            <IonLabel position="stacked">Phone number</IonLabel>
-                            <PhoneInput
-                                placeholder={"(888) 888-8888"}
-                                defaultCountry="US"
-                                value={phoneNumber}
-                                onChange={setPhoneNumber}
-                            />
-                        </IonItem>
+                        <BoxedStackedPhoneInput
+                            label="Phone number"
+                            placeholder="(888) 888-8888"
+                            value={phoneNumber ?? undefined}
+                            onChange={setPhoneNumber}
+                        />
                         <IonButton className="ion-margin-top" onClick={() => { modal.current?.dismiss(); accountRecoveryModalPresent() }} expand="block" disabled={!phoneNumber || phoneNumber?.length < 7}>
                             See account recovery options
                         </IonButton>

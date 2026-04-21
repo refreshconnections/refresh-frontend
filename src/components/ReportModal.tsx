@@ -153,7 +153,7 @@ const ReportModal: React.FC<Props> = (props) => {
                             style={{ minHeight: "63pt" }}
                             name="details"
                             autoGrow={true}
-                            autoCapitalize='sentences'
+                            autocapitalize='sentences'
                             onIonInput={e => setDetails(e.detail.value!)}
                             placeholder="Add specifics for the moderation team to check out."
                         />

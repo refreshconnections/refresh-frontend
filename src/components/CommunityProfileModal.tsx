@@ -13,12 +13,12 @@ import {
   useIonModal,
 } from '@ionic/react';
 import React, { useEffect, useState } from 'react';
-import { apiClient } from '../hooks/api/api-client';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { useGetIncomingConnectionStatus } from '../hooks/api/profiles/incoming-connection-status';
 import { useProfileDetails } from '../hooks/api/profiles/details';
 import ProfileModal from './ProfileModal';
-import { isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked } from '../hooks/utilities';
+import { getAvatarDisplay, getPrimaryOrderedPhoto, isPersonalPlus, normalizeLocalMediaUrl, onImgError, updateBlockedConnections, updateCommunityBlocked } from '../hooks/utilities';
 import { useBlockProfile } from '../hooks/useBlockProfile';
 import './CommunityProfileModal.css';
 import TextModal from './TextModal';
@@ -32,19 +32,6 @@ import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import { ellipsisHorizontal } from 'ionicons/icons';
 import BlockTypesExplainedModal from './BlockTypesExplainedModal';
 
-
-type CommunityProfileData = {
-  user_id: number;
-  username?: string | null;
-  has_community_profile: boolean;
-  community_bio?: string | null;
-  location?: string | null;
-  age_display?: string | number | null;
-  connect_enabled: boolean;
-  display_photo?: string | null;
-  personal_photo?: string | null;
-};
-
 type Props = {
   userId: number | null;
   isAnonymous?: boolean;
@@ -54,9 +41,8 @@ type Props = {
 
 const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl, onDismiss }) => {
   const { data: currentProfile } = useGetCurrentProfile();
-  const [data, setData] = useState<CommunityProfileData | null>(null);
-  const [loading, setLoading] = useState(false);
-
+  const communityProfile = useGetCommunityProfile(userId, Boolean(userId));
+  const data = communityProfile.data ?? null;
   const profileDetails = useProfileDetails(Number(userId), Boolean(userId));
   const chatsList = useGetCurrentUserChats().data || [];
   const incomingStatus = useGetIncomingConnectionStatus(userId ?? undefined).data;
@@ -140,22 +126,6 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     onDismiss: handleChatDismiss,
   });
 
-  useEffect(() => {
-    if (!userId) return;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await apiClient.get(`/api/profiles/community_profile/${userId}`);
-        setData(response.data);
-      } catch (error) {
-        console.error('Failed to load community profile', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [userId]);
-
   const otherDeactivated = Boolean(profileDetails.data?.deactivated_profile);
   const showRestricted = Boolean(otherDeactivated || isAnonymousAuthor);
   const username = isAnonymousAuthor
@@ -164,17 +134,19 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       ? (currentProfile?.username || data?.username || 'You')
       : (otherDeactivated ? 'Refresh member' : (data?.username || 'Anonymous'));
   const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
-  const displayPhoto = avatarOverride ?? (showRestricted ? undefined : normalizeLocalMediaUrl(data?.display_photo));
-  const fallbackPersonalPhoto =
-    showRestricted || !data?.connect_enabled ? undefined : normalizeLocalMediaUrl(data?.personal_photo);
-  const resolvedDisplayPhoto = displayPhoto || fallbackPersonalPhoto;
-  const fallbackLogo = showRestricted ? undefined : '../static/img/refresh-flower-blue.png';
+  const communityAvatar = getAvatarDisplay({
+    profileImage: avatarOverride ?? (showRestricted ? null : data?.display_photo),
+    viewerConnect: currentProfile?.settings_community_profile,
+    authorConnect: data?.connect_enabled,
+  });
+  const orderedPersonalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(profileDetails.data));
+  const fallbackLogo = '../static/img/navynobordervector.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(data?.connect_enabled);
   const canSendLikeFromCommunity = viewerConnect && otherConnect && !isConnected && !isBlocked && !isUnmatched && (hasIncomingLike || !hasOutgoingLike);
   const canLikeBack = viewerConnect && otherConnect && hasIncomingLike && !isConnected && !isBlocked && !isUnmatched;
   const showCommunityDetails = Boolean(!showRestricted && (data?.community_bio || data?.location || data?.age_display));
-  const personalPhoto = showRestricted ? undefined : (normalizeLocalMediaUrl(data?.personal_photo) || displayPhoto);
+  const personalPhoto = showRestricted ? undefined : (orderedPersonalPhoto || normalizeLocalMediaUrl(data?.personal_photo));
   const connectName = profileDetails.data?.name || username;
   const detailsLine = [data?.location, data?.age_display].filter(Boolean).join(' • ');
   const canShowChat = Boolean(isConnected && otherConnect && viewerActive && otherActive);
@@ -331,14 +303,14 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
             >
               Close
             </IonButton>
-            {loading ? (
+            {communityProfile.isLoading && !data ? (
               <IonSpinner name="dots" />
             ) : (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <img
-                    alt="Community profile"
-                    src={!showRestricted && data?.has_community_profile ? (resolvedDisplayPhoto || fallbackLogo) : fallbackLogo}
+                    alt="Refreshments profile"
+                    src={showRestricted ? fallbackLogo : communityAvatar.src}
                     onError={(e) => onImgError(e)}
                     style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover' }}
                   />
@@ -366,7 +338,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                       <p>This is you!</p>
                     </IonText>
                     <IonButton expand="block" onClick={() => editPresent()}>
-                      Edit community profile
+                      Edit Refreshments profile
                     </IonButton>
                   </div>
                 )}

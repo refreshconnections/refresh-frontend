@@ -3,7 +3,6 @@ import {
   IonCard,
   IonCardContent,
   IonCardTitle,
-  IonInput,
   IonItem,
   IonLabel,
   IonRow,
@@ -16,6 +15,7 @@ import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './OnboardingCard.css';
 
@@ -53,8 +53,16 @@ const OnboardingCardPronouns: React.FC = () => {
     swiper.slideNext();
   };
 
+  const skipPronouns = async () => {
+    const existing = currentProfile?.pronouns ?? '';
+    if (existing !== '') {
+      await updateCurrentUserProfile({ pronouns: '' });
+    }
+    swiper.slideNext();
+  };
+
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>{copy.body}</IonText>
@@ -79,30 +87,30 @@ const OnboardingCardPronouns: React.FC = () => {
           </IonSelect>
         </IonItem>
         {selected === 'custom' && (
-          <IonItem>
-            <IonLabel position="stacked">{copy.customLabel}</IonLabel>
-            <IonInput
-              value={custom}
-              placeholder={copy.customPlaceholder}
-              maxlength={30}
-              onIonInput={(event) => setCustom(event.detail.value ?? '')}
-              onKeyUp={(event) => {
-                if (event.key === 'Enter' && canContinue) {
-                  updateProfile();
-                }
-              }}
-            />
-          </IonItem>
+          <BoxedStackedInput
+            label={copy.customLabel}
+            value={custom}
+            name="custom_pronouns"
+            placeholder={copy.customPlaceholder}
+            onIonInput={(event) => setCustom(event.detail.value ?? '')}
+          />
         )}
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          {ONBOARDING_COPY.common.back}
-        </IonButton>
-        <IonButton onClick={updateProfile} disabled={!canContinue}>
-          {ONBOARDING_COPY.common.next}
-        </IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={!canContinue}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="clear" size="small" onClick={skipPronouns}>
+            {ONBOARDING_COPY.common.skip}
+          </IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

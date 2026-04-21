@@ -3,9 +3,6 @@ import {
   IonCard,
   IonCardContent,
   IonCardTitle,
-  IonInput,
-  IonItem,
-  IonLabel,
   IonRow,
   IonText,
 } from '@ionic/react';
@@ -14,6 +11,7 @@ import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './OnboardingCard.css';
 
@@ -50,7 +48,7 @@ const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
   };
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>
@@ -61,25 +59,26 @@ const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
           </p>
           <p>{copy.note}</p>
         </IonText>
-        <IonItem>
-          <IonLabel position="stacked">{copy.label}</IonLabel>
-          <IonInput
-            value={location}
-            placeholder={copy.placeholder}
-            autoCapitalize="words"
-            maxlength={40}
-            onIonInput={(event) => setLocation(event.detail.value ?? '')}
-          />
-        </IonItem>
+        <BoxedStackedInput
+          label={copy.label}
+          value={location}
+          name="location_label"
+          placeholder={copy.placeholder}
+          autocapitalize="words"
+          type="text"
+          onIonInput={(event) => setLocation(event.detail.value ?? '')}
+        />
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          {ONBOARDING_COPY.common.back}
-        </IonButton>
-        <IonButton onClick={saveAndContinue} disabled={!location.trim()}>
-          {ONBOARDING_COPY.common.next}
-        </IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={saveAndContinue} disabled={!location.trim()}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

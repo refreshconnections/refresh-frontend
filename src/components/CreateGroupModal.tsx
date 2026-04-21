@@ -124,7 +124,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
                             placeholder="Group Name"
                             onIonInput={e => setGroupName(e.detail.value!)}
                             type="text" 
-                            autoCapitalize='words'/>
+                            autocapitalize='words'/>
                     </IonItem>
                     <IonItem>
                         <IonLabel position="stacked">Description</IonLabel>
@@ -133,7 +133,7 @@ const CreateGroupModal: React.FC<Props> = (props) => {
                             placeholder="What's this group all about?"
                             onIonInput={e => setDescription(e.detail.value!)}
                             type="text" 
-                            autoCapitalize='sentences'/>
+                            autocapitalize='sentences'/>
                             
                     </IonItem>
                     <IonItem>

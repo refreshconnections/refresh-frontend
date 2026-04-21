@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IonApp } from '@ionic/react';
 
 const {
-  mockApiGet,
   mockPresentModal,
   mockDismissModal,
   mockPresentAlert,
@@ -16,7 +15,6 @@ const {
   mockRemoveCommunityBlocked,
   mockBlockProfile,
 } = vi.hoisted(() => ({
-  mockApiGet: vi.fn(),
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
   mockPresentAlert: vi.fn(),
@@ -32,11 +30,13 @@ let mockCurrentProfile: any;
 let mockProfileDetails: any;
 let mockIncomingStatus: any;
 let mockChats: any[];
+let mockCommunityProfile: any;
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
     useIonActionSheet: () => [mockPresentActionSheet, vi.fn()],
     useIonModal: (component: any, modalProps: any) => [
@@ -56,14 +56,15 @@ vi.mock('@tanstack/react-query', async () => {
   };
 });
 
-vi.mock('../hooks/api/api-client', () => ({
-  apiClient: {
-    get: (...args: any[]) => mockApiGet(...args),
-  },
-}));
-
 vi.mock('../hooks/api/profiles/current-profile', () => ({
   useGetCurrentProfile: () => ({ data: mockCurrentProfile }),
+}));
+
+vi.mock('../hooks/api/profiles/community-profile', () => ({
+  useGetCommunityProfile: () => ({
+    data: mockCommunityProfile,
+    isLoading: false,
+  }),
 }));
 
 vi.mock('../hooks/api/profiles/details', () => ({
@@ -83,6 +84,25 @@ vi.mock('../hooks/useBlockProfile', () => ({
 }));
 
 vi.mock('../hooks/utilities', () => ({
+  getPrimaryOrderedPhoto: (profile: any) => {
+    if (!profile) return null;
+    const keys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const preferredOrder = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+      ? profile.photo_order
+      : keys;
+    const existing = keys.filter((key) => Boolean(profile[key]));
+    const ordered = [
+      ...preferredOrder.filter((key: string) => existing.includes(key)),
+      ...existing.filter((key) => !preferredOrder.includes(key)),
+    ];
+    return ordered[0] ? profile[ordered[0]] : null;
+  },
+  getAvatarDisplay: vi.fn(({ profileImage }: any) => ({
+    className: profileImage ? 'community-avatar' : 'refresh-avatar',
+    src: profileImage ?? '../static/img/navynobordervector.png',
+    hasImage: Boolean(profileImage),
+    showConnectBorder: false,
+  })),
   isPersonalPlus: (subscriptionLevel: string) => subscriptionLevel === 'pro' || subscriptionLevel === 'plus',
   normalizeLocalMediaUrl: (value: string | null | undefined) => value ?? undefined,
   onImgError: vi.fn(),
@@ -134,6 +154,9 @@ const baseProfileDetails = {
   name: 'Jordan',
   deactivated_profile: false,
   paused_profile: false,
+  pic1_main: '/img/old-primary.jpg',
+  pic2: '/img/new-primary.jpg',
+  photo_order: ['pic2', 'pic1_main'],
 };
 
 const renderModal = (props: Partial<React.ComponentProps<typeof CommunityProfileModal>> = {}) => {
@@ -158,7 +181,7 @@ describe('CommunityProfileModal', () => {
     mockProfileDetails = { ...baseProfileDetails };
     mockIncomingStatus = { is_incoming: false };
     mockChats = [];
-    mockApiGet.mockResolvedValue({ data: { ...baseCommunityData } });
+    mockCommunityProfile = { ...baseCommunityData };
     mockUpdateBlockedConnections.mockResolvedValue(undefined);
     mockUpdateCommunityBlocked.mockResolvedValue(undefined);
     mockRemoveCommunityBlocked.mockResolvedValue(undefined);
@@ -171,7 +194,7 @@ describe('CommunityProfileModal', () => {
 
     expect(await screen.findByText('This is you!')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Edit community profile'));
+    fireEvent.click(screen.getByText('Edit Refreshments profile'));
     expect(mockPresentModal).toHaveBeenCalledWith(
       'EditCommunityProfileModal',
       expect.objectContaining({
@@ -255,6 +278,7 @@ describe('CommunityProfileModal', () => {
     renderModal();
 
     expect(await screen.findByText(/You both have Connect from Refreshments turned on!/)).toBeInTheDocument();
+    expect(screen.getByAltText('Profile')).toHaveAttribute('src', '/img/new-primary.jpg');
 
     fireEvent.click(document.querySelector('.community-profile-profile-item') as HTMLElement);
 
@@ -285,9 +309,22 @@ describe('CommunityProfileModal', () => {
     renderModal({ isAnonymous: true });
 
     expect(await screen.findByText('Refresh member')).toBeInTheDocument();
-    expect(screen.queryByText('Edit community profile')).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit Refreshments profile')).not.toBeInTheDocument();
     expect(screen.queryByText(/You both have Connect from Refreshments turned on!/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Like Jordan back/)).not.toBeInTheDocument();
+  });
+
+  it('uses the grey Refreshments fallback when there is no community-facing photo', async () => {
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      display_photo: null,
+      personal_photo: '/img/personal.jpg',
+    };
+
+    renderModal({ avatarUrl: null });
+
+    const avatar = await screen.findByAltText('Refreshments profile');
+    expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
   });
 
   it('opens the action menu, enforces exact full community block confirmation, and shows the block types modal', async () => {

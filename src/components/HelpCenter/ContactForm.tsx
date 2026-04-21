@@ -133,11 +133,11 @@ const ContactForm: React.FC = () => {
             />
             <IonCard>
                 <IonRow className="help-buttons">
-                    <Link to="tips">
-                        <IonButton className="ion-text-wrap" fill="outline" style={{ width: "50pt" }}>How To</IonButton>
+                    <Link className="help-button-link" to="tips">
+                        <IonButton className="ion-text-wrap help-button" fill="outline">How To</IonButton>
                     </Link>
-                    <Link to="faqs">
-                        <IonButton className="ion-text-wrap" fill="outline" style={{ width: "50pt" }}>FAQs</IonButton>
+                    <Link className="help-button-link" to="faqs">
+                        <IonButton className="ion-text-wrap help-button" fill="outline">FAQs</IonButton>
                     </Link>
                 </IonRow>
                 <IonItem>

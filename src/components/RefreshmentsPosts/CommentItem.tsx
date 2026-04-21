@@ -1,6 +1,6 @@
-import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal } from "@ionic/react";
+import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useEffect, useRef, useState } from "react";
-import { authorSidenoteComment, editComment, getAvatarDisplay, increaseStreak, likeComment, onImgError, openExternalUrl, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
+import { authorSidenoteComment, editComment, getAvatarDisplay, getInternalAppPath, increaseStreak, likeComment, onImgError, openExternalUrl, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import Linkify from 'react-linkify';
@@ -60,6 +60,7 @@ const CommentItem: React.FC<Props> = (props) => {
 
 
   const queryClient = useQueryClient()
+  const router = useIonRouter();
 
 
   // const {data: comment, isLoading: commentLoading} = useGetStaticIndividualComment(comment_id)
@@ -85,6 +86,14 @@ const CommentItem: React.FC<Props> = (props) => {
 
 
   const limits = useGetLimits().data
+  const openAppOrExternalUrl = (url: string) => {
+    const internalPath = getInternalAppPath(url);
+    if (internalPath) {
+      router.push(internalPath);
+      return;
+    }
+    openExternalUrl(url);
+  };
 
 
   const [liked, setLiked] = useState<boolean>(false)
@@ -95,7 +104,15 @@ const CommentItem: React.FC<Props> = (props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editDraft, setEditDraft] = useState<string>(comment?.text ?? "");
   const [editSaving, setEditSaving] = useState(false);
+  const editTextareaRef = useRef<HTMLIonTextareaElement | null>(null);
 
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => {
+        editTextareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
+  }, [isEditing]);
 
   const [presentSidenoteAlert] = useIonAlert();
   const [presentSidenoteAlertConfirmation] = useIonAlert();
@@ -444,7 +461,7 @@ const CommentItem: React.FC<Props> = (props) => {
                             )}
                             {isOwner && comment?.removed_reason ? (
                               <>
-                                <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                                <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                               </>
                             ) : null}
                             <ModerationNote
@@ -469,7 +486,7 @@ const CommentItem: React.FC<Props> = (props) => {
                               </IonAvatar>
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
-                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                             <ModerationNote
                               moderationNote={comment.moderation_note}
                               moderationIconOnly={false}
@@ -484,7 +501,7 @@ const CommentItem: React.FC<Props> = (props) => {
                               </IonAvatar>
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
-                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                           </>
                           : sidenotedByMe ?
                           <>
@@ -494,7 +511,7 @@ const CommentItem: React.FC<Props> = (props) => {
                               </IonAvatar>
                               <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
                             </div>
-                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                            <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                           </>
                           :
                           <>
@@ -508,9 +525,13 @@ const CommentItem: React.FC<Props> = (props) => {
                             {isEditing ? (
                               <div className="comment-edit-inline">
                                 <IonTextarea
+                                  ref={editTextareaRef}
                                   aria-label="Edit comment text"
                                   value={editDraft}
                                   rows={4}
+                                  autocapitalize="sentences"
+                                  autoCorrect="on"
+                                  spellcheck
                                   onIonInput={(event) => setEditDraft(event.detail.value ?? "")}
                                 />
                                 <div className="comment-edit-actions">
@@ -523,7 +544,7 @@ const CommentItem: React.FC<Props> = (props) => {
                                 </div>
                               </div>
                             ) : (
-                              <h4 className="css-fix comment-body-text"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                              <h4 className="css-fix comment-body-text"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
                             )}
                           </>
                       }

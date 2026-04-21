@@ -18,6 +18,7 @@ import { Preferences } from "@capacitor/preferences";
 import Construction from "../pages/Construction";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocketContext } from "./WebsocketContext";
+import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
 
 
 const ENV = process.env.NODE_ENV
@@ -117,8 +118,9 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
             key: 'EXPIRY',
             value: res.data["expiry"],
           });
-          // queryClient.invalidateQueries()
-          // queryClient.refetchQueries()
+          queryClient.removeQueries({ queryKey: userQueryKeys.global_current });
+          queryClient.removeQueries({ queryKey: userQueryKeys.current });
+          queryClient.removeQueries({ queryKey: userQueryKeys.settings_current });
           pushOneSignalExtId(res.data["user"])
           setLoggedin(true)
           connect(); 

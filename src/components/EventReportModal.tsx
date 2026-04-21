@@ -81,7 +81,7 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
             onIonInput={(e) => setDetails(e.detail.value ?? '')}
             placeholder="Add specifics for the moderation team to check out."
             autoGrow
-            autoCapitalize="sentences"
+            autocapitalize="sentences"
             rows={5}
           />
         </IonItem>

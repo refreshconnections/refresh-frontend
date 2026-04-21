@@ -24,6 +24,7 @@ vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     useIonAlert: () => [mockPresentAlert, vi.fn()],
     useIonModal: () => [mockPresentModal, mockDismissModal],
     useIonRouter: () => ({ push: mockRouterPush, goBack: vi.fn() }),
@@ -500,7 +501,7 @@ describe('Activity page', () => {
 
       goToSegment('Streak');
 
-      expect(screen.getByText(/Your 12-day streak broke/)).toBeInTheDocument();
+      expect(screen.getByText(/Your 12-day streak ended!/)).toBeInTheDocument();
     });
 
     it('shows personal best and saver count', () => {
@@ -508,6 +509,16 @@ describe('Activity page', () => {
 
       expect(screen.getByText(/Personal best: 10 days/)).toBeInTheDocument();
       expect(screen.getByText(/2 streak savers/)).toBeInTheDocument();
+    });
+
+    it('shows the pro-user streak note', () => {
+      mockCurrentProfile.mockReturnValue({
+        data: { ...baseProfile, subscription_level: 'pro' },
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/Remember, as a pro user, your streak is just for fun!/)).toBeInTheDocument();
     });
 
     it('calls recoverStreak and invalidates the streak query when the restore button is clicked', async () => {

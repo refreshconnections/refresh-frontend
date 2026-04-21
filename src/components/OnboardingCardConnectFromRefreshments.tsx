@@ -23,6 +23,8 @@ const OnboardingCardConnectFromRefreshments: React.FC = () => {
   const queryClient = useQueryClient();
   const currentProfile = useGetCurrentProfile().data;
   const copy = ONBOARDING_COPY.communityOnboarding.connect;
+  const bodyBreak = 'Turn on Connect from Refreshments';
+  const [bodyIntro, bodyRest] = copy.body.split(bodyBreak);
 
   const handleToggleConnect = async (checked: boolean) => {
     await updateCurrentUserProfile({ settings_community_profile: checked });
@@ -33,10 +35,11 @@ const OnboardingCardConnectFromRefreshments: React.FC = () => {
   return (
     <div className="onboarding-v2__slide">
       <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
-        <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
+        <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight onboarding-v2__connect-card-body">
           <IonCardTitle>{copy.title}</IonCardTitle>
-          <p>{copy.body}</p>
-          <IonItem lines="none" color="white">
+          <p>{bodyIntro?.trim()}</p>
+          <p className="onboarding-v2__connect-body-break">{bodyRest ? `${bodyBreak}${bodyRest}` : copy.body}</p>
+          <IonItem lines="none" color="white" className="onboarding-v2__input onboarding-v2__input--card onboarding-v2__connect-toggle">
             <IonLabel>{copy.toggleLabel}</IonLabel>
             <IonToggle
               slot="end"

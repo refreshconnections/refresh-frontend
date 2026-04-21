@@ -203,25 +203,78 @@ ion-avatar.connect-avatar {
 
 ion-card.opened-post-event {
   margin: 12px 0 0;
-  box-shadow: none;
   border-radius: 14px;
   background: var(--ion-color-white);
   border: 1px solid var(--ion-color-step-150, #e2e1f6);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.opened-post-event--clickable {
   cursor: pointer;
 }
 
-ion-card.opened-post-event ion-card-title {
-  font-size: calc(18px * var(--text-scale, 1));
-  padding: 0 0 6px 0;
+.opened-post-event--stale {
+  cursor: default;
 }
 
-.opened-post-event-line {
-  display: block;
-  margin-top: 6px;
+ion-card.opened-post-event ion-card-content {
+  padding: 12px 14px;
 }
 
-.opened-post-event-name {
-  display: block;
+ion-card.opened-post-event .calendar-event-card-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+ion-card.opened-post-event .event-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--ion-color-step-100, #f3f3f3);
+  color: var(--ion-color-medium);
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+ion-card.opened-post-event .calendar-event-card-toggle {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 0;
+}
+
+ion-card.opened-post-event .calendar-event-card-name {
+  font-weight: 600;
+  font-size: calc(15px * var(--text-scale, 1));
+  color: var(--ion-color-dark);
+}
+
+ion-card.opened-post-event .calendar-event-card-time {
+  font-size: calc(13px * var(--text-scale, 1));
+  color: var(--ion-color-medium);
   margin-top: 2px;
+}
+
+ion-card.opened-post-event .calendar-event-card-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ion-color-step-100, #f0f0f0);
+}
+
+ion-card.opened-post-event .calendar-event-description {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+ion-card.opened-post-event .opened-post-event-line:first-child {
+  margin-top: 0;
 }

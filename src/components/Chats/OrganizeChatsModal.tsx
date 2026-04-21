@@ -42,7 +42,8 @@ function MemberRow({ member, onRemove }: { member: ChatGroupMember; onRemove?: (
 
   return (
     <IonItem
-      lines="none"
+      data-testid="organize-chats-member-row"
+      lines="full"
       button
       onClick={() => present()}
       style={{ '--background': 'var(--ion-color-white)' } as React.CSSProperties}
@@ -214,7 +215,7 @@ const ListAccordion: React.FC<ListAccordionProps> = ({
             {!atCap && (
               !showSearch ? (
                 <IonButton fill="clear" size="small" color="primary" onClick={() => setShowSearch(true)}>
-                  Search for more people to add
+                  Search for additional chats to add to this section
                 </IonButton>
               ) : (
                 <>

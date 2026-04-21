@@ -29,12 +29,18 @@ export type RefreshEvent = {
   profile_image?: string | null
   settings_community_profile?: boolean
   interested?: boolean
+  interested_count?: number | null
 }
 
 export type EventFilters = {
   eventTypes: string[]
   attendeePrecautionPreferences: string[]
   inPersonPrecautions: string[]
+}
+
+export type EventQueryOptions = {
+  local?: boolean
+  radius?: number | null
 }
 
 export const DEFAULT_EVENT_FILTERS: EventFilters = {
@@ -49,8 +55,17 @@ export const EVENT_FILTER_PREF_KEYS = {
   inPersonPrecautions: 'event_filter_in_person_precautions',
 }
 
-const fetchEvents = async (filters: EventFilters) => {
+const fetchEvents = async (
+  filters: EventFilters,
+  options: EventQueryOptions = {},
+) => {
   const params = new URLSearchParams()
+  if (options.local) {
+    params.set('local', 'true')
+  }
+  if (typeof options.radius === 'number') {
+    params.set('radius', String(options.radius))
+  }
   if (!filters.eventTypes.includes('all')) {
     params.set('event_type', filters.eventTypes.join(','))
   }
@@ -65,9 +80,19 @@ const fetchEvents = async (filters: EventFilters) => {
   return response.data as RefreshEvent[]
 }
 
-export function useGetEvents(filters: EventFilters = DEFAULT_EVENT_FILTERS) {
+export function useGetEvents(
+  filters: EventFilters = DEFAULT_EVENT_FILTERS,
+  options: EventQueryOptions = {},
+) {
   return useQuery({
-    queryKey: ['events', filters.eventTypes, filters.attendeePrecautionPreferences, filters.inPersonPrecautions],
-    queryFn: () => fetchEvents(filters),
+    queryKey: [
+      'events',
+      filters.eventTypes,
+      filters.attendeePrecautionPreferences,
+      filters.inPersonPrecautions,
+      options.local ?? false,
+      options.radius ?? null,
+    ],
+    queryFn: () => fetchEvents(filters, options),
   })
 }

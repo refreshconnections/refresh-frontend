@@ -1,23 +1,218 @@
-import { IonButton, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonNote, IonPage, IonRow, IonText } from '@ionic/react';
-import { useEffect, useMemo, useState } from 'react';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonNote, IonPage, IonRow, IonSkeletonText, IonText, IonTitle, IonToolbar, useIonModal } from '@ionic/react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faCalendarStar, faComment, faReel, faStar } from '@fortawesome/pro-solid-svg-icons';
 import { useHistory } from 'react-router';
-import { useGetInterestedEvents, useGetInterestedPosts } from '../hooks/api/interests';
+import { useGetInterestedEvents, useGetInterestedPosts, type InterestedPost } from '../hooks/api/interests';
 import { useGetMegathreads } from '../hooks/api/refreshments/megathreads';
 import { useGetDailyTip } from '../hooks/api/tips';
 import PostSuggestionMini from '../components/PostSuggestionMini';
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { isCommunityPlus, openExternalUrl } from '../hooks/utilities';
+import type { RefreshEvent } from '../hooks/api/events';
 import './Page.css';
 import './Hub.css';
 
-const Hub: React.FC = () => {
+const HUB_VISIBLE_ITEMS = 3;
+const HUB_MODAL_BATCH_SIZE = 10;
+
+type HubMegathread = {
+  id: number;
+  title: string;
+  preview?: string;
+  content?: string;
+  comment_count?: number;
+  like_count?: number;
+  category?: string;
+  latest_activity_time?: string;
+  uploadDateTime?: string;
+};
+
+type HubListModalProps<T extends { id: number }> = {
+  title: string;
+  emptyCopy: string;
+  onDismiss: () => void;
+  items: T[];
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void | Promise<void>;
+  renderItem: (item: T) => ReactNode;
+};
+
+const HubListModal = <T extends { id: number }>({
+  title,
+  emptyCopy,
+  onDismiss,
+  items,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  renderItem,
+}: HubListModalProps<T>) => (
+  <IonPage>
+    <IonHeader>
+      <IonToolbar className="modal-title">
+        <IonTitle>{title}</IonTitle>
+        <IonButtons slot="end">
+          <IonButton onClick={onDismiss}>Done</IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent className="ion-padding">
+      {items.length ? (
+        <IonRow className="hub-modal-list">
+          {items.map((item) => (
+            <IonCol key={item.id} size="12">
+              {renderItem(item)}
+            </IonCol>
+          ))}
+        </IonRow>
+      ) : (
+        <IonNote color="medium">{emptyCopy}</IonNote>
+      )}
+      <IonInfiniteScroll
+        disabled={!hasMore || !onLoadMore}
+        onIonInfinite={async (event) => {
+          if (hasMore && onLoadMore) {
+            await onLoadMore();
+          }
+          (event.target as HTMLIonInfiniteScrollElement).complete();
+        }}
+      >
+        <IonInfiniteScrollContent loadingSpinner="bubbles" />
+      </IonInfiniteScroll>
+      {isLoadingMore ? (
+        <IonRow className="ion-justify-content-center hub-modal-loading-row">
+          <IonSkeletonText animated style={{ width: '120px', height: '14px' }} />
+        </IonRow>
+      ) : null}
+    </IonContent>
+  </IonPage>
+);
+
+type HubInterestedEventsModalProps = {
+  onDismiss: () => void;
+  upcomingEvents: RefreshEvent[];
+  pastEvents: RefreshEvent[];
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void | Promise<void>;
+};
+
+const HubInterestedEventsModal = ({
+  onDismiss,
+  upcomingEvents,
+  pastEvents,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+}: HubInterestedEventsModalProps) => {
+  const history = useHistory();
+
+  const renderEventCard = (event: RefreshEvent) => {
+    const dayTag = getEventDayTag(event.start_datetime);
+
+    return (
+      <button
+        type="button"
+        key={event.id}
+        className="hub-event-preview hub-event-preview-modal"
+        onClick={() => history.push(`/community?calendarDate=${moment(event.start_datetime).format('YYYY-MM-DD')}`)}
+      >
+        {dayTag ? (
+          <span className={`hub-event-tag ${dayTag === 'TODAY' ? 'today' : 'tomorrow'}`}>
+            {dayTag}
+          </span>
+        ) : null}
+        <span className="hub-event-preview-title">{event.name}</span>
+        <span className="hub-event-preview-datetime">{getEventDateTimeLabel(event.start_datetime)}</span>
+      </button>
+    );
+  };
+
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar className="modal-title">
+          <IonTitle>Interested Events</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={onDismiss}>Done</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding">
+        {upcomingEvents.length ? (
+          <section className="hub-modal-section">
+            <h2 className="hub-modal-section-title">Upcoming</h2>
+            <div className="hub-modal-events-grid">
+              {upcomingEvents.map((event) => renderEventCard(event))}
+            </div>
+          </section>
+        ) : null}
+
+        {pastEvents.length ? (
+          <section className="hub-modal-section">
+            <h2 className="hub-modal-section-title">Recent Past</h2>
+            <IonNote color="medium" className="hub-modal-section-note">
+              Past events are limited by your current subscription.
+            </IonNote>
+            <div className="hub-modal-events-grid">
+              {pastEvents.map((event) => renderEventCard(event))}
+            </div>
+          </section>
+        ) : null}
+
+        {!upcomingEvents.length && !pastEvents.length ? (
+          <IonNote color="medium">No interested events to show yet.</IonNote>
+        ) : null}
+
+        <IonInfiniteScroll
+          disabled={!hasMore || !onLoadMore}
+          onIonInfinite={async (event) => {
+            if (hasMore && onLoadMore) {
+              await onLoadMore();
+            }
+            (event.target as HTMLIonInfiniteScrollElement).complete();
+          }}
+        >
+          <IonInfiniteScrollContent loadingSpinner="bubbles" />
+        </IonInfiniteScroll>
+        {isLoadingMore ? (
+          <IonRow className="ion-justify-content-center hub-modal-loading-row">
+            <IonSkeletonText animated style={{ width: '120px', height: '14px' }} />
+          </IonRow>
+        ) : null}
+      </IonContent>
+    </IonPage>
+  );
+};
+
+const getEventDayTag = (startDatetime?: string | null) => {
+  if (!startDatetime) return null;
+  const start = moment(startDatetime);
+  if (!start.isValid()) return null;
+  if (start.isSame(moment(), 'day')) return 'TODAY';
+  if (start.isSame(moment().add(1, 'day'), 'day')) return 'Tomorrow';
+  return null;
+};
+
+const getEventDateTimeLabel = (startDatetime?: string | null) => {
+  if (!startDatetime) return '';
+  const start = moment(startDatetime);
+  if (!start.isValid()) return '';
+  return start.format('ddd, MMM D • h:mm A');
+};
+
+const Hub = () => {
   const [interestedPostsPage, setInterestedPostsPage] = useState(1);
   const [interestedEventsPage, setInterestedEventsPage] = useState(1);
-  const [displayedInterestedPosts, setDisplayedInterestedPosts] = useState<any[]>([]);
-  const [displayedInterestedEvents, setDisplayedInterestedEvents] = useState<any[]>([]);
+  const [displayedInterestedPosts, setDisplayedInterestedPosts] = useState<InterestedPost[]>([]);
+  const [displayedInterestedEvents, setDisplayedInterestedEvents] = useState<RefreshEvent[]>([]);
+  const [visibleMegathreadsCount, setVisibleMegathreadsCount] = useState(HUB_MODAL_BATCH_SIZE);
   const [showFlowerThanks, setShowFlowerThanks] = useState(false);
   const history = useHistory();
+  const profile = useGetCurrentProfile().data;
 
   const interestedPostsQuery = useGetInterestedPosts(interestedPostsPage);
   const interestedEventsQuery = useGetInterestedEvents(interestedEventsPage);
@@ -45,11 +240,6 @@ const Hub: React.FC = () => {
   }, [interestedEvents, interestedEventsPage]);
 
   useEffect(() => {
-    if (!interestedEvents?.next) return;
-    setInterestedEventsPage((prev) => prev + 1);
-  }, [interestedEvents?.next]);
-
-  useEffect(() => {
     if (!showFlowerThanks) return;
     const timeout = window.setTimeout(() => {
       setShowFlowerThanks(false);
@@ -59,7 +249,7 @@ const Hub: React.FC = () => {
 
   const upcomingInterestedEvents = useMemo(() => {
     const now = moment();
-    const twoWeeksOut = moment().add(14, 'days').endOf('day');
+    const twoWeeksOut = moment(now).add(14, 'days').endOf('day');
 
     const nextTwoWeeks = displayedInterestedEvents
       .filter((event) => {
@@ -86,9 +276,45 @@ const Hub: React.FC = () => {
     return [...todayAndTomorrow, ...laterEvents.slice(0, remainingSlots)];
   }, [displayedInterestedEvents]);
 
+  const visibleUpcomingInterestedEvents = useMemo(
+    () => upcomingInterestedEvents.slice(0, HUB_VISIBLE_ITEMS),
+    [upcomingInterestedEvents]
+  );
+
+  const pastInterestedEvents = useMemo(() => {
+    const now = moment();
+    const earliestPast = isCommunityPlus(profile?.subscription_level)
+      ? moment().subtract(2, 'months').startOf('day')
+      : moment().subtract(1, 'week').startOf('day');
+
+    return displayedInterestedEvents
+      .filter((event) => {
+        const start = moment(event.start_datetime);
+        return start.isValid() && start.isBefore(now) && start.isSameOrAfter(earliestPast);
+      })
+      .sort((a, b) => moment(b.start_datetime).valueOf() - moment(a.start_datetime).valueOf());
+  }, [displayedInterestedEvents, profile?.subscription_level]);
+
+  const allVisibleInterestedEvents = useMemo(
+    () => [...upcomingInterestedEvents, ...pastInterestedEvents.filter((event) => !upcomingInterestedEvents.some((upcoming) => upcoming.id === event.id))],
+    [pastInterestedEvents, upcomingInterestedEvents]
+  );
+
   const activeMegathreads = useMemo(
     () => megathreads.slice(0, 5),
     [megathreads]
+  );
+  const visibleMegathreads = useMemo(
+    () => activeMegathreads.slice(0, HUB_VISIBLE_ITEMS),
+    [activeMegathreads]
+  );
+  const megathreadsForModal = useMemo(
+    () => activeMegathreads.slice(0, visibleMegathreadsCount),
+    [activeMegathreads, visibleMegathreadsCount]
+  );
+  const visibleInterestedPosts = useMemo(
+    () => displayedInterestedPosts.slice(0, HUB_VISIBLE_ITEMS),
+    [displayedInterestedPosts]
   );
 
   const getLatestActivityLabel = (thread: any) => {
@@ -129,41 +355,84 @@ const Hub: React.FC = () => {
     setShowFlowerThanks((prev) => !prev);
   };
 
-  const getEventDayTag = (startDatetime?: string | null) => {
-    if (!startDatetime) return null;
-    const start = moment(startDatetime);
-    if (!start.isValid()) return null;
-    if (start.isSame(moment(), 'day')) return 'TODAY';
-    if (start.isSame(moment().add(1, 'day'), 'day')) return 'Tomorrow';
-    return null;
-  };
-
-  const getEventDateTimeLabel = (startDatetime?: string | null) => {
-    if (!startDatetime) return '';
-    const start = moment(startDatetime);
-    if (!start.isValid()) return '';
-    return start.format('ddd, MMM D • h:mm A');
-  };
+  const eventsLoading = interestedEventsQuery.isLoading && interestedEventsPage === 1;
+  const postsLoading = interestedPostsQuery.isLoading && interestedPostsPage === 1;
+  const tipLoading = !dailyTip;
+  const [presentInterestedEventsModal, dismissInterestedEventsModal] = useIonModal(HubInterestedEventsModal, {
+    upcomingEvents: upcomingInterestedEvents,
+    pastEvents: pastInterestedEvents,
+    hasMore: Boolean(interestedEvents?.next),
+    isLoadingMore: interestedEventsQuery.isFetching && interestedEventsPage > 1,
+    onLoadMore: () => setInterestedEventsPage((prev) => prev + 1),
+    onDismiss: () => dismissInterestedEventsModal(),
+  });
+  const [presentInterestedPostsModal, dismissInterestedPostsModal] = useIonModal(HubListModal, {
+    title: "Posts You're Interested In",
+    emptyCopy: "No interested posts to show yet.",
+    items: displayedInterestedPosts,
+    hasMore: Boolean(interestedPosts?.next),
+    isLoadingMore: interestedPostsQuery.isFetching && interestedPostsPage > 1,
+    onLoadMore: () => setInterestedPostsPage((prev) => prev + 1),
+    renderItem: (post: InterestedPost) => (
+      <PostSuggestionMini
+        post={post}
+        className="hub-mini-post"
+        routerLink={`/community/${post.id}`}
+        showContent={false}
+        showLikeCount={false}
+        showCommentCount={true}
+        customMeta={getPostActivityLabel(post)}
+      />
+    ),
+    onDismiss: () => dismissInterestedPostsModal(),
+  });
+  const [presentMegathreadsModal, dismissMegathreadsModal] = useIonModal(HubListModal, {
+    title: 'Megathreads',
+    emptyCopy: 'No megathreads to show yet.',
+    items: megathreadsForModal,
+    hasMore: visibleMegathreadsCount < activeMegathreads.length,
+    onLoadMore: () => setVisibleMegathreadsCount((prev) => prev + HUB_MODAL_BATCH_SIZE),
+    renderItem: (thread: HubMegathread) => (
+      <PostSuggestionMini
+        post={thread}
+        className="hub-mini-post"
+        routerLink={`/community/${thread.id}`}
+        showContent={false}
+        showLikeCount={false}
+        showCommentCount={true}
+        customMeta={getLatestActivityLabel(thread)}
+      />
+    ),
+    onDismiss: () => dismissMegathreadsModal(),
+  });
 
   return (
     <IonPage>
       <IonContent fullscreen>
-        <IonRow className="page-title bigger">
-          <IonText className="hub-page-title">Hub</IonText>
+        <IonRow className="page-title">
+          <img className="color-invertible" src="../static/img/hub.png" alt="hub" />
         </IonRow>
 
-        <IonRow className="hub-section-row">
+        <IonRow className="hub-section-row hub-first-section-row">
           <IonCol size="12">
             <IonCard className="hub-section-card hub-white-card">
               <IonCardContent>
                 <IonCardTitle>
-                  <FontAwesomeIcon icon={faCalendarStar} /> &nbsp; Upcoming events
+                  <FontAwesomeIcon icon={faCalendarStar} /> &nbsp; Upcoming events you're interested in
                 </IonCardTitle>
-                {interestedEventsQuery.isLoading && interestedEventsPage === 1 ? (
-                  <IonNote color="medium">Loading events...</IonNote>
-                ) : upcomingInterestedEvents.length ? (
+                {eventsLoading ? (
+                  <div className="hub-events-strip" aria-hidden="true">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="hub-event-preview hub-event-preview-skeleton">
+                        <IonSkeletonText animated style={{ width: '44px', height: '18px', borderRadius: '999px' }} />
+                        <IonSkeletonText animated style={{ width: '78%', height: '16px' }} />
+                        <IonSkeletonText animated style={{ width: '62%', height: '14px' }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : visibleUpcomingInterestedEvents.length ? (
                   <div className="hub-events-strip" role="list" aria-label="Upcoming interested events">
-                    {upcomingInterestedEvents.map((event) => (
+                    {visibleUpcomingInterestedEvents.map((event) => (
                       <button
                         type="button"
                         key={event.id}
@@ -186,12 +455,19 @@ const Hub: React.FC = () => {
                       Use the Star <FontAwesomeIcon icon={faStar} /> to see events you&apos;re interested in here.
                     </IonNote>
                     <div className="hub-empty-state-action">
-                      <IonButton size="small" fill="outline" color="navy" routerLink="/community">
+                      <IonButton size="small" fill="outline" color="navy" onClick={() => history.push(`/community?calendarDate=${moment().format('YYYY-MM-DD')}`)}>
                         Open calendar
                       </IonButton>
                     </div>
                   </div>
                 )}
+                {allVisibleInterestedEvents.length > HUB_VISIBLE_ITEMS || interestedEvents?.next ? (
+                  <div className="hub-section-action-row">
+                    <IonButton size="small" fill="outline" onClick={() => presentInterestedEventsModal()}>
+                      See all events
+                    </IonButton>
+                  </div>
+                ) : null}
               </IonCardContent>
             </IonCard>
           </IonCol>
@@ -212,7 +488,19 @@ const Hub: React.FC = () => {
               ) : null}
             <IonCard className="hub-section-card hub-tips-section-card">
               <div>
-                {dailyTip ? (
+                {tipLoading ? (
+                  <IonCard className="hub-tip-card">
+                    <div className="hub-tip-card-header">
+                      <IonSkeletonText animated style={{ width: '120px', height: '20px' }} />
+                    </div>
+                    <div className="hub-tip-card-body">
+                      <IonSkeletonText animated style={{ width: '58%', height: '16px', marginBottom: '6px' }} />
+                      <IonSkeletonText animated style={{ width: '100%', height: '14px', marginBottom: '6px' }} />
+                      <IonSkeletonText animated style={{ width: '92%', height: '14px', marginBottom: '10px' }} />
+                      <IonSkeletonText animated style={{ width: '96px', height: '32px', borderRadius: '8px' }} />
+                    </div>
+                  </IonCard>
+                ) : dailyTip ? (
                   <IonCard className="hub-tip-card">
                     <div className="hub-tip-card-header">
                       <div className="hub-tip-card-header-title">Tip of the Day</div>
@@ -222,7 +510,7 @@ const Hub: React.FC = () => {
                       <span className="hub-tip-card-copy">{dailyTip.description}</span>
                       {dailyTip.link && (
                         <div className="hub-tip-card-button-row">
-                          <IonButton fill="outline" color="navy" size="small" href={dailyTip.link} target="_blank" rel="noopener noreferrer">
+                          <IonButton fill="outline" color="navy" size="small" onClick={() => openExternalUrl(dailyTip.link!)}>
                             {dailyTip.link_name || 'Learn more'}
                           </IonButton>
                         </div>
@@ -242,11 +530,24 @@ const Hub: React.FC = () => {
                 <IonCardTitle>
                   <FontAwesomeIcon icon={faStar} /> &nbsp; Posts you're interested in
                 </IonCardTitle>
-                {interestedPostsQuery.isLoading && interestedPostsPage === 1 ? (
-                  <IonNote color="medium">Loading posts...</IonNote>
-                ) : displayedInterestedPosts.length ? (
+                {postsLoading ? (
                   <IonRow className="hub-mini-posts-row">
-                    {displayedInterestedPosts.map((post) => (
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <IonCol key={index} size="12" sizeMd="6">
+                        <IonCard className="hub-mini-post hub-mini-post-skeleton">
+                          <IonCardContent>
+                            <IonSkeletonText animated style={{ width: '72%', height: '18px', marginBottom: '8px' }} />
+                            <IonSkeletonText animated style={{ width: '100%', height: '14px', marginBottom: '6px' }} />
+                            <IonSkeletonText animated style={{ width: '86%', height: '14px', marginBottom: '10px' }} />
+                            <IonSkeletonText animated style={{ width: '44%', height: '12px' }} />
+                          </IonCardContent>
+                        </IonCard>
+                      </IonCol>
+                    ))}
+                  </IonRow>
+                ) : visibleInterestedPosts.length ? (
+                  <IonRow className="hub-mini-posts-row">
+                    {visibleInterestedPosts.map((post) => (
                       <IonCol key={post.id} size="12" sizeMd="6">
                         <PostSuggestionMini
                           post={post}
@@ -267,10 +568,12 @@ const Hub: React.FC = () => {
                     </IonNote>
                   </div>
                 )}
-                {interestedPosts?.next ? (
-                  <IonButton size="small" fill="outline" onClick={() => setInterestedPostsPage(interestedPostsPage + 1)}>
-                    See more posts
-                  </IonButton>
+                {displayedInterestedPosts.length > HUB_VISIBLE_ITEMS || interestedPosts?.next ? (
+                  <div className="hub-section-action-row">
+                    <IonButton size="small" fill="outline" onClick={() => presentInterestedPostsModal()}>
+                      See all posts
+                    </IonButton>
+                  </div>
                 ) : null}
               </IonCardContent>
             </IonCard>
@@ -282,9 +585,9 @@ const Hub: React.FC = () => {
                 <IonCardTitle>
                   <FontAwesomeIcon icon={faReel} /> &nbsp; Megathreads
                 </IonCardTitle>
-                {activeMegathreads.length ? (
+                {visibleMegathreads.length ? (
                   <IonRow className="hub-mini-posts-row">
-                    {activeMegathreads.map((thread: any) => (
+                    {visibleMegathreads.map((thread: HubMegathread) => (
                       <IonCol key={thread.id} size="12" sizeMd="6">
                         <PostSuggestionMini
                           post={thread}
@@ -301,6 +604,13 @@ const Hub: React.FC = () => {
                 ) : (
                   <IonNote color="medium">No megathreads to show yet.</IonNote>
                 )}
+                {activeMegathreads.length > HUB_VISIBLE_ITEMS ? (
+                  <div className="hub-section-action-row">
+                    <IonButton size="small" fill="outline" onClick={() => presentMegathreadsModal()}>
+                      See all megathreads
+                    </IonButton>
+                  </div>
+                ) : null}
               </IonCardContent>
             </IonCard>
           </IonCol>

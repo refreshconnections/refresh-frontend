@@ -8,10 +8,14 @@ const {
   likeAnnouncement,
   unlikeAnnouncement,
   increaseStreak,
+  mockGetShowInterestedCountPref,
+  mockGetHideInterestedCountOnMySubmissionsPref,
 } = vi.hoisted(() => ({
   likeAnnouncement: vi.fn(),
   unlikeAnnouncement: vi.fn(),
   increaseStreak: vi.fn(),
+  mockGetShowInterestedCountPref: vi.fn(),
+  mockGetHideInterestedCountOnMySubmissionsPref: vi.fn(),
 }));
 
 vi.mock('@fortawesome/react-fontawesome', () => ({
@@ -24,6 +28,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('../../hooks/utilities', () => ({
   increaseStreak: (...args: any[]) => increaseStreak(...args),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'pro'),
   likeAnnouncement: (...args: any[]) => likeAnnouncement(...args),
   unlikeAnnouncement: (...args: any[]) => unlikeAnnouncement(...args),
   onImgError: vi.fn(),
@@ -49,8 +54,19 @@ vi.mock('../../hooks/api/profiles/refreshments-current-profile', () => ({
   useGetRefreshmentsCurrentProfile: vi.fn(),
 }));
 
+vi.mock('../../hooks/api/profiles/global-app-current-profile', () => ({
+  useGetGlobalAppCurrentProfile: vi.fn(),
+}));
+
 vi.mock('./Polls/Poll', () => ({
   default: () => <div>poll</div>,
+}));
+
+vi.mock('../../hooks/capacitorPreferences/interested-counts', () => ({
+  getShowInterestedCountPref: (...args: any[]) => mockGetShowInterestedCountPref(...args),
+  getHideInterestedCountOnMySubmissionsPref: (...args: any[]) => mockGetHideInterestedCountOnMySubmissionsPref(...args),
+  SHOW_INTERESTED_COUNT_CHANGED_EVENT: 'show_interested_count_changed',
+  HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT: 'hide_interested_count_on_my_submissions_changed',
 }));
 
 import RefreshmentsPost from './RefreshmentsPost';
@@ -59,12 +75,14 @@ import { useGetStaticPostContent } from '../../hooks/api/refreshments/static-pos
 import { useGetDynamicPostContent } from '../../hooks/api/refreshments/dynamic-post-content';
 import { useGetSettingsCurrentProfile } from '../../hooks/api/profiles/settings-current-profile';
 import { useGetRefreshmentsCurrentProfile } from '../../hooks/api/profiles/refreshments-current-profile';
+import { useGetGlobalAppCurrentProfile } from '../../hooks/api/profiles/global-app-current-profile';
 
 const mockCommentsNotShownCount = vi.mocked(useGetCommentsNotShownCount);
 const mockStaticPostContent = vi.mocked(useGetStaticPostContent);
 const mockDynamicPostContent = vi.mocked(useGetDynamicPostContent);
 const mockSettingsProfile = vi.mocked(useGetSettingsCurrentProfile);
 const mockRefreshmentsProfile = vi.mocked(useGetRefreshmentsCurrentProfile);
+const mockGlobalProfile = vi.mocked(useGetGlobalAppCurrentProfile);
 
 const baseStaticPost = {
   id: 42,
@@ -131,6 +149,12 @@ beforeEach(() => {
     data: { settings_show_sensitive_content: true },
     isLoading: false,
   } as any);
+  mockGlobalProfile.mockReturnValue({
+    data: { subscription_level: 'communityplus' },
+    isLoading: false,
+  } as any);
+  mockGetShowInterestedCountPref.mockResolvedValue(true);
+  mockGetHideInterestedCountOnMySubmissionsPref.mockResolvedValue(false);
   mockRefreshmentsProfile.mockReturnValue({
     data: { likes: [], hidden_announcements: [], hidden_authors: [] },
     isLoading: false,
@@ -317,6 +341,52 @@ describe('RefreshmentsPost', () => {
     renderPost();
 
     expect(screen.getByText('poll')).toBeInTheDocument();
+  });
+
+  it('shows the interested count for Community+ users when more than three people are interested', () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...baseStaticPost,
+        interested_count: 4,
+      },
+    } as any);
+
+    renderPost();
+
+    expect(screen.getByTestId('post-interest-count')).toHaveTextContent('4');
+  });
+
+  it('hides the interested count for non-premium users', () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...baseStaticPost,
+        interested_count: 4,
+      },
+    } as any);
+    mockGlobalProfile.mockReturnValue({
+      data: { subscription_level: 'none' },
+      isLoading: false,
+    } as any);
+
+    renderPost();
+
+    expect(screen.queryByTestId('post-interest-count')).not.toBeInTheDocument();
+  });
+
+  it('hides the interested count when the local preference is off', async () => {
+    mockStaticPostContent.mockReturnValue({
+      data: {
+        ...baseStaticPost,
+        interested_count: 4,
+      },
+    } as any);
+    mockGetShowInterestedCountPref.mockResolvedValue(false);
+
+    renderPost();
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('post-interest-count')).not.toBeInTheDocument();
+    });
   });
 
   it('omits the pinned and local badges when those flags are false', () => {

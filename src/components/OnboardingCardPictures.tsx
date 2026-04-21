@@ -140,67 +140,57 @@ const OnboardingCardPictures: React.FC = () => {
 
 
   return (
-  <>
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
-
         <IonText>{copy.body}</IonText>
-        <IonItem className="no-bottom-line" style={{ overflow: "auto" }}>
-          {data ?
-            <IonGrid className="pics">
+        <IonItem className="no-bottom-line onboarding-photo-panel" style={{ overflow: "auto" }}>
+          {data ? (
+            <IonGrid className="pics onboarding-pictures-grid">
               <IonRow>
-                <IonCol size="12">
-                  <div style={{ alignItems: "center", display: "flex" }}>
-                  {loading2 ? 
-                    <img alt="loading" src={"../static/img/loading-refresh-faster.gif"}></img> :
-                    data && data.pic2 !== null ?
+                <IonCol size="6" className="onboarding-pictures-grid__col">
+                  <div className="onboarding-photo-upload-row onboarding-photo-upload-row--stacked">
+                    {loading2 ? (
+                      <img alt="loading" src={"../static/img/loading-refresh-faster.gif"} />
+                    ) : data.pic2 !== null ? (
                       <img alt="Picture 2" src={data.pic2} onError={(e) => onImgError(e)} />
-                      : <img alt="Picture 2 null" src={"../static/img/null.png"} />
-                    }
+                    ) : (
+                      <img alt="Picture 2 null" src={"../static/img/null.png"} />
+                    )}
                     <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic2")}><FontAwesomeIcon icon={faPenToSquare}/> {copy.upload}</IonButton>
+                    <CaptionsSelect onboarding={true} picture="pic2_caption" current_caption={data.pic2_caption ?? null} />
                   </div>
                 </IonCol>
-                <IonCol size="12" >
-                  <CaptionsSelect onboarding={true} picture="pic2_caption" current_caption={data && data.pic2_caption ? data.pic2_caption : null} />
-                </IonCol>
-              </IonRow>
-              <IonRow>
-                <IonCol size="12">
-                  <div style={{ alignItems: "center", display: "flex" }}>
-                  {loading3 ? 
-                    <img alt="loading" src={"../static/img/loading-refresh-faster.gif"}></img> :
-                    data && data.pic3 !== null ?
+                <IonCol size="6" className="onboarding-pictures-grid__col">
+                  <div className="onboarding-photo-upload-row onboarding-photo-upload-row--stacked">
+                    {loading3 ? (
+                      <img alt="loading" src={"../static/img/loading-refresh-faster.gif"} />
+                    ) : data.pic3 !== null ? (
                       <img alt="Picture 3" src={data.pic3} onError={(e) => onImgError(e)} />
-                      : <img alt="Picture 3 null" src={"../static/img/null.png"} />
-                    }
+                    ) : (
+                      <img alt="Picture 3 null" src={"../static/img/null.png"} />
+                    )}
                     <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic3")}><FontAwesomeIcon icon={faPenToSquare}/> {copy.upload}</IonButton>
+                    <CaptionsSelect onboarding={true} picture="pic3_caption" current_caption={data.pic3_caption ?? null} />
                   </div>
-                </IonCol>
-                <IonCol size="12">
-                  <CaptionsSelect onboarding={true} picture="pic3_caption" current_caption={data && data.pic3_caption ? data.pic3_caption : null} />
                 </IonCol>
               </IonRow>
             </IonGrid>
-
-            :
-            <div>
-              loading
-            </div>
-          }
+          ) : (
+            <div>loading</div>
+          )}
         </IonItem>
-
-
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
-        <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic2 !== null && data.pic3 !== null ? false : true}>{ONBOARDING_COPY.common.next}</IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={() => swiper.slideNext()} disabled={!(data && data.pic2 !== null && data.pic3 !== null)}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="clear" size="small" onClick={() => stayPausedOpen()}>{copy.skip}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
-    <IonRow className="notyet">
-    <IonButton fill="clear" onClick={() => stayPausedOpen()}>{copy.skip}</IonButton>
-  </IonRow>
-  </>
   )
 };
 export default OnboardingCardPictures;
