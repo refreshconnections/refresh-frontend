@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
-import { useWarmCachedValue } from '../../useWarmCachedValue';
+import { useWarmCachedValue, WARM_CACHE_QUERY_OPTIONS } from '../../useWarmCachedValue';
 
 const getMegathreadsFn = async (search: string) => {
   const params = new URLSearchParams();
@@ -15,6 +15,7 @@ export function useGetMegathreads(search: string) {
   const query = useQuery({
     queryKey: ['megathreads', search],
     queryFn: () => getMegathreadsFn(search),
+    ...WARM_CACHE_QUERY_OPTIONS,
   });
 
   const { cachedData } = useWarmCachedValue(

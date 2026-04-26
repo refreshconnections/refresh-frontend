@@ -97,6 +97,22 @@ ion-item.streak ion-label h2{
     font-size: 13px;
 }
 
+:root.ion-palette-dark.ios,
+:root.ion-palette-dark.md {
+  .submission-callout--edit {
+    background: rgba(var(--ion-color-warning-rgb), 0.2);
+    color: var(--ion-color-warning);
+  }
+  .submission-callout--pending {
+    background: var(--ion-color-step-100);
+    color: var(--ion-text-color);
+  }
+  .submission-chip {
+    background: var(--ion-color-step-200);
+    color: var(--ion-text-color);
+  }
+}
+
 .comment-card {
     background: var(--ion-color-white);
     border-radius: 8px;

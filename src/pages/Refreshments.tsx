@@ -112,8 +112,9 @@ const Refreshments: React.FC = () => {
   const [radius, setRadius] = useState<number | null>(null)
   const [sort, setSort] = useState<string>("recent")
   const [local, setLocal] = useState<boolean>(true)
-  const [littleLoading, setLittleLoading] = useState<boolean>(false);
+
   const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState(true);
+  const [forceRefreshing, setForceRefreshing] = useState(false);
   const [eventFilters, setEventFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
 
@@ -236,17 +237,12 @@ const Refreshments: React.FC = () => {
   }
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
-    setLittleLoading(true)
-    setTimeout(async () => {
-      queryClient.invalidateQueries({
-        queryKey: ['filteredposts'], exact: false,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['events'],
-      });
-      event.detail.complete();
-      setLittleLoading(false)
-    }, 2000);
+    event.detail.complete();
+    setForceRefreshing(true);
+    queryClient.invalidateQueries({ queryKey: ['filteredposts'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setForceRefreshing(false);
   }
 
 
@@ -321,7 +317,7 @@ const Refreshments: React.FC = () => {
     };
   }, []);
 
-  const isRefreshingPosts = Boolean(!littleLoading && somePosts?.length && postsFetching);
+  const isRefreshingPosts = Boolean(somePosts?.length && (postsFetching || forceRefreshing));
   const upcomingEventsThisWeek = useMemo(() => {
     const now = moment();
     const weekAhead = now.clone().add(7, 'days');
@@ -372,16 +368,11 @@ const Refreshments: React.FC = () => {
         </IonRow>
         <div ref={refreshmentsTop}></div>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
         </IonRefresher>
-        {littleLoading ? (
-          <IonRow className="ion-justify-content-center warm-cache-refresh-indicator">
-            <IonSpinner name="dots"></IonSpinner>
-          </IonRow>
-        ) : <></>}
         {isRefreshingPosts ? (
           <IonRow className="ion-justify-content-center warm-cache-refresh-indicator" data-testid="warm-cache-refresh-indicator">
-            <IonSpinner name="dots" />
+            <IonSpinner name="dots"></IonSpinner>
           </IonRow>
         ) : null}
         <IonRow className="filter-buttons">

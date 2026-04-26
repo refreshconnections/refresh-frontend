@@ -418,7 +418,8 @@ describe('Chats page', () => {
 
     renderChats();
 
-    expect(await screen.findByText('loading-card')).toBeInTheDocument();
+    expect((await screen.findAllByTestId('chat-skeleton-item')).length).toBe(5);
+    expect(screen.getAllByText('User')).toHaveLength(5);
   });
 
   it('shows the cant-access card when the user cannot access chats', async () => {

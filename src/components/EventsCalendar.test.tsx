@@ -226,7 +226,7 @@ describe('EventsCalendar', () => {
     expect(mockPreferencesGet).toHaveBeenCalledWith({ key: 'events_calendar_view_mode' });
     expect(screen.getAllByText('Clean air picnic').length).toBeGreaterThan(0);
     expect(screen.getByText('Bring filters and snacks.')).toBeInTheDocument();
-    expect(screen.getByText('Masks Required')).toBeInTheDocument();
+    expect(screen.getByText('Masks required')).toBeInTheDocument();
     expect(screen.getByText('Covid conscientious only')).toBeInTheDocument();
     expect(screen.getByText('External registration required.')).toBeInTheDocument();
   });
@@ -306,6 +306,45 @@ describe('EventsCalendar', () => {
 
     expect(mockPreferencesSet).toHaveBeenCalledTimes(4);
     expect(mockPreferencesSet).toHaveBeenCalledWith({ key: 'events_calendar_view_mode', value: 'month' });
+  });
+
+  it('shows a filter-count badge only for groups narrowed away from Any', async () => {
+    const { rerender } = render(
+      <IonApp>
+        <QueryClientProvider client={new QueryClient()}>
+          <EventsCalendar
+            openOnLoad
+            initialDate="2026-03-29"
+            eventFilters={{
+              eventTypes: ['all'],
+              attendeePrecautionPreferences: ['all'],
+              inPersonPrecautions: ['all'],
+            }}
+          />
+        </QueryClientProvider>
+      </IonApp>
+    );
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(document.querySelector('.events-calendar-filter-badge')).toBeNull();
+
+    rerender(
+      <IonApp>
+        <QueryClientProvider client={new QueryClient()}>
+          <EventsCalendar
+            openOnLoad
+            initialDate="2026-03-29"
+            eventFilters={{
+              eventTypes: ['virtual_only'],
+              attendeePrecautionPreferences: ['all'],
+              inPersonPrecautions: ['outdoors'],
+            }}
+          />
+        </QueryClientProvider>
+      </IonApp>
+    );
+
+    expect(document.querySelector('.events-calendar-filter-badge')).toHaveTextContent('2');
   });
 
   it('opens the host popover, profile sheet, report modal, and routes to the linked post', async () => {

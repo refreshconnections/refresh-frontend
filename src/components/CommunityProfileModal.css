@@ -37,11 +37,11 @@ ion-modal.community-profile-modal .ion-page {
   max-width: 520px;
   max-height: 80vh;
   overflow-y: auto;
-  background: var(--ion-card-background, #ffffff);
+  background: var(--ion-card-background, var(--ion-color-white));
 }
 
 .community-profile-card-content {
-  background: var(--ion-card-background, #ffffff);
+  background: var(--ion-card-background, var(--ion-color-white));
   position: relative;
 }
 
@@ -80,7 +80,7 @@ ion-modal.community-profile-modal .ion-page {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #f2f3fc;
+  background: var(--ion-color-step-100, #f2f3fc);
 }
 
 .community-profile-ellipsis ion-icon {
@@ -113,7 +113,7 @@ ion-modal.community-profile-modal .ion-page {
 
 .community-profile-info-box {
   display: block;
-  background: #e6efff;
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
   border-radius: 12px;
   padding: 12px 14px;
 }

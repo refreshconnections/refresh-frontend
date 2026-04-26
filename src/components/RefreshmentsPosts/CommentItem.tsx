@@ -515,7 +515,11 @@ const CommentItem: React.FC<Props> = (props) => {
                           </>
                           :
                           <>
-                            <div className="name-avatar comment-name-row" onClick={isEditing ? undefined : () => onClickProfileHandler()}>
+                            <div
+                              className="name-avatar comment-name-row"
+                              onClick={(!isEditing && !commentAnonymous) ? () => onClickProfileHandler() : undefined}
+                              style={(!isEditing && !commentAnonymous) ? { cursor: 'pointer' } : undefined}
+                            >
                               <IonAvatar className={avatarClassName}>
                                 <img src={avatarSrc} onError={(e) => onImgError(e)} />
                               </IonAvatar>

@@ -2876,3 +2876,14 @@ export function maxBirthdateForAdult(): string {
     date.setFullYear(date.getFullYear() - 18);
     return date.toISOString().split('T')[0];
 }
+
+export function localTzAbbr(date?: Date | string | null): string {
+    try {
+        const d = date ? new Date(date) : new Date();
+        return new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+            .formatToParts(d)
+            .find(p => p.type === 'timeZoneName')?.value ?? '';
+    } catch {
+        return '';
+    }
+}

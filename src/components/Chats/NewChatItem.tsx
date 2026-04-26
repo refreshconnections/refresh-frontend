@@ -1,6 +1,6 @@
 import { IonAvatar, IonItem, IonText, useIonModal } from "@ionic/react";
-import React from "react";
-import {  isPersonalPlus, onImgError } from "../../hooks/utilities";
+import React, { useState } from "react";
+import { isPersonalPlus, onImgError } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 
 import TextModal from "../TextModal";
@@ -11,89 +11,76 @@ import { chatQueryKeys } from "../../hooks/api/chats/chat-query-keys";
 
 
 
-
-
 type Props = {
-    user: any
+    user: any;
     currentUserProfile: any;
-    opener: boolean
+    opener: boolean;
+    name?: string;
+    pic1_main?: string | null;
 };
 
 
 
 const NewChatItem: React.FC<Props> = (props) => {
-    const { user, currentUserProfile, opener } = props;
-    const queryClient = useQueryClient()
+    const { user, currentUserProfile, opener, name: nameProp, pic1_main: picProp } = props;
+    const queryClient = useQueryClient();
 
-    const profileDetails = useProfileDetails(user).data;
+    const hasSummaryProfileData = nameProp !== undefined || picProp !== undefined;
+    const [profileDetailsEnabled, setProfileDetailsEnabled] = useState(!hasSummaryProfileData);
+    const { data: profileDetails } = useProfileDetails(user, profileDetailsEnabled);
 
+    const displayName = nameProp ?? profileDetails?.name ?? "";
+    const displayPic = picProp !== undefined ? picProp : profileDetails?.pic1_main;
+    const isDeactivated = profileDetails?.deactivated_profile ?? false;
 
     const handleDismiss = () => {
-        queryClient.invalidateQueries({
-            queryKey: chatQueryKeys.all,
-        })
-        queryClient.invalidateQueries({
-            queryKey: chatQueryKeys.paginated,
-        })
-        queryClient.invalidateQueries({
-            queryKey: ['mutuals-no-dialog'],
-        })
-        dismiss()
-    }
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
+        queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] });
+        dismiss();
+    };
 
     const [present, dismiss] = useIonModal(TextModal, {
         textModalData: {
-            other_user_id: profileDetails?.user.toString(),
+            other_user_id: String(user),
             unread_count: 0
         },
         profileDetails: profileDetails,
         pro: isPersonalPlus(currentUserProfile?.subscription_level),
         settingsAlt: currentUserProfile?.settings_alt_text,
-        from_name: currentUserProfile?.name, 
+        from_name: currentUserProfile?.name,
         onDismiss: handleDismiss,
-      });
-    
-      const openModal = () => {
-    
-        
+    });
+
+    if (currentUserProfile?.hidden_dialogs.includes(user) || currentUserProfile?.blocked_connections.includes(user)) {
+        return null;
+    }
+
+    if (!displayName && !hasSummaryProfileData) {
+        return null;
+    }
+
+    const openModal = () => {
+        setProfileDetailsEnabled(true);
         present();
-      }
-
-    // useEffect(() => {
-    //     setLoading(true); // set loading to true
-    //     const fetchData = async () => {
-    //         setProfileDetails(await getProfileCardInfo(user))
-    //     }
-    //     fetchData();
-    //     setLoading(false);
-    // }, []);
-
+    };
 
     return (
-        <>
-            {(!(currentUserProfile?.hidden_dialogs.includes(user)) && !(currentUserProfile?.blocked_connections.includes(user))) ?
-                <IonItem className="chat-item" button disabled={!profileDetails} detail={true} 
-                onClick={() => 
-                { openModal() }}>
-                    <IonAvatar>
-                    {profileDetails?.deactivated_profile?
-                        <img alt="chat avatar" src={"../static/img/null.png"} onError={(e) => onImgError(e)} />
-                        :
-                        <img alt="chat avatar" src={profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
-                    }
-                    </IonAvatar>
-                    <IonText className="name">{profileDetails?.name || "User"}</IonText>
-                    {opener &&
-                    <div slot="end">
-                    <FontAwesomeIcon icon={faCommentHeart} ></FontAwesomeIcon>
-                    </div>
-                    }
-                </IonItem>
-                : <></>}
-        </>
-
-
-    )
+        <IonItem className="chat-item" button detail={true} onClick={openModal}>
+            <IonAvatar>
+                {isDeactivated
+                    ? <img alt="chat avatar" src={"../static/img/null.png"} onError={(e) => onImgError(e)} />
+                    : <img alt="chat avatar" src={displayPic ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
+                }
+            </IonAvatar>
+            <IonText className="name">{displayName}</IonText>
+            {opener &&
+                <div slot="end">
+                    <FontAwesomeIcon icon={faCommentHeart} />
+                </div>
+            }
+        </IonItem>
+    );
 };
 
 export default NewChatItem;

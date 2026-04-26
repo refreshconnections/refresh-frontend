@@ -151,7 +151,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
             {mutualConnectionsList?.length > 0 ?
                 <>
                     {/* Filter tabs */}
-                    {chatOrganizerEnabled && <div style={{ overflowX: 'auto', display: 'flex', padding: '4px 3px 0', gap: '6px', justifyContent: 'center' }}>
+                    {chatOrganizerEnabled && <div style={{ overflowX: 'auto', display: 'flex', padding: '4px 8px 0', gap: '6px' }}>
                         {tabs.map(tab => (
                             <IonChip
                                 key={tab.key}

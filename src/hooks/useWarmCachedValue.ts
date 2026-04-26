@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getWithExpiry, setWithExpiry } from './capacitorPreferences/all';
 
+export const WARM_CACHE_QUERY_OPTIONS = {
+  staleTime: 0,
+  refetchOnMount: 'always' as const,
+  refetchOnWindowFocus: true,
+  refetchOnReconnect: true,
+};
+
 export function useWarmCachedValue<T>(
   key: string,
   sourceData: T | undefined,

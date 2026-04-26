@@ -82,8 +82,8 @@ vi.mock('../hooks/api/chats/hidden-chats', () => ({
         pages: [
           {
             results: [
-              { id: 'chat-1', other_user_id: '7' },
-              { id: 'chat-2', other_user_id: '8' },
+              { id: 'chat-1', other_user_id: '7', name: 'Sam' },
+              { id: 'chat-2', other_user_id: '8', name: 'Jamie' },
             ],
           },
         ],

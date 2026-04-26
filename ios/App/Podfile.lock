@@ -3,6 +3,9 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (7.0.2):
     - Capacitor
+  - CapacitorBlobWriter (0.0.1):
+    - Capacitor
+    - GCDWebServer (~> 3.0)
   - CapacitorBrowser (7.0.3):
     - Capacitor
   - CapacitorCamera (7.0.2):
@@ -10,9 +13,9 @@ PODS:
   - CapacitorCordova (7.4.2)
   - CapacitorDevice (7.0.2):
     - Capacitor
-  - CapacitorFilesystem (8.1.2):
+  - CapacitorFilesystem (7.1.4):
     - Capacitor
-    - IONFilesystemLib (~> 1.1.1)
+    - IONFilesystemLib (~> 1.0.1)
   - CapacitorGeolocation (7.1.5):
     - Capacitor
     - IONGeolocationLib (= 1.0.1)
@@ -30,12 +33,15 @@ PODS:
     - Capacitor
   - CapgoNativegeocoder (7.1.8):
     - Capacitor
-  - CordovaPlugins (7.4.2):
-    - CapacitorCordova
   - CordovaPluginsStatic (7.4.2):
     - CapacitorCordova
     - OneSignalXCFramework (= 5.2.0)
-  - IONFilesystemLib (1.1.2)
+  - EbarooniCapacitorCalendar (7.2.0):
+    - Capacitor
+  - GCDWebServer (3.5.4):
+    - GCDWebServer/Core (= 3.5.4)
+  - GCDWebServer/Core (3.5.4)
+  - IONFilesystemLib (1.0.1)
   - IONGeolocationLib (1.0.1)
   - OneSignalXCFramework (5.2.0):
     - OneSignalXCFramework/OneSignalComplete (= 5.2.0)
@@ -93,6 +99,7 @@ PODS:
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - CapacitorBlobWriter (from `../../node_modules/capacitor-blob-writer`)
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
@@ -106,12 +113,13 @@ DEPENDENCIES:
   - "CapacitorTextZoom (from `../../node_modules/@capacitor/text-zoom`)"
   - CapacitorVoiceRecorder (from `../../node_modules/capacitor-voice-recorder`)
   - "CapgoNativegeocoder (from `../../node_modules/@capgo/nativegeocoder`)"
-  - CordovaPlugins (from `../capacitor-cordova-ios-plugins`)
   - CordovaPluginsStatic (from `../capacitor-cordova-ios-plugins`)
+  - "EbarooniCapacitorCalendar (from `../../node_modules/@ebarooni/capacitor-calendar`)"
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
   trunk:
+    - GCDWebServer
     - IONFilesystemLib
     - IONGeolocationLib
     - OneSignalXCFramework
@@ -123,6 +131,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorApp:
     :path: "../../node_modules/@capacitor/app"
+  CapacitorBlobWriter:
+    :path: "../../node_modules/capacitor-blob-writer"
   CapacitorBrowser:
     :path: "../../node_modules/@capacitor/browser"
   CapacitorCamera:
@@ -149,21 +159,22 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/capacitor-voice-recorder"
   CapgoNativegeocoder:
     :path: "../../node_modules/@capgo/nativegeocoder"
-  CordovaPlugins:
-    :path: "../capacitor-cordova-ios-plugins"
   CordovaPluginsStatic:
     :path: "../capacitor-cordova-ios-plugins"
+  EbarooniCapacitorCalendar:
+    :path: "../../node_modules/@ebarooni/capacitor-calendar"
   RevenuecatPurchasesCapacitor:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
   Capacitor: 9d9e481b79ffaeacaf7a85d6a11adec32bd33b59
   CapacitorApp: 1f6922c9c5c8b1c538d7fbe92ebe44a81b34bed3
+  CapacitorBlobWriter: d709e5d22ab9989afd730eb4773873d1ded5fd08
   CapacitorBrowser: b98aa3db018a2ce4c68242d27e596c344f3b81b3
   CapacitorCamera: f9e54db0a18bb218a8dc360907d63aaefe9209ff
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorDevice: 81ae78d5d1942707caad79276badd458bf6ec603
-  CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
+  CapacitorFilesystem: f9bd850c41e048180e5dc0cbb90f2033ede9d2cc
   CapacitorGeolocation: 84f868bea4c2499aebc3bb3a88fd0a508f87ab87
   CapacitorKeyboard: a86aa9e4741b6444a802df26440a92ae041b34a6
   CapacitorPreferences: 65107ed7437d96ee72583df5763985e3c0ff2bc2
@@ -172,15 +183,16 @@ SPEC CHECKSUMS:
   CapacitorTextZoom: 726ff9338c1e2d2c1e1ee8a9df1189047428f2f2
   CapacitorVoiceRecorder: 9158861be982f32d411769723a4d813d6ce46135
   CapgoNativegeocoder: f23baa66000c8522794bb78f0d3c318600e0b946
-  CordovaPlugins: 7b9a4f380c92ca7f28630723befaca556461f4c3
   CordovaPluginsStatic: afb8a3ae43217ce298b8d0f20cd10b1dee6535ab
-  IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
+  EbarooniCapacitorCalendar: 4568a8a318b940245bf6e257a8b115626581bb7d
+  GCDWebServer: 2c156a56c8226e2d5c0c3f208a3621ccffbe3ce4
+  IONFilesystemLib: 89258b8e3e85465da93127d25d7ce37f977e8a6f
   IONGeolocationLib: 20f9d0248a0b5264511fb57a37e25dd2badf797a
   OneSignalXCFramework: bdf74fdc06888f9466dc21e826fe1549ed143095
   PurchasesHybridCommon: 662aa1f4769ff4ef594e35adf1a5d0ad7b3d08b7
   RevenueCat: 2d3639d30b8a71cbfe3d99cef8243c602793e0ec
   RevenuecatPurchasesCapacitor: 504ec074eb7d3d31b528f041c227b0c71efee80f
 
-PODFILE CHECKSUM: e3a34c232e1bb072b3accfdf50392f1c3955d300
+PODFILE CHECKSUM: a5fbfc4ed057fcdc41b22312b504703dd6d05474
 
 COCOAPODS: 1.16.2

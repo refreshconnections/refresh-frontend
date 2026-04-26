@@ -1,6 +1,6 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, getInternalAppPath, increaseStreak, isCommunityPlus, likeAnnouncement, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, getInternalAppPath, increaseStreak, isCommunityPlus, likeAnnouncement, localTzAbbr, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
 import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
@@ -185,6 +185,7 @@ const OpenedPost: React.FC = () => {
 
 
     const [presentWhyHiddenAlert] = useIonAlert();
+    const [presentLinkAlert] = useIonAlert();
 
     const createComment = async (text: string, replyTo: any) => {
         setNoComment(true)
@@ -645,7 +646,7 @@ const OpenedPost: React.FC = () => {
                 <>
                     <IonContent>
                         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                            <IonRefresherContent></IonRefresherContent>
+                            <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
                         </IonRefresher>
                         <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
                             <IonFabButton color="light" onClick={() => { backToAllPosts(); router.canGoBack() ? router.goBack() : router.push('/community', 'back'); }}>
@@ -787,7 +788,7 @@ const OpenedPost: React.FC = () => {
                                                 )}
                                                 <span className="calendar-event-card-time">
                                                     {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
-                                                    {moment(approvedEventForPost.end_datetime).format('h:mm A')}
+                                                    {moment(approvedEventForPost.end_datetime).format('h:mm A')} {localTzAbbr(approvedEventForPost.start_datetime)}
                                                 </span>
                                             </div>
                                             {isPastEvent ? (
@@ -802,7 +803,14 @@ const OpenedPost: React.FC = () => {
                                                 ? () => communityProfilePresent({ cssClass: 'community-profile-modal' })
                                                 : undefined}
                                             onExternalLinkClick={approvedEventForPost.external_link
-                                                ? () => openExternalUrl(approvedEventForPost.external_link!)
+                                                ? () => presentLinkAlert({
+                                                    header: 'Open link?',
+                                                    message: approvedEventForPost.external_link!,
+                                                    buttons: [
+                                                      { text: 'Cancel', role: 'cancel' },
+                                                      { text: 'Open', handler: () => openExternalUrl(approvedEventForPost.external_link!) },
+                                                    ],
+                                                  })
                                                 : undefined}
                                         />
                                     </IonCardContent>

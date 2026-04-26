@@ -20,8 +20,7 @@ vi.mock('../../capacitorPreferences/all', () => ({
 
 import { useGetCurrentUserChats } from './current-user-chats';
 
-const createWrapper = () => {
-  const queryClient = new QueryClient();
+const createWrapper = (queryClient = new QueryClient()) => {
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -61,6 +60,39 @@ describe('useGetCurrentUserChats warm cache', () => {
     }, { timeout: 5000 });
 
     expect(setWithExpiry).toHaveBeenCalledWith(
+      'warm_chats_v1',
+      [{ id: 2, other_user_id: '11' }],
+      1000 * 60 * 10,
+    );
+  });
+
+  it('refetches on mount even when React Query still has in-memory data', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: Infinity,
+        },
+      },
+    });
+    queryClient.setQueryData(['chats'], [{ id: 1, other_user_id: '10' }]);
+    getWithExpiry.mockResolvedValue(null);
+    apiGet.mockResolvedValue({ data: [{ id: 2, other_user_id: '11' }] });
+
+    const { result } = renderHook(() => useGetCurrentUserChats(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(result.current.data).toEqual([{ id: 1, other_user_id: '10' }]);
+
+    await waitFor(() => {
+      expect(apiGet).toHaveBeenCalledWith('/api/profiles/chats/dialogs_v2/');
+    }, { timeout: 5000 });
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual([{ id: 2, other_user_id: '11' }]);
+    }, { timeout: 5000 });
+
+    expect(setWithExpiry).toHaveBeenLastCalledWith(
       'warm_chats_v1',
       [{ id: 2, other_user_id: '11' }],
       1000 * 60 * 10,

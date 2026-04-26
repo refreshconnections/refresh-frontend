@@ -86,6 +86,13 @@ ion-row.post-likes {
 
 ion-row.post-likes ion-row {
     align-items: center;
+    flex-wrap: nowrap;
+}
+
+ion-row.post-likes ion-text {
+    font-size: calc(14px * var(--text-scale, 1));
+    line-height: 1;
+    align-self: center;
 }
 
 ion-row.post-likes ion-button {

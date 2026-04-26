@@ -1289,7 +1289,7 @@ const SelfProfileV2: React.FC = () => {
                       </div>
 
                       <div className="field-header">
-                        <p>Choices</p>
+                        <p>Your selections</p>
                         <IonButton size="small" fill="outline" color="primary" onClick={() => setEditing(prev => ({ ...prev, gender_sexuality_choices: !prev.gender_sexuality_choices }))}>
                           {editing.gender_sexuality_choices ? 'Done' : 'Edit'}
                         </IonButton>
@@ -1362,7 +1362,7 @@ const SelfProfileV2: React.FC = () => {
                       </div>
 
                       <div className="field-header">
-                        <p>Choices</p>
+                        <p>Your selections</p>
                         <IonButton size="small" fill="outline" color="primary" onClick={() => setEditing(prev => ({ ...prev, lived_experiences: !prev.lived_experiences }))}>
                           {editing.lived_experiences ? 'Done' : 'Edit'}
                         </IonButton>

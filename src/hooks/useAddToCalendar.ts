@@ -1,35 +1,40 @@
+import { CapacitorCalendar } from '@ebarooni/capacitor-calendar';
+import { Capacitor } from '@capacitor/core';
+
 type CalendarEventInput = {
   title: string;
   startDate: Date;
   endDate: Date;
   location?: string | null;
   notes?: string | null;
+  alerts?: number[];
 };
 
 type AddToCalendarResult = 'success' | 'denied' | 'unavailable';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getCalendarPlugin = () => (window as any).plugins?.calendar as any | undefined;
+const addToCalendar = async (event: CalendarEventInput): Promise<AddToCalendarResult> => {
+  if (!Capacitor.isNativePlatform()) return 'unavailable';
 
-const addToCalendar = (event: CalendarEventInput): Promise<AddToCalendarResult> =>
-  new Promise((resolve) => {
-    const cal = getCalendarPlugin();
-    if (!cal) {
-      resolve('unavailable');
-      return;
-    }
-    cal.createEvent(
-      event.title,
-      event.location ?? '',
-      event.notes ?? '',
-      event.startDate,
-      event.endDate,
-      () => resolve('success'),
-      () => resolve('denied'),
-    );
-  });
+  try {
+    const { result } = await CapacitorCalendar.requestWriteOnlyCalendarAccess();
+    if (result !== 'granted') return 'denied';
+
+    await CapacitorCalendar.createEvent({
+      title: event.title,
+      startDate: event.startDate.getTime(),
+      endDate: event.endDate.getTime(),
+      location: event.location ?? undefined,
+      description: event.notes ?? undefined,
+      alerts: event.alerts,
+    });
+
+    return 'success';
+  } catch {
+    return 'unavailable';
+  }
+};
 
 export const useAddToCalendar = () => ({
   addToCalendar,
-  isAvailable: typeof getCalendarPlugin() !== 'undefined',
+  isAvailable: Capacitor.isNativePlatform(),
 });

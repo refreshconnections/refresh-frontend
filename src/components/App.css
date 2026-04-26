@@ -72,6 +72,15 @@ ion-toast.streak-toast::part(button) {
   }
 }
 
+ion-refresher-content {
+  --color: var(--ion-text-color);
+}
+
+ion-refresher ion-spinner {
+  --color: var(--ion-text-color);
+  color: var(--ion-text-color);
+}
+
 body.samsung-keyboard-open ion-footer {
   transform: translateY(calc(-1 * calc(var(--keyboard-offset, 0px) + 50px)));
   transition: transform 150ms ease-in-out;

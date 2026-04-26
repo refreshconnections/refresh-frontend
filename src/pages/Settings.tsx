@@ -50,6 +50,11 @@ import {
   setShowEventsThisWeekRowPref,
   SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT,
 } from '../hooks/capacitorPreferences/events-this-week-row';
+import {
+  getShowAddToCalendarPref,
+  setShowAddToCalendarPref,
+  SHOW_ADD_TO_CALENDAR_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/add-to-calendar';
 import { useChatSettings } from '../hooks/api/chats/chat-settings';
 import SettingsSupportCard from '../components/SettingsSupportCard';
 
@@ -72,6 +77,7 @@ const Settings: React.FC = () => {
   const [showInterestedCount, setShowInterestedCount] = useState<boolean>(true);
   const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState<boolean>(false);
   const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState<boolean>(true);
+  const [showAddToCalendar, setShowAddToCalendar] = useState<boolean>(true);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
@@ -486,6 +492,8 @@ const Settings: React.FC = () => {
         if (cancelled) return;
         setShowEventsThisWeekRow(await getShowEventsThisWeekRowPref());
         if (cancelled) return;
+        setShowAddToCalendar(await getShowAddToCalendarPref());
+        if (cancelled) return;
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
@@ -695,6 +703,23 @@ const Settings: React.FC = () => {
                     setShowEventsThisWeekRow(val);
                     await setShowEventsThisWeekRowPref(val);
                     window.dispatchEvent(new CustomEvent(SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT, { detail: val }));
+                  }}
+                />
+              </IonItem>
+
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Add to Calendar Button</span>
+                  <p>Show a button on events to save them directly to your device calendar.</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={showAddToCalendar}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowAddToCalendar(val);
+                    await setShowAddToCalendarPref(val);
+                    window.dispatchEvent(new CustomEvent(SHOW_ADD_TO_CALENDAR_CHANGED_EVENT, { detail: val }));
                   }}
                 />
               </IonItem>

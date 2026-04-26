@@ -991,8 +991,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 {siteSettings?.allow_free_users_to_submit_posts && (
                     <>
                         <IonCard className="ion-padding limited ion-text-center">
-                            <p>All users can submit 2 posts a month.</p>
-                            <IonText color="medium"><FontAwesomeIcon icon={faCirclePlus} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
+                            <p>All members can submit 2 posts each month.</p>
+                            <IonText color="medium">
+                                <FontAwesomeIcon icon={faCirclePlus} /> Community+ and Pro include unlimited post submissions. All submissions are subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments posting guidelines</a>.
+                            </IonText>
                         </IonCard>
                         {hasPreviousSubmissions && (
                             <IonRow className="ion-justify-content-center">

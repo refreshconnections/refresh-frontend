@@ -6,6 +6,7 @@ export type RefreshEvent = {
   name: string
   description?: string | null
   image?: string | null
+  image_alt?: string | null
   start_datetime: string
   end_datetime: string
   post?: number | null

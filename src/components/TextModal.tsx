@@ -333,6 +333,7 @@ const TextModal: React.FC<Props> = (props) => {
     const [currMessageHeart, setCurrMessageHeart] = useState<number | null>(null);
 
     const messagesEndRef = useRef<null | HTMLDivElement>(null)
+    const scrollAfterSendRef = useRef(false)
 
     const [justHearted, setJustHearted] = useState<number[]>([]);
 
@@ -369,8 +370,6 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const scrollToBottom = () => {
-        console.log("Scrolling to the bottom.")
-
         messagesEndRef.current?.scrollIntoView({
             behavior: "auto",
             block: "end"
@@ -378,15 +377,16 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const addMessageToFrontOfTheArray = (newMessage: any) => {
+        scrollAfterSendRef.current = true;
         setMessages(messages => ({
             ...messages,
             pages:
                 [
                     {
-                        ...messages.pages[0],  // Spread the first user object
-                        data: [newMessage, ...messages.pages[0].data]  // Add new hobby
+                        ...messages.pages[0],
+                        data: [newMessage, ...messages.pages[0].data]
                     },
-                    ...messages.pages?.slice(1) ?? []  // Keep the other users unchanged
+                    ...messages.pages?.slice(1) ?? []
                 ]
         }));
     };
@@ -488,33 +488,10 @@ const TextModal: React.FC<Props> = (props) => {
 
 
     useEffect(() => {
-
-
-
-        scrollToBottom()
-
-
-        console.log("messages?.count", messages?.pages[0].data.length)
-
-        if (messagesEndRef.current) {
-            // Scroll after a small delay to ensure the DOM has settled
-            setTimeout(() => {
-                messagesEndRef.current!.scrollIntoView({ behavior: 'smooth' });
-            }, 0);
+        if (scrollAfterSendRef.current) {
+            scrollAfterSendRef.current = false;
+            scrollToBottom();
         }
-
-
-        // if (messages && messages?.pages.length == 1) {
-        //     const timeout = setTimeout(() => {
-        //         console.log("done with timeout, scrolling to bottom")
-        //         scrollToBottom()
-        //     }, 500);
-        //     return () => {
-        //         // clears timeout before running the new effect
-        //         clearTimeout(timeout);
-        //     };
-        // }
-
     }, [messages])
 
 
@@ -1144,20 +1121,23 @@ const TextModal: React.FC<Props> = (props) => {
 
 
                 <IonList className="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
+                    <div ref={messagesEndRef} style={{ float: 'left', clear: 'both' }} />
                     <PhotoProvider bannerVisible={false} >
                         {showEarlySupportNotice && (
                             <li style={{ listStyle: 'none' }}>
                                 <IonCard color="white" className="ion-padding">
                                     <IonCardContent>
                                         <IonText color="navy">
-                                            <p>As we’ve grown, these messages are no longer routinely monitored and are only used for specific ongoing Help requests.</p>
+                                            <p>All new support requests should now be submitted through the Help feature. Messages sent to Freshy are no longer routinely monitored and will only be used when needed for an active Help request.</p>
+                                            <br />
+                                            <p>As we've grown, we've moved to a more structured support system to make sure requests are handled clearly and consistently.</p>
                                             <br />
                                             <p>
-                                                For feedback or support, please use the Help feature in the Me tab or reach out to{' '}
+                                                For feedback or support, please use the Help feature in the Me tab or contact 
                                                 <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a>.
                                             </p>
                                             <br />
-                                            <p>Thanks for joining us early!</p>
+                                            <p>Thanks for being part of Refresh early on. We appreciate you sticking with us!</p>
                                         </IonText>
                                         <IonRow className="ion-justify-content-center">
                                             <IonButton
@@ -1196,7 +1176,6 @@ const TextModal: React.FC<Props> = (props) => {
                                             </div>
                                             :
                                             <IonItemSliding key={item.id}>
-                                                <div ref={(page === 0 && index === 0) ? messagesEndRef : null} ></div>
                                                 <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== item?.id ? () => setCurrMessageHeart(item?.id) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
                                                     {item?.text ?
                                                         <IonLabel className="ion-text-wrap the-actual-message">

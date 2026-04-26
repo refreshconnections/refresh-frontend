@@ -2,7 +2,6 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { IonApp } from '@ionic/react';
 
 const {
   authorSidenoteComment,
@@ -193,19 +192,17 @@ const renderComment = (
   const queryClient = new QueryClient();
 
   return render(
-    <IonApp>
-      <QueryClientProvider client={queryClient}>
-        <CommentItem
-          comment={{ ...baseComment, ...commentOverrides }}
-          showSidenotes={false}
-          setReplyTo={setReplyTo}
-          isAReply={false}
-          onLikeUnlike={onLikeUnlike}
-          forceShowReplies={false}
-          {...propOverrides}
-        />
-      </QueryClientProvider>
-    </IonApp>
+    <QueryClientProvider client={queryClient}>
+      <CommentItem
+        comment={{ ...baseComment, ...commentOverrides }}
+        showSidenotes={false}
+        setReplyTo={setReplyTo}
+        isAReply={false}
+        onLikeUnlike={onLikeUnlike}
+        forceShowReplies={false}
+        {...propOverrides}
+      />
+    </QueryClientProvider>
   );
 };
 

@@ -7,6 +7,7 @@ export const userQueryKeys = {
     mutuals: ['mutuals'],
     mutuals_no_dialog: ['mutuals-no-dialog'],
     mutuals_no_dialog_paginated: ['mutuals-no-dialog-paginated'],
+    mutuals_no_dialog_paginated_v3: ['mutuals-no-dialog-paginated-v3'],
     searched: (searched_name: string) => ['mutuals', searched_name ],
     incoming: ['incoming'],
     incoming_paginated: ['incoming-paginated'],

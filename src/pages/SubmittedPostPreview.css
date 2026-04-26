@@ -25,6 +25,7 @@ ion-toolbar.modal-title {
 .submitted-post-preview .section-heading h3 {
   font-size: calc(16px * var(--text-scale, 1));
   margin: 0 0 6px;
+  color: var(--ion-color-medium);
 }
 
 .submitted-post-preview .section-header {
@@ -47,7 +48,7 @@ ion-toolbar.modal-title {
 .submitted-post-preview .status-info-content {
   padding: 10px 12px;
   font-size: 0.9rem;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .submitted-post-preview .status-row {
@@ -77,12 +78,14 @@ ion-toolbar.modal-title {
 
 .submitted-post-preview .preview-form ion-label {
   color: var(--ion-color-medium);
+  font-size: 0.8rem;
 }
 
 .submitted-post-preview .preview-value {
   display: block;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   font-size: 1rem;
+  white-space: pre-wrap;
 }
 
 .submitted-post-preview .preview-content-item .preview-content {

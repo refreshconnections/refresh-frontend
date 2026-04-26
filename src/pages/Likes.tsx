@@ -131,7 +131,7 @@ const Likes: React.FC = () => {
   }
 
   // Optionally update other queries (non-destructive)
-  ['mutuals', 'mutuals-no-dialog-paginated'].forEach((key) => {
+  ['mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3'].forEach((key) => {
     queryClient.invalidateQueries({ queryKey: [key] });
   });
   profileDismiss();
@@ -156,7 +156,7 @@ const Likes: React.FC = () => {
 
   const handleRefresh = (event: CustomEvent<RefresherEventDetail>) => {
     setTimeout(async () => {
-      ['current', 'mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
+      ['current', 'mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       event.detail.complete();
@@ -180,7 +180,7 @@ const Likes: React.FC = () => {
 
   const handleLeaveLikes = () => {
     setTimeout(async () => {
-      ['mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
+      ['mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }, 500);
@@ -193,7 +193,7 @@ const Likes: React.FC = () => {
         !currentUserProfile?.paused_profile ? (
         <IonContent fullscreen>
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-            <IonRefresherContent />
+            <IonRefresherContent refreshingSpinner="dots" />
           </IonRefresher>
 
           <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">

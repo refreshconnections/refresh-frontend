@@ -144,7 +144,7 @@ ion-item .commentdiv {
 }
 
 .sort-label {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
   white-space: normal;      
   min-width: 110px;         
   flex-shrink: 0;   
@@ -160,7 +160,7 @@ ion-item .commentdiv {
   --padding-start: 8px;
   --padding-end: 28px; /* space for the icon, not too tight */
   height: 30px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
   position: relative;
 }
 
@@ -201,20 +201,20 @@ ion-avatar.refresh-avatar img {
 }
 
 .comment-original-title {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
   color: var(--ion-color-primary);
   margin: 0;
 }
 
 .comment-original-time {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
   color: var(--ion-color-primary);
   margin: 4px 0 0;
 }
 
 .comment-original-note {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
   color: var(--ion-color-medium);
   margin-top: 12px;
 }

@@ -201,6 +201,9 @@ const mockCurrentProfile = vi.mocked(useGetCurrentProfile);
 const mockSiteSettings = vi.mocked(useGetSiteSettings);
 const mockNotifications = vi.mocked(useGetRecentNotifications);
 const mockUseGetEvents = vi.mocked(useGetEvents);
+const futureEventDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+const futureEventDateIso = futureEventDate.toISOString();
+const futureEventDateParam = futureEventDateIso.slice(0, 10);
 
 const renderRefreshments = () => {
   const queryClient = new QueryClient();
@@ -394,8 +397,8 @@ describe('Refreshments page', () => {
       {
         id: 77,
         name: 'Masked meetup',
-        start_datetime: '2026-04-19T18:00:00.000Z',
-        end_datetime: '2026-04-19T19:00:00.000Z',
+        start_datetime: futureEventDateIso,
+        end_datetime: futureEventDateIso,
         interested: false,
       },
     ];
@@ -407,9 +410,9 @@ describe('Refreshments page', () => {
 
     expect(historyReplace).toHaveBeenCalledWith({
       pathname: '/refreshments',
-      search: 'calendarDate=2026-04-19&calendarEventId=77',
+      search: `calendarDate=${futureEventDateParam}&calendarEventId=77`,
     });
-    expect(screen.getByText('calendar:2026-04-19:77:true')).toBeInTheDocument();
+    expect(screen.getByText(`calendar:${futureEventDateParam}:77:true`)).toBeInTheDocument();
   });
 
   it('shows the community block migration popup on the active page when eligible', async () => {

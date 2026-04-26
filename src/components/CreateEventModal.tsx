@@ -21,6 +21,7 @@ import {
   useIonModal,
   useIonRouter,
   IonCard,
+  IonToggle,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
@@ -35,12 +36,37 @@ import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import SubmissionAgeGateCard from './SubmissionAgeGateCard';
 import CreatePostModal from './CreatePostModal';
+import CroppedPostImageModal from './CroppedPostImageModal';
 import { informationCircleOutline } from 'ionicons/icons';
 import BoxedStackedInput from './BoxedStackedInput';
 import BoxedStackedSelect from './BoxedStackedSelect';
 import BoxedStackedTextarea from './BoxedStackedTextarea';
 
 import './CreateEventModal.css';
+
+
+function toUTC(localStr: string, tzName: string): string {
+  if (!localStr) return localStr;
+  const [datePart, timePart] = localStr.split('T');
+  if (!datePart || !timePart) return localStr;
+  const [y, mo, d] = datePart.split('-').map(Number);
+  const [h, mi] = timePart.split(':').map(Number);
+  if ([y, mo, d, h, mi].some(isNaN)) return localStr;
+
+  const refMs = Date.UTC(y, mo - 1, d, h, mi, 0);
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tzName,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', hour12: false,
+    }).formatToParts(new Date(refMs));
+    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? '0');
+    const tzMs = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), 0);
+    return moment(new Date(refMs + (refMs - tzMs))).utc().format('YYYY-MM-DDTHH:mm');
+  } catch {
+    return localStr;
+  }
+}
 
 const EVENT_TYPE_CHOICES = [
   { value: 'in_person_with_virtual_option', label: 'In person with virtual option' },
@@ -140,6 +166,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [externalLink, setExternalLink] = useState('');
   const [externalRegistrationRequired, setExternalRegistrationRequired] = useState(false);
   const [imageData, setImageData] = useState<string | null>(null);
+  const [rawImage, setRawImage] = useState<string | null>(null);
   const [imageAlt, setImageAlt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,6 +187,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const recurrenceTypeRef = useRef(recurrenceType);
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: (selectedCity?: City) => handleCityDismiss(selectedCity),
+  });
+  const [presentCropModal, dismissCropModal] = useIonModal(CroppedPostImageModal, {
+    image: rawImage,
+    picDb: '',
+    imageName: 'event.png',
+    vertical: false,
+    onDismiss: (cropped: string | null) => {
+      if (cropped) setImageData(cropped);
+      setRawImage(null);
+      dismissCropModal();
+    },
   });
   const feedHighlightPopoverText = 'If you say yes, we may share this event in the Refreshments Bar as a post or as part of a curated event post with the details you submitted.';
   const FeedHighlightPopover = () => (
@@ -229,6 +267,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   );
   const [startDatetime, setStartDatetime] = useState(defaultStartDatetime);
   const [endDatetime, setEndDatetime] = useState(defaultEndDatetime);
+  const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const normalizeDatetime = (value: string) => {
     if (!value) return value;
@@ -390,9 +429,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      setImageData(reader.result as string);
+      setRawImage(reader.result as string);
+      presentCropModal();
     };
     reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleAttachPhotoClick = () => {
@@ -457,15 +498,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       return;
     }
     if (startMoment.isBefore(moment())) {
-      setError('Events can’t start in the past.');
+      setError("Events can't start in the past.");
       return;
     }
     if (endMoment.isBefore(startMoment)) {
-      setError('End date can’t be before the start date.');
+      setError("End date can't be before the start date.");
       return;
     }
-    if (!startMoment.isSame(endMoment, 'day')) {
-      setError('Start and end must be on the same day.');
+    if (endMoment.diff(startMoment, 'minutes') >= 24 * 60) {
+      setError("Events can't be longer than 24 hours.");
       return;
     }
     if (hasPii) {
@@ -516,12 +557,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
           }
           const startTime = moment(startValue);
           const endTime = moment(endValue);
-          if (!endTime.isSame(startTime, 'day')) {
-            setError('Recurring date end times must be on the same day.');
+          if (endTime.diff(startTime, 'minutes') >= 24 * 60) {
+            setError("Recurring date end times can't be longer than 24 hours.");
             return;
           }
           if (endTime.isBefore(startTime)) {
-            setError('Recurring date end times can’t be before the start.');
+            setError("Recurring date end times can't be before the start.");
             return;
           }
         }
@@ -548,11 +589,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       const linksForPayload = recurrenceType === 'custom'
         ? trimmedCustomDates.map((_, index) => recurrenceExternalLinks[index] ?? '')
         : summaryDates.map((_, index) => recurrenceExternalLinks[index] ?? '');
+      const toUTCStr = (s: string) => toUTC(s, timezone);
       const payload = {
         name,
         description,
-        start_datetime: startDatetime,
-        end_datetime: endDatetime,
+        start_datetime: toUTCStr(startDatetime),
+        end_datetime: toUTCStr(endDatetime),
         location: locationLabel || location,
         location_point_lat: lat,
         location_point_long: long,
@@ -569,12 +611,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         external_registration_required: externalRegistrationRequired ? 'true' : 'false',
         recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
         recurrence_count: recurrenceType !== 'custom' ? recurrenceCount : null,
-        recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates : null,
+        recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates.map(toUTCStr) : null,
         recurrence_month_day: recurrenceType === 'monthly' ? recurrenceMonthDay : null,
         recurrence_descriptions: recurrenceType !== 'none'
           ? descriptionsForPayload
           : null,
-        recurrence_end_datetimes: recurrenceType !== 'none' ? endsForPayload : null,
+        recurrence_end_datetimes: recurrenceType !== 'none' ? endsForPayload.map(toUTCStr) : null,
         recurrence_external_links: recurrenceType !== 'none' ? linksForPayload : null,
       };
 
@@ -659,16 +701,16 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
 
   const dateErrorMessages = new Set([
     'Start and end must be valid dates.',
-    'Events can’t start in the past.',
-    'End date can’t be before the start date.',
-    'Start and end must be on the same day.',
+    "Events can't start in the past.",
+    "End date can't be before the start date.",
+    "Events can't be longer than 24 hours.",
   ]);
   const recurrenceErrorMessages = new Set([
     'Add at least one additional date.',
     'Recurring dates must be in order (later dates after earlier ones).',
     'Each recurring date needs an end time.',
-    'Recurring date end times must be on the same day.',
-    'Recurring date end times can’t be before the start.',
+    "Recurring date end times can't be longer than 24 hours.",
+    "Recurring date end times can't be before the start.",
   ]);
   const dateError = error && dateErrorMessages.has(error) ? error : null;
   const recurrenceError = error && recurrenceErrorMessages.has(error) ? error : null;
@@ -725,7 +767,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       </IonHeader>
       <IonContent className="create-event-modal">
         {!isOldEnoughForEvents ? (
-          <SubmissionAgeGateCard noun="event" onUpgrade={() => router.push('/store')} />
+          <SubmissionAgeGateCard noun="event" onUpgrade={() => { onDismiss?.(); router.push('/store'); }} />
         ) : moderationSubmissionBlocked ? (
           <IonCard className="ion-padding ion-text-center">
             <IonText>
@@ -799,6 +841,23 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                 }
               }}
             />
+            <BoxedStackedSelect
+              label="Time zone"
+              value={timezone}
+              onIonChange={(e) => setTimezone(e.detail.value ?? timezone)}
+            >
+              <IonSelectOption value="America/New_York">Eastern (ET)</IonSelectOption>
+              <IonSelectOption value="America/Chicago">Central (CT)</IonSelectOption>
+              <IonSelectOption value="America/Denver">Mountain (MT)</IonSelectOption>
+              <IonSelectOption value="America/Los_Angeles">Pacific (PT)</IonSelectOption>
+              <IonSelectOption value="Pacific/Honolulu">Hawaii (HT)</IonSelectOption>
+              <IonSelectOption value="Europe/London">London (GMT/BST)</IonSelectOption>
+              <IonSelectOption value="Australia/Sydney">Sydney (AEST)</IonSelectOption>
+              <IonSelectOption value="UTC">UTC</IonSelectOption>
+            </BoxedStackedSelect>
+            <IonText color="medium" style={{ fontSize: '0.8rem', display: 'block', marginTop: 6 }}>
+              Event times are shown in each member's local time zone.
+            </IonText>
           </div>
           <div className="create-event-section">
             <BoxedStackedSelect
@@ -1002,28 +1061,37 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             />
           ) : null}
           <div className="create-event-section">
-            <BoxedStackedSelect
-              label={
-                <>
-                Repeat
-                <FontAwesomeIcon style={{ marginLeft: '6px' }} color="var(--ion-color-medium)" icon={faCirclePlus} />
-                </>
-              }
-              value={recurrenceType}
-              disabled={!canUseRecurring}
-              onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'none')}
-            >
-              <IonSelectOption value="none">Does not repeat</IonSelectOption>
-              <IonSelectOption value="daily">Daily</IonSelectOption>
-              <IonSelectOption value="weekly">Weekly</IonSelectOption>
-              <IonSelectOption value="monthly">Monthly</IonSelectOption>
-              <IonSelectOption value="custom">Custom dates</IonSelectOption>
-            </BoxedStackedSelect>
-              {!canUseRecurring && (
-                <IonText color="medium" className="recurring-note">
-                  Recurring events are available for Community+ and Pro members.
-                </IonText>
-              )}
+            <IonItem lines="none">
+              <IonLabel>
+                Is this a recurring event?
+                {!canUseRecurring && (
+                  <FontAwesomeIcon style={{ marginLeft: '6px' }} color="var(--ion-color-medium)" icon={faCirclePlus} />
+                )}
+              </IonLabel>
+              <IonToggle
+                slot="end"
+                disabled={!canUseRecurring}
+                checked={recurrenceType !== 'none'}
+                onIonChange={(e) => handleRecurrenceChange(e.detail.checked ? 'weekly' : 'none')}
+              />
+            </IonItem>
+            {!canUseRecurring && (
+              <IonText color="medium" className="recurring-note">
+                Recurring events are available for Community+ and Pro members.
+              </IonText>
+            )}
+            {canUseRecurring && recurrenceType !== 'none' && (
+              <BoxedStackedSelect
+                label="Repeat"
+                value={recurrenceType}
+                onIonChange={(event) => handleRecurrenceChange(event.detail.value ?? 'weekly')}
+              >
+                <IonSelectOption value="daily">Daily</IonSelectOption>
+                <IonSelectOption value="weekly">Weekly</IonSelectOption>
+                <IonSelectOption value="monthly">Monthly</IonSelectOption>
+                <IonSelectOption value="custom">Custom dates</IonSelectOption>
+              </BoxedStackedSelect>
+            )}
             {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && (
               <IonItem>
                 <IonLabel position="stacked">How many recurring dates?</IonLabel>

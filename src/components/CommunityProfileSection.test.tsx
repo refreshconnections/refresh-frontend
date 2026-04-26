@@ -117,4 +117,27 @@ describe('CommunityProfileSection', () => {
       '../static/img/navynobordervector.png'
     );
   });
+
+  it('falls back to the Refreshments photo rules when the personal profile is paused', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      paused_profile: true,
+    };
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(mockApiPatch).toHaveBeenCalledWith('/api/profiles/community_profile/', {
+        use_personal_profile_picture: false,
+      });
+    });
+
+    expect(screen.getByAltText('Refreshments profile')).toHaveAttribute(
+      'src',
+      '../static/img/navynobordervector.png'
+    );
+    expect(
+      screen.getByText(/While your personal profile is paused, Refreshments uses your Refreshments profile photo or the default avatar\./)
+    ).toBeInTheDocument();
+  });
 });

@@ -54,6 +54,8 @@ vi.mock('../hooks/api/profiles/current-streak', () => ({
 
 import ProfileCard from './ProfileCard';
 
+const recentRegistrationDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
 const baseCardData = {
   user: 77,
   name: 'Alex',
@@ -156,7 +158,9 @@ describe('ProfileCard', () => {
   });
 
   it('shows the new-here badge, banner art, lived experiences, and long covid support details', () => {
-    const { container } = renderCard();
+    const { container } = renderCard({
+      registrationDate: recentRegistrationDate,
+    });
 
     expect(screen.getByText(/I'm new here!/)).toBeInTheDocument();
     expect(container.querySelector('img[alt="Happy pride banner"]')).toBeTruthy();
@@ -196,7 +200,9 @@ describe('ProfileCard', () => {
       registrationDate: '2025-01-01T12:00:00.000Z',
     });
 
-    expect(screen.queryByText(/I'm new here!/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText((_, element) => element?.textContent?.includes("I'm new here!") ?? false)
+    ).not.toBeInTheDocument();
   });
 
   it('shows the limited let’s-talk-about upsell when the viewer is not pro and has a short streak', () => {

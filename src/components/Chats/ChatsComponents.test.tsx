@@ -28,8 +28,8 @@ vi.mock('./HiddenChatItem', () => ({
   default: ({ user, chat }: any) => <div>hidden-chat-item-{user}-{chat.id}</div>,
 }));
 
-vi.mock('../../hooks/api/profiles/mutuals-no-dialog', () => ({
-  useGetMutualConnectionsNoDialogWOpenerCheck: (...args: any[]) => mutualsNoDialogHook(...args),
+vi.mock('../../hooks/api/profiles/mutuals-no-dialog-v3', () => ({
+  useGetMutualConnectionsNoDialogV3: (...args: any[]) => mutualsNoDialogHook(...args),
 }));
 
 vi.mock('../../hooks/api/chats/hidden-chats', () => ({
@@ -38,7 +38,6 @@ vi.mock('../../hooks/api/chats/hidden-chats', () => ({
 
 import OngoingChats from './OngoingChats';
 import NewChats from './NewChats';
-import HiddenChats from './HiddenChats';
 
 const renderWithProviders = (ui: React.ReactElement) => {
   const queryClient = new QueryClient();
@@ -207,112 +206,3 @@ describe('NewChats', () => {
   });
 });
 
-describe('HiddenChats', () => {
-  it('does not render the hidden chats accordion when there are no hidden dialogs', () => {
-    renderWithProviders(
-      <HiddenChats
-        currentUserProfile={{ ...currentUserProfile, hidden_dialogs: [] }}
-      />
-    );
-
-    expect(screen.queryByText('Hidden chats')).not.toBeInTheDocument();
-  });
-
-  it('enables the hidden chats query only after the accordion is opened', async () => {
-    const { container } = renderWithProviders(
-      <HiddenChats currentUserProfile={currentUserProfile} />
-    );
-
-    expect(hiddenChatsHook).toHaveBeenCalledWith(false);
-
-    const accordionGroup = container.querySelector('ion-accordion-group') as HTMLElement;
-    fireEvent(
-      accordionGroup,
-      new CustomEvent('ionChange', {
-        detail: { value: 'first' },
-        bubbles: true,
-      })
-    );
-
-    await waitFor(() => {
-      expect(hiddenChatsHook).toHaveBeenLastCalledWith(true);
-    });
-  });
-
-  it('renders only unblocked hidden chats after opening the accordion', async () => {
-    const { container } = renderWithProviders(
-      <HiddenChats currentUserProfile={currentUserProfile} />
-    );
-
-    const accordionGroup = container.querySelector('ion-accordion-group') as HTMLElement;
-    fireEvent(
-      accordionGroup,
-      new CustomEvent('ionChange', {
-        detail: { value: 'first' },
-        bubbles: true,
-      })
-    );
-
-    expect(await screen.findByText('hidden-chat-item-50-1')).toBeInTheDocument();
-    expect(screen.queryByText('hidden-chat-item-51-2')).not.toBeInTheDocument();
-  });
-
-  it('shows loading UI while hidden chats are fetching after opening', async () => {
-    hiddenChatsHook.mockImplementation((enabled: boolean) => ({
-      data: enabled ? undefined : undefined,
-      isLoading: enabled,
-      isFetchingNextPage: false,
-      hasNextPage: false,
-      fetchNextPage: vi.fn(),
-    }));
-
-    const { container } = renderWithProviders(
-      <HiddenChats currentUserProfile={currentUserProfile} />
-    );
-
-    const accordionGroup = container.querySelector('ion-accordion-group') as HTMLElement;
-    fireEvent(
-      accordionGroup,
-      new CustomEvent('ionChange', {
-        detail: { value: 'first' },
-        bubbles: true,
-      })
-    );
-
-    await waitFor(() => {
-      expect(container.querySelector('ion-spinner')).toBeTruthy();
-    });
-  });
-
-  it('supports pagination for additional hidden chats', async () => {
-    const fetchNextPage = vi.fn();
-    hiddenChatsHook.mockImplementation((enabled: boolean) => ({
-      data: enabled
-        ? {
-            pages: [{ results: [{ id: 1, other_user_id: '50' }] }],
-          }
-        : undefined,
-      isLoading: false,
-      isFetchingNextPage: false,
-      hasNextPage: true,
-      fetchNextPage,
-    }));
-
-    const { container } = renderWithProviders(
-      <HiddenChats currentUserProfile={currentUserProfile} />
-    );
-
-    const accordionGroup = container.querySelector('ion-accordion-group') as HTMLElement;
-    fireEvent(
-      accordionGroup,
-      new CustomEvent('ionChange', {
-        detail: { value: 'first' },
-        bubbles: true,
-      })
-    );
-
-    fireEvent.click(await screen.findByText('Load more'));
-
-    expect(fetchNextPage).toHaveBeenCalledTimes(1);
-  });
-});

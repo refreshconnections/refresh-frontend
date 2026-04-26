@@ -9,7 +9,6 @@ import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 import { useQueryClient } from "@tanstack/react-query";
 import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
 import { useGetHiddenChats } from "../hooks/api/chats/hidden-chats";
-import { useProfileDetails } from "../hooks/api/profiles/details";
 import { chatQueryKeys } from "../hooks/api/chats/chat-query-keys";
 import { useSearchCommunityBlocked } from "../hooks/api/profiles/community-blocked-search";
 import "../pages/Settings.css";
@@ -21,8 +20,7 @@ type Props = {
 
 const HiddenChatRow: React.FC<{ chat: any; nameFilter: string; onUnhide: (userId: number) => void }> = ({ chat, nameFilter, onUnhide }) => {
     const userId = parseInt(chat.other_user_id);
-    const profileDetails = useProfileDetails(userId).data;
-    const name = profileDetails?.name || '';
+    const name = chat.name || '';
     if (nameFilter && name && !name.toLowerCase().includes(nameFilter.toLowerCase())) return null;
     return (
         <IonItem lines="full" style={{ '--background': 'var(--ion-color-white)' } as React.CSSProperties}>

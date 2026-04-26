@@ -194,6 +194,7 @@ const ProfileModal: React.FC<Props> = (props) => {
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals'] })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
+        queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] })
         onDismiss()
 
         return response
@@ -217,6 +218,7 @@ const ProfileModal: React.FC<Props> = (props) => {
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.all })
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
+        queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] })
         onDismiss()
         return response
     }

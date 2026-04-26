@@ -56,7 +56,9 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
 
   const personalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(currentProfile)) ?? null;
   const communityPhoto = normalizeLocalMediaUrl(communityProfile?.community_profile_pic) ?? null;
-  const previewPhoto = usePersonalPhoto ? personalPhoto : communityPhoto;
+  const personalProfilePaused = Boolean(currentProfile?.paused_profile);
+  const effectiveUsePersonalPhoto = Boolean(!personalProfilePaused && usePersonalPhoto && personalPhoto);
+  const previewPhoto = effectiveUsePersonalPhoto ? personalPhoto : communityPhoto;
   const photoButtonLabel = communityPhoto ? 'Change Refreshments profile photo' : 'Upload Refreshments profile photo';
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const isTeen = ageNumber !== null && ageNumber < 20;
@@ -66,8 +68,8 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const hasPersonalPhoto = Boolean(personalPhoto);
   const hasLocation = Boolean(currentProfile?.location);
   const showLocationChecked = hasLocation ? showLocation : false;
-  const personalPhotoToggleChecked = hasPersonalPhoto ? usePersonalPhoto : false;
-  const personalPhotoToggleDisabled = !hasPersonalPhoto;
+  const personalPhotoToggleChecked = hasPersonalPhoto ? effectiveUsePersonalPhoto : false;
+  const personalPhotoToggleDisabled = personalProfilePaused || !hasPersonalPhoto;
   const communityFallbackPhoto = '../static/img/navynobordervector.png';
   const displayPhoto = previewPhoto || communityFallbackPhoto;
   const isFallbackPhoto = !previewPhoto;
@@ -83,8 +85,19 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
     } else {
       setShowAgeTier(savedTier);
     }
-    setUsePersonalPhoto(communityProfile.use_personal_profile_picture ?? true);
-  }, [communityProfile]);
+    setUsePersonalPhoto(
+      hasPersonalPhoto
+        ? Boolean(communityProfile.use_personal_profile_picture ?? true)
+        : false
+    );
+  }, [communityProfile, hasPersonalPhoto, isTeen]);
+
+  useEffect(() => {
+    if (!personalProfilePaused || !communityProfile?.use_personal_profile_picture) return;
+
+    setUsePersonalPhoto(false);
+    void updateCommunityProfile({ use_personal_profile_picture: false });
+  }, [communityProfile?.use_personal_profile_picture, personalProfilePaused]);
 
   useEffect(() => {
     setConnectFromRefreshments(Boolean(currentProfile?.settings_community_profile));
@@ -106,6 +119,11 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   };
 
   const handleTogglePersonalPhoto = async (checked: boolean) => {
+    if (personalProfilePaused || !hasPersonalPhoto) {
+      setUsePersonalPhoto(false);
+      return;
+    }
+
     setUsePersonalPhoto(checked);
     await updateCommunityProfile({ use_personal_profile_picture: checked });
   };
@@ -238,6 +256,11 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             {!hasPersonalPhoto && (
               <IonText color="medium" className="community-subtitle">
                 Once you've uploaded a profile pic, you can choose to use that as your Refreshments profile picture too.
+              </IonText>
+            )}
+            {personalProfilePaused && (
+              <IonText color="medium" className="community-subtitle">
+                While your personal profile is paused, Refreshments uses your Refreshments profile photo or the default avatar.
               </IonText>
             )}
             <IonButton expand="block" color="tertiary" onClick={updatePicture}>

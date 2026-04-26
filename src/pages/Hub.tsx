@@ -9,7 +9,7 @@ import { useGetMegathreads } from '../hooks/api/refreshments/megathreads';
 import { useGetDailyTip } from '../hooks/api/tips';
 import PostSuggestionMini from '../components/PostSuggestionMini';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
-import { isCommunityPlus, openExternalUrl } from '../hooks/utilities';
+import { isCommunityPlus, localTzAbbr, openExternalUrl } from '../hooks/utilities';
 import type { RefreshEvent } from '../hooks/api/events';
 import './Page.css';
 import './Hub.css';
@@ -201,7 +201,8 @@ const getEventDateTimeLabel = (startDatetime?: string | null) => {
   if (!startDatetime) return '';
   const start = moment(startDatetime);
   if (!start.isValid()) return '';
-  return start.format('ddd, MMM D • h:mm A');
+  const tz = localTzAbbr(startDatetime);
+  return `${start.format('ddd, MMM D • h:mm A')}${tz ? ` ${tz}` : ''}`;
 };
 
 const Hub = () => {

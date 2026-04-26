@@ -1,10 +1,9 @@
-import { IonBadge, IonButton, IonCol, IonContent, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSpinner, RefresherEventDetail } from '@ionic/react';
+import { IonAvatar, IonBadge, IonButton, IonCol, IonContent, IonItem, IonLabel, IonList, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSkeletonText, IonSpinner, IonText, RefresherEventDetail } from '@ionic/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getGroupChatInvites, getGroupChats, getWebsocketUrl } from '../hooks/utilities';
 import './Chats.css';
 import "./Page.css"
 import CantAccessCard from '../components/CantAccessCard';
-import LoadingCard from '../components/LoadingCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { App } from '@capacitor/app';
@@ -32,12 +31,34 @@ function getDialogBySender(dialogsList: { id: number, other_user_id: string }[],
   return dialogsList.find(chat => chat[field] === value);
 }
 
+const CHAT_SKELETON_COUNT = 5;
+
+const ChatsLoadingSkeleton: React.FC = () => (
+  <IonList lines="full">
+    {Array.from({ length: CHAT_SKELETON_COUNT }).map((_, index) => (
+      <IonItem key={index} className="chat-item" data-testid="chat-skeleton-item">
+        <IonAvatar>
+          <IonSkeletonText animated />
+        </IonAvatar>
+        <div style={{ flex: 1, padding: '10px 0' }}>
+          <IonText className="name">User</IonText>
+          <IonSkeletonText
+            animated
+            style={{ width: index % 2 === 0 ? '60%' : '72%', height: 12, marginTop: 6, marginLeft: 10 }}
+          />
+        </div>
+      </IonItem>
+    ))}
+  </IonList>
+);
+
 const Chats: React.FC = () => {
 
   const { addListener } = useWebSocketContext();
 
-  const [littleLoading, setLittleLoading] = useState<boolean>(false);
+
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [forceRefreshing, setForceRefreshing] = useState(false);
 
   const [groupChats, setGroupChats] = useState<any>(null);
   const [groupChatInvites, setGroupChatInvites] = useState<any>(null);
@@ -70,10 +91,9 @@ const Chats: React.FC = () => {
 
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
   const isRefreshingChats = Boolean(
-    !littleLoading &&
     visibleChats.length > 0 &&
     dataFlat &&
-    (chatsQuery.isFetching || mutualsQuery.isFetching || chatsIsFetchingNextPage)
+    (chatsQuery.isFetching || mutualsQuery.isFetching || chatsIsFetchingNextPage || forceRefreshing)
   );
 
   const statuses = useGetStatuses().data;
@@ -105,6 +125,7 @@ const Chats: React.FC = () => {
           // Refresh mutuals
           await queryClient.invalidateQueries({ queryKey: ['mutuals'] });
           await queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] });
+          await queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] });
 
           // Invalidate and wait for fresh chat list
           await queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -177,17 +198,17 @@ const Chats: React.FC = () => {
   }, [currSegment]);
 
 
-  function handleRefresh(event: CustomEvent<RefresherEventDetail>) {
-    setLittleLoading(true)
-    setTimeout(async () => {
-      setGroupChats(await getGroupChats());
-      setGroupChatInvites(await getGroupChatInvites());
-      queryClient.invalidateQueries({
-        queryKey: ['mutuals'],
-      })
-      event.detail.complete();
-      setLittleLoading(false)
-    }, 2000);
+  async function handleRefresh(event: CustomEvent<RefresherEventDetail>) {
+    event.detail.complete();
+    setForceRefreshing(true);
+    getGroupChats().then(setGroupChats);
+    getGroupChatInvites().then(setGroupChatInvites);
+    queryClient.invalidateQueries({ queryKey: ['mutuals'] });
+    queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] });
+    queryClient.invalidateQueries({ queryKey: ['chats'] });
+    queryClient.invalidateQueries({ queryKey: ['chats', 'paginated'] });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setForceRefreshing(false);
   }
 
 
@@ -196,16 +217,11 @@ const Chats: React.FC = () => {
       {currentUserProfile && currentUserProfile.created_profile && !(currentUserProfile.deactivated_profile) ?
         <IonContent fullscreen className="page-with-warm-cache-indicator">
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-            <IonRefresherContent></IonRefresherContent>
+            <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
           </IonRefresher>
           <IonRow className="page-title" >
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
-          {littleLoading ? (
-            <IonRow className="ion-justify-content-center warm-cache-refresh-indicator">
-              <IonSpinner name="dots"></IonSpinner>
-            </IonRow>
-          ) : <></>}
           {isRefreshingChats ? (
             <IonRow className="ion-justify-content-center warm-cache-refresh-indicator" data-testid="warm-cache-refresh-indicator">
               <IonSpinner name="dots" />
@@ -255,7 +271,7 @@ const Chats: React.FC = () => {
                   onLoadMoreChats={() => fetchNextChatsPage()}
                 />
                 :
-                <LoadingCard />
+                <ChatsLoadingSkeleton />
               }
             </>
             :
@@ -270,7 +286,7 @@ const Chats: React.FC = () => {
           <IonRow className="page-title">
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
-          {(chatsLoading || currentUserProfileLoading) ? <LoadingCard /> : <CantAccessCard tabName="Chats" />}
+          {(chatsLoading || currentUserProfileLoading) ? <ChatsLoadingSkeleton /> : <CantAccessCard tabName="Chats" />}
         </IonContent>
       }
     </IonPage>

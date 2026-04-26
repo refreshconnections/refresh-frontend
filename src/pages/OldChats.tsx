@@ -340,16 +340,11 @@ const OldChats: React.FC = () => {
       {currentUserProfile && currentUserProfile.created_profile && !(currentUserProfile.deactivated_profile)?
         <IonContent fullscreen className="page-with-warm-cache-indicator">
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-            <IonRefresherContent></IonRefresherContent>
+            <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
           </IonRefresher>
           <IonRow className="page-title" >
             <img className="color-invertible" src="../static/img/refresh_chats_navy.png" alt="chats" />
           </IonRow>
-          {littleLoading ? (
-            <IonRow className="ion-justify-content-center warm-cache-refresh-indicator">
-              <IonSpinner name="dots"></IonSpinner>
-            </IonRow>
-          ) : <></>}
           <IonRow className="segments">
             <IonSegment value={currSegment}>
               <IonSegmentButton value="chats" onClick={() => setCurrSegment("chats")}>

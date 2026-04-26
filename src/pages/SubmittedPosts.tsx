@@ -10,7 +10,6 @@ import {
   IonLabel,
   IonList,
   IonModal,
-  IonPopover,
   IonButton,
   IonNote,
   IonPage,
@@ -23,14 +22,17 @@ import {
   IonToolbar,
   IonToggle,
   IonIcon,
+  useIonPopover,
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
+import moment from 'moment';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
 import { eyeOffOutline, informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPosts.css';
 import { ModerationCopy } from '../enums/moderation';
+import { openExternalUrl } from '../hooks/utilities';
 
 const statusLabelMap: Record<string, string> = {
   draft: 'Unsubmitted draft',
@@ -119,6 +121,12 @@ const formatEditableLabel = (value: string | Date | null | undefined) => {
   return null;
 };
 
+const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <IonContent className="ion-padding">
+    {ModerationCopy.MODERATION_INFO_POPOVER}
+  </IonContent>
+);
+
 const SubmittedPosts: React.FC = () => {
   const history = useHistory();
   const now = useMemo(() => new Date(), []);
@@ -142,7 +150,9 @@ const SubmittedPosts: React.FC = () => {
   const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
-  const [showEventStatusInfo, setShowEventStatusInfo] = useState(false);
+  const [presentEventStatusPopover, dismissEventStatusPopover] = useIonPopover(StatusInfoPopover, {
+    onDismiss: () => dismissEventStatusPopover(),
+  });
 
   const submissions = useMemo(() => {
     const raw = data?.pages?.flatMap((page) => page?.results ?? []) ?? [];
@@ -200,14 +210,15 @@ const SubmittedPosts: React.FC = () => {
 
   const formatEventDateTime = (event: any) => {
     if (!event?.start_datetime) return null;
-    const start = new Date(event.start_datetime);
-    if (Number.isNaN(start.getTime())) return null;
-    const end = event?.end_datetime ? new Date(event.end_datetime) : null;
-    const dateLabel = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const startTime = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    if (end && !Number.isNaN(end.getTime())) {
-      const endTime = end.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-      return `${dateLabel} · ${startTime} - ${endTime}`;
+    const start = moment(event.start_datetime);
+    if (!start.isValid()) return null;
+    const dateLabel = start.format('MMM D');
+    const startTime = start.format('h:mm A');
+    if (event?.end_datetime) {
+      const end = moment(event.end_datetime);
+      if (end.isValid()) {
+        return `${dateLabel} · ${startTime} – ${end.format('h:mm A')}`;
+      }
     }
     return `${dateLabel} · ${startTime}`;
   };
@@ -401,7 +412,7 @@ const SubmittedPosts: React.FC = () => {
             )}
           </>
         )}
-        <IonModal isOpen={eventDetailOpen} onDidDismiss={() => setEventDetailOpen(false)}>
+        <IonModal isOpen={eventDetailOpen} onDidDismiss={() => setEventDetailOpen(false)} style={{ '--height': '100%' }}>
           <IonHeader>
             <IonToolbar className="modal-title">
               <IonButtons slot="start">
@@ -411,7 +422,7 @@ const SubmittedPosts: React.FC = () => {
             </IonToolbar>
           </IonHeader>
           <IonContent className="ion-padding submitted-posts">
-            <IonCard className="section-card">
+            <IonCard color="white" className="section-card">
               <IonCardContent>
                 <IonRow className="section-header">
                   <IonText color="dark" className="section-heading">
@@ -422,21 +433,12 @@ const SubmittedPosts: React.FC = () => {
                       fill="clear"
                       size="small"
                       className="info-button"
-                      onClick={() => setShowEventStatusInfo(true)}
+                      onClick={(e) => presentEventStatusPopover({ event: e.nativeEvent })}
                     >
                       <IonIcon icon={informationCircleOutline} />
                     </IonButton>
                   )}
                 </IonRow>
-                <IonPopover
-                  isOpen={showEventStatusInfo}
-                  onDidDismiss={() => setShowEventStatusInfo(false)}
-                  className="status-info-popover"
-                >
-                  <div className="status-info-content">
-                    {ModerationCopy.MODERATION_INFO_POPOVER}
-                  </div>
-                </IonPopover>
                 <IonRow className="status-row">
                   <IonBadge color={eventStatusColorMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'medium'}>
                     {eventStatusLabelMap[(selectedEvent?.status ?? 'pending').toLowerCase()] ?? 'Pending moderator review'}
@@ -457,7 +459,7 @@ const SubmittedPosts: React.FC = () => {
                 </IonRow>
               </IonCardContent>
             </IonCard>
-            <IonCard className="preview-card section-card">
+            <IonCard color="white" className="preview-card section-card">
               <IonCardContent className="preview-form">
                 <IonItem color="white" lines="none">
                   <IonLabel position="stacked">Title*</IonLabel>
@@ -484,7 +486,14 @@ const SubmittedPosts: React.FC = () => {
                 {selectedEvent?.external_link && (
                   <IonItem color="white" lines="none">
                     <IonLabel position="stacked">Link</IonLabel>
-                    <IonText className="preview-value">{selectedEvent.external_link}</IonText>
+                    <IonButton
+                      fill="clear"
+                      size="small"
+                      className="preview-value"
+                      onClick={() => openExternalUrl(selectedEvent!.external_link!)}
+                    >
+                      {selectedEvent.external_link}
+                    </IonButton>
                   </IonItem>
                 )}
                 {(selectedEvent?.status ?? 'pending').toLowerCase() !== 'pending' && typeof selectedEvent?.interested_count === 'number' && (
@@ -497,6 +506,22 @@ const SubmittedPosts: React.FC = () => {
                   <IonItem color="white" lines="none">
                     <IonLabel position="stacked">Description</IonLabel>
                     <IonText className="preview-value">{selectedEvent.description}</IonText>
+                  </IonItem>
+                )}
+                {selectedEvent?.image && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Image</IonLabel>
+                    <img
+                      src={selectedEvent.image}
+                      alt={selectedEvent.image_alt || selectedEvent.name || 'Event image'}
+                      style={{ width: '100%', borderRadius: 8, marginTop: 6, marginBottom: 4 }}
+                    />
+                  </IonItem>
+                )}
+                {selectedEvent?.image_alt && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Image description</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.image_alt}</IonText>
                   </IonItem>
                 )}
               </IonCardContent>

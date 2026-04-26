@@ -357,7 +357,7 @@ const Community: React.FC = () => {
           <div ref={refreshmentsTopRef}></div>
         </IonRow>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
         </IonRefresher>
         {topRefreshmentsAlert ? (
           <IonRow className="refreshments-alert-row">
@@ -386,11 +386,6 @@ const Community: React.FC = () => {
             </IonCol>
           </IonRow>
         ) : null}
-        {littleLoading ? (
-          <IonRow className="ion-justify-content-center warm-cache-refresh-indicator">
-            <IonSpinner name="dots"></IonSpinner>
-          </IonRow>
-        ) : <></>}
         <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">
             <FontAwesomeIcon icon={faBarsFilter} />

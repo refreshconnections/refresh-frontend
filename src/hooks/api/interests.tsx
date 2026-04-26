@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './api-client';
 import { postQueryKeys } from './refreshments/post-query-keys';
 import type { RefreshEvent } from './events';
-import { useWarmCachedValue } from '../useWarmCachedValue';
+import { useWarmCachedValue, WARM_CACHE_QUERY_OPTIONS } from '../useWarmCachedValue';
 
 export const interestQueryKeys = {
   posts: ['interests', 'posts'] as const,
@@ -39,6 +39,7 @@ export function useGetInterestedPosts(page = 1) {
       return response.data;
     },
     enabled: !!localStorage.getItem('token'),
+    ...WARM_CACHE_QUERY_OPTIONS,
   });
 
   const { cachedData } = useWarmCachedValue(
@@ -63,6 +64,7 @@ export function useGetInterestedEvents(page = 1) {
       return response.data;
     },
     enabled: !!localStorage.getItem('token'),
+    ...WARM_CACHE_QUERY_OPTIONS,
   });
 
   const { cachedData } = useWarmCachedValue(

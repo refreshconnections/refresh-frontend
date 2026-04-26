@@ -143,6 +143,13 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
           </IonCardTitle>
           <br />
           <p>You can change this in Settings at any time.</p>
+          {currentUserProfile?.paused_profile && (
+            <IonText color="medium">
+              <p>
+                Your personal profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.
+              </p>
+            </IonText>
+          )}
           <IonItem>
             <IonLabel>Connect from Refreshments</IonLabel>
             <IonToggle

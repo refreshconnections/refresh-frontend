@@ -1129,6 +1129,23 @@ describe('active onboarding pages', () => {
     expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
   });
 
+  it('skips the location-sharing card in personal onboarding when location was set during refreshments onboarding', () => {
+    // Simulates the flow: account created → refreshments profile completed (sets coords) → personal profile started
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
+    };
+    // mockCommunityProfile is already set, representing the completed refreshments profile
+
+    renderInApp(<PersonalProfile />);
+
+    // Location coords slide must be absent from the first render so Swiper never initialises with it
+    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
+  });
+
   it('shows the finish-later branch on personal profile and not the connect toggle card mock', () => {
     renderInApp(<PersonalProfile />);
 

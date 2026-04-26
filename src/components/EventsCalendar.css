@@ -9,8 +9,18 @@
   border: 1px solid var(--ion-color-primary, #2a2a9c);
 }
 
+.events-calendar-filter-badge {
+  margin-left: 8px;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
 .refreshments-calendar-modal {
-  --background: #f7f6ff;
+  --background: var(--ion-background-color);
   --padding-start: 20px;
   --padding-end: 20px;
   --padding-top: 18px;
@@ -60,8 +70,8 @@
 
 .refreshments-calendar-modal .calendar-day {
   border: none;
-  background: #ffffff;
-  color: var(--ion-color-dark);
+  background: var(--ion-color-white);
+  color: var(--ion-text-color);
   border-radius: 10px;
   min-height: 52px;
   padding: 6px 0;
@@ -126,7 +136,7 @@
   margin: 0;
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  background: #ffffff;
+  background: var(--ion-color-white);
   position: relative;
 }
 
@@ -180,7 +190,7 @@
 }
 
 .calendar-event-interest-count {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   color: var(--ion-color-medium);
   min-width: 1ch;
   text-align: right;
@@ -188,14 +198,14 @@
 
 .calendar-event-card-name {
   font-weight: 600;
-  font-size: 15px;
-  color: var(--ion-color-dark);
+  font-size: calc(15px * var(--text-scale, 1));
+  color: var(--ion-text-color);
 }
 
 .calendar-event-card-time {
-  font-size: 13px;
+  font-size: calc(15px * var(--text-scale, 1));
   color: var(--ion-color-medium);
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .calendar-event-card-details {
@@ -208,7 +218,7 @@
 
 .calendar-event-type {
   font-weight: 700;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
   margin: 4px 0 6px;
   color: var(--ion-color-dark);
 }
@@ -216,7 +226,49 @@
 .calendar-event-registration {
   display: block;
   margin: 4px 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
+}
+
+.calendar-event-chip {
+  color: var(--ion-color-black);
+  border: 1px solid var(--ion-color-step-150);
+  --color: var(--ion-color-black);
+  --background: var(--ion-color-step-100, #f3f3f3);
+}
+
+.calendar-event-chip ion-label {
+  color: var(--ion-color-black);
+}
+
+.calendar-event-chip--type {
+  --background: var(--ion-color-step-150);
+}
+
+.calendar-event-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.calendar-event-chips .calendar-event-chip {
+  margin: 0;
+}
+
+.calendar-event-chip--attendee-open {
+  --background: rgba(var(--ion-color-success-rgb), 0.2);
+}
+
+.calendar-event-chip--attendee-preferred {
+  --background: rgba(var(--ion-color-tertiary-rgb), 0.2);
+}
+
+.calendar-event-chip--attendee-only {
+  --background: rgba(var(--ion-color-warning-rgb), 0.3);
+}
+
+.calendar-event-chip--precaution {
+  --background: var(--ion-color-step-100);
 }
 
 .calendar-event-actions {
@@ -257,7 +309,7 @@
 }
 
 .event-host-popover-content {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1));
   line-height: 1.35;
 }
 
@@ -285,7 +337,7 @@
   object-fit: contain;
   margin-top: 12px;
   cursor: zoom-in;
-  background: #f5f4ff;
+  background: var(--ion-color-white);
   padding: 8px;
 }
 
@@ -302,11 +354,26 @@ ion-toolbar.events-calendar-toolbar {
 
 .calendar-add-event-row {
   padding: 8px 0;
+  background: var(--ion-color-background);
+  border-radius: 12px;
 }
 
 .events-calendar-event-form ion-item {
   --border-radius: 10px;
   margin: 8px;
-  background: #fff;
+  background: var(--ion-color-white);
   --box-shadow: 0 6px 12px rgba(34, 33, 88, 0.08);
+}
+
+:root.ion-palette-dark.ios,
+:root.ion-palette-dark.md {
+  .calendar-event-image {
+    background: var(--ion-color-step-50);
+  }
+  .refreshments-calendar-modal .calendar-day:not(.calendar-day--selected) {
+    background: var(--ion-color-step-50);
+  }
+  .refreshments-calendar-modal .calendar-event-card {
+    background: var(--ion-color-step-50);
+  }
 }

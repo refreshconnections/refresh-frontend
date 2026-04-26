@@ -69,7 +69,10 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const { data: communityProfile } = useGetCommunityProfile();
   const hasCommunityProfile = Boolean(communityProfile);
   const SLIDE_KEY = 'personal_profile_onboarding_slide';
-  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
+  const [locallySharedCoords, setLocallySharedCoords] = useState(false);
+  const hasSharedLocationCoords = locallySharedCoords || Boolean(
+    currentProfile?.location_point_lat && currentProfile?.location_point_long
+  );
   const [locationLabelDraft, setLocationLabelDraft] = useState('');
   const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
 
@@ -84,17 +87,12 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   }, []);
 
   useEffect(() => {
-    setHasSharedLocationCoords(
-      Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
-    );
     setLocationLabelDraft(
       (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim()
     );
   }, [
     currentProfile?.location,
     currentProfile?.coordinates_near,
-    currentProfile?.location_point_lat,
-    currentProfile?.location_point_long,
   ]);
 
   useEffect(() => {
@@ -192,7 +190,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                     style={{ width: 'min(220px, 50%)', alignSelf: 'center', margin: '24px auto' }}
                   />
                   <IonText style={{ textAlign: 'center' }}>
-                    <h2>{copy.intro.bodyPrimary}</h2>
+                    <h4>{copy.intro.bodyPrimary}</h4>
                   </IonText>
                 </IonCardContent>
                 <div className="onboarding-v2__card-footer">
@@ -224,7 +222,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
               <div className="onboarding-v2__slide onboarding-v2__slide--tight-top">
                 <OnboardingCardLocationCoords
                   onCoordsSaved={(localLabel) => {
-                    setHasSharedLocationCoords(true);
+                    setLocallySharedCoords(true);
                     setLocationLabelDraft((prev) => prev || localLabel);
                   }}
                 />

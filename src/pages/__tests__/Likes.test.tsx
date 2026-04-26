@@ -297,6 +297,7 @@ describe('Likes page infinite scroll behavior', () => {
     });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['mutuals'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['mutuals-no-dialog-paginated'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['mutuals-no-dialog-paginated-v3'] });
     expect(profileDismiss).toHaveBeenCalledTimes(1);
   });
 

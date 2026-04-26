@@ -491,7 +491,7 @@ describe('CreateEventModal', () => {
 
     fireEvent.click(screen.getByText('Submit event'));
 
-    expect(await screen.findByText('Recurring date end times must be on the same day.')).toBeInTheDocument();
+    expect(await screen.findByText("Recurring date end times can't be longer than 24 hours.")).toBeInTheDocument();
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 

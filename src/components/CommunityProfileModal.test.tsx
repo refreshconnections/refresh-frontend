@@ -146,6 +146,7 @@ const baseCommunityData = {
   age_display: 31,
   connect_enabled: true,
   display_photo: '/img/community.jpg',
+  community_profile_pic: null,
   personal_photo: '/img/personal.jpg',
 };
 
@@ -201,6 +202,41 @@ describe('CommunityProfileModal', () => {
         onDismiss: expect.any(Function),
       })
     );
+  });
+
+  it('capitalizes the connect guidance correctly when the viewer already has an active personal profile', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      settings_community_profile: false,
+      created_profile: true,
+    };
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      connect_enabled: false,
+    };
+
+    renderModal();
+
+    expect(
+      await screen.findByText(/Want to connect 1:1 with people you meet in the comments\? Turn on your Connect from Refreshments in your Me tab > Settings\./i)
+    ).toBeInTheDocument();
+  });
+
+  it('does not show a personal-profile-derived refreshments avatar when the owner is paused and has no refreshments photo', async () => {
+    mockProfileDetails = {
+      ...baseProfileDetails,
+      paused_profile: true,
+    };
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      display_photo: '/img/personal-derived.jpg',
+      community_profile_pic: null,
+    };
+
+    renderModal();
+
+    const avatar = await screen.findByAltText('Refreshments profile');
+    expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
   });
 
   it('shows the connected chat branch and invalidates chat queries when the chat modal closes', async () => {

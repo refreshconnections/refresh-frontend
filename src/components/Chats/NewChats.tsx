@@ -1,7 +1,7 @@
 import { IonButton, IonList, IonRow, IonSpinner, IonText } from "@ionic/react";
 import React, { useMemo } from "react";
 import NewChatItem from "./NewChatItem";
-import { useGetMutualConnectionsNoDialogWOpenerCheck } from "../../hooks/api/profiles/mutuals-no-dialog";
+import { useGetMutualConnectionsNoDialogV3 } from "../../hooks/api/profiles/mutuals-no-dialog-v3";
 
 
 
@@ -20,13 +20,13 @@ const NewChats: React.FC<Props> = (props) => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useGetMutualConnectionsNoDialogWOpenerCheck();
+  } = useGetMutualConnectionsNoDialogV3();
   const noDialogsMutualConnections = noDialogsMutualConnectionsData?.pages.flatMap(page => page?.results ?? []) ?? [];
 
   const visibleChats = useMemo(() => {
     const seen = new Set();
     return noDialogsMutualConnections.filter(item => {
-      const key = item.user_id || item.id;
+      const key = item.user_id;
       if (seen.has(key)) return false;
       seen.add(key);
       if (filterUserIds && !filterUserIds.includes(key)) return false;
@@ -46,9 +46,15 @@ const NewChats: React.FC<Props> = (props) => {
         : <></>
       }
       <IonList id="wl" lines="full">
-        {visibleChats?.map((e: any) => (
+        {visibleChats?.map((e) => (
           <li key={`new-chat-${e.user_id}`}>
-            <NewChatItem user={e.user_id} currentUserProfile={currentUserProfile} opener={e.opener ?? false}/>
+            <NewChatItem
+              user={e.user_id}
+              currentUserProfile={currentUserProfile}
+              opener={e.opener}
+              name={e.name}
+              pic1_main={e.pic1_main}
+            />
           </li>
         ))}
       </IonList>
@@ -60,9 +66,6 @@ const NewChats: React.FC<Props> = (props) => {
       </IonRow>
       ) : null}
     </>
-
-
-
   )
 };
 

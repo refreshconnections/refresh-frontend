@@ -22,7 +22,9 @@ dependencies {
     implementation project(':capacitor-text-zoom')
     implementation project(':capawesome-capacitor-android-edge-to-edge-support')
     implementation project(':capgo-nativegeocoder')
+    implementation project(':ebarooni-capacitor-calendar')
     implementation project(':revenuecat-purchases-capacitor')
+    implementation project(':capacitor-blob-writer')
     implementation project(':capacitor-voice-recorder')
     implementation "com.onesignal:OneSignal:5.1.13"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.10"

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { postQueryKeys } from './post-query-keys';
-import { useWarmCachedValue } from '../../useWarmCachedValue';
+import { useWarmCachedValue, WARM_CACHE_QUERY_OPTIONS } from '../../useWarmCachedValue';
 
 const getPostsFn = async ({queryKey}) => {
 
@@ -32,6 +32,7 @@ const getPostsFn = async ({queryKey}) => {
     const query = useQuery({
       queryKey: postQueryKeys.filtered(category, search, local, radius, sort),
       queryFn: getPostsFn,
+      ...WARM_CACHE_QUERY_OPTIONS,
     });
 
     const warmKey = `warm_refreshments_${category || 'all'}_${search || 'none'}_${local ? 'local' : 'global'}_${radius ?? 'any'}_${sort}_v1`;

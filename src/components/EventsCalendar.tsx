@@ -1,4 +1,5 @@
 import {
+  IonBadge,
   IonButton,
   IonButtons,
   IonCard,
@@ -29,7 +30,7 @@ import moment, { type Moment } from 'moment';
 import type { RefreshEvent } from '../hooks/api/events';
 import { useGetEvents, DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, EventFilters } from '../hooks/api/events';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
-import { getAvatarDisplay, isCommunityPlus } from '../hooks/utilities';
+import { getAvatarDisplay, isCommunityPlus, localTzAbbr, openExternalUrl } from '../hooks/utilities';
 import { useSheetModal } from '../hooks/useSheetModal';
 
 import EllipsisMenuButton from './EllipsisMenuButton';
@@ -37,6 +38,7 @@ import CreateEventModal from './CreateEventModal';
 import CommunityProfileModal from './CommunityProfileModal';
 import EventReportModal from './EventReportModal';
 import EventFiltersModal from './EventFiltersModal';
+import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import {
   getHideInterestedCountOnMySubmissionsPref,
@@ -46,11 +48,28 @@ import {
 } from '../hooks/capacitorPreferences/interested-counts';
 import { useInterestEvent, useUninterestEvent } from '../hooks/api/interests';
 import { useAddToCalendar } from '../hooks/useAddToCalendar';
+import {
+  getShowAddToCalendarPref,
+  SHOW_ADD_TO_CALENDAR_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/add-to-calendar';
 import RefreshmentsEventDetails from './RefreshmentsEventDetails';
 
 import './EventsCalendar.css';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+
+type ReminderOption = { text: string; minutes: number | null; free: boolean };
+const REMINDER_OPTIONS: ReminderOption[] = [
+  { text: 'No reminder',        minutes: null,  free: true  },
+  { text: 'At time of event',   minutes: 0,     free: true  },
+  { text: '15 minutes before',  minutes: -15,   free: false },
+  { text: '30 minutes before',  minutes: -30,   free: false },
+  { text: '1 hour before',      minutes: -60,   free: false },
+  { text: '2 hours before',     minutes: -120,  free: true  },
+  { text: '1 day before',       minutes: -1440, free: true  },
+  { text: '2 days before',      minutes: -2880, free: false },
+];
 
 type CalendarDay = {
   iso: string;
@@ -129,6 +148,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const [selectedEventInterested, setSelectedEventInterested] = useState(false);
   const [selectedEventInterestedCount, setSelectedEventInterestedCount] = useState(0);
   const [showInterestedCountPref, setShowInterestedCountPrefState] = useState(true);
+  const [showAddToCalendarPref, setShowAddToCalendarPref] = useState(true);
   const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [viewModeLoaded, setViewModeLoaded] = useState(false);
@@ -166,6 +186,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const uninterestEvent = useUninterestEvent();
   const { addToCalendar, isAvailable: calendarAvailable } = useAddToCalendar();
   const [presentCalendarAlert] = useIonAlert();
+  const [presentReminderAlert] = useIonAlert();
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, RefreshEvent[]>();
@@ -193,6 +214,20 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
 
   const selectedDayKey = moment(selectedDate).format('YYYY-MM-DD');
   const eventsForSelectedDate = eventsByDay.get(selectedDayKey) ?? [];
+  const activeEventFilterCount = useMemo(() => {
+    const groups = [
+      eventFilters.eventTypes,
+      eventFilters.attendeePrecautionPreferences,
+      eventFilters.inPersonPrecautions,
+    ];
+
+    return groups.reduce((count, values) => {
+      const hasSpecificFilter = Array.isArray(values)
+        && values.length > 0
+        && !values.includes('all');
+      return count + (hasSpecificFilter ? 1 : 0);
+    }, 0);
+  }, [eventFilters]);
   const calendarDays = useMemo(() => buildCalendarDays(calendarMonth), [calendarMonth]);
   const weekDays = useMemo(() => {
     const start = moment(selectedDate).clone().startOf('week');
@@ -237,15 +272,17 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
     let cancelled = false;
 
     const syncPrefs = async () => {
-      const [showInterestedCount, hideOnMySubmissions] = await Promise.all([
+      const [showInterestedCount, hideOnMySubmissions, showAddToCalendar] = await Promise.all([
         getShowInterestedCountPref(),
         getHideInterestedCountOnMySubmissionsPref(),
+        getShowAddToCalendarPref(),
       ]);
       if (cancelled) {
         return;
       }
       setShowInterestedCountPrefState(showInterestedCount);
       setHideInterestedCountOnMySubmissions(hideOnMySubmissions);
+      setShowAddToCalendarPref(showAddToCalendar);
     };
 
     const handleShowInterestedCountChanged = (event: Event) => {
@@ -256,14 +293,20 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
       setHideInterestedCountOnMySubmissions(Boolean((event as CustomEvent<boolean>).detail));
     };
 
+    const handleShowAddToCalendarChanged = (event: Event) => {
+      setShowAddToCalendarPref(Boolean((event as CustomEvent<boolean>).detail));
+    };
+
     syncPrefs();
     window.addEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
     window.addEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+    window.addEventListener(SHOW_ADD_TO_CALENDAR_CHANGED_EVENT, handleShowAddToCalendarChanged);
 
     return () => {
       cancelled = true;
       window.removeEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
       window.removeEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+      window.removeEventListener(SHOW_ADD_TO_CALENDAR_CHANGED_EVENT, handleShowAddToCalendarChanged);
     };
   }, []);
   const eventAnonymous = Boolean(selectedEvent?.anonymous);
@@ -274,6 +317,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   });
 
   const [presentEventActionSheet] = useIonActionSheet();
+  const [presentReminderSheet] = useIonActionSheet();
   const [presentEventReport, dismissEventReport] = useIonModal(EventReportModal, {
     eventId: selectedEvent?.id ?? 0,
     eventTitle: selectedEvent?.name ?? 'Event',
@@ -534,7 +578,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                         >
                           <span className="calendar-event-card-name">{event.name}</span>
                           <span className="calendar-event-card-time">
-                            {moment(event.start_datetime).format('MMM D, h:mm A')} – {moment(event.end_datetime).format('h:mm A')}
+                            {moment(event.start_datetime).format('MMM D, h:mm A')} – {moment(event.end_datetime).format('h:mm A')} {localTzAbbr(event.start_datetime)}
                           </span>
                         </button>
                         <div className="calendar-event-interest-meta">
@@ -562,12 +606,22 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                           event={selectedEvent!}
                           anonymous={eventAnonymous}
                           avatarDisplay={eventAvatarDisplay}
+                          settingsAlt={Boolean(profile?.settings_alt_text)}
                           onProfilePresent={() => eventProfilePresent({ cssClass: 'community-profile-modal' })}
                           onHostInfo={(e) => {
                             setHostPopoverText("I can answer questions about this event! (I'm the host or know the host)");
                             presentHostPopover({ event: e.nativeEvent as Event });
                           }}
-                          onExternalLinkClick={selectedEvent?.external_link ? () => window.open(selectedEvent.external_link!, '_blank', 'noreferrer') : undefined}
+                          onExternalLinkClick={selectedEvent?.external_link ? () => {
+                            presentCalendarAlert({
+                              header: 'Open link?',
+                              message: selectedEvent.external_link!,
+                              buttons: [
+                                { text: 'Cancel', role: 'cancel' },
+                                { text: 'Open', handler: () => openExternalUrl(selectedEvent.external_link!) },
+                              ],
+                            });
+                          } : undefined}
                           actions={
                             <>
                               {selectedEvent!.post ? (
@@ -575,7 +629,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                                   View post
                                 </IonButton>
                               ) : null}
-                              {!isPastEvent ? (
+                              {!isPastEvent && showAddToCalendarPref ? (
                                 <IonButton
                                   fill="outline"
                                   size="small"
@@ -588,19 +642,67 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                                       });
                                       return;
                                     }
-                                    const result = await addToCalendar({
-                                      title: selectedEvent!.name ?? 'Event',
-                                      startDate: new Date(selectedEvent!.start_datetime!),
-                                      endDate: new Date(selectedEvent!.end_datetime ?? selectedEvent!.start_datetime!),
-                                      location: selectedEvent!.location,
-                                      notes: selectedEvent!.description,
-                                    });
-                                    if (result === 'denied') {
-                                      presentCalendarAlert({
-                                        header: 'Calendar access',
-                                        message: "Refresh doesn't have permission to access your calendar. You can enable it in your device settings.",
-                                        buttons: ['OK'],
+
+                                    const saveWithAlerts = async (alerts: number[]) => {
+                                      const result = await addToCalendar({
+                                        title: selectedEvent!.name ?? 'Event',
+                                        startDate: new Date(selectedEvent!.start_datetime!),
+                                        endDate: new Date(selectedEvent!.end_datetime ?? selectedEvent!.start_datetime!),
+                                        location: selectedEvent!.location,
+                                        notes: selectedEvent!.description,
+                                        alerts,
                                       });
+                                      if (result === 'success') {
+                                        presentCalendarAlert({
+                                          header: 'Added to calendar',
+                                          message: 'The event has been saved to your calendar.',
+                                          buttons: [
+                                            { text: 'Open Calendar', handler: () => { window.open(Capacitor.getPlatform() === 'android' ? 'content://com.android.calendar/time/' : 'calshow://', '_system'); } },
+                                            { text: 'Done', role: 'cancel' },
+                                          ],
+                                        });
+                                      } else if (result === 'denied') {
+                                        presentCalendarAlert({
+                                          header: 'Calendar access',
+                                          message: "Refresh doesn't have permission to access your calendar. You can enable it in your device settings.",
+                                          buttons: ['OK'],
+                                        });
+                                      }
+                                    };
+
+                                    if (Capacitor.getPlatform() === 'ios') {
+                                      if (isPremium) {
+                                        presentReminderAlert({
+                                          header: 'Add reminders',
+                                          subHeader: 'Choose up to 2',
+                                          inputs: REMINDER_OPTIONS
+                                            .filter(o => o.minutes !== null)
+                                            .map(o => ({
+                                              type: 'checkbox' as const,
+                                              label: o.text,
+                                              value: String(o.minutes),
+                                            })),
+                                          buttons: [
+                                            { text: 'No reminder', role: 'cancel', handler: () => saveWithAlerts([]) },
+                                            { text: 'Save', handler: (selected: string[]) => saveWithAlerts(selected.slice(0, 2).map(Number)) },
+                                          ],
+                                        });
+                                      } else {
+                                        presentReminderSheet({
+                                          header: 'Add a reminder?',
+                                          buttons: [
+                                            ...REMINDER_OPTIONS
+                                              .filter(o => o.free)
+                                              .map(o => ({
+                                                text: o.text,
+                                                handler: () => saveWithAlerts(o.minutes === null ? [] : [o.minutes]),
+                                              })),
+                                            { text: 'Cancel', role: 'cancel' },
+                                          ],
+                                        });
+                                      }
+                                    } else {
+                                      await saveWithAlerts([]);
                                     }
                                   }}
                                 >
@@ -638,6 +740,11 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             <IonButton fill="outline" onClick={() => presentEventFiltersModal()}>
               <IonIcon icon={filterIcon} slot="start" />
               Filters
+              {activeEventFilterCount > 0 ? (
+                <IonBadge className="events-calendar-filter-badge" color="primary">
+                  {activeEventFilterCount}
+                </IonBadge>
+              ) : null}
             </IonButton>
           </IonRow>
         </IonContent>

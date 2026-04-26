@@ -112,6 +112,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
     queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] });
+    queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] });
     dismissChat();
   };
 
@@ -134,8 +135,16 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       ? (currentProfile?.username || data?.username || 'You')
       : (otherDeactivated ? 'Refresh member' : (data?.username || 'Anonymous'));
   const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
+  const ownerPaused = Boolean(profileDetails.data?.paused_profile);
+  const pausedCommunityPhoto = normalizeLocalMediaUrl((data as any)?.community_profile_pic);
   const communityAvatar = getAvatarDisplay({
-    profileImage: avatarOverride ?? (showRestricted ? null : data?.display_photo),
+    profileImage: avatarOverride ?? (
+      showRestricted
+        ? null
+        : ownerPaused
+          ? pausedCommunityPhoto
+          : data?.display_photo
+    ),
     viewerConnect: currentProfile?.settings_community_profile,
     authorConnect: data?.connect_enabled,
   });
@@ -363,7 +372,9 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                     <IonText className="community-profile-info-box">
                       <p>
                         {!viewerConnect &&
-                          `Want to connect 1:1 with people you meet in the comments?${currentProfile?.created_profile ? '' : ' Create an active personal profile and'} turn on your Connect from Refreshments in your Me tab > Settings.`}
+                          (currentProfile?.created_profile
+                            ? 'Want to connect 1:1 with people you meet in the comments? Turn on your Connect from Refreshments in your Me tab > Settings.'
+                            : 'Want to connect 1:1 with people you meet in the comments? Create an active personal profile and turn on your Connect from Refreshments in your Me tab > Settings.')}
                         {canLikeBack && (
                           <>
                             {username} has already sent you a Like.

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api-client';
 import { chatQueryKeys } from './chat-query-keys';
-import { useWarmCachedValue } from '../../useWarmCachedValue';
+import { useWarmCachedValue, WARM_CACHE_QUERY_OPTIONS } from '../../useWarmCachedValue';
 
 const CHAT_GROUPS_WARM_CACHE_KEY = 'warm_chats_groups_v1';
 const CHAT_GROUPS_WARM_CACHE_TTL = 1000 * 60 * 10;
@@ -32,6 +32,7 @@ export function useChatGroups() {
       return response.data as ChatGroupsData;
     },
     enabled: !!localStorage.getItem('token'),
+    ...WARM_CACHE_QUERY_OPTIONS,
   });
 
   const { cachedData } = useWarmCachedValue(

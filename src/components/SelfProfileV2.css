@@ -40,7 +40,7 @@
   --background: transparent;
   --padding-start: 16px;
 
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--ion-color-step-100);
   border-radius: 0;
   margin: 0;
   display: flex;
@@ -112,7 +112,7 @@ ion-card-content .card-grid {
 
 .card-field.editing {
   align-items: stretch;
-  border: 1px solid rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--ion-color-step-300);
   border-radius: 12px;
 }
 
@@ -464,6 +464,13 @@ ion-card-content .card-grid {
   color: var(--ion-color-dark);
 }
 
+:root.ion-palette-dark.ios,
+:root.ion-palette-dark.md {
+  .choice-summary {
+    color: var(--ion-color-step-800);
+  }
+}
+
 .choice-editor {
   margin-top: 8px;
 }
@@ -687,7 +694,7 @@ ion-card-content .card-grid {
   --padding-start: 0;
   --inner-padding-start: 0;
   --inner-padding-end: 0;
-  border: 1px solid rgba(11, 28, 68, 0.14);
+  border: 1px solid var(--ion-color-step-150);
   border-radius: 16px;
 }
 

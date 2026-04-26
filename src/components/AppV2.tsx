@@ -899,8 +899,8 @@ const AppV2: React.FC = () => {
               <div className="startup-timeout-screen__inner">
                 <IonCard className="startup-timeout-screen__card">
                   <IonCardContent>
-                    <h1>Oops</h1>
-                    <p>The app is taking too long to load right now.</p>
+                    <h1>Connection issue</h1>
+                    <p>This is taking longer than expected. Please try again later.</p>
                     <IonButton expand="block" onClick={retryStartup}>
                       Try again
                     </IonButton>
