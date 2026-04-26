@@ -111,6 +111,7 @@ vi.mock('../../hooks/utilities', () => ({
   }),
   openExternalUrl: (...args: any[]) => openExternalUrl(...args),
   unlikeAnnouncement: (...args: any[]) => unlikeAnnouncement(...args),
+  localTzAbbr: vi.fn(() => 'EST'),
 }));
 
 vi.mock('../../hooks/api/refreshments/comments-not-shown', () => ({
@@ -306,7 +307,7 @@ describe('OpenedPost', () => {
     const { container } = renderOpenedPost();
 
     expect(screen.getByText('Picnic meetup')).toBeInTheDocument();
-    expect(screen.getByText('Apr 10, 5:30 PM – 7:00 PM')).toBeInTheDocument();
+    expect(screen.getByText('Apr 10, 5:30 PM – 7:00 PM EST')).toBeInTheDocument();
     expect(screen.getByText(/Prospect Park/)).toBeInTheDocument();
 
     fireEvent.click(container.querySelector('.opened-post-event') as HTMLElement);
@@ -318,6 +319,11 @@ describe('OpenedPost', () => {
     renderOpenedPost();
 
     fireEvent.click(await screen.findByText('Learn more'));
+
+    // Component shows a confirmation alert before opening the link
+    const alertCall = mockPresentAlert.mock.calls[0][0];
+    const openHandler = alertCall.buttons.find((b: any) => b.text === 'Open').handler;
+    openHandler();
 
     expect(openExternalUrl).toHaveBeenCalledWith('https://example.com/event');
   });

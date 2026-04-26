@@ -15,10 +15,23 @@ let mockEventsQuery: any;
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const { createElement } = await import('react');
+  const { flushSync } = await import('react-dom');
+  const { createRoot } = await import('react-dom/client');
   return {
     ...actual,
     IonPopover: ({ isOpen, children }: any) => (isOpen ? <div>{children}</div> : null),
     IonModal: ({ isOpen, children }: any) => (isOpen ? <div>{children}</div> : null),
+    useIonPopover: (Component: any, componentProps: any) => {
+      const present = () => {
+        const div = document.createElement('div');
+        document.body.appendChild(div);
+        flushSync(() => {
+          createRoot(div).render(createElement(Component, { ...componentProps, onDismiss: () => {} }));
+        });
+      };
+      return [present, vi.fn()];
+    },
   };
 });
 
@@ -103,7 +116,7 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('../enums/moderation', () => ({
   ModerationCopy: {
-    MODERATION_INFO_POPOVER: 'Moderator review takes a few days.',
+    MODERATION_INFO_POPOVER: 'Moderation can take up to 3 business days.',
   },
 }));
 
@@ -173,7 +186,7 @@ describe('SubmittedPosts', () => {
     expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     expect(screen.queryByText('7')).not.toBeInTheDocument();
     fireEvent.click(document.querySelector('.info-button') as HTMLElement);
-    expect(screen.getByText('Moderator review takes a few days.')).toBeInTheDocument();
+    expect(screen.getByText('Moderation can take up to 3 business days.')).toBeInTheDocument();
   });
 
   it('filters out expired and stale submissions, while keeping editable drafts with the correct label', async () => {

@@ -54,6 +54,7 @@ vi.mock('../hooks/api/profiles/current-profile', () => ({
 
 vi.mock('../hooks/utilities', () => ({
   isCommunityPlus: vi.fn((level: string) => level === 'communityplus' || level === 'pro'),
+  localTzAbbr: vi.fn(() => 'EST'),
 }));
 
 vi.mock('../components/PostSuggestionMini', () => ({

@@ -296,6 +296,7 @@ describe('CreateEventModal', () => {
 
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
     setAnonymousPosting(container);
+    fireEvent(container.querySelector('ion-toggle')!, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
     setIonSelect(getItemControl(container, 'Repeat', 'ion-select'), 'custom');
 
     fireEvent.click(screen.getByText('Submit event'));
@@ -376,7 +377,7 @@ describe('CreateEventModal', () => {
     fireEvent.click(getItemControl(container, 'Nearby City', 'ion-input'));
     expect(mockPresentModal).toHaveBeenCalled();
 
-    const citySelectorConfig = mockModalConfigs.at(-1);
+    const citySelectorConfig = mockModalConfigs[1];
     await act(async () => {
       citySelectorConfig.onDismiss({ name: 'Brooklyn', lat: 40.6782, lng: -73.9442 });
     });
@@ -393,7 +394,7 @@ describe('CreateEventModal', () => {
     setAnonymousPosting(container);
     setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'in_person_only');
 
-    const citySelectorConfig = mockModalConfigs.at(-1);
+    const citySelectorConfig = mockModalConfigs[1];
     await act(async () => {
       citySelectorConfig.onDismiss({ name: 'Brooklyn', lat: 40.6782, lng: -73.9442 });
     });
@@ -427,6 +428,7 @@ describe('CreateEventModal', () => {
 
     fillRequiredEventFields(container, '2026-04-01T18:00', '2026-04-01T19:00');
     setAnonymousPosting(container);
+    fireEvent(container.querySelector('ion-toggle')!, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
     setIonSelect(getItemControl(container, 'Repeat', 'ion-select'), 'weekly');
 
     expect(await screen.findByText('Dates (auto-generated) • Your time zone')).toBeInTheDocument();
@@ -479,6 +481,7 @@ describe('CreateEventModal', () => {
 
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
     setAnonymousPosting(container);
+    fireEvent(container.querySelector('ion-toggle')!, new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true }));
     setIonSelect(getItemControl(container, 'Repeat', 'ion-select'), 'custom');
 
     fireEvent.click(screen.getByText('Add another date'));
@@ -569,12 +572,14 @@ describe('CreateEventModal', () => {
       const photo = new File(['img'], 'event.png', { type: 'image/png' });
 
       fireEvent.change(fileInput, { target: { files: [photo] } });
+      await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
 
       fireEvent.click(container.querySelector('ion-button[color="danger"]') as HTMLElement);
       expect(screen.queryByText('Photo attached')).not.toBeInTheDocument();
 
       fireEvent.change(fileInput, { target: { files: [photo] } });
+      await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
 
       fireEvent.click(screen.getByText('Submit event'));

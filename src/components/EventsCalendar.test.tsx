@@ -131,6 +131,7 @@ vi.mock('../hooks/utilities', () => ({
   })),
   isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'pro'),
   onImgError: vi.fn(),
+  localTzAbbr: vi.fn(() => 'EST'),
 }));
 
 vi.mock('../hooks/useSheetModal', () => ({

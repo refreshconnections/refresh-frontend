@@ -352,44 +352,30 @@ describe('Refreshments page', () => {
   });
 
   it('pull-to-refresh invalidates current post queries and events, then completes the refresher', async () => {
-    vi.useFakeTimers();
-    try {
-      const { container } = renderRefreshments();
+    const { container } = renderRefreshments();
 
-      const refresher = container.querySelector('ion-refresher') as HTMLElement | null;
-      expect(refresher).not.toBeNull();
+    const refresher = container.querySelector('ion-refresher') as HTMLElement | null;
+    expect(refresher).not.toBeNull();
 
-      const complete = vi.fn();
+    const complete = vi.fn();
 
-      await act(async () => {
-        fireEvent(
-          refresher!,
-          new CustomEvent('ionRefresh', {
-            detail: { complete },
-          })
-        );
-      });
+    await act(async () => {
+      fireEvent(
+        refresher!,
+        new CustomEvent('ionRefresh', {
+          detail: { complete },
+        })
+      );
+    });
 
-      expect(queryInvalidate).not.toHaveBeenCalledWith({
-        queryKey: ['filteredposts'],
-        exact: false,
-      });
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      });
-
-      expect(queryInvalidate).toHaveBeenCalledWith({
-        queryKey: ['filteredposts'],
-        exact: false,
-      });
-      expect(queryInvalidate).toHaveBeenCalledWith({
-        queryKey: ['events'],
-      });
-      expect(complete).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(queryInvalidate).toHaveBeenCalledWith({
+      queryKey: ['filteredposts'],
+      exact: false,
+    });
+    expect(queryInvalidate).toHaveBeenCalledWith({
+      queryKey: ['events'],
+    });
+    expect(complete).toHaveBeenCalledTimes(1);
   });
 
   it('passes the selected event id into the calendar when an events-row card is clicked', async () => {

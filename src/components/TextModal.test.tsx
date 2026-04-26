@@ -292,6 +292,7 @@ const origGetContext = HTMLCanvasElement.prototype.getContext;
 describe('TextModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
     // Ensure addListener always returns a valid unsubscribe function.
     mockAddListener.mockReturnValue(vi.fn());
     mockIsConnected = true;
