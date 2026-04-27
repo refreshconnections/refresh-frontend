@@ -1,3 +1,9 @@
+.modal-title ion-title::part(native) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
 ion-fab ion-badge.chats-likes {
     width: 25pt;
     height: 25pt;

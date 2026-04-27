@@ -43,13 +43,13 @@ const SettingsSupportCard: React.FC<Props> = ({ isProUser, onPremiumIconClick })
           <IonCardContent slot="content" className="settings__support-card-content">
             <IonText className="settings__support-copy">
               <p>
-                Refresh Connections is member-supported, with paid levels that help sustain the app while adding extra control and organization across its community and personal sides.
+                Refresh Connections is member-supported, with subscriptions that help sustain the app while adding extra control and organization across its community and personal sides.
               </p>
               <p>
                 Settings marked with <button type="button" className="settings__premium-icon-button settings__premium-icon-button--inline" aria-label="See plans" onClick={(event) => {
                   event.stopPropagation();
                   onPremiumIconClick();
-                }}><FontAwesomeIcon className="settings__premium-icon settings__premium-icon--inline" icon={faCirclePlus} aria-hidden="true" /></button> are available with a paid level. Tap the icon to learn more and see plans.
+                }}><FontAwesomeIcon className="settings__premium-icon settings__premium-icon--inline" icon={faCirclePlus} aria-hidden="true" /></button> are available with a subscription. Tap the icon to learn more and see plans.
               </p>
             </IonText>
             <IonButton

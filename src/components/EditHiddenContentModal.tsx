@@ -190,12 +190,6 @@ const EditHiddenContentModal: React.FC<Props> = (props) => {
                     </IonItem>
 
                     <IonNote className="ion-text-wrap">Blocks</IonNote>
-                    <IonItem lines="full">
-                        <IonLabel className="ion-text-wrap">
-                            <span className="settings__label-heading">Personal Blocks ({data?.blocked_connections?.length ?? 0})</span>
-                            <p>Permanent one-to-one blocks.</p>
-                        </IonLabel>
-                    </IonItem>
 
                     {(data?.blocked_connections?.length ?? 0) > 0 && (
                         <IonItem lines="full">

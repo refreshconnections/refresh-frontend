@@ -8,6 +8,7 @@ import "./Page.css"
 import "./Settings.css"
 
 import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref, isCommunityPlus, updateCurrentUserChatSettings } from '../hooks/utilities';
+import { UPSELL_POPUPS_ENABLED_KEY } from '../hooks/useUpsellAlert';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -78,6 +79,7 @@ const Settings: React.FC = () => {
   const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState<boolean>(false);
   const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState<boolean>(true);
   const [showAddToCalendar, setShowAddToCalendar] = useState<boolean>(true);
+  const [showSubscriptionPopups, setShowSubscriptionPopups] = useState<boolean>(true);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
@@ -124,8 +126,10 @@ const Settings: React.FC = () => {
   const [presentPremiumUpsellAlert] = useIonAlert();
 
   const openPremiumUpsellAlert = () => {
+    if (!showSubscriptionPopups) return;
     presentPremiumUpsellAlert({
-      header: 'Get Pro!',
+      header: 'Get + or Pro!',
+      message: 'This feature is available with a subscription.',
       buttons: [
         {
           text: 'Back',
@@ -494,6 +498,9 @@ const Settings: React.FC = () => {
         if (cancelled) return;
         setShowAddToCalendar(await getShowAddToCalendarPref());
         if (cancelled) return;
+        const { value: upsellPref } = await Preferences.get({ key: UPSELL_POPUPS_ENABLED_KEY });
+        if (cancelled) return;
+        setShowSubscriptionPopups(upsellPref !== 'false');
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
@@ -638,7 +645,7 @@ const Settings: React.FC = () => {
               <IonItem>
                 <IonLabel className="ion-text-wrap">
                   <span className="settings__label-heading">Connect from Refreshments</span>
-                  <p>View profiles and send or receive Likes from Refreshments Bar posts, comments, and Refreshments Calendar events.</p>
+                  <p>Turn this on to let people discover your personal profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
                 </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_community_profile": e.detail.checked })}
@@ -926,6 +933,20 @@ const Settings: React.FC = () => {
                     setReduceAnimations(val);
                     await setReduceAnimationsPref(val);
                     window.dispatchEvent(new CustomEvent('reduce_animations_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Subscription Popups</span>
+                  <p>Show prompts to subscribe when tapping locked features.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  checked={showSubscriptionPopups}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowSubscriptionPopups(val);
+                    await Preferences.set({ key: UPSELL_POPUPS_ENABLED_KEY, value: String(val) });
                   }}
                 />
               </IonItem>

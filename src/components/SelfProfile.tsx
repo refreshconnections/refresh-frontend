@@ -232,7 +232,7 @@ const SelfProfile: React.FC = () => {
     const [presentShowContactSupportAlert] = useIonAlert();
 
     const showOnProfileInfoText =
-        "These choices are used when other members filter Discovery. You can also choose whether or not to show them on your profile.";
+        "These choices are used when other members use their Discovery filters. You can choose to show or hide them on your profile.";
 
     const ShowOnProfilePopover = () => (
         <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
@@ -939,7 +939,7 @@ const SelfProfile: React.FC = () => {
                                                                         ['trans', 'Trans'],
                                                                         ['intersex', 'Intersex'],
                                                                         ['mono', 'Monogamous'],
-                                                                        ['poly', 'Polyamorous'],
+                                                                        ['poly', 'Nonmonogamous'],
                                                                     ].map(([val, label]) => (
                                                                         <IonItem key={val} lines="none">
                                                                             <IonCheckbox

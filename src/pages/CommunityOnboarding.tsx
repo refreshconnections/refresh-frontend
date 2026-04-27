@@ -512,7 +512,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   flow="community"
                   onCoordsSaved={(localLabel) => {
                     setHasSharedLocationCoords(true);
-                    setCommunityLocationLabel((prev) => prev || localLabel);
+                    setCommunityLocationLabel(localLabel);
                   }}
                 />
               </div>

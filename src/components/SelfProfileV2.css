@@ -112,7 +112,7 @@ ion-card-content .card-grid {
 
 .card-field.editing {
   align-items: stretch;
-  border: 1px solid var(--ion-color-step-300);
+  border: 1px solid var(--ion-color-black);
   border-radius: 12px;
 }
 
@@ -459,9 +459,17 @@ ion-card-content .card-grid {
 
 .choice-summary {
   list-style-type: disc;
-  padding-left: 20px;
+  padding-left: 36px;
   margin: 0;
   color: var(--ion-color-dark);
+}
+
+.self-profile-v2 ion-card-content.card-grid > .field-header {
+  padding-inline-start: 18px;
+}
+
+.community-profile-card ion-card-content.card-grid > .field-header {
+  padding-inline-start: 0;
 }
 
 :root.ion-palette-dark.ios,
@@ -612,6 +620,12 @@ ion-card-content .card-grid {
 
 .self-profile-v2 .accordion-card {
   --background: transparent;
+  margin-inline: 0;
+}
+
+.self-profile-v2 ion-card-content.card-grid.accordion-body {
+  --padding-start: 0;
+  --padding-end: 0;
 }
 
 .community-bio-field:not(.editing) {

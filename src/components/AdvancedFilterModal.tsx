@@ -292,7 +292,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     { value: "trans", label: "Trans" },
     { value: "intersex", label: "Intersex" },
     { value: "mono", label: "Monogamous" },
-    { value: "poly", label: "Polyamorous" },
+    { value: "poly", label: "Nonmonogamous" },
   ];
 
   const formatGenderSexualityLabel = (value: string) => {
@@ -1480,7 +1480,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   </IonItem>
                   <IonItem>
                     <IonCheckbox slot="start" value="poly" checked={genderSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addGenderSexualityFilterCheckbox(e)} />
-                    Polyamorous
+                    Nonmonogamous
                   </IonItem>
                 </IonCol>
               </IonRow>
@@ -1665,7 +1665,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                             </IonItem>
                             <IonItem>
                               <IonCheckbox slot="start" value="poly" disabled={onlyshowSexualityFilterChecked.includes("mono")} checked={onlyshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                              Polyamorous
+                              Nonmonogamous
                             </IonItem>
 
                           </IonCol>
@@ -1795,7 +1795,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                             </IonItem>
                             <IonItem>
                               <IonCheckbox slot="start" value="poly" disabled={dontshowSexualityFilterChecked.includes("mono")} checked={dontshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                              Polyamorous
+                              Nonmonogamous
                             </IonItem>
 
                           </IonCol>

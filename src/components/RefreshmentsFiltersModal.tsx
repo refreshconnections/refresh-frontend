@@ -562,7 +562,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
               {(!isCommunityPlus(currentUserProfile?.subscription_level)) &&
                 <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
                   <IonNote className="ion-text-center">
-                    Upgrade to a subscription level to filter by more categories.
+                    Filter by more categories with Community+ or Pro.
                   </IonNote>
                 </IonRow>
               }
@@ -584,7 +584,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
         {(!isCommunityPlus(currentUserProfile?.subscription_level)) &&
           <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
             <IonNote className="ion-text-center">
-              <FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /> Upgrade to a subscription level for more sort options, filters, and additional locations and increased radius for local posts.
+              <FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /> Get more sort options, filters, additional locations, and an increased radius for local posts with Community+ or Pro.
             </IonNote>
           </IonRow>}
 

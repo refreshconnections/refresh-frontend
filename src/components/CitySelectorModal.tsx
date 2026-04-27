@@ -26,8 +26,8 @@ const CitySelectorModal: React.FC<Props> = ({ onDismiss }) => {
       if (data.geonames) {
         const results = data.geonames.map((city: any) => ({
           name: `${city.name}${city.adminName1 ? `, ${city.adminName1}` : ''}, ${city.countryName}`,
-          lat: city.lat,
-          lng: city.lng,
+          lat: parseFloat(city.lat),
+          lng: parseFloat(city.lng),
         }));
         setCities(results);
       } else {

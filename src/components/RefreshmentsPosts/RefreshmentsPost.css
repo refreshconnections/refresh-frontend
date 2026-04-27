@@ -10,6 +10,7 @@ ion-card-content p.post-content-more-lines {
     -webkit-line-clamp: 8;
     line-clamp: 8;
     -webkit-box-orient: vertical;
+    font-size: calc(12pt * var(--text-scale, 1));
 }
 
 ion-card-content p.post-content {
@@ -19,6 +20,7 @@ ion-card-content p.post-content {
     -webkit-line-clamp: 8;
     line-clamp: 8;
     -webkit-box-orient: vertical;
+    font-size: calc(12pt * var(--text-scale, 1));
 }
 
 ion-card.refreshments-card-in-list {
@@ -72,7 +74,7 @@ ion-card.refreshments-card-in-list ion-card-content{
     padding-bottom: 10pt;
     padding-inline-start: 0;
     padding-inline-end: 0;
-    font-size: calc(14pt * var(--text-scale, 1));
+    font-size: calc(12pt * var(--text-scale, 1));
     line-height: 1.4;
 }
 

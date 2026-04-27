@@ -516,7 +516,7 @@ const SelfProfileV2: React.FC = () => {
       ['trans', 'Trans'],
       ['intersex', 'Intersex'],
       ['mono', 'Monogamous'],
-      ['poly', 'Polyamorous'],
+      ['poly', 'Nonmonogamous'],
     ],
   ];
 
@@ -537,7 +537,7 @@ const SelfProfileV2: React.FC = () => {
     "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
 
   const showOnProfileInfoText =
-    "These choices are used when other members filter Discovery. You can also choose whether or not to show them on your profile.";
+    "These choices are used when other members use their Discovery filters. You can choose to show or hide them on your profile. ";
 
   const ShowOnProfilePopover = () => (
     <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>

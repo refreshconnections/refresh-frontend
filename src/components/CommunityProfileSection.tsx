@@ -212,7 +212,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const innerContent = (
     <IonRow>
       <IonCol size="12">
-        <IonCard className="accordion-card" style={{boxShadow: "none"}}>
+        <IonCard className="accordion-card community-profile-card" style={{boxShadow: "none"}}>
           <IonCardContent className="card-grid">
             <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -339,7 +339,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             <IonItem lines="none" className="community-toggle-item community-profile-item">
               <IonLabel className="ion-text-wrap">
                 <p>Connect from Refreshments</p>
-                <p className="community-subtitle">Turn this on to let people discover your personal profile from your Refreshments posts and comments.</p>
+                <p className="community-subtitle">Turn this on to let people discover your personal profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
               </IonLabel>
               <IonToggle
                 slot="end"

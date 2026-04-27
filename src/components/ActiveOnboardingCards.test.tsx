@@ -344,7 +344,7 @@ describe('active onboarding cards', () => {
       coordinates_near: 'Chicago, United States',
     });
     expect(onCoordsSaved).toHaveBeenCalledWith('Chicago, United States');
-    expect(sharedSwiper.slideNext).not.toHaveBeenCalled();
+    expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
   it('does not save coordinates when the city confirmation popup is canceled', async () => {
@@ -383,7 +383,7 @@ describe('active onboarding cards', () => {
       coordinates_near: 'New York, United States',
     });
     expect(onCoordsSaved).toHaveBeenCalledWith('New York, United States');
-    expect(sharedSwiper.slideNext).not.toHaveBeenCalled();
+    expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
   it('falls back to raw coordinates when reverse geocoding has no locality', async () => {

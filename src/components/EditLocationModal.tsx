@@ -171,7 +171,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
         header: isPlus ? "You can only change your location once a day" : "You can only change your location every 30 days.",
         message: lastSaved
           ? "You can restore your last location instead if you want. Or upgrade to Pro for unlimited location changes."
-          : "Upgrade to Pro for unlimited location changes.",
+          : "Get Pro for unlimited location changes.",
         buttons: buttons
       });
 
@@ -180,7 +180,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
 
     presentOptionsAlert({
       header: "How would you like to share your location?",
-      subHeader: isPro ? 'As a pro member, you can change your location as much as you want.' : isPlus ? 'As a + member, you can change your location once a day.' : 'You can only change your location every 30 days. Upgrade to a subscription to change your location more often.',
+      subHeader: isPro ? 'As a pro member, you can change your location as much as you want.' : isPlus ? 'As a + member, you can change your location once a day.' : 'You can only change your location every 30 days. Change your location more often with a subscription.',
       buttons: [
         {
           text: "Nevermind",

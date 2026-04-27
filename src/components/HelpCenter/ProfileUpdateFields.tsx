@@ -59,6 +59,7 @@ const ProfileUpdateFields: React.FC<Props> = ({
                         placeholder="Your preferred name"
                         value={newName}
                         onIonInput={e => setNewName(e.detail.value!)}
+                        autocapitalize="words"
                     />
                 </IonItem>
             )}

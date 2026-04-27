@@ -40,17 +40,16 @@ function SubscriptionMessage({ subscriptionLevel }: { subscriptionLevel: string 
 
 
 
-  const description = isSubscribed
-    ? "Together, we're building a conscientious community while you enjoy an upgraded experience designed for deeper connections." : "Discover everything Refresh Connections has to offer and pick the plan that's right for you."
+  const description = "Subscriptions help sustain this member-supported community while adding extra control and organization across the personal and community sides of the app. A Pro subscription combines Community+ and Personal+ features, and includes additional Pro-specific tools."
 
   return (
     <IonCard color="navy" className="ion-padding" style={{ textAlign: "center", borderRadius: "16px" }}>
-        <FontAwesomeIcon icon={faCirclePlus} style={{ fontSize: '36px', color: 'var(--ion-color-primary)', marginTop: "15pt" }} />
+        <FontAwesomeIcon icon={faCirclePlus} style={{ fontSize: '36px', color: 'var(--ion-color-white)', marginTop: "15pt" }} />
 
       <IonCardHeader>
 
         <IonCardTitle style={{ marginTop: '8px', fontSize: '20px' }}>
-          {isSubscribed ?`Welcome to ${levelName}!` : "Unlock the complete Pro experience."}
+          {isSubscribed ?`Thanks for supporting Refresh Connections with your ${levelName} subscription!` : "Support Refresh Connections!"}
         </IonCardTitle>
       </IonCardHeader>
 

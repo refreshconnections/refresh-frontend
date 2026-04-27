@@ -176,3 +176,7 @@ ion-content.settings ion-label {
   font-weight: normal;
   display: block;
 }
+
+ion-label.ion-text-wrap p {
+  font-size: calc(11pt * var(--text-scale, 1));
+}

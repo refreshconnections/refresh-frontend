@@ -76,7 +76,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
   };
 
   const confirmLocationAlert = async (lat: number, long: number, cityLabel?: string) => {
-    const reverseOptions = { latitude: lat, longitude: long };
+    const reverseOptions = { latitude: parseFloat(String(lat)), longitude: parseFloat(String(long)) };
     const address = await NativeGeocoder.reverseGeocode(reverseOptions);
     const firstAddress = address?.addresses?.[0];
     const fallbackLabel =
@@ -99,20 +99,24 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
             });
             setCoordsSet(true);
             onCoordsSaved?.(local);
+            swiper.slideNext();
           },
         },
       ],
     });
   };
 
+  const showDeniedAlert = () =>
+    presentAlert({
+      header: copy.deniedHeader,
+      subHeader: copy.deniedSubHeader,
+      buttons: ['OK'],
+    });
+
   const shareLocation = async () => {
     const permissionsStatus = await Geolocation.checkPermissions();
-    if (permissionsStatus.location === 'denied') {
-      await presentAlert({
-        header: copy.deniedHeader,
-        message: copy.deniedMessage,
-        buttons: ['OK'],
-      });
+    if (permissionsStatus.location === 'denied' && permissionsStatus.coarseLocation !== 'granted') {
+      await showDeniedAlert();
       return;
     }
 
@@ -137,12 +141,17 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
         coordinates.coords.longitude,
         undefined
       );
-    } catch (err) {
-      await presentAlert({
-        header: copy.gpsErrorHeader,
-        message: copy.gpsErrorMessage,
-        buttons: ['OK'],
-      });
+    } catch (err: any) {
+      const msg: string = err?.message ?? '';
+      if (msg.toLowerCase().includes('permission')) {
+        await showDeniedAlert();
+      } else {
+        await presentAlert({
+          header: copy.gpsErrorHeader,
+          message: copy.gpsErrorMessage,
+          buttons: ['OK'],
+        });
+      }
     }
   };
 
