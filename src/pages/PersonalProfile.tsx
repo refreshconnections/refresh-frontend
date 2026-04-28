@@ -69,9 +69,11 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const { data: communityProfile } = useGetCommunityProfile();
   const hasCommunityProfile = Boolean(communityProfile);
   const SLIDE_KEY = 'personal_profile_onboarding_slide';
-  const [locallySharedCoords, setLocallySharedCoords] = useState(false);
-  const hasSharedLocationCoords = locallySharedCoords || Boolean(
-    currentProfile?.location_point_lat && currentProfile?.location_point_long
+
+  // Read synchronously from cache on first render. If the user shared location
+  // during community onboarding, the coords slide shows the "already set" state.
+  const [hasSharedLocationCoords] = useState(
+    () => Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
   );
   const [locationLabelDraft, setLocationLabelDraft] = useState('');
   const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
@@ -88,7 +90,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
 
   useEffect(() => {
     setLocationLabelDraft(
-      (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim()
+      (currentProfile?.location || currentProfile?.coordinates_near || '').trim()
     );
   }, [
     currentProfile?.location,
@@ -101,6 +103,13 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
         await Preferences.remove({ key: SLIDE_KEY });
         return;
       }
+      // Coords slide is now always present. If pre-existing coords exist, the
+      // old stored index was from a layout without that slide — clear it to avoid
+      // landing on the wrong slide.
+      if (hasSharedLocationCoords) {
+        await Preferences.remove({ key: SLIDE_KEY });
+        return;
+      }
       const stored = await Preferences.get({ key: SLIDE_KEY });
       const storedIndex = stored?.value ? Number(stored.value) : 0;
       if (swiperRef.current && Number.isFinite(storedIndex) && storedIndex > 0) {
@@ -108,7 +117,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
       }
     };
     restoreSlide();
-  }, [currentProfile?.created_profile]);
+  }, [currentProfile?.created_profile, hasSharedLocationCoords]);
 
   const confirmLogoutAlert = async () => {
     confirmLogout({
@@ -217,18 +226,19 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
               <OnboardingCardPronouns />
             </div>
           </SwiperSlide>
-          {!hasSharedLocationCoords && (
-            <SwiperSlide>
-              <div className="onboarding-v2__slide onboarding-v2__slide--tight-top">
-                <OnboardingCardLocationCoords
-                  onCoordsSaved={(localLabel) => {
-                    setLocallySharedCoords(true);
-                    setLocationLabelDraft((prev) => prev || localLabel);
-                  }}
-                />
-              </div>
-            </SwiperSlide>
-          )}
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLocationCoords
+                preExistingCoords={hasSharedLocationCoords}
+                onCoordsSaved={(localLabel) => {
+                  setLocationLabelDraft(localLabel);
+                }}
+                onCoordsCleared={() => {
+                  setLocationLabelDraft('');
+                }}
+              />
+            </div>
+          </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardLocationLabel initialLocation={locationLabelDraft} />

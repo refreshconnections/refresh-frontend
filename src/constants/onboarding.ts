@@ -1,7 +1,7 @@
 const SHARED_LOCATION_COORDS_COPY = {
   useLocation: 'Share by device location',
   chooseCity: 'Share by choosing my city',
-  coordsSaved: 'Coordinates saved. You can edit your location label on the next step.',
+  coordsSaved: 'You can edit your location label on the next step.',
   dontShare: "Don't share my location",
   confirmPrefix: "So just confirming, you're near ",
   confirmSuffix: '?',
@@ -9,7 +9,7 @@ const SHARED_LOCATION_COORDS_COPY = {
   confirmConfirm: 'Yep',
   deniedHeader: "Refresh Connections can't access your location because of your settings.",
   deniedSubHeader: 'Allow the app to see your current location by going to Settings > Refresh > Location.',
-  gpsErrorHeader: "We couldn't get your GPS coordinates.",
+  gpsErrorHeader: "We couldn't get your location coordinates.",
   gpsErrorMessage: 'Try again, choose your city, or continue without sharing.',
   declineCancel: 'Go back',
   declineConfirm: 'OK',

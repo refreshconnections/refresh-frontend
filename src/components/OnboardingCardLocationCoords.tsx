@@ -13,9 +13,11 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { Geolocation } from '@capacitor/geolocation';
 import { NativeGeocoder } from '@capgo/nativegeocoder';
+import { useQueryClient } from '@tanstack/react-query';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getCurrentPositionSmart } from '../hooks/geolocationUtilities';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import CitySelectorModal from './CitySelectorModal';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 
@@ -23,7 +25,9 @@ import './OnboardingCard.css';
 
 type Props = {
   flow?: 'personal' | 'community';
+  preExistingCoords?: boolean;
   onCoordsSaved?: (localLabel: string) => void;
+  onCoordsCleared?: () => void;
 };
 
 const buildLocationLabel = (address?: Record<string, any>, fallback?: string) => {
@@ -43,12 +47,13 @@ const buildLocationLabel = (address?: Record<string, any>, fallback?: string) =>
   return fallback ?? '';
 };
 
-const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCoordsSaved }) => {
+const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preExistingCoords = false, onCoordsSaved, onCoordsCleared }) => {
   const copy =
     flow === 'community'
       ? ONBOARDING_COPY.cards.locationCoords.community
       : ONBOARDING_COPY.cards.locationCoords.personal;
   const swiper = useSwiper();
+  const queryClient = useQueryClient();
   const currentProfile = useGetCurrentProfile().data;
   const [presentAlert] = useIonAlert();
   const [presentConfirm] = useIonAlert();
@@ -83,7 +88,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
       cityLabel ||
       firstAddress?.locality ||
       `${lat.toFixed(3)}, ${long.toFixed(3)}`;
-    const local = buildLocationLabel(firstAddress, fallbackLabel) || fallbackLabel;
+    const local = cityLabel || buildLocationLabel(firstAddress, fallbackLabel) || fallbackLabel;
 
     presentConfirm({
       header: `${copy.confirmPrefix}${local}${copy.confirmSuffix}`,
@@ -97,6 +102,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
               location_point_lat: lat,
               coordinates_near: local,
             });
+            await queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
             setCoordsSet(true);
             onCoordsSaved?.(local);
             swiper.slideNext();
@@ -156,7 +162,6 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
   };
 
   const declineCoordinates = async () => {
-    setCoordsSet(false);
     await presentAlert({
       header: copy.declineHeader,
       message: copy.declineMessage,
@@ -167,13 +172,56 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', onCo
         },
         {
           text: copy.declineConfirm,
-          handler: () => {
+          handler: async () => {
+            setCoordsSet(false);
+            await updateCurrentUserProfile({
+              location_point_lat: null,
+              location_point_long: null,
+              coordinates_near: null,
+            });
+            await queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
+            onCoordsCleared?.();
             swiper.slideNext();
           },
         },
       ],
     });
   };
+
+  if (preExistingCoords) {
+    const existingLabel = (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim();
+    return (
+      <IonCard className="onboarding-slide">
+        <IonCardContent>
+          <IonCardTitle>{copy.title}</IonCardTitle>
+          <IonNote style={{ display: 'block', marginBottom: '8px' }}>
+            You've already shared your location{existingLabel ? `: ${existingLabel}` : ''}.
+          </IonNote>
+          <IonText style={{ whiteSpace: 'pre-line' }}>
+            {copy.body}
+          </IonText>
+          <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
+            <IonButton expand="block" onClick={shareLocation}>
+              Update via device location
+            </IonButton>
+          </IonRow>
+          {coordsSet && (
+            <IonNote style={{ textAlign: 'center' }}>
+              {copy.coordsSaved}
+            </IonNote>
+          )}
+        </IonCardContent>
+        <IonRow className="onboarding-slide-buttons">
+          <IonButton color="gray" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton onClick={() => swiper.slideNext()}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+      </IonCard>
+    );
+  }
 
   return (
     <IonCard className="onboarding-slide">

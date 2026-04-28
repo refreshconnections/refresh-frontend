@@ -99,10 +99,19 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [savingBio, setSavingBio] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
   const [savingAge, setSavingAge] = useState(false);
+  const locationLabelCleared = useRef(false);
 
   const hasPersonalProfile = Boolean(currentProfile?.created_profile);
-  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
-  const totalSlides = 7 + (hasPersonalProfile ? 1 : 0) + (!hasSharedLocationCoords ? 1 : 0);
+
+  // Read synchronously from cache on first render — stable for the session.
+  const [hasSharedLocationCoords] = useState(
+    () => Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
+  );
+
+  // Tracks coords saved/cleared this session for UI text decisions (separate from slide presence).
+  const [coordsSavedThisSession, setCoordsavedThisSession] = useState(false);
+  const hasAnyCoords = hasSharedLocationCoords || coordsSavedThisSession;
+  const totalSlides = 7 + (hasPersonalProfile ? 1 : 0) + 1; // coords slide always rendered
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
   const ageLabel = ageNumber !== null ? `${ageNumber}` : '-';
@@ -150,12 +159,12 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   }, [communityProfile]);
 
   useEffect(() => {
-    setHasSharedLocationCoords(
-      Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
-    );
-    setCommunityLocationLabel(
-      (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim()
-    );
+    if (currentProfile === undefined) return;
+    const newLabel = (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim();
+    setCommunityLocationLabel(prev => {
+      if (locationLabelCleared.current) return '';
+      return newLabel || prev;
+    });
   }, [
     currentProfile?.location,
     currentProfile?.coordinates_near,
@@ -235,7 +244,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
   const handleLocationNext = async () => {
     const trimmedLocationLabel = communityLocationLabel.trim();
-    const shouldShowLocation = hasSharedLocationCoords ? showLocation : Boolean(trimmedLocationLabel);
+    const shouldShowLocation = hasAnyCoords ? showLocation : Boolean(trimmedLocationLabel);
 
     if (shouldShowLocation && !trimmedLocationLabel) {
       return;
@@ -505,19 +514,24 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             </div>
           </SwiperSlide>
 
-          {!hasSharedLocationCoords && (
-            <SwiperSlide>
-              <div className="onboarding-v2__slide onboarding-v2__slide--tight-top">
-                <OnboardingCardLocationCoords
-                  flow="community"
-                  onCoordsSaved={(localLabel) => {
-                    setHasSharedLocationCoords(true);
-                    setCommunityLocationLabel(localLabel);
-                  }}
-                />
-              </div>
-            </SwiperSlide>
-          )}
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLocationCoords
+                flow="community"
+                preExistingCoords={hasSharedLocationCoords}
+                onCoordsSaved={(localLabel) => {
+                  locationLabelCleared.current = false;
+                  setCommunityLocationLabel(localLabel);
+                  setCoordsavedThisSession(true);
+                }}
+                onCoordsCleared={() => {
+                  locationLabelCleared.current = true;
+                  setCommunityLocationLabel('');
+                  setCoordsavedThisSession(false);
+                }}
+              />
+            </div>
+          </SwiperSlide>
 
           <SwiperSlide>
             <div className="onboarding-v2__slide">
@@ -525,11 +539,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                 <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
                   <IonCardTitle>{copy.location.title}</IonCardTitle>
                   <p>
-                    {hasSharedLocationCoords
+                    {hasAnyCoords
                       ? copy.location.withSharedCoords
                       : copy.location.withoutSharedCoords}
                   </p>
-                  {hasSharedLocationCoords ? (
+                  {hasAnyCoords ? (
                     <>
                       <IonText color="medium">
                         <p style={{ marginTop: 0 }}>
@@ -568,7 +582,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                     <IonButton
                       className="onboarding-v2__primary-action"
                       onClick={handleLocationNext}
-                      disabled={savingLocation || (hasSharedLocationCoords && showLocation && !communityLocationLabel.trim())}
+                      disabled={savingLocation || (hasAnyCoords && showLocation && !communityLocationLabel.trim())}
                     >
                       <span className={`onboarding-v2__button-label ${savingLocation ? 'loading' : ''}`}>
                         {ONBOARDING_COPY.common.next}
@@ -576,7 +590,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       {savingLocation && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
                     </IonButton>
                   </IonRow>
-                  {!hasSharedLocationCoords && (
+                  {!hasAnyCoords && (
                     <IonRow className="onboarding-v2__nav">
                       <IonButton fill="clear" size="small" onClick={handleLocationSkip}>
                         {ONBOARDING_COPY.common.skip}

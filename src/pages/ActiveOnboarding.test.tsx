@@ -28,6 +28,8 @@ const {
   mockBrowserOpen,
   mockApiGet,
   mockAgeVerificationProps,
+  mockLocationCoordsProps,
+  mockLocationLabelProps,
   mockWindowOpen,
   mockKeyboardAddListener,
   mockKeyboardGetResizeMode,
@@ -59,6 +61,8 @@ const {
   mockBrowserOpen: vi.fn(),
   mockApiGet: vi.fn(),
   mockAgeVerificationProps: [] as any[],
+  mockLocationCoordsProps: [] as any[],
+  mockLocationLabelProps: [] as any[],
   mockWindowOpen: vi.fn(),
   mockKeyboardAddListener: vi.fn(),
   mockKeyboardGetResizeMode: vi.fn().mockResolvedValue({ mode: 'native' }),
@@ -331,11 +335,29 @@ vi.mock('../components/OnboardingCardPronouns', () => ({
 }));
 
 vi.mock('../components/OnboardingCardLocationCoords', () => ({
-  default: () => <div>onboarding-card-location-coords</div>,
+  default: (props: any) => {
+    mockLocationCoordsProps.push(props);
+    return (
+      <div>
+        onboarding-card-location-coords
+        <span>pre-existing-coords:{String(Boolean(props.preExistingCoords))}</span>
+        <button onClick={() => props.onCoordsSaved?.('Chicago, Illinois, United States')}>mock-save-coords</button>
+        <button onClick={() => props.onCoordsCleared?.()}>mock-clear-coords</button>
+      </div>
+    );
+  },
 }));
 
 vi.mock('../components/OnboardingCardLocationLabel', () => ({
-  default: () => <div>onboarding-card-location-label</div>,
+  default: (props: any) => {
+    mockLocationLabelProps.push(props);
+    return (
+      <div>
+        onboarding-card-location-label
+        <span>initial-location:{props.initialLocation ?? ''}</span>
+      </div>
+    );
+  },
 }));
 
 vi.mock('../components/OnboardingCardLookingFor', () => ({
@@ -417,6 +439,8 @@ describe('active onboarding pages', () => {
     mockBrowserOpen.mockResolvedValue(undefined);
     mockApiGet.mockResolvedValue({ data: { status: 'pending' } });
     mockAgeVerificationProps.length = 0;
+    mockLocationCoordsProps.length = 0;
+    mockLocationLabelProps.length = 0;
     mockWindowOpen.mockReset();
     mockGlobalProfile = {
       birth_date: null,
@@ -746,14 +770,22 @@ describe('active onboarding pages', () => {
       created_profile: true,
       location_point_lat: 40.7128,
       location_point_long: -74.006,
+      location: 'Brooklyn',
     };
 
     renderInApp(<CommunityOnboarding />);
 
+    expect(mockLocationCoordsProps.at(-1)).toEqual(
+      expect.objectContaining({
+        flow: 'community',
+        preExistingCoords: true,
+      })
+    );
     expect(
       screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withSharedCoords)
     ).toBeInTheDocument();
-    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
+    expect(screen.getByText('pre-existing-coords:true')).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal)).not.toBeInTheDocument();
   });
 
@@ -770,7 +802,74 @@ describe('active onboarding pages', () => {
     expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.title).length).toBeGreaterThan(0);
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
     expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(mockLocationCoordsProps.at(-1)).toEqual(
+      expect.objectContaining({
+        flow: 'community',
+        preExistingCoords: false,
+      })
+    );
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
+  });
+
+  it('keeps refreshments onboarding on the normal location UI after a previously shared location was cleared', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: '',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    expect(mockLocationCoordsProps.at(-1)).toEqual(
+      expect.objectContaining({
+        flow: 'community',
+        preExistingCoords: false,
+      })
+    );
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
+  });
+
+  it('switches the refreshments location label step to shared-location UI after sharing mid-flow', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: '',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText('mock-save-coords'));
+
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).toBeInTheDocument();
+    expect(screen.getByText(/Location shown on your profile:/)).toHaveTextContent('Chicago, Illinois, United States');
+  });
+
+  it('clears the refreshments location label step after sharing then declining mid-flow', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: '',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText('mock-save-coords'));
+    fireEvent.click(screen.getByText('mock-clear-coords'));
+
+    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Location shown on your profile:/)).not.toBeInTheDocument();
   });
 
   it('renders the locked-username and age-hidden community branches', () => {
@@ -1103,47 +1202,93 @@ describe('active onboarding pages', () => {
     });
   });
 
-  it('includes the location-sharing card in personal onboarding when shared coordinates do not exist', () => {
+  it('shows normal location-sharing UI in personal onboarding when Refreshments was declined first', () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
+      created_profile: false,
       location_point_lat: null,
       location_point_long: null,
+      coordinates_near: null,
+      location: '',
     };
 
     renderInApp(<PersonalProfile />);
 
     expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(screen.getByText('pre-existing-coords:false')).toBeInTheDocument();
     expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
+    expect(screen.getByText('initial-location:')).toBeInTheDocument();
   });
 
-  it('skips the location-sharing card in personal onboarding when shared coordinates already exist', () => {
-    mockCurrentProfile = {
-      ...mockCurrentProfile,
-      location_point_lat: 40.7128,
-      location_point_long: -74.006,
-    };
-
-    renderInApp(<PersonalProfile />);
-
-    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
-    expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
-  });
-
-  it('skips the location-sharing card in personal onboarding when location was set during refreshments onboarding', () => {
-    // Simulates the flow: account created → refreshments profile completed (sets coords) → personal profile started
+  it('shows already-shared location UI in personal onboarding when Refreshments shared first', () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
       created_profile: false,
       location_point_lat: 40.7128,
       location_point_long: -74.006,
+      coordinates_near: 'New York, United States',
+      location: 'NYC metro',
     };
-    // mockCommunityProfile is already set, representing the completed refreshments profile
 
     renderInApp(<PersonalProfile />);
 
-    // Location coords slide must be absent from the first render so Swiper never initialises with it
-    expect(screen.queryByText('onboarding-card-location-coords')).not.toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(screen.getByText('pre-existing-coords:true')).toBeInTheDocument();
     expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
+    expect(screen.getByText('initial-location:NYC metro')).toBeInTheDocument();
+  });
+
+  it('shows normal location-sharing UI in personal onboarding when Refreshments shared then declined first', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: '',
+    };
+
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
+    expect(screen.getByText('pre-existing-coords:false')).toBeInTheDocument();
+    expect(screen.getByText('onboarding-card-location-label')).toBeInTheDocument();
+  });
+
+  it('uses cached coordinates for already-shared personal onboarding UI even if the location step was never visited', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: 51.5074,
+      location_point_long: -0.1278,
+      coordinates_near: 'London, United Kingdom',
+      location: '',
+    };
+
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.getByText('pre-existing-coords:true')).toBeInTheDocument();
+    expect(screen.getByText('initial-location:London, United Kingdom')).toBeInTheDocument();
+  });
+
+  it('updates and clears the personal location label draft when sharing or declining mid-flow', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: '',
+    };
+
+    renderInApp(<PersonalProfile />);
+
+    fireEvent.click(screen.getByText('mock-save-coords'));
+    expect(screen.getByText('initial-location:Chicago, Illinois, United States')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('mock-clear-coords'));
+    expect(screen.getByText('initial-location:')).toBeInTheDocument();
+    expect(screen.queryByText('initial-location:Chicago, Illinois, United States')).not.toBeInTheDocument();
   });
 
   it('shows the finish-later branch on personal profile and not the connect toggle card mock', () => {

@@ -1,0 +1,21 @@
+.standalone-community-profile .profile-accordion-group ion-accordion {
+  background: var(--ion-color-white);
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.standalone-community-profile .profile-accordion-group ion-accordion ion-item {
+  --background: var(--ion-color-white);
+}
+
+.standalone-community-profile .profile-accordion-group .accordion-card {
+  --background: transparent;
+  margin: 0;
+  box-shadow: none;
+}
+
+.standalone-community-profile .profile-accordion-group ion-card-content.accordion-body {
+  --padding-start: 0;
+  --padding-end: 0;
+  padding-top: 0;
+}

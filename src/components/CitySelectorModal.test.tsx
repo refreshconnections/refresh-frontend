@@ -6,7 +6,10 @@ import CitySelectorModal from './CitySelectorModal';
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
-  return { ...actual };
+  return {
+    ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
+  };
 });
 
 const renderModal = async (onDismiss = vi.fn()) => {
@@ -26,7 +29,7 @@ const getReactProps = (el: HTMLElement) => {
 };
 
 const triggerSearchInput = async (value: string) => {
-  const searchbar = document.querySelector('ion-searchbar') as HTMLElement;
+  const searchbar = document.querySelector('ion-searchbar') as unknown as HTMLElement;
   await act(async () => {
     fireEvent(searchbar, new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
     await Promise.resolve();

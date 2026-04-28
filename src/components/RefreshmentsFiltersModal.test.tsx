@@ -271,7 +271,7 @@ describe('RefreshmentsFiltersModal', () => {
       localProp: false,
     });
 
-    expect(await screen.findByText('Upgrade to a subscription level to filter by more categories.')).toBeInTheDocument();
+    expect(await screen.findByText('Filter by more categories with Community+ or Pro.')).toBeInTheDocument();
 
     await act(async () => {
       fireEvent(

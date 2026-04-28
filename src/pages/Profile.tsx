@@ -290,7 +290,7 @@ const Profile: React.FC = () => {
                   Update location
                 </IonButton>
                 {data?.username ? (
-                  <div style={{ marginTop: '12px' }}>
+                  <div className="standalone-community-profile" style={{ marginTop: '12px' }}>
                     <CommunityProfileSection />
                   </div>
                 ) : null}

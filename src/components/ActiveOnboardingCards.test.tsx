@@ -330,7 +330,7 @@ describe('active onboarding cards', () => {
 
     const citySelectorProps = mockIonModalProps.at(-1);
     await act(async () => {
-      await citySelectorProps.onDismiss({ name: 'Chicago', lat: 41.8781, lng: -87.6298 });
+      await citySelectorProps.onDismiss({ name: 'Chicago, Illinois, United States', lat: 41.8781, lng: -87.6298 });
     });
 
     const confirmConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
@@ -341,9 +341,9 @@ describe('active onboarding cards', () => {
     expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
       location_point_long: -87.6298,
       location_point_lat: 41.8781,
-      coordinates_near: 'Chicago, United States',
+      coordinates_near: 'Chicago, Illinois, United States',
     });
-    expect(onCoordsSaved).toHaveBeenCalledWith('Chicago, United States');
+    expect(onCoordsSaved).toHaveBeenCalledWith('Chicago, Illinois, United States');
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
@@ -354,7 +354,7 @@ describe('active onboarding cards', () => {
 
     const citySelectorProps = mockIonModalProps.at(-1);
     await act(async () => {
-      await citySelectorProps.onDismiss({ name: 'Seattle', lat: 47.6062, lng: -122.3321 });
+      await citySelectorProps.onDismiss({ name: 'Seattle, Washington, United States', lat: 47.6062, lng: -122.3321 });
     });
 
     const confirmConfig = mockPresentAlert.mock.calls.at(-1)?.[0];

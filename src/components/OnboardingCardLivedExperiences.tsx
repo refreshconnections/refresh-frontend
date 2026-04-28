@@ -53,7 +53,6 @@ const OnboardingCardLivedExperiences: React.FC = () => {
   };
 
   const updateProfile = async () => {
-    if (selected.length === 0) return;
     const existingSelected = currentProfile?.lived_experiences ?? [];
     const existingShow = Boolean(currentProfile?.settings_show_lived_experiences);
     const nextSorted = [...selected].sort();
@@ -121,7 +120,7 @@ const OnboardingCardLivedExperiences: React.FC = () => {
       <div className="onboarding-v2__card-footer">
         <IonRow className="onboarding-v2__nav">
           <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
-          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={selected.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile}>{ONBOARDING_COPY.common.next}</IonButton>
         </IonRow>
       </div>
     </IonCard>

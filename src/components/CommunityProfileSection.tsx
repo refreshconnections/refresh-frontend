@@ -31,6 +31,7 @@ import { getPrimaryOrderedPhoto, normalizeLocalMediaUrl, onImgError, updateCurre
 import CroppedImageModal from './CroppedImageModal';
 import EditUsernameModal from './EditUsernameModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
+import './CommunityProfileSection.css';
 
 type CommunityProfileSectionProps = {
   useAccordion?: boolean;

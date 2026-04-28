@@ -41,6 +41,7 @@ vi.mock('@ionic/react', async () => {
 
   return {
     ...actual,
+    IonApp: ({ children }: any) => <div>{children}</div>,
     IonAlert: ({ isOpen, header, subHeader, message, buttons, onDidDismiss }: any) =>
       isOpen ? (
         <div data-testid="ion-alert">

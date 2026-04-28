@@ -304,13 +304,13 @@ describe('Settings page', () => {
     fireEvent.click(screen.getByText('Thanks for supporting Refresh Connections with Pro'));
 
     expect(
-      screen.getByText('Refresh Connections is member-supported, with paid levels that help sustain the app while adding extra control and organization across its community and personal sides.')
+      screen.getByText('Refresh Connections is member-supported, with subscriptions that help sustain the app while adding extra control and organization across its community and personal sides.')
     ).toBeInTheDocument();
     const supportCard = screen.getByText('Thanks for supporting Refresh Connections with Pro').closest('ion-card');
     expect(supportCard).toBeTruthy();
     const supportParagraphs = (supportCard as HTMLElement).querySelectorAll('p');
     expect(supportParagraphs[1]?.textContent).toContain('Settings marked with');
-    expect(supportParagraphs[1]?.textContent).toContain('are available with a paid level. Tap the icon to learn more and see plans.');
+    expect(supportParagraphs[1]?.textContent).toContain('are available with a subscription. Tap the icon to learn more and see plans.');
 
     fireEvent.click(screen.getByText('See plans'));
 
@@ -339,7 +339,8 @@ describe('Settings page', () => {
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: 'Get Pro!',
+        header: 'Get + or Pro!',
+        message: 'This feature is available with a subscription.',
         buttons: expect.arrayContaining([
           expect.objectContaining({ text: 'Back' }),
           expect.objectContaining({ text: 'Store' }),
