@@ -98,7 +98,7 @@ describe('CommunityProfileSection', () => {
   it('shows the default Refreshments avatar when personal photo use is turned off and there is no community photo', async () => {
     renderSection();
 
-    const avatar = screen.getByAltText('Refreshments profile');
+    const avatar = screen.getByAltText('Refreshments Profile');
     expect(avatar).toHaveAttribute('src', '/img/personal.jpg');
 
     const toggle = document.querySelector('ion-toggle') as HTMLElement;
@@ -112,7 +112,7 @@ describe('CommunityProfileSection', () => {
       });
     });
 
-    expect(screen.getByAltText('Refreshments profile')).toHaveAttribute(
+    expect(screen.getByAltText('Refreshments Profile')).toHaveAttribute(
       'src',
       '../static/img/navynobordervector.png'
     );
@@ -132,12 +132,12 @@ describe('CommunityProfileSection', () => {
       });
     });
 
-    expect(screen.getByAltText('Refreshments profile')).toHaveAttribute(
+    expect(screen.getByAltText('Refreshments Profile')).toHaveAttribute(
       'src',
       '../static/img/navynobordervector.png'
     );
     expect(
-      screen.getByText(/While your personal profile is paused, Refreshments uses your Refreshments profile photo or the default avatar\./)
+      screen.getByText(/While your Personal Profile is paused, Refreshments uses your Refreshments Profile photo or the default avatar\./)
     ).toBeInTheDocument();
   });
 });

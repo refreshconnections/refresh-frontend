@@ -113,7 +113,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
     <IonCard  className="onboarding-slide">
       <IonCardContent>
         <IonCardTitle>Want to {currentUserProfile?.username? "change": "create"} your Refreshments handle?</IonCardTitle>
-            <IonText>Your handle keeps your preferred first name hidden at the Refreshments Bar, but know that anyone who can see your profile can also see your handle.</IonText>
+            <IonText>Your handle keeps your preferred first name hidden at the Refreshments Bar, but know that anyone who can see your Personal Profile can also see your handle.</IonText>
             <p> You can only change your handle every 60 days.</p>
             <IonItem >
             <IonInput value={username}
@@ -146,7 +146,7 @@ const EditUsernameModal: React.FC<Props> =  (props) => {
           {currentUserProfile?.paused_profile && (
             <IonText color="medium">
               <p>
-                Your personal profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.
+                Your Personal Profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.
               </p>
             </IonText>
           )}

@@ -27,7 +27,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { apiClient } from '../hooks/api/api-client';
 import CitySelectorModal from './CitySelectorModal';
-import { containsGoogleDocLink, containsLinkShortener, containsPii, eventUploadPhoto, isCommunityPlus, isPro } from '../hooks/utilities';
+import { containsGoogleDocLink, containsLinkShortener, containsPii, eventUploadPhoto, increaseStreak, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
@@ -121,7 +121,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [showPostTip, setShowPostTip] = useState(false);
   const { data: globalProfile } = useGetGlobalAppCurrentProfile();
   const moderation = useGetCurrentModeration().data;
-  const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate);
+  const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate)
+    || isPro(globalProfile?.subscription_level)
+    || isCommunityPlus(globalProfile?.subscription_level);
   const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
   const commentingPausedUntil = moderation?.commenting_paused_until;
   const commentingPauseActive = Boolean(
@@ -266,7 +268,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     [defaultStartDatetime]
   );
   const [startDatetime, setStartDatetime] = useState(defaultStartDatetime);
-  const [endDatetime, setEndDatetime] = useState(defaultEndDatetime);
+  const [endDatetime, setEndDatetime] = useState('');
   const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const normalizeDatetime = (value: string) => {
@@ -630,6 +632,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         await eventUploadPhoto({ image: imageData }, eventId);
       }
 
+      await increaseStreak();
       setShowSuccessAlert(true);
     } catch (err) {
       console.error('Unable to create event', err);
@@ -812,10 +815,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               step="900"
               value={startDatetime}
               name="start_datetime"
-              onIonChange={(event) => setStartDatetime(normalizeDatetime(event.detail.value ?? ''))}
-              onIonFocus={() => {
-                if (!startDatetime) {
-                  setStartDatetime(defaultStartDatetime);
+              onIonChange={(event) => {
+                const normalized = normalizeDatetime(event.detail.value ?? '');
+                setStartDatetime(normalized);
+                if (normalized && !endDatetime) {
+                  setEndDatetime(moment(normalized).add(1, 'hour').format('YYYY-MM-DDTHH:mm'));
                 }
               }}
             />
@@ -830,16 +834,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               value={endDatetime}
               name="end_datetime"
               onIonChange={(event) => setEndDatetime(normalizeDatetime(event.detail.value ?? ''))}
-              onIonFocus={() => {
-                if (endDatetime) return;
-                if (startDatetime) {
-                  const next = moment(startDatetime).add(1, 'hour').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
-                  setEndDatetime(next);
-                } else {
-                  const next = moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
-                  setEndDatetime(next);
-                }
-              }}
             />
             <BoxedStackedSelect
               label="Time zone"

@@ -67,21 +67,10 @@ const WelcomeSlide: React.FC = () => {
             onClick={() => {
               swiper.allowSlideNext = true;
               swiper.allowSlidePrev = true;
-              swiper.slideTo(2, 0);
-            }}
-          >
-            {copy.primaryCta}
-          </IonButton>
-          <IonButton
-            expand="block"
-            fill="outline"
-            onClick={() => {
-              swiper.allowSlideNext = true;
-              swiper.allowSlidePrev = true;
               swiper.slideNext();
             }}
           >
-            {copy.secondaryCta}
+            {copy.primaryCta}
           </IonButton>
         </div>
         <IonButton

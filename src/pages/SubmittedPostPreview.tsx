@@ -655,12 +655,6 @@ const SubmittedPostPreview: React.FC = () => {
                 )}
               </IonItem>
             )}
-            {typeof post?.interested_count === 'number' && (
-              <IonItem color="white" lines="none">
-                <IonLabel position="stacked">Interested count</IonLabel>
-                <IonText className="preview-value">{post.interested_count}</IonText>
-              </IonItem>
-            )}
             {post?.sensitive && (
               <IonItem color="white" lines="none">
                 <IonLabel position="stacked">Sensitive Content</IonLabel>

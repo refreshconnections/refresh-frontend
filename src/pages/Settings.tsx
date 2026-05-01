@@ -240,7 +240,7 @@ const Settings: React.FC = () => {
   const pauseProfileClicked = async () => {
     console.log('Pause clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to pause your profile?',
+      header: 'Are you sure you want to pause your Personal Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -261,7 +261,7 @@ const Settings: React.FC = () => {
 
   const cantUnpause = async (message: string) => {
     cantUnpauseAlert({
-      header: 'Uh oh. Your profile is not ready to be un-paused!',
+      header: 'Uh oh. Your Personal Profile is not ready to be un-paused!',
       subHeader: message,
       buttons: [
         {
@@ -326,7 +326,7 @@ const Settings: React.FC = () => {
   const unpauseProfileClicked = async () => {
     console.log('Pause clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to unpause your profile?',
+      header: 'Are you sure you want to unpause your Personal Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -347,7 +347,7 @@ const Settings: React.FC = () => {
   const deactivateProfileClicked = async () => {
     console.log('Deactivate clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to deactivate your profile?',
+      header: 'Are you sure you want to deactivate your Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -385,7 +385,7 @@ const Settings: React.FC = () => {
     }
     else {
       presentConfirmAlert({
-        header: 'Are you sure you want to reactivate your profile?',
+        header: 'Are you sure you want to reactivate your Profile?',
         buttons: [
           {
             text: 'Nevermind.',
@@ -645,7 +645,7 @@ const Settings: React.FC = () => {
               <IonItem>
                 <IonLabel className="ion-text-wrap">
                   <span className="settings__label-heading">Connect from Refreshments</span>
-                  <p>Turn this on to let people discover your personal profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
+                  <p>Turn this on to let people discover your Personal Profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
                 </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_community_profile": e.detail.checked })}
@@ -865,7 +865,7 @@ const Settings: React.FC = () => {
               <IonItem>
                 <IonLabel className="ion-text-wrap">
                   <PremiumLabel available={isProUser}>Show Pro Banner</PremiumLabel>
-                  <p>Display your Pro banner on your profile while other members browse in Discovery.</p>
+                  <p>Display your Pro banner on your Personal Profile while other members browse in Discovery.</p>
                 </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_profile_banner_bool": e.detail.checked })}
@@ -912,6 +912,20 @@ const Settings: React.FC = () => {
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Subscription Pop-ups</span>
+                  <p>Show prompts to subscribe when tapping locked features.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  checked={showSubscriptionPopups}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowSubscriptionPopups(val);
+                    await Preferences.set({ key: UPSELL_POPUPS_ENABLED_KEY, value: String(val) });
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
                   <span className="settings__label-heading">Show Image Descriptions</span>
                   <p>Show text descriptions for images when available.</p>
                 </IonLabel>
@@ -933,20 +947,6 @@ const Settings: React.FC = () => {
                     setReduceAnimations(val);
                     await setReduceAnimationsPref(val);
                     window.dispatchEvent(new CustomEvent('reduce_animations_changed', { detail: val }));
-                  }}
-                />
-              </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">
-                  <span className="settings__label-heading">Subscription Popups</span>
-                  <p>Show prompts to subscribe when tapping locked features.</p>
-                </IonLabel>
-                <IonToggle slot="end"
-                  checked={showSubscriptionPopups}
-                  onIonChange={async e => {
-                    const val = e.detail.checked;
-                    setShowSubscriptionPopups(val);
-                    await Preferences.set({ key: UPSELL_POPUPS_ENABLED_KEY, value: String(val) });
                   }}
                 />
               </IonItem>
@@ -973,28 +973,28 @@ const Settings: React.FC = () => {
               <IonNote className="ion-text-wrap">Profile Actions</IonNote>
               {data?.paused_profile ?
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Unpause profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Unpause Profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => unPauseProfileHandler()}><FontAwesomeIcon icon={faCirclePlay} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
                   <IonLabel className="ion-text-wrap">
                     <span className="settings__label-heading">Pause Profile</span>
-                    <p>Stop showing your profile in Discovery while keeping existing chats and community participation.</p>
+                    <p>Stop showing your Personal Profile in Discovery while keeping existing chats and community participation.</p>
                   </IonLabel>
                   <IonButton slot="end" size="default" onClick={() => pauseProfileClicked()}><FontAwesomeIcon icon={faCirclePause} /></IonButton>
                 </IonItem>
               }
               {data?.deactivated_profile ?
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Reactivate profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Reactivate Profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => reactivateProfileClicked()}><FontAwesomeIcon icon={faSquarePlus} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
                   <IonLabel className="ion-text-wrap">
                     <span className="settings__label-heading">Deactivate Profile</span>
-                    <p>Hide your profile and pause discovery, messaging, posting, and commenting until you reactivate. You can still read Refreshments posts and view the calendar.</p>
+                    <p>Hide your Personal Profile and pause Discovery, messaging, posting, and commenting until you reactivate. You can still read Refreshments posts and view the calendar.</p>
                   </IonLabel>
                   <IonButton slot="end" size="default" onClick={() => deactivateProfileClicked()}><FontAwesomeIcon icon={faSquareMinus} /></IonButton>
                 </IonItem>

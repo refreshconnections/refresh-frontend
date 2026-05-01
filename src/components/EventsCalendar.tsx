@@ -32,6 +32,7 @@ import { useGetEvents, DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, EventFilte
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getAvatarDisplay, isCommunityPlus, localTzAbbr, openExternalUrl } from '../hooks/utilities';
 import { useSheetModal } from '../hooks/useSheetModal';
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 
 import EllipsisMenuButton from './EllipsisMenuButton';
 import CreateEventModal from './CreateEventModal';
@@ -187,6 +188,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const { addToCalendar, isAvailable: calendarAvailable } = useAddToCalendar();
   const [presentCalendarAlert] = useIonAlert();
   const [presentReminderAlert] = useIonAlert();
+  const presentUpsellAlert = useUpsellAlert();
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, RefreshEvent[]>();
@@ -343,6 +345,9 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   const canGoPrevWeek = currentWeekStart.isAfter(earliest.clone().startOf('day'));
   const canGoNextWeek = currentWeekEnd.isBefore(latest.clone().endOf('day'));
 
+  const prevAtNonPremiumLimit = !isPremium && (viewMode === 'month' ? !canGoPrevMonth : !canGoPrevWeek);
+  const nextAtNonPremiumLimit = !isPremium && (viewMode === 'month' ? !canGoNextMonth : !canGoNextWeek);
+
   const clampTarget = (candidate: Moment) => clampToRange(candidate);
 
   const openEventsCalendar = (dateOverride?: string, eventIdOverride?: number | null) => {
@@ -468,15 +473,20 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
           <div className="calendar-header">
             <IonButton
               fill="clear"
-              size="small"
-              disabled={(viewMode === 'month' ? !canGoPrevMonth : !canGoPrevWeek)}
+              color={prevAtNonPremiumLimit ? 'medium' : undefined}
+              disabled={!isPremium ? false : (viewMode === 'month' ? !canGoPrevMonth : !canGoPrevWeek)}
               onClick={() => {
                 if (viewMode === 'month') {
-                  if (!canGoPrevMonth) return;
-                  changeMonth(-1);
+                  if (canGoPrevMonth) { changeMonth(-1); return; }
                 } else {
-                  if (!canGoPrevWeek) return;
-                  changeWeek(-1);
+                  if (canGoPrevWeek) { changeWeek(-1); return; }
+                }
+                if (!isPremium) {
+                  presentUpsellAlert({
+                    header: 'Get Community+ & Pro',
+                    message: 'Browse up to 2 months back and 3 months ahead with a subscription.',
+                    onSeePlans: () => setIsCalendarOpen(false),
+                  });
                 }
               }}
             >
@@ -489,15 +499,20 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
             </IonText>
             <IonButton
               fill="clear"
-              size="small"
-              disabled={(viewMode === 'month' ? !canGoNextMonth : !canGoNextWeek)}
+              color={nextAtNonPremiumLimit ? 'medium' : undefined}
+              disabled={!isPremium ? false : (viewMode === 'month' ? !canGoNextMonth : !canGoNextWeek)}
               onClick={() => {
                 if (viewMode === 'month') {
-                  if (!canGoNextMonth) return;
-                  changeMonth(1);
+                  if (canGoNextMonth) { changeMonth(1); return; }
                 } else {
-                  if (!canGoNextWeek) return;
-                  changeWeek(1);
+                  if (canGoNextWeek) { changeWeek(1); return; }
+                }
+                if (!isPremium) {
+                  presentUpsellAlert({
+                    header: 'Get Community+ & Pro',
+                    message: 'Browse up to 2 months back and 3 months ahead with a subscription.',
+                    onSeePlans: () => setIsCalendarOpen(false),
+                  });
                 }
               }}
             >

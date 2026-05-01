@@ -60,7 +60,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
   const personalProfilePaused = Boolean(currentProfile?.paused_profile);
   const effectiveUsePersonalPhoto = Boolean(!personalProfilePaused && usePersonalPhoto && personalPhoto);
   const previewPhoto = effectiveUsePersonalPhoto ? personalPhoto : communityPhoto;
-  const photoButtonLabel = communityPhoto ? 'Change Refreshments profile photo' : 'Upload Refreshments profile photo';
+  const photoButtonLabel = communityPhoto ? 'Change Refreshments Profile photo' : 'Upload Refreshments Profile photo';
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const isTeen = ageNumber !== null && ageNumber < 20;
   const ageDecade = ageNumber !== null ? (isTeen ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : 'Decade';
@@ -218,7 +218,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                 <img
-                  alt="Refreshments profile"
+                  alt="Refreshments Profile"
                   src={displayPhoto}
                   onError={(e) => onImgError(e)}
                   style={{
@@ -246,7 +246,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             </IonItem>
             
             <div className="field-header">
-              <p>Use personal profile photo</p>
+              <p>Use Personal Profile photo</p>
               <IonToggle
                 slot="end"
                 checked={personalPhotoToggleChecked}
@@ -256,12 +256,12 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             </div>
             {!hasPersonalPhoto && (
               <IonText color="medium" className="community-subtitle">
-                Once you've uploaded a profile pic, you can choose to use that as your Refreshments profile picture too.
+                Once you've uploaded a profile pic, you can choose to use that as your Refreshments Profile picture too.
               </IonText>
             )}
             {personalProfilePaused && (
               <IonText color="medium" className="community-subtitle">
-                While your personal profile is paused, Refreshments uses your Refreshments profile photo or the default avatar.
+                While your Personal Profile is paused, Refreshments uses your Refreshments Profile photo or the default avatar.
               </IonText>
             )}
             <IonButton expand="block" color="tertiary" onClick={updatePicture}>
@@ -333,14 +333,14 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             </div>
             {!hasLocation && (
               <IonText color="medium" className="community-subtitle">
-                Once you've added a location, you can choose to share that on your Refreshments profile.
+                Once you've added a location, you can choose to share that on your Refreshments Profile.
               </IonText>
             )}
 
             <IonItem lines="none" className="community-toggle-item community-profile-item">
               <IonLabel className="ion-text-wrap">
                 <p>Connect from Refreshments</p>
-                <p className="community-subtitle">Turn this on to let people discover your personal profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
+                <p className="community-subtitle">Turn this on to let people discover your Personal Profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
               </IonLabel>
               <IonToggle
                 slot="end"
@@ -369,7 +369,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
             <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
               <IonIcon slot="start" icon={informationCircleOutline} color="navy" style={{ marginInlineEnd: '8px', fontSize: '18px' }} />
               <IonLabel color="navy" className="ion-text-wrap" style={{ fontSize: '0.85rem' }}>
-                Changes to your Refreshments profile may take a few minutes to appear in Refreshments.
+                Changes to your Refreshments Profile may take a few minutes to appear in Refreshments.
               </IonLabel>
             </IonItem>
           </IonCardContent>
@@ -391,7 +391,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
       <IonAccordion value="communityProfile">
         <IonItem slot="header" lines="none" className="accordion-header">
           <IonLabel>
-            <h2>Refreshments profile</h2>
+            <h2>Refreshments Profile</h2>
           </IonLabel>
         </IonItem>
         <IonCardContent slot="content" className="no-padding-cc accordion-body">

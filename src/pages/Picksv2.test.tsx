@@ -272,9 +272,9 @@ describe('Picksv2', () => {
     renderPicks();
 
     expect(
-      await screen.findByText('You’ll need a personal profile before browsing Discovery.')
+      await screen.findByText('You’ll need a Personal Profile before browsing Discovery.')
     ).toBeInTheDocument();
-    expect(screen.getByText('Create personal profile')).toBeInTheDocument();
+    expect(screen.getByText('Create Personal Profile')).toBeInTheDocument();
   });
 
   it('shows the access card when the personal profile is paused or deactivated', async () => {

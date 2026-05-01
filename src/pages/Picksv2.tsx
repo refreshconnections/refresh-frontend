@@ -495,12 +495,12 @@ const Picksv2: React.FC = () => {
           </IonRow>
           <IonCard className="prelaunch">
             <IonCardTitle style={{ fontWeight: 'normal' }}>
-              You’ll need a personal profile before browsing Discovery.
+              You’ll need a Personal Profile before browsing Discovery.
             </IonCardTitle>
             <IonCardContent>
-              <p style={{ marginTop: 0 }}>Finish setting up your profile to unlock Discovery and start making one-on-one connections.</p>
+              <p style={{ marginTop: 0 }}>Finish setting up your Personal Profile to unlock Discovery and start making one-on-one connections.</p>
               <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
-                Create personal profile
+                Create Personal Profile
               </IonButton>
             </IonCardContent>
           </IonCard>

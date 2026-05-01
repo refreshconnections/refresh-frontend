@@ -24,9 +24,9 @@ const GuidelinesButton: React.FC<Props> = ({
         presentActionSheet({
             header: 'Guidelines',
             buttons: [
-                ...(includeMechanics ? [{ text: 'Refreshments posting mechanics', handler: () => openExternalUrl('https://refreshconnections.com/mechanics') }] : []),
-                { text: 'Language', handler: () => openExternalUrl('https://refreshconnections.com/language') },
-                { text: 'STEAM', handler: () => openExternalUrl('https://refreshconnections.com/steam') },
+                ...(includeMechanics ? [{ text: 'Posting and commenting mechanics', handler: () => openExternalUrl('https://refreshconnections.com/mechanics') }] : []),
+                { text: 'Language guidelines', handler: () => openExternalUrl('https://refreshconnections.com/language') },
+                { text: 'STEAM guidelines', handler: () => openExternalUrl('https://refreshconnections.com/science') },
                 { text: 'Cancel', role: 'cancel' },
             ],
         });

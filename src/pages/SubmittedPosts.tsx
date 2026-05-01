@@ -26,6 +26,7 @@ import {
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
 import moment from 'moment';
+import { useClearRefreshmentsAlertsOnMount } from '../hooks/api/profiles/recent-notifications';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
 import { useHistory } from 'react-router-dom';
@@ -131,6 +132,7 @@ const SubmittedPosts: React.FC = () => {
   const history = useHistory();
   const now = useMemo(() => new Date(), []);
   const [showHidden, setShowHidden] = useState(false);
+  useClearRefreshmentsAlertsOnMount();
   const {
     data,
     isLoading,

@@ -323,7 +323,7 @@ const AppV2: React.FC = () => {
   const { chatBadgeCount, setChatBadgeCount } = useContext(ChatBadgeContext);
 
   const queryClient = useQueryClient()
-  const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
+  const { data: globalCurrentProfile, isLoading: globalIsLoading, isError: globalIsError } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
   const { data: communityProfile, isLoading: communityProfileLoading } = useGetCommunityProfile(undefined, loggedin);
 
@@ -936,6 +936,28 @@ const AppV2: React.FC = () => {
     return (
       <IonApp>
         <Login setLoggedin={setLoggedin} />
+      </IonApp>
+    );
+  }
+
+  if (!globalCurrentProfile || globalIsError) {
+    return (
+      <IonApp>
+        <IonPage>
+          <IonContent fullscreen className="startup-timeout-screen">
+            <div className="startup-timeout-screen__inner">
+              <IonCard className="startup-timeout-screen__card">
+                <IonCardContent>
+                  <h1>Account issue</h1>
+                  <p>There's a problem loading your account. Please log out and back in, or contact support if this keeps happening.</p>
+                  <IonButton expand="block" onClick={() => handleLogoutCommon()}>
+                    Log out
+                  </IonButton>
+                </IonCardContent>
+              </IonCard>
+            </div>
+          </IonContent>
+        </IonPage>
       </IonApp>
     );
   }

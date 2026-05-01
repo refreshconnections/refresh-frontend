@@ -113,7 +113,10 @@ const EditHiddenContentModal: React.FC<Props> = (props) => {
         <IonPage>
             <IonHeader>
                 <IonToolbar className="modal-title">
-                    <IonTitle>Hidden Content and Blocks</IonTitle>
+                    <IonButtons slot="start">
+                        <IonButton style={{ visibility: 'hidden' }}>Done</IonButton>
+                    </IonButtons>
+                    <div className="modal-wrapping-title">Hidden Content & Blocks</div>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss}>Done</IonButton>
                     </IonButtons>

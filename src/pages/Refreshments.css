@@ -17,6 +17,10 @@
   margin-bottom: 12px;
 }
 
+.calendar-header ion-button::part(native) {
+  font-size: 24px;
+}
+
 .calendar-month-label {
   font-weight: 600;
 }

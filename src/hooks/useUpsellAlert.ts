@@ -10,13 +10,14 @@ type UpsellAlertOptions = {
   header: string;
   message?: string;
   extraButtons?: ExtraButton[];
+  onSeePlans?: () => void;
 };
 
 export function useUpsellAlert() {
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
 
-  return async ({ header, message, extraButtons }: UpsellAlertOptions) => {
+  return async ({ header, message, extraButtons, onSeePlans }: UpsellAlertOptions) => {
     const { value } = await Preferences.get({ key: UPSELL_POPUPS_ENABLED_KEY });
     if (value === 'false') return;
     presentAlert({
@@ -25,7 +26,7 @@ export function useUpsellAlert() {
       buttons: [
         { text: 'Not now', role: 'cancel' },
         ...(extraButtons ?? []),
-        { text: 'See plans', handler: () => router.push('/store') },
+        { text: 'See plans', handler: () => { onSeePlans?.(); router.push('/store'); } },
       ],
     });
   };

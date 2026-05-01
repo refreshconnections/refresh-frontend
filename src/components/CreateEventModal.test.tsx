@@ -607,4 +607,28 @@ describe('CreateEventModal', () => {
 
     expect(await screen.findByText('Unable to submit event right now.')).toBeInTheDocument();
   });
+
+  it('bypasses the age gate for pro users with accounts under 2 weeks old', () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      registrationDate: daysAgoIso(7),
+      subscription_level: 'pro',
+    };
+
+    renderModal();
+
+    expect(screen.queryByText('age-gate-event')).not.toBeInTheDocument();
+  });
+
+  it('bypasses the age gate for community+ users with accounts under 2 weeks old', () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      registrationDate: daysAgoIso(7),
+      subscription_level: 'community_plus',
+    };
+
+    renderModal();
+
+    expect(screen.queryByText('age-gate-event')).not.toBeInTheDocument();
+  });
 });

@@ -473,9 +473,9 @@ const EditLocationModal: React.FC<Props> = (props) => {
           <IonCardContent>
             <IonCardTitle>Want to change your location?</IonCardTitle>
 
-            <IonText>The approximate location description you share on your profile is different from the coordinates Refresh uses to filter by distance.</IonText>
+            <IonText>The approximate location description you share on your Profile is different from the coordinates Refresh uses to filter by distance.</IonText>
 
-            <IonText><p>The location description shown on your profile:</p></IonText>
+            <IonText><p>The location description shown on your Profile:</p></IonText>
             <IonItem>
               <IonInput value={location}
                 name="location"

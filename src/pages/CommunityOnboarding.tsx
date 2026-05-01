@@ -467,14 +467,14 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       <div className="onboarding-v2__photo-preview-frame">
                       {previewPhoto ? (
                         <img
-                          alt="Refreshments profile"
+                          alt="Refreshments Profile"
                           src={previewPhoto}
                           onError={(e) => onImgError(e)}
                           className="onboarding-v2__photo-preview-image"
                         />
                       ) : (
                         <img
-                          alt="Refreshments profile placeholder"
+                          alt="Refreshments Profile placeholder"
                           src={"../static/img/navynobordervector.png"}
                           className="onboarding-v2__photo-preview-image onboarding-v2__photo-preview-image--placeholder"
                         />

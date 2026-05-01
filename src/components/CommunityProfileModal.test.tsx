@@ -195,7 +195,7 @@ describe('CommunityProfileModal', () => {
 
     expect(await screen.findByText('This is you!')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Edit Refreshments profile'));
+    fireEvent.click(screen.getByText('Edit Refreshments Profile'));
     expect(mockPresentModal).toHaveBeenCalledWith(
       'EditCommunityProfileModal',
       expect.objectContaining({
@@ -235,7 +235,7 @@ describe('CommunityProfileModal', () => {
 
     renderModal();
 
-    const avatar = await screen.findByAltText('Refreshments profile');
+    const avatar = await screen.findByAltText('Refreshments Profile');
     expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
   });
 
@@ -345,7 +345,7 @@ describe('CommunityProfileModal', () => {
     renderModal({ isAnonymous: true });
 
     expect(await screen.findByText('Refresh member')).toBeInTheDocument();
-    expect(screen.queryByText('Edit Refreshments profile')).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
     expect(screen.queryByText(/You both have Connect from Refreshments turned on!/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Like Jordan back/)).not.toBeInTheDocument();
   });
@@ -359,7 +359,7 @@ describe('CommunityProfileModal', () => {
 
     renderModal({ avatarUrl: null });
 
-    const avatar = await screen.findByAltText('Refreshments profile');
+    const avatar = await screen.findByAltText('Refreshments Profile');
     expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
   });
 
@@ -444,7 +444,7 @@ describe('CommunityProfileModal', () => {
 
     renderModal();
 
-    expect(await screen.findByText(/Create an active personal profile and turn on your Connect from Refreshments/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Create an active Personal Profile and turn on your Connect from Refreshments/i)).toBeInTheDocument();
     expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
   });
 });

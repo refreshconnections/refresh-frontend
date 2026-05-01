@@ -24,7 +24,7 @@ const CantAccessCard: React.FC<ContainerProps> = ({ tabName }) => {
             <img src="../static/img/refresh-icon@3x.png"></img>
 
             <IonCardContent>
-                You need to have an active profile to see your {tabName}. 
+                You need to have an active Personal Profile to see your {tabName}. 
                 <br></br>
                 Go to Settings in the "Me" tab.
             </IonCardContent>

@@ -760,4 +760,28 @@ describe('CreatePostModal', () => {
     expect(onDismiss).toHaveBeenCalled();
     expect(window.location.pathname).toBe('/store');
   });
+
+  it('bypasses the age gate for pro users with accounts under 2 weeks old', () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      registrationDate: daysAgoIso(7),
+      subscription_level: 'pro',
+    };
+
+    renderModal();
+
+    expect(screen.queryByText('age-gate-post')).not.toBeInTheDocument();
+  });
+
+  it('bypasses the age gate for community+ users with accounts under 2 weeks old', () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      registrationDate: daysAgoIso(7),
+      subscription_level: 'community_plus',
+    };
+
+    renderModal();
+
+    expect(screen.queryByText('age-gate-post')).not.toBeInTheDocument();
+  });
 });

@@ -722,7 +722,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const clearFilterAlert = async () => {
     presentClearFiltersAlert({
       header: 'Are you sure you want to clear your filters?',
-      subHeader: 'You can always put them back. Note: This does not clear your profile visibility preferences.',
+      subHeader: 'You can always put them back. Note: This does not clear your Profile visibility preferences.',
       buttons: [
         {
           text: 'Nevermind',
@@ -1185,11 +1185,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonRadioGroup value={keywordMode} onIonChange={(e) => setKeywordMode(e.detail.value)}>
                 <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('include')}>
                   <IonRadio slot="start" value="include" />
-                  <IonLabel className="ion-text-wrap">Talking about this in their profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Talking about this in their Profile</IonLabel>
                 </IonItem>
                 <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('exclude')}>
                   <IonRadio slot="start" value="exclude" />
-                  <IonLabel className="ion-text-wrap">Not talking about this in their profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Not talking about this in their Profile</IonLabel>
                 </IonItem>
               </IonRadioGroup>
               <IonItem lines="none" className="keyword-input-item">
@@ -1523,7 +1523,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonRow>
               <IonRow >
                 <IonText className="ion-padding ion-text-wrap" style={{ fontSize: "14px" }}>
-                  ● Only show my profile to people who:
+                  ● Only show my Profile to people who:
                 </IonText>
               </IonRow>
               <IonItem>
@@ -1547,7 +1547,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonAccordionGroup className="blue-bg">
                 <IonAccordion value="first">
                   <IonItem slot="header">
-                    <IonLabel style={{ paddingLeft: 0 }} className="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
+                    <IonLabel style={{ paddingLeft: 0 }} className="ion-text-wrap">● Only show my Profile to people who identify as:</IonLabel>
                     {onlyshowSexualityFilterChecked.length > 0 ? <IonBadge color={(onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{onlyshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
@@ -1583,7 +1583,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                           </> : <></>}
                         <IonRow className="lr-pad">
                           <IonText className="ion-padding ion-text-wrap">
-                            Only show my profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
+                            Only show my Profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
                           </IonText>
                         </IonRow>
                         <IonRow>
@@ -1677,7 +1677,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                 </IonAccordion>
                 <IonAccordion value="second">
                   <IonItem slot="header">
-                    <IonLabel className="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
+                    <IonLabel className="ion-text-wrap">● Only show my Profile to people who do NOT identify as</IonLabel>
                     {dontshowSexualityFilterChecked.length > 0 ? <IonBadge color={(dontShowAnyOrAll == "any") ? "danger" : "primary"}>{dontshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
@@ -1713,7 +1713,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                           </> : <></>}
                         <IonRow className="lr-pad">
                           <IonText className="ion-padding ion-text-wrap">
-                            Only show my profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
+                            Only show my Profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
                           </IonText>
                         </IonRow>
                         <IonRow>
@@ -1810,7 +1810,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonAccordionGroup>
               <IonRow className="lr-pad">
                 <IonText style={{ fontSize: "10pt" }} className="ion-padding ion-text-wrap">
-                  *Using visibility preferences does not guarantee that your profile will only be shown to people with your choices.
+                  *Using visibility preferences does not guarantee that your Profile will only be shown to people with your choices.
                   Members self-select any number of attributes and can change them at any time.
                   Using preferences should not lower the caution you take in what you reveal on your profile.
                   Please check out our How Tos for specific examples and our

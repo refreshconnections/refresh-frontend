@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
 import moment from "moment";
 
 import './CreatePostModal.css'
-import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, isCommunityPlus, isPro } from "../hooks/utilities";
+import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, increaseStreak, isCommunityPlus, isPro } from "../hooks/utilities";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import CroppedPostImageModal from "./CroppedPostImageModal";
@@ -93,7 +93,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
     const moderation = useGetCurrentModeration().data;
-    const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate);
+    const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)
+        || isPro(globalCurrentProfile?.subscription_level)
+        || isCommunityPlus(globalCurrentProfile?.subscription_level);
     const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
     const commentingPausedUntil = moderation?.commenting_paused_until;
     const commentingPauseActive = Boolean(
@@ -732,6 +734,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setRecurrenceCustomDates([]);
             setRecurrenceDescriptions([]);
             queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+            await increaseStreak();
             setLastAction('submitted');
             setShowAlert(true)
         }

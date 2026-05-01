@@ -569,7 +569,7 @@ describe('OpenedPost', () => {
     renderOpenedPost();
 
     expect(
-      await screen.findByText('Create a Refreshments profile to post a comment')
+      await screen.findByText('Create a Refreshments Profile to post a comment')
     ).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Leave a comment')).not.toBeInTheDocument();
   });

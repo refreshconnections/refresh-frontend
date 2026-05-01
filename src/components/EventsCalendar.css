@@ -50,6 +50,10 @@
   margin-bottom: 12px;
 }
 
+.refreshments-calendar-modal .calendar-header ion-button::part(native) {
+  font-size: 28px;
+}
+
 .refreshments-calendar-modal .calendar-month-label {
   font-weight: 600;
 }

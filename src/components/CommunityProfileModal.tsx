@@ -318,7 +318,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <img
-                    alt="Refreshments profile"
+                    alt="Refreshments Profile"
                     src={showRestricted ? fallbackLogo : communityAvatar.src}
                     onError={(e) => onImgError(e)}
                     style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover' }}
@@ -347,7 +347,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                       <p>This is you!</p>
                     </IonText>
                     <IonButton expand="block" onClick={() => editPresent()}>
-                      Edit Refreshments profile
+                      Edit Refreshments Profile
                     </IonButton>
                   </div>
                 )}
@@ -374,7 +374,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                         {!viewerConnect &&
                           (currentProfile?.created_profile
                             ? 'Want to connect 1:1 with people you meet in the comments? Turn on your Connect from Refreshments in your Me tab > Settings.'
-                            : 'Want to connect 1:1 with people you meet in the comments? Create an active personal profile and turn on your Connect from Refreshments in your Me tab > Settings.')}
+                            : 'Want to connect 1:1 with people you meet in the comments? Create an active Personal Profile and turn on your Connect from Refreshments in your Me tab > Settings.')}
                         {canLikeBack && (
                           <>
                             {username} has already sent you a Like.
@@ -388,7 +388,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                           </>
                         )}
 
-                        {((hasOutgoingLike && !hasIncomingLike) || !otherConnect || isUnmatched) && `Please reply to ${username} in the thread.`}
+                        {viewerConnect && ((hasOutgoingLike && !hasIncomingLike) || !otherConnect || isUnmatched) && `Please reply to ${username} in the thread.`}
                       </p>
                     </IonText>
                     {canLikeBack && (

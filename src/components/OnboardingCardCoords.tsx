@@ -241,7 +241,7 @@ const OnboardingCardCoords: React.FC = () => {
         <IonCardContent>
           <IonCardTitle>Where do you live?</IonCardTitle>
 
-          <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your profile to potential connections nearby.
+          <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your Profile to potential connections nearby.
           </IonText>
 
 

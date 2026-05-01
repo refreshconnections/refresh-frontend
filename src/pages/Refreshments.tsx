@@ -241,6 +241,7 @@ const Refreshments: React.FC = () => {
     setForceRefreshing(true);
     queryClient.invalidateQueries({ queryKey: ['filteredposts'], exact: false });
     queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications });
     await new Promise(resolve => setTimeout(resolve, 500));
     setForceRefreshing(false);
   }
@@ -434,7 +435,19 @@ const Refreshments: React.FC = () => {
                 <IonCardContent>
                   <IonRow className="refreshments-alert-content">
                     <IonCol className="refreshments-alert-text" size="11">
-                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                      {topRefreshmentsAlert.message?.startsWith('Your post') ? (
+                        <IonText>
+                          {topRefreshmentsAlert.message}{' '}
+                          <span
+                            style={{ textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', color: 'var(--ion-color-primary)' }}
+                            onClick={() => router.push('/community/submitted')}
+                          >
+                            See Submissions
+                          </span>
+                        </IonText>
+                      ) : (
+                        <IonText>{topRefreshmentsAlert.message}</IonText>
+                      )}
                     </IonCol>
                     <IonCol className="refreshments-alert-action" size="1">
                       <IonButton

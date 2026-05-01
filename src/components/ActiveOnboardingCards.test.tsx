@@ -438,6 +438,44 @@ describe('active onboarding cards', () => {
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
+  it('clears coordinates and calls onCoordsCleared when decline is confirmed', async () => {
+    const onCoordsCleared = vi.fn();
+    await renderInApp(<OnboardingCardLocationCoords onCoordsCleared={onCoordsCleared} />);
+
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.dontShare).closest('ion-button'));
+
+    const declineConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      await declineConfig.buttons[1].handler();
+    });
+
+    expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+    });
+    expect(onCoordsCleared).toHaveBeenCalled();
+    expect(sharedSwiper.slideNext).toHaveBeenCalled();
+  });
+
+  it('shows the already-shared UI when preExistingCoords is true', async () => {
+    await renderInApp(<OnboardingCardLocationCoords preExistingCoords />);
+
+    expect(screen.getByText(/You've already shared your location/)).toBeInTheDocument();
+    expect(screen.getByText('Update via device location')).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.common.next)).toBeInTheDocument();
+    expect(screen.queryByText(ONBOARDING_COPY.cards.locationCoords.personal.dontShare)).not.toBeInTheDocument();
+  });
+
+  it('next button on the already-shared UI advances without re-sharing', async () => {
+    await renderInApp(<OnboardingCardLocationCoords preExistingCoords />);
+
+    await clickElement(screen.getByText(ONBOARDING_COPY.common.next).closest('ion-button'));
+
+    expect(mockUpdateCurrentUserProfile).not.toHaveBeenCalled();
+    expect(sharedSwiper.slideNext).toHaveBeenCalled();
+  });
+
   it('renders the shared location label card copy', async () => {
     await renderInApp(<OnboardingCardLocationLabel />);
     expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.title)).toBeInTheDocument();
@@ -498,6 +536,22 @@ describe('active onboarding cards', () => {
     expect(screen.getByText(ONBOARDING_COPY.cards.livedExperiences.title)).toBeInTheDocument();
     expect(screen.getAllByText(ONBOARDING_COPY.cards.livedExperiences.popover)[0]).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.cards.livedExperiences.options[0][1])).toBeInTheDocument();
+  });
+
+  it('advances lived experiences without any selection when next is clicked', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      lived_experiences: [],
+    };
+
+    await renderInApp(<OnboardingCardLivedExperiences />);
+
+    const nextBtn = screen.getByText(ONBOARDING_COPY.common.next).closest('ion-button');
+    expect(nextBtn).not.toHaveAttribute('disabled');
+
+    await clickElement(nextBtn);
+
+    expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
   it('renders the shared covid card copy and labels', async () => {

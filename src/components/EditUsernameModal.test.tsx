@@ -56,7 +56,7 @@ describe('EditUsernameModal', () => {
     renderModal();
 
     expect(
-      screen.getByText('Your personal profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.')
+      screen.getByText('Your Personal Profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.')
     ).toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('EditUsernameModal', () => {
     renderModal();
 
     expect(
-      screen.queryByText('Your personal profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.')
+      screen.queryByText('Your Personal Profile is currently paused. Once you unpause it, you can turn on Connect from Refreshments.')
     ).not.toBeInTheDocument();
   });
 });

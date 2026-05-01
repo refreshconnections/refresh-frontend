@@ -23,14 +23,6 @@ const RecentSegment: React.FC<Props> = ({ recentNotifications, globalProfile, li
             <IonNote className="header">Recent happenings</IonNote>
 
             <div>
-                {(recentNotifications?.length ?? 0) < 10 && globalProfile?.registrationDate && (
-                    <div className="comment-card">
-                        <div className="comment-card-text expanded">
-                            <FontAwesomeIcon icon={faSparkles} /> &nbsp; You joined Refresh Connections {moment(globalProfile.registrationDate).fromNow()}
-                        </div>
-                    </div>
-                )}
-
                 {recentNotifications?.map((item: any) => (
                     <div className="comment-card" key={item.id}>
                         <div className="comment-card-text expanded">
@@ -49,6 +41,14 @@ const RecentSegment: React.FC<Props> = ({ recentNotifications, globalProfile, li
                         </div>
                     </div>
                 ))}
+
+                {(recentNotifications?.length ?? 0) < 10 && globalProfile?.registrationDate && (
+                    <div className="comment-card">
+                        <div className="comment-card-text expanded">
+                            <FontAwesomeIcon icon={faSparkles} /> &nbsp; You joined Refresh Connections {moment(globalProfile.registrationDate).fromNow()}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <IonNote style={{ padding: '20pt' }}>

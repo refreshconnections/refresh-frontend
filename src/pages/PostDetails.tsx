@@ -265,7 +265,7 @@ const PostDetails: React.FC<Props> = (props) => {
         :
         <IonRow className="ion-justify-content-center comment-username">
           <IonButton routerLink="/community-onboarding" color="tertiary">
-            Create a Refreshments profile to post a comment
+            Create a Refreshments Profile to post a comment
           </IonButton>
         </IonRow>}
     </IonList>

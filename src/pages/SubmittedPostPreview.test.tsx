@@ -77,11 +77,11 @@ describe('SubmittedPostPreview', () => {
     });
   });
 
-  it('shows interested count in the opened submission preview', async () => {
+  it('does not show interested count in the opened submission preview', async () => {
     renderPage();
 
     expect(await screen.findByText('Your Submission')).toBeInTheDocument();
-    expect(screen.getByText('Interested count')).toBeInTheDocument();
-    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(screen.getByText('Interested count')).not.toBeInTheDocument();
+    expect(screen.getByText('9')).not.toBeInTheDocument();
   });
 });

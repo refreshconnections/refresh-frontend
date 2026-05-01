@@ -761,7 +761,7 @@ describe('active onboarding pages', () => {
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
     expect(screen.getAllByText(ONBOARDING_COPY.common.skip).length).toBeGreaterThan(0);
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal)).toBeInTheDocument();
-    expect(screen.getByAltText('Refreshments profile placeholder')).toBeInTheDocument();
+    expect(screen.getByAltText('Refreshments Profile placeholder')).toBeInTheDocument();
   });
 
   it('shows the shared-personal-location copy in community onboarding when coordinates already exist', () => {
@@ -887,8 +887,8 @@ describe('active onboarding pages', () => {
     renderInApp(<CommunityOnboarding />);
 
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.username.lockedNote)).toBeInTheDocument();
-    expect(screen.getByText(/Age shown on your Refreshments profile:/)).toHaveTextContent(
-      `Age shown on your Refreshments profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
+    expect(screen.getByText(/Age shown on your Refreshments Profile:/)).toHaveTextContent(
+      `Age shown on your Refreshments Profile: ${ONBOARDING_COPY.communityOnboarding.age.hideAge}`
     );
   });
 
@@ -1115,7 +1115,7 @@ describe('active onboarding pages', () => {
     );
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[6]);
 
-    expect(screen.getByText(/Age shown on your Refreshments profile:/)).toHaveTextContent('30s');
+    expect(screen.getByText(/Age shown on your Refreshments Profile:/)).toHaveTextContent('30s');
   });
 
   it('auto-enables community location display when a label is added without shared coordinates', async () => {
