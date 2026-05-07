@@ -20,10 +20,8 @@ import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BoxedStackedPhoneInput from '../components/BoxedStackedPhoneInput';
 import BoxedStackedInput from '../components/BoxedStackedInput';
-import { Pagination } from 'swiper';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/pagination';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 import { useEmailStatus } from '../hooks/api/account/emails';
@@ -830,8 +828,7 @@ const OnboardingV2: React.FC = () => {
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
           <Swiper
-            modules={[Pagination]}
-            pagination={{ clickable: true }}
+
             className="onboarding-v2__swiper"
             centeredSlides
             allowTouchMove={false}

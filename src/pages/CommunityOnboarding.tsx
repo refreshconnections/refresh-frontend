@@ -21,10 +21,8 @@ import {
   useIonRouter,
   IonList,
 } from '@ionic/react';
-import { Pagination } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/pagination';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 import { Camera, CameraResultType } from '@capacitor/camera';
@@ -36,9 +34,7 @@ import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile'
 import { apiClient } from '../hooks/api/api-client';
 import { getPrimaryOrderedPhoto, updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
 import CroppedImageModal from '../components/CroppedImageModal';
-import EditLocationModal from '../components/EditLocationModal';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
-import PersonalProfile from './PersonalProfile';
 import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardConnectFromRefreshments';
 
 import './OnboardingV2.css';
@@ -47,6 +43,9 @@ import { Preferences } from '@capacitor/preferences';
 import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 const USERNAME_CHANGE_WINDOW_DAYS = 60;
+const COMMUNITY_ONBOARDING_IN_PROGRESS_KEY = 'community_onboarding_in_progress';
+const COMMUNITY_ONBOARDING_SLIDE_KEY = 'community_onboarding_slide';
+const PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY = 'personal_profile_onboarding_in_progress';
 
 type AgeTier = 'exact' | 'decade' | 'none';
 
@@ -74,9 +73,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   });
   const { data: currentProfile } = useGetCurrentProfile();
   const { data: communityProfile, refetch: refetchCommunityProfile } = useGetCommunityProfile();
-  const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
-    onDismiss: () => dismissPersonalProfile(),
-  });
 
   const swiperRef = useRef<any>(null);
   const [swiperReady, setSwiperReady] = useState(false);
@@ -100,6 +96,8 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [savingLocation, setSavingLocation] = useState(false);
   const [savingAge, setSavingAge] = useState(false);
   const locationLabelCleared = useRef(false);
+  const originalLocationLabelRef = useRef('');
+  const [hadLocationLabelBeforeCoords, setHadLocationLabelBeforeCoords] = useState(false);
 
   const hasPersonalProfile = Boolean(currentProfile?.created_profile);
 
@@ -111,6 +109,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   // Tracks coords saved/cleared this session for UI text decisions (separate from slide presence).
   const [coordsSavedThisSession, setCoordsavedThisSession] = useState(false);
   const hasAnyCoords = hasSharedLocationCoords || coordsSavedThisSession;
+  const shouldShowCommunityLocationInput = !hasAnyCoords || showLocation || hadLocationLabelBeforeCoords;
   const totalSlides = 7 + (hasPersonalProfile ? 1 : 0) + 1; // coords slide always rendered
   const ageNumber = typeof currentProfile?.age === 'number' ? currentProfile.age : null;
   const ageDecade = ageNumber !== null ? (ageNumber < 20 ? 'late teens' : `${Math.floor(ageNumber / 10) * 10}s`) : '-';
@@ -145,6 +144,11 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     }
   };
 
+  const clearResumeState = async () => {
+    await Preferences.remove({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY });
+    await Preferences.remove({ key: COMMUNITY_ONBOARDING_SLIDE_KEY });
+  };
+
   useEffect(() => {
     if (!communityProfile) return;
     const profile = communityProfile as CommunityProfile;
@@ -159,10 +163,40 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   }, [communityProfile]);
 
   useEffect(() => {
+    if (onDismiss) return;
+    Preferences.set({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (!swiperReady || onDismiss) return;
+
+    const restoreSlide = async () => {
+      const stored = await Preferences.get({ key: COMMUNITY_ONBOARDING_SLIDE_KEY });
+      const storedIndex = stored?.value ? Number(stored.value) : 0;
+      if (Number.isFinite(storedIndex) && storedIndex > 0 && storedIndex < totalSlides) {
+        slideTo(storedIndex, 0);
+      }
+    };
+
+    restoreSlide();
+  }, [onDismiss, swiperReady, totalSlides]);
+
+  useEffect(() => {
     if (currentProfile === undefined) return;
     const newLabel = (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim();
+    const savedLocationLabel = (currentProfile?.location ?? '').trim();
+
+    if (!coordsSavedThisSession) {
+      originalLocationLabelRef.current = savedLocationLabel;
+      setHadLocationLabelBeforeCoords(Boolean(savedLocationLabel));
+    }
+
     setCommunityLocationLabel(prev => {
       if (locationLabelCleared.current) return '';
+      if (coordsSavedThisSession && !hadLocationLabelBeforeCoords) return prev;
+      if (coordsSavedThisSession && hadLocationLabelBeforeCoords) {
+        return originalLocationLabelRef.current || prev;
+      }
       return newLabel || prev;
     });
   }, [
@@ -170,6 +204,8 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     currentProfile?.coordinates_near,
     currentProfile?.location_point_lat,
     currentProfile?.location_point_long,
+    coordsSavedThisSession,
+    hadLocationLabelBeforeCoords,
   ]);
 
   const canChangeUsername = () => {
@@ -216,9 +252,14 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     if (currentProfile?.onboarded !== true) {
       await completeOnboarding.mutateAsync();
     }
-    await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
+    const personalProfileComplete = Boolean(getPrimaryOrderedPhoto(currentProfile) && currentProfile?.bio);
+    await updateCurrentUserProfile({
+      ...(personalProfileComplete ? {} : { paused_profile: true }),
+      settings_community_profile: false,
+    });
     await queryClient.invalidateQueries({ queryKey: ['current'] });
     await queryClient.invalidateQueries({ queryKey: ['global-current'] });
+    await clearResumeState();
     if (onDismiss) {
       onDismiss();
       return;
@@ -253,7 +294,19 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setSavingLocation(true);
     const currentLocation = (currentProfile?.location ?? '').trim();
     if (trimmedLocationLabel && trimmedLocationLabel !== currentLocation) {
-      await updateCurrentUserProfile({ location: trimmedLocationLabel });
+      const updatedProfile = await updateCurrentUserProfile({ location: trimmedLocationLabel });
+      queryClient.setQueryData(['current'], (oldProfile: any) => ({
+        ...(oldProfile ?? currentProfile ?? {}),
+        ...(updatedProfile ?? {}),
+        location: trimmedLocationLabel,
+      }));
+      queryClient.setQueryData(['global-current'], (oldProfile: any) => ({
+        ...(oldProfile ?? currentProfile ?? {}),
+        ...(updatedProfile ?? {}),
+        location: trimmedLocationLabel,
+      }));
+      await queryClient.invalidateQueries({ queryKey: ['current'] });
+      await queryClient.invalidateQueries({ queryKey: ['global-current'] });
     }
     setShowLocation(shouldShowLocation);
     await updateCommunityProfile({ show_location: shouldShowLocation });
@@ -290,7 +343,14 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
       use_personal_profile_picture: hasPersonalPhoto ? usePersonalPhoto : false,
     });
 
+    await clearResumeState();
     router.push('/community', 'root', 'replace');
+  };
+
+  const handleCreatePersonalProfile = async () => {
+    await clearResumeState();
+    await Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+    router.push('/personal-profile-onboarding', 'root', 'replace');
   };
 
   const updatePicture = async () => {
@@ -340,13 +400,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     uploadHandler: uploadCommunityProfilePhoto,
     onDismiss: handleCropDismiss,
   });
-  const [presentLocationModal, dismissLocationModal] = useIonModal(EditLocationModal, {
-    onDismiss: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['current'] });
-      dismissLocationModal();
-    },
-  });
-
   return (
     <IonPage>
       <IonContent
@@ -354,12 +407,16 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
         <Swiper
-          modules={[Pagination]}
-          pagination={{ clickable: false }}
           className="onboarding-v2__swiper"
           centeredSlides
           allowTouchMove={false}
-          onSlideChange={(swiperInstance) => setActiveSlideIndex(swiperInstance.activeIndex)}
+          onSlideChange={async (swiperInstance) => {
+            setActiveSlideIndex(swiperInstance.activeIndex);
+            if (!onDismiss) {
+              await Preferences.set({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+              await Preferences.set({ key: COMMUNITY_ONBOARDING_SLIDE_KEY, value: String(swiperInstance.activeIndex) });
+            }
+          }}
           onSwiper={(swiperInstance) => {
             swiperRef.current = swiperInstance;
             setSwiperReady(true);
@@ -519,9 +576,13 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
               <OnboardingCardLocationCoords
                 flow="community"
                 preExistingCoords={hasSharedLocationCoords}
+                hasPersonalProfile={hasPersonalProfile}
                 onCoordsSaved={(localLabel) => {
                   locationLabelCleared.current = false;
-                  setCommunityLocationLabel(localLabel);
+                  setCommunityLocationLabel(hadLocationLabelBeforeCoords ? originalLocationLabelRef.current : localLabel);
+                  if (!hadLocationLabelBeforeCoords) {
+                    setShowLocation(false);
+                  }
                   setCoordsavedThisSession(true);
                 }}
                 onCoordsCleared={() => {
@@ -540,19 +601,13 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   <IonCardTitle>{copy.location.title}</IonCardTitle>
                   <p>
                     {hasAnyCoords
-                      ? copy.location.withSharedCoords
-                      : copy.location.withoutSharedCoords}
+                      ? ONBOARDING_COPY.cards.locationLabel.withCoords
+                      : ONBOARDING_COPY.cards.locationLabel.withoutCoords}
                   </p>
+                  <h3>{ONBOARDING_COPY.cards.locationLabel.profileNote}</h3>
+                  <p>{ONBOARDING_COPY.cards.locationLabel.note}</p>
                   {hasAnyCoords ? (
                     <>
-                      <IonText color="medium">
-                        <p style={{ marginTop: 0 }}>
-                          {copy.location.shownPrefix}{communityLocationLabel || '-'}
-                        </p>
-                      </IonText>
-                      <IonButton fill="outline" size="small" onClick={() => presentLocationModal()}>
-                        {communityLocationLabel ? copy.location.editLocation : copy.location.addLocation}
-                      </IonButton>
                       <IonItem lines="none" className="onboarding-v2__photo-toggle">
                         <IonLabel>{copy.location.toggleLabel}</IonLabel>
                         <IonToggle
@@ -561,6 +616,24 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                           onIonChange={(e) => setShowLocation(e.detail.checked)}
                         />
                       </IonItem>
+                      {shouldShowCommunityLocationInput && (
+                        <>
+                          <IonText color="medium">
+                            <p style={{ marginTop: 0 }}>
+                              {copy.location.shownPrefix}{communityLocationLabel || '-'}
+                            </p>
+                          </IonText>
+                          <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
+                            <IonInput
+                              value={communityLocationLabel}
+                              placeholder={ONBOARDING_COPY.cards.locationLabel.placeholder}
+                              autocapitalize="words"
+                              maxlength={40}
+                              onIonInput={(event) => setCommunityLocationLabel(event.detail.value ?? '')}
+                            />
+                          </IonItem>
+                        </>
+                      )}
                     </>
                   ) : (
                     <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
@@ -697,7 +770,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                     <IonButton
                       expand="block"
                       fill="outline"
-                      onClick={() => presentPersonalProfile()}
+                      onClick={handleCreatePersonalProfile}
                     >
                       {copy.ready.createPersonal}
                     </IonButton>

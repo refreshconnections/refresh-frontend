@@ -111,6 +111,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useHistory: () => ({ push: mockPush }),
+    useLocation: () => ({ pathname: '/submitted-posts', search: '', hash: '', state: null }),
   };
 });
 

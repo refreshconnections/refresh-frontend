@@ -2,6 +2,7 @@ import {
   IonButton,
   IonCard,
   IonCardContent,
+  IonCardSubtitle,
   IonCardTitle,
   IonNote,
   IonRow,
@@ -26,6 +27,7 @@ import './OnboardingCard.css';
 type Props = {
   flow?: 'personal' | 'community';
   preExistingCoords?: boolean;
+  hasPersonalProfile?: boolean;
   onCoordsSaved?: (localLabel: string) => void;
   onCoordsCleared?: () => void;
 };
@@ -47,11 +49,15 @@ const buildLocationLabel = (address?: Record<string, any>, fallback?: string) =>
   return fallback ?? '';
 };
 
-const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preExistingCoords = false, onCoordsSaved, onCoordsCleared }) => {
+const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preExistingCoords = false, hasPersonalProfile = false, onCoordsSaved, onCoordsCleared }) => {
   const copy =
     flow === 'community'
       ? ONBOARDING_COPY.cards.locationCoords.community
       : ONBOARDING_COPY.cards.locationCoords.personal;
+  const body =
+    flow === 'community' && hasPersonalProfile
+      ? ONBOARDING_COPY.cards.locationCoords.community.bodyWithPersonalProfile
+      : copy.body;
   const swiper = useSwiper();
   const queryClient = useQueryClient();
   const currentProfile = useGetCurrentProfile().data;
@@ -188,23 +194,45 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preE
     });
   };
 
+  const [showUpdateButtons, setShowUpdateButtons] = useState(false);
+
   if (preExistingCoords) {
-    const existingLabel = (currentProfile?.location ?? currentProfile?.coordinates_near ?? '').trim();
+    const coordinatesNear = (currentProfile?.coordinates_near ?? '').trim();
+    const coordinatesLabel = currentProfile?.location_point_lat && currentProfile?.location_point_long
+      ? `${currentProfile.location_point_lat}, ${currentProfile.location_point_long}`
+      : '';
+    const existingLabel = coordinatesNear || coordinatesLabel;
     return (
       <IonCard className="onboarding-slide">
         <IonCardContent>
           <IonCardTitle>{copy.title}</IonCardTitle>
-          <IonNote style={{ display: 'block', marginBottom: '8px' }}>
-            You've already shared your location{existingLabel ? `: ${existingLabel}` : ''}.
-          </IonNote>
-          <IonText style={{ whiteSpace: 'pre-line' }}>
-            {copy.body}
+          <IonText style={{ whiteSpace: 'pre-line', display: 'block', marginBottom: '12px' }}>
+            {flow === 'personal'
+              ? 'Your location helps Refresh Connections show you people nearby and helps others understand where you\'re looking to connect.\n\nThis location will be used for filtering on both your Personal and Refreshments Profiles.'
+              : 'Your location helps Refresh Connections show you posts and events nearby.\n\nThis location will be used for filtering on both your Personal and Refreshments Profiles.'}
           </IonText>
-          <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
-            <IonButton expand="block" onClick={shareLocation}>
-              Update via device location
-            </IonButton>
-          </IonRow>
+          {!showUpdateButtons ? (
+            <>
+              <IonText style={{ whiteSpace: 'pre-line', display: 'block', }}>
+                {`You can update your location now or press next to keep using`}
+              </IonText>
+              <IonText style={{ fontSize: '1.25rem', display: 'block', fontWeight: 600, textAlign: 'center' }}>
+                {existingLabel}
+              </IonText>
+              <IonButton size="small" fill="outline" style={{ alignSelf: 'center' }} onClick={() => setShowUpdateButtons(true)}>
+                Update my location
+              </IonButton>
+            </>
+          ) : (
+            <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
+              <IonButton expand="block" onClick={shareLocation}>
+                Update via device location
+              </IonButton>
+              <IonButton expand="block" fill="outline" onClick={openCitySelector}>
+                Update by choosing my city
+              </IonButton>
+            </IonRow>
+          )}
           {coordsSet && (
             <IonNote style={{ textAlign: 'center' }}>
               {copy.coordsSaved}
@@ -228,7 +256,7 @@ const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preE
       <IonCardContent>
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText style={{ whiteSpace: 'pre-line' }}>
-          {copy.body}
+          {body}
         </IonText>
         <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
           <IonButton expand="block" onClick={shareLocation}>

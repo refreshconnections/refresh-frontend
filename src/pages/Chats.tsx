@@ -71,6 +71,8 @@ const Chats: React.FC = () => {
   const currentUserProfileLoading = useGetCurrentProfile().isLoading;
   const chatsQuery = useGetCurrentUserChats();
   const allChats = chatsQuery.data
+  const allChatsRef = useRef(allChats);
+  useEffect(() => { allChatsRef.current = allChats; }, [allChats]);
   const chatsLoading = chatsQuery.isLoading
   const {
     data: paginatedChatsData,
@@ -93,7 +95,7 @@ const Chats: React.FC = () => {
   const isRefreshingChats = Boolean(
     visibleChats.length > 0 &&
     dataFlat &&
-    (chatsQuery.isFetching || mutualsQuery.isFetching || chatsIsFetchingNextPage || forceRefreshing)
+    (mutualsQuery.isFetching || chatsQuery.isFetching || chatsIsFetchingNextPage || forceRefreshing)
   );
 
   const statuses = useGetStatuses().data;
@@ -165,7 +167,9 @@ const Chats: React.FC = () => {
   useEffect(() => {
     const unsubscribe = addListener((msg) => {
       if (msg.msg_type === 9) {
-        const dialog = getDialogBySender(allChats, 'other_user_id', msg.sender);
+        const dialog = allChatsRef.current
+          ? getDialogBySender(allChatsRef.current, 'other_user_id', msg.sender)
+          : null;
         if (dialog) {
           queryClient.invalidateQueries({ queryKey: ['chats', 'details', dialog.id] });
         }
@@ -175,7 +179,7 @@ const Chats: React.FC = () => {
       }
     });
     return unsubscribe;
-  }, [addListener, allChats]);
+  }, [addListener]);
 
 
   useEffect(() => {

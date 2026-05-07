@@ -11,6 +11,7 @@ const EVENT_TYPE_OPTIONS = [
 
 const ATTENDEE_PRECAUTION_OPTIONS = [
   { value: 'all', label: 'Any' },
+  { value: 'not_specified', label: 'Not specified' },
   { value: 'precautions_only', label: 'Covid conscientious only' },
   { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
   { value: 'open', label: 'Open to everyone' },

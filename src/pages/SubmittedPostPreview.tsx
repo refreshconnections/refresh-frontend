@@ -89,7 +89,7 @@ const statusLabelMap: Record<string, string> = {
   pending: 'Pending moderator review',
   approved: 'Approved',
   needs_edit: 'Needs your edit',
-  rejected: 'Rejected',
+  rejected: 'Not Approved',
 };
 
 const statusColorMap: Record<string, string> = {

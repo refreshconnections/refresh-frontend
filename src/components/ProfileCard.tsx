@@ -52,7 +52,7 @@ import 'swiper/css/pagination';
 import { Navigation, Pagination } from 'swiper';
 
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { onImgError, somethingInLetsTalkAbout } from '../hooks/utilities';
+import { getPhotoAltKey, onImgError, somethingInLetsTalkAbout } from '../hooks/utilities';
 import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import { faSubtitles } from '@fortawesome/pro-regular-svg-icons/faSubtitles';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
@@ -175,7 +175,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                         <img
                             ref={primaryImageRef}
                             className={`profilepic ${imageLoaded ? 'loaded' : 'loading'}`}
-                            alt={cardData?.[`${primaryPhotoKey}_alt`] || "Profile photo"}
+                            alt={cardData?.[getPhotoAltKey(primaryPhotoKey)] || "Profile photo"}
                             src={primaryPhotoSrc}
                             onError={(e) => onImgError(e)}
                             loading="lazy"
@@ -212,14 +212,14 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
                     {altShow === primaryPhotoKey ?
                         <IonRow className="show-alt-profile">
-                            <IonText>{cardData?.[`${primaryPhotoKey}_alt`]}</IonText>
+                            <IonText>{cardData?.[getPhotoAltKey(primaryPhotoKey)]}</IonText>
                         </IonRow>
                         : <></>}
                 </div>
 
 
                 <IonCardHeader className="leave-end-room ">
-                    {settingsAlt && cardData?.[`${primaryPhotoKey}_alt`] ?
+                    {settingsAlt && cardData?.[getPhotoAltKey(primaryPhotoKey)] ?
                         <IonButton className="alt-desc-profile" fill="clear" size="small" onClick={altShow !== primaryPhotoKey ? () => setAltShow(primaryPhotoKey) : () => setAltShow(null)}>
                             <FontAwesomeIcon icon={faSubtitles} />
                         </IonButton>
@@ -486,24 +486,24 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 <SwiperSlide key={key}>
                                     <IonCard>
                                         <img
-                                            alt={cardData?.[`${key}_alt`] || 'Profile photo'}
+                                            alt={cardData?.[getPhotoAltKey(key)] || 'Profile photo'}
                                             src={cardData?.[key]}
                                             onError={(e) => onImgError(e)}
                                         />
                                         {altShow === key ? (
                                             <IonRow className="show-alt">
-                                                <IonText>{cardData?.[`${key}_alt`]}</IonText>
+                                                <IonText>{cardData?.[getPhotoAltKey(key)]}</IonText>
                                             </IonRow>
                                         ) : null}
                                         <IonCardSubtitle
                                             onClick={
-                                                settingsAlt && altShow !== key && cardData?.[`${key}_alt`]
+                                                settingsAlt && altShow !== key && cardData?.[getPhotoAltKey(key)]
                                                     ? () => setAltShow(key)
                                                     : () => setAltShow(null)
                                             }
                                         >
                                             {cardData?.[`${key}_caption`]}
-                                            {settingsAlt && cardData?.[`${key}_alt`] ? (
+                                            {settingsAlt && cardData?.[getPhotoAltKey(key)] ? (
                                                 <FontAwesomeIcon className="alt-desc" icon={faSubtitles} />
                                             ) : null}
                                         </IonCardSubtitle>

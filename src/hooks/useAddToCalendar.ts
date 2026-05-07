@@ -16,7 +16,10 @@ const addToCalendar = async (event: CalendarEventInput): Promise<AddToCalendarRe
   if (!Capacitor.isNativePlatform()) return 'unavailable';
 
   try {
-    const { result } = await CapacitorCalendar.requestWriteOnlyCalendarAccess();
+    const permissionFn = Capacitor.getPlatform() === 'android'
+      ? CapacitorCalendar.requestFullCalendarAccess
+      : CapacitorCalendar.requestWriteOnlyCalendarAccess;
+    const { result } = await permissionFn();
     if (result !== 'granted') return 'denied';
 
     await CapacitorCalendar.createEvent({
@@ -24,7 +27,7 @@ const addToCalendar = async (event: CalendarEventInput): Promise<AddToCalendarRe
       startDate: event.startDate.getTime(),
       endDate: event.endDate.getTime(),
       location: event.location ?? undefined,
-      description: event.notes ?? undefined,
+      description: `${event.notes ? event.notes + "\n\n" : ""}Saved from the Refresh Connections community calendar. www.refreshconnections.com`,
       alerts: event.alerts,
     });
 

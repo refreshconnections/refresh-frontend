@@ -6,11 +6,12 @@ import { renderHook, waitFor } from '@testing-library/react';
 const getWithExpiry = vi.fn();
 const setWithExpiry = vi.fn();
 const apiGet = vi.fn();
+const apiPost = vi.fn();
 
 vi.mock('./api-client', () => ({
   apiClient: {
     get: (...args: any[]) => apiGet(...args),
-    post: vi.fn(),
+    post: (...args: any[]) => apiPost(...args),
   },
 }));
 
@@ -19,10 +20,9 @@ vi.mock('../capacitorPreferences/all', () => ({
   setWithExpiry: (...args: any[]) => setWithExpiry(...args),
 }));
 
-import { useGetInterestedEvents, useGetInterestedPosts } from './interests';
+import { interestQueryKeys, useGetInterestedEvents, useGetInterestedPosts, useInterestEvent, useUninterestEvent } from './interests';
 
-const createWrapper = () => {
-  const queryClient = new QueryClient();
+const createWrapper = (queryClient = new QueryClient()) => {
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -40,6 +40,7 @@ describe('interest hooks warm cache', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.setItem('token', 'test-token');
+    apiPost.mockResolvedValue({ data: {} });
   });
 
   it('hydrates interested posts from cache and then updates with fresh data within 5 seconds', async () => {
@@ -104,5 +105,72 @@ describe('interest hooks warm cache', () => {
     await waitFor(() => {
       expect(result.current.data?.results).toEqual([{ id: 12, name: 'Fresh event', start_datetime: '2026-04-02T18:00:00.000Z' }]);
     }, { timeout: 5000 });
+  });
+
+  it('adds interested event details to the interested events cache', async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(interestQueryKeys.eventsPage(1), {
+      count: 1,
+      next: null,
+      previous: null,
+      results: [{ id: 11, name: 'Existing event', start_datetime: '2026-04-01T18:00:00.000Z' }],
+    });
+
+    const { result } = renderHook(() => useInterestEvent(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await result.current.mutateAsync({
+      id: 12,
+      name: 'New event',
+      start_datetime: '2026-04-02T18:00:00.000Z',
+      end_datetime: '2026-04-02T19:00:00.000Z',
+    });
+
+    expect(apiPost).toHaveBeenCalledWith('/api/refreshments/interest_event/', { event_id: 12 });
+    expect(queryClient.getQueryData<any>(interestQueryKeys.eventsPage(1))).toEqual({
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        {
+          id: 12,
+          name: 'New event',
+          start_datetime: '2026-04-02T18:00:00.000Z',
+          end_datetime: '2026-04-02T19:00:00.000Z',
+          interested: true,
+        },
+        { id: 11, name: 'Existing event', start_datetime: '2026-04-01T18:00:00.000Z' },
+      ],
+    });
+  });
+
+  it('removes uninterested events from the interested events cache', async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(interestQueryKeys.eventsPage(1), {
+      count: 2,
+      next: null,
+      previous: null,
+      results: [
+        { id: 11, name: 'Existing event', start_datetime: '2026-04-01T18:00:00.000Z' },
+        { id: 12, name: 'New event', start_datetime: '2026-04-02T18:00:00.000Z' },
+      ],
+    });
+
+    const { result } = renderHook(() => useUninterestEvent(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await result.current.mutateAsync(12);
+
+    expect(apiPost).toHaveBeenCalledWith('/api/refreshments/uninterest_event/', { event_id: 12 });
+    expect(queryClient.getQueryData<any>(interestQueryKeys.eventsPage(1))).toEqual({
+      count: 1,
+      next: null,
+      previous: null,
+      results: [
+        { id: 11, name: 'Existing event', start_datetime: '2026-04-01T18:00:00.000Z' },
+      ],
+    });
   });
 });

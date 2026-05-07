@@ -53,11 +53,11 @@ const StayPausedModal: React.FC<Props> = (props) => {
                     </IonCardTitle>
                     <IonCardContent>
                         <IonText>
-                        To help keep Refresh Connections safe and genuine, we ask everyone to share some basic Personal Profile information before using the personal side of the app. This includes 3 photos, including 1 that shows your face.
+                        To keep Refresh Connections safe and genuine, the Personal Profile requires 3 photos, including 1 that shows your face.
                         <br/><br/>
-                        If you aren't ready to upload photos yet, that's completely okay. You can still explore the Refreshments Bar and Calendar, read posts, join conversations, and get a feel for what Refresh Connections is all about. You can come back here whenever you're ready to start making one-on-one connections.
+                        If you're not ready yet, you can still explore the Refreshments Bar and Calendar on the community side.
                         <br/><br/>
-                        
+                        You can come back anytime to finish your Personal Profile and start making one-on-one connections.
                         </IonText>
                         </IonCardContent>
 

@@ -31,6 +31,12 @@ type PaginatedResponse<T> = {
   results: T[];
 };
 
+type EventInterestTarget = number | RefreshEvent;
+
+const getEventInterestId = (target: EventInterestTarget) => (
+  typeof target === 'number' ? target : target.id
+);
+
 export function useGetInterestedPosts(page = 1) {
   const query = useQuery({
     queryKey: interestQueryKeys.postsPage(page),
@@ -112,11 +118,24 @@ export function useUninterestPost() {
 export function useInterestEvent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (eventId: number) => {
+    mutationFn: async (target: EventInterestTarget) => {
+      const eventId = getEventInterestId(target);
       const response = await apiClient.post('/api/refreshments/interest_event/', { event_id: eventId });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, target) => {
+      if (typeof target !== 'number') {
+        queryClient.setQueryData<PaginatedResponse<RefreshEvent>>(interestQueryKeys.eventsPage(1), (current) => {
+          if (!current || current.results.some((event) => event.id === target.id)) {
+            return current;
+          }
+          return {
+            ...current,
+            count: current.count + 1,
+            results: [{ ...target, interested: true }, ...current.results],
+          };
+        });
+      }
       queryClient.invalidateQueries({ queryKey: interestQueryKeys.events, exact: false });
       queryClient.invalidateQueries({ queryKey: ['events'], exact: false });
     },
@@ -130,7 +149,17 @@ export function useUninterestEvent() {
       const response = await apiClient.post('/api/refreshments/uninterest_event/', { event_id: eventId });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, eventId) => {
+      queryClient.setQueriesData<PaginatedResponse<RefreshEvent>>({ queryKey: interestQueryKeys.events, exact: false }, (current) => {
+        if (!current) return current;
+        const nextResults = current.results.filter((event) => event.id !== eventId);
+        if (nextResults.length === current.results.length) return current;
+        return {
+          ...current,
+          count: Math.max(0, current.count - (current.results.length - nextResults.length)),
+          results: nextResults,
+        };
+      });
       queryClient.invalidateQueries({ queryKey: interestQueryKeys.events, exact: false });
       queryClient.invalidateQueries({ queryKey: ['events'], exact: false });
     },

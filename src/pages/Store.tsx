@@ -641,6 +641,7 @@ const Store: React.FC = () => {
                 setPurchaseLoading(true)
                 await updateCurrentUserProfile({ "subscription_level": "personalplus", "subscription_source": "RevenueCat" })
             }
+            setActiveEntitlement(purchaseResult.customerInfo.entitlements.active)
         } catch (error: any) {
             if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
                 // Purchase cancelled
@@ -650,6 +651,8 @@ const Store: React.FC = () => {
         }
         await delay(3000)
         queryClient.invalidateQueries({ queryKey: ['current'] })
+        queryClient.invalidateQueries({ queryKey: ['settings-current'] })
+        queryClient.invalidateQueries({ queryKey: ['global-current'] })
         setPurchaseLoading(false)
     }
 

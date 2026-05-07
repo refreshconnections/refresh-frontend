@@ -81,7 +81,7 @@ describe('SubmittedPostPreview', () => {
     renderPage();
 
     expect(await screen.findByText('Your Submission')).toBeInTheDocument();
-    expect(screen.getByText('Interested count')).not.toBeInTheDocument();
-    expect(screen.getByText('9')).not.toBeInTheDocument();
+    expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
+    expect(screen.queryByText('9')).not.toBeInTheDocument();
   });
 });

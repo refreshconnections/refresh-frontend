@@ -65,6 +65,21 @@ describe('shouldShowOnboardingForProfile', () => {
     ).toBe(false);
   });
 
+  it('allows the personal profile onboarding route instead of bouncing back to the first onboarding screen', () => {
+    expect(
+      shouldShowPrimaryOnboardingScreen(
+        '/personal-profile-onboarding',
+        {
+          created_profile: false,
+          onboarded: true,
+          birth_date: '2000-01-01',
+        },
+        { phone: '+15555555555' },
+        true
+      )
+    ).toBe(false);
+  });
+
   it('does not show the ready-to-start onboarding screen once a community profile already exists', () => {
     expect(
       shouldShowPrimaryOnboardingScreen(

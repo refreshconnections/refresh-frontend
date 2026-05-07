@@ -92,6 +92,7 @@ vi.mock('../hooks/utilities', () => ({
   updateCurrentUserProfile: (...args: any[]) => mockUpdateCurrentUserProfile(...args),
   uploadPhoto: vi.fn().mockResolvedValue(undefined),
   onImgError: vi.fn(),
+  isPersonalPlus: vi.fn(() => false),
 }));
 
 vi.mock('@capacitor/geolocation', () => ({
@@ -113,6 +114,7 @@ vi.mock('../hooks/geolocationUtilities', () => ({
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     set: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -323,6 +325,13 @@ describe('active onboarding cards', () => {
   });
 
   it('saves coordinates from a selected city after confirming the popup', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      location: '',
+      coordinates_near: '',
+      location_point_lat: null,
+      location_point_long: null,
+    };
     const onCoordsSaved = vi.fn();
     await renderInApp(<OnboardingCardLocationCoords onCoordsSaved={onCoordsSaved} />);
 
@@ -365,6 +374,13 @@ describe('active onboarding cards', () => {
   });
 
   it('saves coordinates from device location after confirming the popup', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      location: '',
+      coordinates_near: '',
+      location_point_lat: null,
+      location_point_long: null,
+    };
     const onCoordsSaved = vi.fn();
     await renderInApp(<OnboardingCardLocationCoords onCoordsSaved={onCoordsSaved} />);
 
@@ -384,6 +400,36 @@ describe('active onboarding cards', () => {
     });
     expect(onCoordsSaved).toHaveBeenCalledWith('New York, United States');
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
+  });
+
+  it('does not update the location label when saving new coordinates', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      location: 'NYC metro',
+      coordinates_near: 'Brooklyn',
+      location_point_lat: null,
+      location_point_long: null,
+    };
+
+    await renderInApp(<OnboardingCardLocationCoords />);
+
+    await clickElement(screen.getByText(ONBOARDING_COPY.cards.locationCoords.personal.chooseCity).closest('ion-button'));
+
+    const citySelectorProps = mockIonModalProps.at(-1);
+    await act(async () => {
+      await citySelectorProps.onDismiss({ name: 'Chicago, Illinois, United States', lat: 41.8781, lng: -87.6298 });
+    });
+
+    const confirmConfig = mockPresentAlert.mock.calls.at(-1)?.[0];
+    await act(async () => {
+      await confirmConfig.buttons[1].handler();
+    });
+
+    expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({
+      location_point_long: -87.6298,
+      location_point_lat: 41.8781,
+      coordinates_near: 'Chicago, Illinois, United States',
+    });
   });
 
   it('falls back to raw coordinates when reverse geocoding has no locality', async () => {
@@ -461,10 +507,25 @@ describe('active onboarding cards', () => {
   it('shows the already-shared UI when preExistingCoords is true', async () => {
     await renderInApp(<OnboardingCardLocationCoords preExistingCoords />);
 
-    expect(screen.getByText(/You've already shared your location/)).toBeInTheDocument();
-    expect(screen.getByText('Update via device location')).toBeInTheDocument();
+    expect(screen.getByText(/You can update your location now or press next to keep using/)).toBeInTheDocument();
+    expect(screen.getByText('Brooklyn')).toBeInTheDocument();
+    expect(screen.getByText('Update my location')).toBeInTheDocument();
+    expect(screen.queryByText('Update via device location')).not.toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.common.next)).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.cards.locationCoords.personal.dontShare)).not.toBeInTheDocument();
+  });
+
+  it('falls back to latitude and longitude for pre-existing coordinates without a near label', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      coordinates_near: '',
+      location_point_lat: 40.6,
+      location_point_long: -73.9,
+    };
+
+    await renderInApp(<OnboardingCardLocationCoords preExistingCoords />);
+
+    expect(screen.getByText('40.6, -73.9')).toBeInTheDocument();
   });
 
   it('next button on the already-shared UI advances without re-sharing', async () => {
@@ -476,13 +537,16 @@ describe('active onboarding cards', () => {
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
   });
 
-  it('renders the shared location label card copy', async () => {
+  it('renders the keep-using UI when an existing location label is present', async () => {
     await renderInApp(<OnboardingCardLocationLabel />);
     expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.title)).toBeInTheDocument();
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.note)).toBeInTheDocument();
+    expect(screen.getByText(/You've already set a location label to show on your Profiles/)).toBeInTheDocument();
+    expect(screen.getByText('Brooklyn')).toBeInTheDocument();
+    expect(screen.getByText('Update my label')).toBeInTheDocument();
+    expect(document.querySelector('ion-input')).toBeNull();
   });
 
-  it('renders the no-coordinates location-label branch and skips redundant saves', async () => {
+  it('keep-using UI advances without calling updateCurrentUserProfile', async () => {
     mockCurrentProfileState.value = {
       ...mockCurrentProfileState.value,
       location_point_lat: null,
@@ -492,7 +556,7 @@ describe('active onboarding cards', () => {
     };
 
     await renderInApp(<OnboardingCardLocationLabel />);
-    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
+    expect(screen.getByText(/You've already set a location label to show on your Profiles/)).toBeInTheDocument();
 
     await clickElement(screen.getByText(ONBOARDING_COPY.common.next).closest('ion-button'));
 
@@ -515,6 +579,26 @@ describe('active onboarding cards', () => {
     expect(locationInput).not.toBeNull();
     expect(getReactProps(locationInput!)?.value).toBe('Chicago');
     expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
+  });
+
+  it('shows the editable label copy when the initial label was just generated from coordinates', async () => {
+    mockCurrentProfileState.value = {
+      ...mockCurrentProfileState.value,
+      location: 'Chicago',
+      coordinates_near: 'Chicago',
+      location_point_lat: 41.8781,
+      location_point_long: -87.6298,
+    };
+
+    await renderInApp(
+      <OnboardingCardLocationLabel initialLocation="Chicago" initialLocationIsDraft />
+    );
+
+    const locationInput = document.querySelector<HTMLElement>('ion-input');
+    expect(locationInput).not.toBeNull();
+    expect(getReactProps(locationInput!)?.value).toBe('Chicago');
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withCoords)).toBeInTheDocument();
+    expect(screen.queryByText(/You've already set a location label/)).not.toBeInTheDocument();
   });
 
   it('renders the shared looking-for card copy and options', async () => {

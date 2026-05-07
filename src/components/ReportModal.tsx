@@ -12,6 +12,7 @@ type Props = {
     id: number,
     requireDetails?: boolean;
     onDismiss: () => void;
+    onReportSubmitted?: () => void;
 };
 
 interface ReportDetails {
@@ -22,7 +23,7 @@ interface ReportDetails {
 }
 const ReportModal: React.FC<Props> = (props) => {
 
-    const { offender, text, id, onDismiss, requireDetails } = props;
+    const { offender, text, id, onDismiss, requireDetails, onReportSubmitted } = props;
 
 
     const [reason, setReason] = useState("");
@@ -38,6 +39,7 @@ const ReportModal: React.FC<Props> = (props) => {
 
     function reportSubmitSuccessful() {
         setShowAlert(false)
+        onReportSubmitted?.();
         onDismiss();
     }
 

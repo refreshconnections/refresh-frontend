@@ -39,7 +39,9 @@ vi.mock('swiper', () => ({
 }));
 
 vi.mock('../hooks/utilities', () => ({
+  isPersonalPlus: vi.fn(() => false),
   onImgError: vi.fn(),
+  getPhotoAltKey: vi.fn((photoKey: string) => photoKey === 'pic1_main' ? 'pic1_alt' : `${photoKey}_alt`),
   somethingInLetsTalkAbout: (cardData: any) =>
     Boolean(cardData?.freetime || cardData?.hobby || cardData?.together_idea || cardData?.fave_book),
 }));
@@ -64,6 +66,7 @@ const baseCardData = {
   bio: 'Masked and looking for community.',
   registrationDate: '2026-04-12T12:00:00.000Z',
   pic1_main: '/img/1.jpg',
+  pic1_alt: 'Primary alt text',
   pic1_main_alt: 'Primary alt text',
   pic2: '/img/2.jpg',
   pic2_alt: 'Second alt text',

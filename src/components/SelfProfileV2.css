@@ -27,6 +27,14 @@
   margin-bottom: 8px;
 }
 
+.profile-preview-button {
+  width: 100%;
+}
+
+.profile-preview-button::part(native) {
+  white-space: normal;
+}
+
 .info-card ion-item {
   --padding-start: 12px;
   --padding-end: 12px;
@@ -384,6 +392,22 @@ ion-card-content .card-grid {
 }
 
 .self-profile-v2 ion-grid > .profile-accordion-group:last-of-type .accordion-header.open + .accordion-content {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group ion-accordion {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group .accordion-header:not(.open) {
+  --border-radius: 0 0 16px 16px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group .accordion-header:not(.open)::part(native) {
   border-bottom-left-radius: 16px;
   border-bottom-right-radius: 16px;
 }

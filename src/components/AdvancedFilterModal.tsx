@@ -1493,11 +1493,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   lines="none"
                   onClick={whatGenderSexualityNot}
                   className="gender-not-item"
+                  style={{"width": "100%"}}
                 >
                   <IonLabel className="ion-text-wrap gender-not-label">
                     <h3>
                       {genderSexualityNot
-                        ? "I am not looking for anyone who identifies as:"
+                        ? "But I am not looking for anyone who identifies as:"
                         : "Anyone you don’t want to see in Discovery?"}
                     </h3>
                     <p>

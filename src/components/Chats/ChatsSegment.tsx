@@ -151,29 +151,30 @@ const ChatsSegment: React.FC<Props> = (props) => {
             {mutualConnectionsList?.length > 0 ?
                 <>
                     {/* Filter tabs */}
-                    {chatOrganizerEnabled && <div style={{ overflowX: 'auto', display: 'flex', padding: '4px 8px 0', gap: '6px' }}>
-                        {tabs.map(tab => (
-                            <IonChip
-                                key={tab.key}
-                                color={activeTab === tab.key ? 'navy' : 'medium'}
-                                onClick={() => setActiveTab(tab.key)}
-                                style={{ flexShrink: 0 }}
-                            >
-                                <IonLabel>{tab.label}</IonLabel>
+                    {chatOrganizerEnabled && <div className="chat-organizer-scroll">
+                        <div className="chat-organizer-row">
+                            {tabs.map(tab => (
+                                <IonChip
+                                    key={tab.key}
+                                    color={activeTab === tab.key ? 'navy' : 'medium'}
+                                    onClick={() => setActiveTab(tab.key)}
+                                >
+                                    <IonLabel>{tab.label}</IonLabel>
+                                </IonChip>
+                            ))}
+                            <IonChip color="medium" onClick={() => {
+                                if (userIsPersonalPlus) {
+                                    presentManageLists();
+                                } else {
+                                    presentUpsellAlert({
+                                        header: 'Organize your chats',
+                                        message: 'Create custom chat filters with a Personal+ or Pro subscription.',
+                                    });
+                                }
+                            }}>
+                                <IonLabel><FontAwesomeIcon icon={faAddressBook} /></IonLabel>
                             </IonChip>
-                        ))}
-                        <IonChip color="medium" onClick={() => {
-                            if (userIsPersonalPlus) {
-                                presentManageLists();
-                            } else {
-                                presentUpsellAlert({
-                                    header: 'Organize your chats',
-                                    message: 'Create custom chat filters with a Personal+ or Pro subscription.',
-                                });
-                            }
-                        }} style={{ flexShrink: 0 }}>
-                            <IonLabel><FontAwesomeIcon icon={faAddressBook} /></IonLabel>
-                        </IonChip>
+                        </div>
                     </div>}
 
                     {/* Search bar */}
@@ -261,13 +262,22 @@ const ChatsSegment: React.FC<Props> = (props) => {
                                             <IonSpinner name="dots" />
                                         </IonRow>
                                     ) : (
-                                        <IonList id="wl" lines="full">
-                                            {filteredChats.map((e: any) => (
-                                                <li key={e.id}>
-                                                    <ChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
-                                                </li>
-                                            ))}
-                                        </IonList>
+                                        <>
+                                            {activeTab === 'local' && filteredChats.length === 0 && (
+                                                <IonRow className="ion-justify-content-center ion-padding">
+                                                    <IonText color="medium" style={{ textAlign: 'center', padding: '0 16px' }}>
+                                                        This will show chats with members whose location on their profile is near yours.
+                                                    </IonText>
+                                                </IonRow>
+                                            )}
+                                            <IonList id="wl" lines="full">
+                                                {filteredChats.map((e: any) => (
+                                                    <li key={e.id}>
+                                                        <ChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
+                                                    </li>
+                                                ))}
+                                            </IonList>
+                                        </>
                                     )}
                                     <NewChats currentUserProfile={currentUserProfile} filterUserIds={filterIds!} />
                                 </>

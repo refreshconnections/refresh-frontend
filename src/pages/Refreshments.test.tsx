@@ -8,6 +8,7 @@ const {
   dismissNotification,
   preferencesGet,
   preferencesSet,
+  preferencesRemove,
   queryInvalidate,
   historyReplace,
   mockRouterPush,
@@ -18,6 +19,7 @@ const {
   dismissNotification: vi.fn(),
   preferencesGet: vi.fn(),
   preferencesSet: vi.fn(),
+  preferencesRemove: vi.fn(),
   queryInvalidate: vi.fn(),
   historyReplace: vi.fn(),
   mockRouterPush: vi.fn(),
@@ -46,6 +48,7 @@ vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     get: preferencesGet,
     set: preferencesSet,
+    remove: preferencesRemove,
   },
 }));
 
@@ -232,6 +235,7 @@ beforeEach(() => {
 
   preferencesGet.mockResolvedValue({ value: null });
   preferencesSet.mockResolvedValue(undefined);
+  preferencesRemove.mockResolvedValue(undefined);
 
   mockPosts.mockReturnValue({
     data: [11, 12, 13, 14, 15, 16],
@@ -272,6 +276,18 @@ describe('Refreshments page', () => {
     expect(await screen.findByText('post-card-16')).toBeInTheDocument();
   });
 
+  it('returns users to unfinished refreshments onboarding before showing the bar', async () => {
+    preferencesGet.mockImplementation(({ key }: { key: string }) => (
+      Promise.resolve({ value: key === 'community_onboarding_in_progress' ? 'true' : null })
+    ));
+
+    renderRefreshments();
+
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding', 'root', 'replace');
+    });
+  });
+
   it('opens the create-post paywall alert for ineligible users', async () => {
     const { container } = renderRefreshments();
 
@@ -296,7 +312,7 @@ describe('Refreshments page', () => {
     });
   });
 
-  it('shows a small refreshing indicator while fresh posts are loading over warmed data', async () => {
+  it('keeps the dot refresh indicator hidden while fresh posts are loading over warmed data', async () => {
     mockPosts.mockReturnValue({
       data: [11, 12, 13, 14, 15, 16],
       isLoading: false,
@@ -305,10 +321,8 @@ describe('Refreshments page', () => {
 
     const { container } = renderRefreshments();
 
-    await waitFor(() => {
-      expect(screen.getByTestId('warm-cache-refresh-indicator')).toBeInTheDocument();
-      expect(container.querySelector('[data-testid="warm-cache-refresh-indicator"] ion-spinner[name="dots"]')).toBeTruthy();
-    });
+    expect(screen.queryByTestId('warm-cache-refresh-indicator')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-testid="warm-cache-refresh-indicator"] ion-spinner[name="dots"]')).toBeNull();
   });
 
   it('keeps warmed posts visible and does not flash the empty state while fresh posts are fetching', async () => {
@@ -359,7 +373,7 @@ describe('Refreshments page', () => {
 
     const complete = vi.fn();
 
-    await act(async () => {
+    act(() => {
       fireEvent(
         refresher!,
         new CustomEvent('ionRefresh', {
@@ -368,6 +382,8 @@ describe('Refreshments page', () => {
       );
     });
 
+    expect(screen.getByTestId('warm-cache-refresh-indicator')).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="warm-cache-refresh-indicator"] ion-spinner[name="dots"]')).toBeTruthy();
     expect(queryInvalidate).toHaveBeenCalledWith({
       queryKey: ['filteredposts'],
       exact: false,

@@ -1,4 +1,4 @@
-import { IonAvatar, IonButton, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCol, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonPage, IonRow, IonSkeletonText, IonSpinner, IonText, IonTextarea, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
 import React, { useEffect, useRef, useState } from "react";
 import { authorSidenoteComment, editComment, getAvatarDisplay, getInternalAppPath, increaseStreak, likeComment, onImgError, openExternalUrl, removeComment, sidenoteComment, unlikeComment } from "../../hooks/utilities";
 import { useSheetModal } from "../../hooks/useSheetModal";
@@ -20,7 +20,7 @@ import { alert as alertIcon, removeCircleOutline, chatbubble, informationCircleO
 import CommentReplies from "./CommentReplies";
 import CommunityProfileModal from "../CommunityProfileModal";
 import moment from "moment";
-import { faMessageXmark, faPen } from "@fortawesome/pro-solid-svg-icons";
+import { faMessageXmark, faPen, faCircleInfo } from "@fortawesome/pro-solid-svg-icons";
 import { useGetLimits } from "../../hooks/api/profiles/current-limits";
 import { useGetDynamicIndividualComment } from "../../hooks/api/refreshments/individual-comment-dynamic";
 import { useGetStaticIndividualComment } from "../../hooks/api/refreshments/individual-comment-static";
@@ -96,6 +96,7 @@ const CommentItem: React.FC<Props> = (props) => {
   };
 
 
+  const [showRemovedContent, setShowRemovedContent] = useState(false);
   const [liked, setLiked] = useState<boolean>(false)
   const [likedLength, setLikedLength] = useState(0)
   const [commentText, setCommentText] = useState<string>(comment?.text ?? "");
@@ -364,7 +365,7 @@ const CommentItem: React.FC<Props> = (props) => {
   const removeCommentAlert = async () => {
     presentSidenoteAlert({
       header: 'Do you want to remove the comment you just posted?',
-      subHeader: `Please note: You can only remove comments ${5 - limits?.comments_removed} more times this month. Removed comments will also be sidenoted.`,
+      subHeader: `Please note: You can only remove comments ${5 - limits?.comments_removed} more times this month.`,
       buttons: [
         {
           text: 'Nevermind',
@@ -445,30 +446,47 @@ const CommentItem: React.FC<Props> = (props) => {
                         :
                         comment?.removed ?
                           <>
-                            <h4 style={{ color: "var(--ion-color-maroon)" }}>
-                              {isOwner ? "Your removed comments are only visible to you." : "This comment has been removed."}
-                            </h4>
-                            {comment?.removed_reason && (
-                              <h4 style={{ color: "var(--ion-color-maroon)" }}>Removal reason: {comment?.removed_reason}</h4>
-                            )}
+                            <IonCard className="removed-comment-card">
+                              <IonCardContent style={{ padding: "10px 12px" }}>
+                                <p style={{ color: "var(--ion-color-maroon)", margin: "0 0 4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <FontAwesomeIcon icon={faCircleInfo} style={{ flexShrink: 0 }} />
+                                  {isOwner ? "Your removed comments are only visible to you." : "This comment has been removed."}
+                                </p>
+                                {comment?.removed_reason && (
+                                  <p style={{ color: "var(--ion-color-maroon)", margin: "0 0 8px" }}>Removal reason: {comment?.removed_reason}</p>
+                                )}
                                 {isOwner && (
-                                  <div className="name-avatar">
-                                <IonAvatar className={avatarClassName}>
-                                  <img src={avatarSrc} onError={(e) => onImgError(e)} />
-                                </IonAvatar>
-                                <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
-                              </div>
-                            )}
-                            {isOwner && comment?.removed_reason ? (
-                              <>
-                                <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
-                              </>
-                            ) : null}
-                            <ModerationNote
-                              moderationNote={comment.moderation_note}
-                              moderationIconOnly={false}
-                              moderationNoteLonger={comment.moderation_note_longer}
-                            />
+                                  <>
+                                    <div style={{ display: "flex", justifyContent: "center" }}>
+                                    <IonButton
+                                      fill="outline"
+                                      color="navy"
+                                      size="small"
+                                      onClick={() => setShowRemovedContent(v => !v)}
+                                    >
+                                      {showRemovedContent ? "Hide removed comment" : "Show removed comment"}
+                                    </IonButton>
+                                    </div>
+                                    {showRemovedContent && (
+                                      <>
+                                        <div className="name-avatar" style={{ marginTop: "8px" }}>
+                                          <IonAvatar className={avatarClassName}>
+                                            <img src={avatarSrc} onError={(e) => onImgError(e)} />
+                                          </IonAvatar>
+                                          <h3>{comment?.username ? comment?.username : "Anonymous"}</h3>
+                                        </div>
+                                        <h4 className="css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{commentText}</Linkify></h4>
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                                <ModerationNote
+                                  moderationNote={comment.moderation_note}
+                                  moderationIconOnly={false}
+                                  moderationNoteLonger={comment.moderation_note_longer}
+                                />
+                              </IonCardContent>
+                            </IonCard>
                           </>
                           : comment?.sidenoted ?
                           <>
@@ -595,13 +613,13 @@ const CommentItem: React.FC<Props> = (props) => {
                             }}
                             style={{ marginRight: "4px" }}
                           >
-                            <IonText color="medium" style={{ fontSize: "10pt" }}>
+                            <IonText color="navy" style={{ fontSize: "10pt" }}>
                               edited
                             </IonText>
                           </IonButton>
                         )}
                         <div style={{ alignItems: "center", display: "inline-flex", paddingTop: "5pt" }} >
-                          <IonButton fill="clear" color="primary" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton>
+                          <IonButton fill="clear" color={isOwner ? undefined : "primary"} onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton>
                           {comment?.reply_count > 0 ?
                             <IonText style={{ width: "50pt", textAlign: "start", fontSize: "10pt" }} onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}>{comment?.reply_count} {comment?.reply_count == 1 ? "reply" : "replies"}</IonText>
                             : <div style={{ width: "15pt" }}></div>
@@ -639,12 +657,16 @@ const CommentItem: React.FC<Props> = (props) => {
                         {comment?.sidenoted ? <></> :
                           <IonItemOption color="gray" ><IonButton fill="clear" color="black" onClick={comment?.post_author == globalCurrentProfile?.user ? () => authorSidenoteAlert() : () => sidenoteAlert()}><IonIcon icon={removeCircleOutline}></IonIcon></IonButton></IonItemOption>
                         }
-                        <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                        {!comment?.removed && (
+                          <IonItemOption color="primary"><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                        )}
                       </IonItemOptions>
                       :
                       <IonItemOptions side="end">
                         <>
-                          <IonItemOption color="primary" ><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                          {!comment?.removed && (
+                            <IonItemOption color="primary"><IonButton fill="clear" color="white" onClick={() => setReplyTo(isAReply ? comment.reply_to : comment)}><FontAwesomeIcon icon={faComments} /></IonButton></IonItemOption>
+                          )}
                           {canEdit && (
                             <IonItemOption color="medium">
                               <IonButton aria-label="Edit comment" fill="clear" color="white" onClick={handleStartEdit} disabled={isEditing}>

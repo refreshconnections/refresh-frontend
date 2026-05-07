@@ -89,26 +89,29 @@ const RefreshmentsEventDetails: React.FC<RefreshmentsEventDetailsProps> = ({
   footer,
 }) => {
   const eventType = formatEventType(event.event_type);
+  const attendeePreference = event.attendee_precaution_preference === 'not_specified'
+    ? null
+    : event.attendee_precaution_preference;
   const [imageErrored, setImageErrored] = useState(false);
   const [altShow, setAltShow] = useState(false);
   const showAltButton = settingsAlt && !!event.image_alt && !imageErrored;
 
   return (
     <div className="calendar-event-card-details">
-      {eventType || event.attendee_precaution_preference || event.in_person_precautions?.length ? (
+      {eventType || attendeePreference || event.in_person_precautions?.length ? (
         <div className="calendar-event-chips">
           {eventType ? (
-            <IonChip className="calendar-event-chip calendar-event-chip--type" color="light">
+            <IonChip className="calendar-event-chip calendar-event-chip--type">
               <IonLabel>{eventType}</IonLabel>
             </IonChip>
           ) : null}
-          {event.attendee_precaution_preference ? (
+          {attendeePreference ? (
             <IonChip
-              className={`calendar-event-chip ${ATTENDEE_PRECAUTION_CHIP_CLASSES[event.attendee_precaution_preference] ?? ''}`.trim()}
-              color={ATTENDEE_PRECAUTION_COLORS[event.attendee_precaution_preference] ?? 'medium'}
+              className={`calendar-event-chip ${ATTENDEE_PRECAUTION_CHIP_CLASSES[attendeePreference] ?? ''}`.trim()}
+              color={ATTENDEE_PRECAUTION_COLORS[attendeePreference] ?? 'medium'}
             >
               <IonLabel>
-                {ATTENDEE_PRECAUTION_LABELS[event.attendee_precaution_preference] ?? event.attendee_precaution_preference}
+                {ATTENDEE_PRECAUTION_LABELS[attendeePreference] ?? attendeePreference}
               </IonLabel>
             </IonChip>
           ) : null}

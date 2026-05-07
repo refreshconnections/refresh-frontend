@@ -111,6 +111,7 @@ vi.mock('../hooks/utilities', () => ({
   setTextZoom: (...args: any[]) => setTextZoom(...args),
   clearStreak: (...args: any[]) => clearStreak(...args),
   removeAllProfilesFromCapacitorStorage: (...args: any[]) => removeAllProfilesFromCapacitorStorage(...args),
+  isPersonalPlus: vi.fn((level?: string) => level === 'personalplus' || level === 'pro'),
   getReduceAnimations: (...args: any[]) => getReduceAnimations(...args),
   setReduceAnimationsPref: (...args: any[]) => setReduceAnimationsPref(...args),
 }));
@@ -499,7 +500,8 @@ describe('Settings page', () => {
     await waitFor(() => {
       expect(logoutCurrent).toHaveBeenCalledTimes(1);
       expect(preferencesRemove).toHaveBeenCalledWith({ key: 'EXPIRY' });
-      expect(preferencesClear).toHaveBeenCalledTimes(1);
+      expect(clearTransientAppStorage).toHaveBeenCalledTimes(1);
+      expect(removeAllProfilesFromCapacitorStorage).toHaveBeenCalledTimes(1);
       expect(removeItemSpy).toHaveBeenCalledWith('token');
       expect(clearSpy).toHaveBeenCalled();
     });
@@ -529,13 +531,13 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Unpause profile');
+    await screen.findByText('Unpause Profile');
 
-    fireEvent.click(screen.getByText('Unpause profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Unpause Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: 'Uh oh. Your profile is not ready to be un-paused!',
+        header: 'Uh oh. Your Personal Profile is not ready to be un-paused!',
         subHeader: 'Make sure you have uploaded your first three pictures.',
       })
     );
@@ -549,7 +551,7 @@ describe('Settings page', () => {
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
-        header: 'Are you sure you want to pause your profile?',
+        header: 'Are you sure you want to pause your Personal Profile?',
       })
     );
   });
@@ -581,9 +583,9 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Reactivate profile');
+    await screen.findByText('Reactivate Profile');
 
-    fireEvent.click(screen.getByText('Reactivate profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Reactivate Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -598,12 +600,12 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Unpause profile');
+    await screen.findByText('Unpause Profile');
 
-    fireEvent.click(screen.getByText('Unpause profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Unpause Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     const unpauseAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
-    expect(unpauseAlert.header).toBe('Are you sure you want to unpause your profile?');
+    expect(unpauseAlert.header).toBe('Are you sure you want to unpause your Personal Profile?');
 
     await act(async () => {
       await unpauseAlert.buttons[1].handler();
@@ -622,12 +624,12 @@ describe('Settings page', () => {
     } as any);
 
     renderSettings();
-    await screen.findByText('Reactivate profile');
+    await screen.findByText('Reactivate Profile');
 
-    fireEvent.click(screen.getByText('Reactivate profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+    fireEvent.click(screen.getByText('Reactivate Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
 
     const reactivateAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
-    expect(reactivateAlert.header).toBe('Are you sure you want to reactivate your profile?');
+    expect(reactivateAlert.header).toBe('Are you sure you want to reactivate your Profile?');
 
     await act(async () => {
       await reactivateAlert.buttons[1].handler();

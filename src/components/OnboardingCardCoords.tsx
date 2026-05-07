@@ -132,14 +132,14 @@ const OnboardingCardCoords: React.FC = () => {
       header: "So just confirming, you're near " + local + "?",
       buttons: [
         {
-          text: "Nope, I'll try again.",
+          text: "No",
           role: 'cancel',
           handler: () => {
             console.log('Cancel clicked');
           }
         },
         {
-          text: 'Yep',
+          text: 'Yes',
           handler: async () => {
             const response = await updateCurrentUserProfile({ location_point_long: long, location_point_lat: lat })
 

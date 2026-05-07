@@ -3,6 +3,10 @@ ion-list.messages {
     display: flex;
 }
 
+.md ion-content.text-modal-content {
+    --padding-top: 0 !important;
+}
+
 ion-list.messages .per-page {
     flex-direction: column-reverse;
     display: flex

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, IonCardContent, useIonPopover, useIonRouter } from '@ionic/react';
-import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
+import { getCurrentUserProfile, getPhotoAltKey, getPrimaryPhoto, getPrimaryPhotoKey, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
 import "./TextModal.css";
@@ -403,12 +403,8 @@ const TextModal: React.FC<Props> = (props) => {
 
         if (unreadCount > 0 || overallUnread > 0) {
             readUnreadTheFirstTime()
-            queryClient.invalidateQueries({
-                queryKey: ['unread'],
-            })
-            queryClient.invalidateQueries({
-                queryKey: ['chats', 'details', textModalData?.id],
-            })
+            queryClient.invalidateQueries({ queryKey: ['unread'] })
+            queryClient.invalidateQueries({ queryKey: ['chats', 'details', textModalData?.id] })
         }
 
         // scrollToBottom();
@@ -447,6 +443,18 @@ const TextModal: React.FC<Props> = (props) => {
                         user_pk: textModalData.other_user_id,
                         message_id: msg.db_id,
                     });
+                }
+            }
+            if (msg.msg_type === 9) {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chats', 'paginated'] });
+                queryClient.invalidateQueries({ queryKey: ['unread'] });
+                if (msg.sender === textModalData?.other_user_id) {
+                    // Message from the person we're actively reading — mark as read,
+                    // then re-invalidate unread so the badge reflects the reduced count.
+                    markAllInChatAsRead(textModalData.other_user_id)
+                        .then(() => queryClient.invalidateQueries({ queryKey: ['unread'] }))
+                        .catch(() => {});
                 }
             }
         });
@@ -1093,7 +1101,7 @@ const TextModal: React.FC<Props> = (props) => {
                     <IonTitle className="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
                         <div className="text-header ">
                             <IonAvatar>
-                                <img alt={profileDetails?.pic1_alt || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
+                                <img alt={profileDetails?.[getPhotoAltKey(getPrimaryPhotoKey(profileDetails))] || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : getPrimaryPhoto(profileDetails) ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
                             </IonAvatar>
                             {profileDetails?.name} &nbsp;
                             <FontAwesomeIcon className="medium-gray" icon={faAngleRight} />
@@ -1102,7 +1110,7 @@ const TextModal: React.FC<Props> = (props) => {
 
                 </IonToolbar>
             </IonHeader>
-            <IonContent ref={textContentRef} >
+            <IonContent ref={textContentRef} className="text-modal-content">
                 {loadingMessages ? <IonRow className="ion-justify-content-center ion-padding"><IonSpinner name="bubbles"></IonSpinner></IonRow> : <></>}
                 {/* <IonInfiniteScroll
                     position="top"
@@ -1128,12 +1136,13 @@ const TextModal: React.FC<Props> = (props) => {
                                 <IonCard color="white" className="ion-padding">
                                     <IonCardContent>
                                         <IonText color="navy">
+                                            <h3>Same team, different support process!</h3>
                                             <p>All new support requests should now be submitted through the Help feature. Messages sent to Freshy are no longer routinely monitored and will only be used when needed for an active Help request.</p>
                                             <br />
                                             <p>As we've grown, we've moved to a more structured support system to make sure requests are handled clearly and consistently.</p>
                                             <br />
                                             <p>
-                                                For feedback or support, please use the Help feature in the Me tab or contact 
+                                                For feedback or support, please use the Help feature in the Me tab or contact &nbsp;
                                                 <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a>.
                                             </p>
                                             <br />

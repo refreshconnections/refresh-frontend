@@ -17,17 +17,22 @@ import './OnboardingCard.css';
 
 type Props = {
   initialLocation?: string;
+  initialLocationIsDraft?: boolean;
 };
 
-const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
+const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation, initialLocationIsDraft = false }) => {
   const copy = ONBOARDING_COPY.cards.locationLabel;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [location, setLocation] = useState('');
+  const [showInput, setShowInput] = useState(false);
 
   const hasCoords = Boolean(
     currentProfile?.location_point_lat && currentProfile?.location_point_long
   );
+
+  const existingLabel = (currentProfile?.location ?? '').trim();
+  const hasExistingLabel = Boolean(existingLabel) && !initialLocationIsDraft;
 
   useEffect(() => {
     const existingLocation =
@@ -47,6 +52,35 @@ const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
     swiper.slideNext();
   };
 
+  if (hasExistingLabel && !showInput) {
+    return (
+      <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
+        <IonCardContent>
+          <IonCardTitle>{copy.title}</IonCardTitle>
+          <IonText style={{ whiteSpace: 'pre-line', display: 'block' }}>
+            {`You've already set a location label to show on your Profiles. You can keep using this or update it to something different. `}
+          </IonText>
+          <IonText style={{ fontSize: '1.25rem', display: 'block', fontWeight: 600, textAlign: 'center' }}>
+            {existingLabel}
+          </IonText>
+          <IonButton size="small" fill="outline" style={{ alignSelf: 'center' }} onClick={() => setShowInput(true)}>
+            Update my label
+          </IonButton>
+        </IonCardContent>
+        <div className="onboarding-v2__card-footer">
+          <IonRow className="onboarding-v2__nav">
+            <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+              {ONBOARDING_COPY.common.back}
+            </IonButton>
+            <IonButton className="onboarding-v2__primary-action" onClick={() => swiper.slideNext()}>
+              {ONBOARDING_COPY.common.next}
+            </IonButton>
+          </IonRow>
+        </div>
+      </IonCard>
+    );
+  }
+
   return (
     <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
@@ -57,6 +91,7 @@ const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation }) => {
               ? copy.withCoords
               : copy.withoutCoords}
           </p>
+          <h3 style={{ marginBottom: '1rem' }}>{copy.profileNote}</h3>
           <p>{copy.note}</p>
         </IonText>
         <BoxedStackedInput

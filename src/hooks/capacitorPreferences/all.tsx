@@ -6,6 +6,11 @@ const TRANSIENT_CACHE_KEYS = [
   'last_shown_pick_v2',
   'picks_and_profiles_with_filters',
   'chats',
+  'personal_profile_onboarding_in_progress',
+  'personal_profile_onboarding_slide',
+  'community_onboarding_in_progress',
+  'community_onboarding_slide',
+  'ONBOARDED',
 ];
 
 const TRANSIENT_CACHE_PREFIXES = ['warm_', 'profile-'];
@@ -94,3 +99,7 @@ export const clearTransientAppStorage = async () => {
     await Preferences.remove({ key });
   }
 };
+
+// Call on every login (including after auto-logout) to avoid stale state
+// from a previous session bleeding into the new one.
+export const clearOnLoginStorage = clearTransientAppStorage;

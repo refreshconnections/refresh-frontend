@@ -26,6 +26,7 @@ import {
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
 import moment from 'moment';
+import { useLocation } from 'react-router-dom';
 import { useClearRefreshmentsAlertsOnMount } from '../hooks/api/profiles/recent-notifications';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
@@ -40,7 +41,7 @@ const statusLabelMap: Record<string, string> = {
   pending: 'Pending moderator review',
   approved: 'Approved',
   needs_edit: 'Needs your edit',
-  rejected: 'Rejected',
+  rejected: 'Not Approved',
 };
 
 const statusColorMap: Record<string, string> = {
@@ -55,7 +56,7 @@ const statusColorMap: Record<string, string> = {
 const eventStatusLabelMap: Record<string, string> = {
   pending: 'Pending moderator review',
   approved: 'Approved',
-  rejected: 'Rejected',
+  rejected: 'Not Approved',
   cancelled: 'Cancelled',
 };
 
@@ -130,6 +131,7 @@ const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =
 
 const SubmittedPosts: React.FC = () => {
   const history = useHistory();
+  const location = useLocation();
   const now = useMemo(() => new Date(), []);
   const [showHidden, setShowHidden] = useState(false);
   useClearRefreshmentsAlertsOnMount();
@@ -149,7 +151,8 @@ const SubmittedPosts: React.FC = () => {
     isFetchingNextPage: eventsIsFetchingNextPage,
   } = useGetSubmittedEvents();
 
-  const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>('posts');
+  const initialTab = new URLSearchParams(location.search).get('tab');
+  const [activeSegment, setActiveSegment] = useState<'posts' | 'events'>(initialTab === 'events' ? 'events' : 'posts');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [presentEventStatusPopover, dismissEventStatusPopover] = useIonPopover(StatusInfoPopover, {

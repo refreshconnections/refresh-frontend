@@ -76,17 +76,6 @@ const OnboardingCardLivedExperiences: React.FC = () => {
       <IonCardContent className="w-checkboxes">
         <IonCardTitle className="onboarding-title-row">
           <span>{copy.title}</span>
-          <IonButton
-            fill="clear"
-            size="small"
-            className="onboarding-asterisk"
-            onClick={(event) => {
-              event.stopPropagation();
-              presentPopover({ event: event.nativeEvent as Event });
-            }}
-          >
-            *
-          </IonButton>
         </IonCardTitle>
         <IonText>{copy.body}</IonText>
         <IonText className="onboarding-future-filters">

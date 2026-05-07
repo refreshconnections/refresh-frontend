@@ -254,7 +254,7 @@ ion-card.opened-post-event .calendar-event-card-toggle {
 ion-card.opened-post-event .calendar-event-card-name {
   font-weight: 600;
   font-size: calc(15px * var(--text-scale, 1));
-  color: var(--ion-color-dark);
+  color: var(--ion-color-black);
 }
 
 ion-card.opened-post-event .calendar-event-card-time {

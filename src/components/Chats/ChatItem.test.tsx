@@ -46,6 +46,7 @@ vi.mock('../../hooks/api/profiles/details', () => ({
 vi.mock('../../hooks/utilities', () => ({
   isPersonalPlus: vi.fn(() => true),
   onImgError: vi.fn(),
+  getPrimaryPhoto: vi.fn(() => null),
 }));
 
 vi.mock('../TextModal', () => ({
@@ -82,13 +83,43 @@ const renderChatItem = () => {
   );
 };
 
+const renderChatItemWithChat = (chat: any) => {
+  const queryClient = new QueryClient();
+  const currentUserProfile = {
+    subscription_level: 'personalplus',
+    settings_alt_text: true,
+    settings_new_message_count: true,
+    settings_chats_next_reminder: true,
+    hidden_dialogs: [],
+    blocked_connections: [],
+    name: 'Alex',
+  };
+
+  const view = (nextChat: any) => (
+    <IonApp>
+      <QueryClientProvider client={queryClient}>
+        <ChatItem
+          user={42}
+          currentUserProfile={currentUserProfile}
+          chat={nextChat}
+        />
+      </QueryClientProvider>
+    </IonApp>
+  );
+
+  return {
+    ...render(view(chat)),
+    rerenderChat: (nextChat: any) => view(nextChat),
+  };
+};
+
 describe('ChatItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     modalProps.length = 0;
   });
 
-  it('does not invalidate the full chats lists when dismissing an existing chat modal', () => {
+  it('keeps the full chats query stable when dismissing an existing chat modal without new activity', () => {
     renderChatItem();
 
     act(() => {
@@ -109,7 +140,7 @@ describe('ChatItem', () => {
     expect(invalidateQueries).not.toHaveBeenCalledWith({
       queryKey: ['chats'],
     });
-    expect(invalidateQueries).not.toHaveBeenCalledWith({
+    expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['chats', 'paginated'],
     });
   });
@@ -138,5 +169,29 @@ describe('ChatItem', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['chats', 'paginated'],
     });
+  });
+
+  it('shows the unread badge when a previously opened chat goes from zero to one unread message', async () => {
+    const initialChat = {
+      id: 11,
+      other_user_id: '42',
+      unread_count: 0,
+      keep_it_going: true,
+      pic1_main: 'https://example.com/a.jpg',
+      name: 'Sam',
+    };
+    const { rerender, rerenderChat } = renderChatItemWithChat(initialChat);
+
+    act(() => {
+      fireEvent.click(screen.getByText('Sam'));
+    });
+
+    rerender(rerenderChat({
+      ...initialChat,
+      unread_count: 1,
+    }));
+
+    expect(await screen.findByText('1 new')).toBeInTheDocument();
+    expect(screen.queryByText('Keep it going!')).not.toBeInTheDocument();
   });
 });

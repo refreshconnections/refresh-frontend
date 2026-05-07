@@ -31,7 +31,7 @@ const getReactProps = (el: HTMLElement) => {
 const triggerSearchInput = async (value: string) => {
   const searchbar = document.querySelector('ion-searchbar') as unknown as HTMLElement;
   await act(async () => {
-    fireEvent(searchbar, new CustomEvent('ionInput', { detail: { value }, bubbles: true }));
+    fireEvent(searchbar, new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
     await Promise.resolve();
   });
 };
@@ -50,6 +50,7 @@ const clickElement = async (el: HTMLElement | null) => {
 
 const mockGeonamesResponse = (geonames: any[]) => {
   global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
     json: () => Promise.resolve({ geonames }),
   } as any);
 };
@@ -64,14 +65,14 @@ describe('CitySelectorModal', () => {
 
     expect(screen.getByText('Select a City')).toBeInTheDocument();
     expect(document.querySelector('ion-searchbar')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByText('Done')).toBeInTheDocument();
   });
 
   it('calls onDismiss with no args when cancel is pressed', async () => {
     const onDismiss = vi.fn();
     await renderModal(onDismiss);
 
-    await clickElement(screen.getByText('Cancel').closest('ion-button') as HTMLElement);
+    await clickElement(screen.getByText('Done').closest('ion-button') as HTMLElement);
 
     expect(onDismiss).toHaveBeenCalledWith();
   });

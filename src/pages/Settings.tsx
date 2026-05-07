@@ -7,7 +7,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 import "./Page.css"
 import "./Settings.css"
 
-import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref, isCommunityPlus, updateCurrentUserChatSettings } from '../hooks/utilities';
+import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref, isCommunityPlus, isPersonalPlus, updateCurrentUserChatSettings } from '../hooks/utilities';
 import { UPSELL_POPUPS_ENABLED_KEY } from '../hooks/useUpsellAlert';
 
 
@@ -59,6 +59,9 @@ import {
 import { useChatSettings } from '../hooks/api/chats/chat-settings';
 import SettingsSupportCard from '../components/SettingsSupportCard';
 
+const HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY = 'hidden_chat_new_message_badges';
+const HIDDEN_CHAT_NEW_MESSAGE_BADGES_CHANGED_EVENT = 'hidden_chat_new_message_badges_changed';
+
 
 
 
@@ -72,6 +75,7 @@ const Settings: React.FC = () => {
   const [reduceAnimations, setReduceAnimations] = useState<boolean>(false);
   const [chatOrganizer, setChatOrganizer] = useState<boolean>(true);
   const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
+  const [showHiddenChatNewMessageBadges, setShowHiddenChatNewMessageBadges] = useState<boolean>(true);
   const [allowImagesGlobal, setAllowImagesGlobal] = useState<boolean>(false);
   const [allowAudioGlobal, setAllowAudioGlobal] = useState<boolean>(false);
   const [conversationStarter, setConversationStarter] = useState<boolean>(false);
@@ -122,6 +126,7 @@ const Settings: React.FC = () => {
   );
 
   const isProUser = data?.subscription_level === 'pro';
+  const canUseHiddenChatNewMessageBadges = isPersonalPlus(data?.subscription_level);
   const canShowInterestedCounts = isCommunityPlus(data?.subscription_level);
   const [presentPremiumUpsellAlert] = useIonAlert();
 
@@ -174,7 +179,8 @@ const Settings: React.FC = () => {
 
   async function handleLogout() {
     await Preferences.remove({ key: 'EXPIRY' })
-    await Preferences.clear();
+    await clearTransientAppStorage();
+    await removeAllProfilesFromCapacitorStorage();
     localStorage.removeItem('token')
     localStorage.clear();
     Cookies.remove('sessionid')
@@ -490,6 +496,9 @@ const Settings: React.FC = () => {
         const { value: chatOrganizerShowHiddenPref } = await Preferences.get({ key: 'chat_organizer_show_hidden' });
         if (cancelled) return;
         setChatOrganizerShowHidden(chatOrganizerShowHiddenPref === 'true');
+        const { value: hiddenChatNewMessageBadgesPref } = await Preferences.get({ key: HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY });
+        if (cancelled) return;
+        setShowHiddenChatNewMessageBadges(hiddenChatNewMessageBadgesPref !== 'false');
         setShowInterestedCount(await getShowInterestedCountPref());
         if (cancelled) return;
         setHideInterestedCountOnMySubmissions(await getHideInterestedCountOnMySubmissionsPref());
@@ -700,7 +709,7 @@ const Settings: React.FC = () => {
               <IonItem>
                 <IonLabel className="ion-text-wrap">
                   <span className="settings__label-heading">Show Events This Week Row</span>
-                  <p>Keep this week’s events easy to spot above the full community events list.</p>
+                  <p>Keep this week’s events easy to spot above Refreshments Bar posts.</p>
                 </IonLabel>
                 <IonToggle
                   slot="end"
@@ -770,6 +779,22 @@ const Settings: React.FC = () => {
                     setChatOrganizerShowHidden(val);
                     await Preferences.set({ key: 'chat_organizer_show_hidden', value: String(val) });
                     window.dispatchEvent(new CustomEvent('chat_organizer_show_hidden_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={canUseHiddenChatNewMessageBadges}>Show Hidden Chat New Message Badges</PremiumLabel>
+                  <p>Show a new-message badge on chats in your Hidden tab.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!canUseHiddenChatNewMessageBadges}
+                  checked={canUseHiddenChatNewMessageBadges && showHiddenChatNewMessageBadges}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowHiddenChatNewMessageBadges(val);
+                    await Preferences.set({ key: HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY, value: String(val) });
+                    window.dispatchEvent(new CustomEvent(HIDDEN_CHAT_NEW_MESSAGE_BADGES_CHANGED_EVENT, { detail: val }));
                   }}
                 />
               </IonItem>

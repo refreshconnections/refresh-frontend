@@ -110,6 +110,7 @@ vi.mock('../hooks/utilities', () => ({
   containsLinkShortener: vi.fn((value?: string) => /bit\.ly/i.test(value ?? '')),
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
   createAnnouncement: (...args: any[]) => mockCreateAnnouncement(...args),
+  increaseStreak: vi.fn(),
   isCommunityPlus: vi.fn((level?: string) => level === 'community_plus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
 }));
@@ -581,7 +582,7 @@ describe('CreatePostModal', () => {
 
     expect(
       await screen.findByText(
-        'This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.'
+        'This link isn’t allowed due to guidelines.'
       )
     ).toBeInTheDocument();
     expect(screen.getByText('Submit Post')).toBeDisabled();

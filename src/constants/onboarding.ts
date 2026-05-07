@@ -1,12 +1,12 @@
 const SHARED_LOCATION_COORDS_COPY = {
   useLocation: 'Share by device location',
   chooseCity: 'Share by choosing my city',
-  coordsSaved: 'You can edit your location label on the next step.',
+  coordsSaved: 'You can edit how your location appears on your Profile in the next step.',
   dontShare: "Don't share my location",
   confirmPrefix: "So just confirming, you're near ",
   confirmSuffix: '?',
-  confirmCancel: "Nope, I'll try again.",
-  confirmConfirm: 'Yep',
+  confirmCancel: "No",
+  confirmConfirm: 'Yes',
   deniedHeader: "Refresh Connections can't access your location because of your settings.",
   deniedSubHeader: 'Allow the app to see your current location by going to Settings > Refresh > Location.',
   gpsErrorHeader: "We couldn't get your location coordinates.",
@@ -175,7 +175,7 @@ export const ONBOARDING_COPY = {
     location: {
       title: 'Show your location?',
       withSharedCoords:
-        'Choose whether the location that shows on your Personal Profile is also shown on your Refreshments Profile.',
+        'Choose whether to show your location on your Refreshments Profile.It can be vaguer than the location you shared for filtering and local features, and you can update it any time.',
       withoutSharedCoords:
         "Even though you didn't share your location with the app to see local posts, you can add a general location label to show on your Refreshments Profile if you'd like.",
       shownPrefix: 'Location shown on your Profile: ',
@@ -217,8 +217,8 @@ export const ONBOARDING_COPY = {
     name: {
       title: "What's your name?",
       bodyPrimary:
-        'This is the name (a first name or a nickname) that will be shown on your Personal Profile.',
-      bodySecondary: 'It is separate from your Refreshments handle on the community side of the app. If you ever need to change it later, contact support so we can help keep profiles genuine and interactions clear.',
+        'This is the name (first name or nickname) shown on your Personal Profile.',
+      bodySecondary: 'It’s separate from your Refreshments handle on the community side of the app. To help keep Personal Profiles genuine and interactions clear, name changes are handled by support.',
     },
     pronouns: {
       title: 'What are your pronouns?',
@@ -253,6 +253,11 @@ export const ONBOARDING_COPY = {
         You can also use your location for distance filtering on the personal side if you create a Personal Profile later.
 
         Adding your location now helps you get more out of Refresh Connections from the start, but it's always optional.`,
+        bodyWithPersonalProfile: `Share your location to see posts and events local to you in the Refreshments Bar and Calendar.
+
+        It will also power distance filtering on your personal profile.
+
+        Adding your location now helps you get more out of Refresh Connections from the start, but it's always optional.`,
         declineHeader: 'Skip for now?',
         declineMessage:
           "You can still use the community side of Refresh Connections, but you won't be able to see local posts and events until you add your location.",
@@ -262,9 +267,11 @@ export const ONBOARDING_COPY = {
     locationLabel: {
       title: 'Choose your location label',
       withCoords:
-        'This is the general location label that appears on your profiles. It can be vaguer than the location you shared for filtering and local features, and you can update it any time.',
+        'This is the general location label that appears on your Profiles. It can be vaguer than the location you shared for filtering and local features, and you can update it any time.',
       withoutCoords:
-        "Even if you don't share your location for filtering, you can still add a general location label for other members to see.",
+        "Even if you don't share your specific location for filtering, you can still add a more general location label for other members to see.",
+      profileNote:
+        'This general location is shown on your Personal Profile, and it\'s your choice to show it on your Refreshments Profile too.',
       label: 'Location label',
       placeholder: 'Your city and country',
       note:
@@ -313,10 +320,10 @@ export const ONBOARDING_COPY = {
       ] as [string, string][],
     },
     livedExperiences: {
-      title: 'Lived experiences',
+      title: 'Lived experiences*',
       body: 'These choices can help other members discover your Personal Profile. You can choose to show them on your Profile, or keep them just for filtering.',
       popover:
-        "We're adding future filters. These filters will unlock once enough members opt in.",
+        "*We're adding future filters. These filters will unlock once enough members opt in.",
       scrollNote: '',
       subtext: 'You can choose to show these on your Personal Profile, or keep them just for filtering.',
       showOnProfile: 'Show on Profile',

@@ -35,6 +35,7 @@ vi.mock('../hooks/utilities', () => ({
   getGroupChats: (...args: any[]) => getGroupChats(...args),
   getGroupChatInvites: (...args: any[]) => getGroupChatInvites(...args),
   getWebsocketUrl: vi.fn(),
+  isPersonalPlus: vi.fn(() => false),
 }));
 
 vi.mock('../hooks/api/profiles/current-profile', () => ({
@@ -348,6 +349,30 @@ describe('Chats page', () => {
     );
     expect(invalidateQueries).toHaveBeenCalledWith(
       expect.objectContaining({ queryKey: ['unread'] })
+    );
+  });
+
+  it('still runs all invalidations on msg_type 9 when allChats has not yet loaded', async () => {
+    mockCurrentUserChats.mockReturnValue({ data: undefined, isLoading: true, isFetching: false } as any);
+    renderChats();
+
+    const listener = addWsListener.mock.calls[0][0];
+
+    await act(async () => {
+      listener({ msg_type: 9, sender: '99' });
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['chats'] })
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['chats', 'paginated'] })
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['unread'] })
+    );
+    expect(invalidateQueries).not.toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: expect.arrayContaining(['details']) })
     );
   });
 

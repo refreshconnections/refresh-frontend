@@ -45,9 +45,10 @@ import ProfileModal from './ProfileModal';
 import EditLocationModal from './EditLocationModal';
 import CroppedImageModal from './CroppedImageModal';
 import CommunityProfileSection from './CommunityProfileSection';
+import CommunityProfileModal from './CommunityProfileModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { faFaceViewfinder, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
+import { faFaceViewfinder, faInfoCircle, faMugSaucer } from '@fortawesome/pro-solid-svg-icons';
 import { chevronDownOutline, ellipsisHorizontal } from 'ionicons/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import Resizer from 'react-image-file-resizer';
@@ -367,6 +368,11 @@ const SelfProfileV2: React.FC = () => {
       ],
     });
   };
+
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: currentUserProfile?.user ?? null,
+    onDismiss: () => communityProfileDismiss(),
+  });
 
   // ✅ useIonModal version: feed from profileModalData state
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
@@ -1044,13 +1050,14 @@ const SelfProfileV2: React.FC = () => {
         <IonRow className="preview-row">
           <IonCol className="ion-text-center">
             <IonButton
+              className="profile-preview-button"
               color="primary"
               onClick={() => {
                 profilePresent();
               }}
             >
               <FontAwesomeIcon icon={faFaceViewfinder as IconProp} />
-              &nbsp; See how others see your profile
+              &nbsp; See how others see your Personal Profile
             </IonButton>
           </IonCol>
         </IonRow>
@@ -1460,7 +1467,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup className="profile-accordion-group">
+        <IonAccordionGroup className="profile-accordion-group personal-profile-final-group">
           <IonAccordion value="talk">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1491,7 +1498,37 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        {(currentUserProfile?.username ?? communityProfile?.username) ? <CommunityProfileSection /> : null}
+        {(currentUserProfile?.username ?? communityProfile?.username)
+          ? (
+            <>
+              <hr style={{ margin: '24px 16px 8px', borderColor: 'var(--ion-color-light)' }} />
+              <IonRow className="preview-row">
+                <IonCol className="ion-text-center">
+                  <IonButton
+                    className="profile-preview-button"
+                    color="navy"
+                    onClick={() => communityProfilePresent()}
+                  >
+                    <FontAwesomeIcon icon={faMugSaucer as IconProp} />
+                    &nbsp; See how others see your Refreshments Profile
+                  </IonButton>
+                </IonCol>
+              </IonRow>
+              <div className="standalone-community-profile">
+                <CommunityProfileSection />
+              </div>
+            </>
+          )
+          : currentUserProfile?.created_profile
+            ? (
+              <IonRow className="ion-justify-content-center" style={{ margin: '16px 0' }}>
+                <IonButton onClick={() => history.push('/community-onboarding')} color="navy">
+                  Create Refreshments Profile
+                </IonButton>
+              </IonRow>
+            )
+            : null
+        }
       </IonGrid>
     </div>
   );

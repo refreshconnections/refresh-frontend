@@ -200,9 +200,7 @@ ion-item.streak ion-label h2{
 .streak-summary-card {
     width: 100%;
     margin: 8px 8px 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     border-radius: 12px;
-    border: 1px solid var(--ion-color-step-150, #e3e3ef);
     overflow: visible;
 }
 

@@ -21,8 +21,6 @@ import '../components/OnboardingCard.css';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/pagination';
-import { Pagination } from 'swiper';
 import OnboardingCardGenderIdentity from '../components/OnboardingCardGenderIdentity';
 import OnboardingCardDone from '../components/OnboardingCardDone';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
@@ -50,6 +48,9 @@ type PersonalProfileProps = {
   onDismiss?: () => void;
 };
 
+const PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY = 'personal_profile_onboarding_in_progress';
+const PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY = 'personal_profile_onboarding_slide';
+
 const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const copy = ONBOARDING_COPY.personalProfile;
   const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
@@ -67,15 +68,20 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   const currentProfile = useGetCurrentProfile().data;
   const moderation = useGetCurrentModeration().data;
   const { data: communityProfile } = useGetCommunityProfile();
-  const hasCommunityProfile = Boolean(communityProfile);
-  const SLIDE_KEY = 'personal_profile_onboarding_slide';
+  const hasCommunityProfile = Boolean(communityProfile?.username);
 
-  // Read synchronously from cache on first render. If the user shared location
-  // during community onboarding, the coords slide shows the "already set" state.
-  const [hasSharedLocationCoords] = useState(
-    () => Boolean(currentProfile?.location_point_lat && currentProfile?.location_point_long)
-  );
+  // Start false; flip to true (and stay true) once coords appear in cache.
+  // Using useState+useEffect rather than a snapshot avoids stale reads when
+  // this modal is pre-mounted by useIonModal before the user has shared location.
+  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
+  useEffect(() => {
+    if (currentProfile?.location_point_lat && currentProfile?.location_point_long) {
+      setHasSharedLocationCoords(true);
+    }
+  }, [currentProfile?.location_point_lat, currentProfile?.location_point_long]);
   const [locationLabelDraft, setLocationLabelDraft] = useState('');
+  const [locationLabelDraftFromCoords, setLocationLabelDraftFromCoords] = useState(false);
+  const locationLabelDraftFromCoordsRef = useRef('');
   const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
 
   useEffect(() => {
@@ -89,9 +95,9 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   }, []);
 
   useEffect(() => {
-    setLocationLabelDraft(
-      (currentProfile?.location || currentProfile?.coordinates_near || '').trim()
-    );
+    const profileLocationLabel = (currentProfile?.location || currentProfile?.coordinates_near || '').trim();
+    setLocationLabelDraft(profileLocationLabel);
+    setLocationLabelDraftFromCoords(wasDraft => wasDraft && profileLocationLabel === locationLabelDraftFromCoordsRef.current);
   }, [
     currentProfile?.location,
     currentProfile?.coordinates_near,
@@ -100,17 +106,21 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   useEffect(() => {
     const restoreSlide = async () => {
       if (currentProfile?.created_profile) {
-        await Preferences.remove({ key: SLIDE_KEY });
+        await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+        await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
         return;
       }
       // Coords slide is now always present. If pre-existing coords exist, the
       // old stored index was from a layout without that slide — clear it to avoid
       // landing on the wrong slide.
       if (hasSharedLocationCoords) {
-        await Preferences.remove({ key: SLIDE_KEY });
-        return;
+        const inProgress = await Preferences.get({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+        if (inProgress.value !== 'true') {
+          await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
+          return;
+        }
       }
-      const stored = await Preferences.get({ key: SLIDE_KEY });
+      const stored = await Preferences.get({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
       const storedIndex = stored?.value ? Number(stored.value) : 0;
       if (swiperRef.current && Number.isFinite(storedIndex) && storedIndex > 0) {
         swiperRef.current.slideTo(storedIndex, 0);
@@ -118,6 +128,16 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     };
     restoreSlide();
   }, [currentProfile?.created_profile, hasSharedLocationCoords]);
+
+  useEffect(() => {
+    if (currentProfile?.created_profile) return;
+    Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+  }, [currentProfile?.created_profile]);
+
+  const clearResumeState = async () => {
+    await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+    await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
+  };
 
   const confirmLogoutAlert = async () => {
     confirmLogout({
@@ -173,8 +193,6 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
         <Swiper
-          modules={[Pagination]}
-          pagination={{ clickable: false }}
           centeredSlides
           allowTouchMove={false}
           className="onboarding-v2__swiper"
@@ -183,10 +201,11 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
           }}
           onSlideChange={async (swiperInstance) => {
             if (currentProfile?.created_profile) {
-              await Preferences.remove({ key: SLIDE_KEY });
+              await clearResumeState();
               return;
             }
-            await Preferences.set({ key: SLIDE_KEY, value: String(swiperInstance.activeIndex) });
+            await Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+            await Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY, value: String(swiperInstance.activeIndex) });
           }}
         >
           <SwiperSlide>
@@ -232,16 +251,23 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                 preExistingCoords={hasSharedLocationCoords}
                 onCoordsSaved={(localLabel) => {
                   setLocationLabelDraft(localLabel);
+                  locationLabelDraftFromCoordsRef.current = localLabel;
+                  setLocationLabelDraftFromCoords(true);
                 }}
                 onCoordsCleared={() => {
                   setLocationLabelDraft('');
+                  locationLabelDraftFromCoordsRef.current = '';
+                  setLocationLabelDraftFromCoords(false);
                 }}
               />
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
-              <OnboardingCardLocationLabel initialLocation={locationLabelDraft} />
+              <OnboardingCardLocationLabel
+                initialLocation={locationLabelDraft}
+                initialLocationIsDraft={locationLabelDraftFromCoords}
+              />
             </div>
           </SwiperSlide>
           <SwiperSlide>

@@ -110,6 +110,7 @@ import Picksv2 from '../pages/Picksv2';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import OnboardingV2 from '../pages/OnboardingV2';
 import CommunityOnboarding from '../pages/CommunityOnboarding';
+import PersonalProfile from '../pages/PersonalProfile';
 import AgeVerificationFlow, { AgeCheckState, YOTI_BROWSER_CLOSED_EVENT } from '../pages/AgeVerificationFlow';
 import { extractSessionIdFromPayload, normalizeYotiSessionId } from '../utils/yoti-session';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
@@ -144,7 +145,7 @@ type TabsShellProps = {
 
 const TabsShell: React.FC<TabsShellProps> = ({ chatBadgeCount }) => {
   const location = useLocation();
-  const hideTabs = location.pathname === '/community-onboarding';
+  const hideTabs = location.pathname === '/community-onboarding' || location.pathname === '/personal-profile-onboarding';
 
   return (
     <IonTabs>
@@ -166,6 +167,9 @@ const TabsShell: React.FC<TabsShellProps> = ({ chatBadgeCount }) => {
           </Route>
           <Route exact path="/community-onboarding">
             <CommunityOnboarding />
+          </Route>
+          <Route exact path="/personal-profile-onboarding">
+            <PersonalProfile />
           </Route>
           <Route exact path="/community/submitted">
             <SubmittedPosts />
@@ -404,10 +408,18 @@ const AppV2: React.FC = () => {
           if (settingsCurrentProfile?.settings_streak_tracker) {
             const result = await checkForBrokenStreak();
             if (result?.data?.broken === 'true' && result?.data?.savers > 0 && result?.data?.streak_pre_break) {
+              const computedCost = (() => {
+                if (result.data.recovery_cost != null) return result.data.recovery_cost;
+                if (result.data.break_date) {
+                  const d = Math.floor((Date.now() - new Date(result.data.break_date).getTime()) / 86400000);
+                  return d <= 2 ? 1 : d <= 4 ? 2 : d <= 6 ? 3 : d <= 10 ? 4 : d <= 14 ? 5 : null;
+                }
+                return 1;
+              })();
               setStreakSaverAlert({
                 preBreak: result.data.streak_pre_break,
                 savers: result.data.savers,
-                recoveryCost: result.data.recovery_cost ?? null,
+                recoveryCost: computedCost,
               });
             }
           }
@@ -588,10 +600,18 @@ const AppV2: React.FC = () => {
             setLoggedin(true)
             const brokenResult = await checkForBrokenStreak();
             if (brokenResult?.data?.broken === 'true' && brokenResult?.data?.savers > 0 && brokenResult?.data?.streak_pre_break) {
+              const computedCost = (() => {
+                if (brokenResult.data.recovery_cost != null) return brokenResult.data.recovery_cost;
+                if (brokenResult.data.break_date) {
+                  const d = Math.floor((Date.now() - new Date(brokenResult.data.break_date).getTime()) / 86400000);
+                  return d <= 2 ? 1 : d <= 4 ? 2 : d <= 6 ? 3 : d <= 10 ? 4 : d <= 14 ? 5 : null;
+                }
+                return 1;
+              })();
               setStreakSaverAlert({
                 preBreak: brokenResult.data.streak_pre_break,
                 savers: brokenResult.data.savers,
-                recoveryCost: brokenResult.data.recovery_cost ?? null,
+                recoveryCost: computedCost,
               });
             }
 

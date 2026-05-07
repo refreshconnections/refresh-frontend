@@ -86,6 +86,7 @@ vi.mock('./ProfileModal', () => ({ default: function ProfileModal() { return <di
 vi.mock('./EditLocationModal', () => ({ default: function EditLocationModal() { return <div>edit-location-modal</div>; } }));
 vi.mock('./CroppedImageModal', () => ({ default: function CroppedImageModal() { return <div>cropped-image-modal</div>; } }));
 vi.mock('./CommunityProfileSection', () => ({ default: () => <div>community-profile-section</div> }));
+vi.mock('./CommunityProfileModal', () => ({ default: function CommunityProfileModal() { return <div>community-profile-modal</div>; } }));
 
 vi.mock('react-image-file-resizer', () => ({
   default: { imageFileResizer: vi.fn() },
@@ -174,7 +175,7 @@ describe('SelfProfileV2', () => {
   it('opens the preview modal and the location editor from the basics section', async () => {
     renderSelfProfile();
 
-    fireEvent.click(screen.getByText(/See how others see your profile/));
+    fireEvent.click(screen.getByText(/See how others see your Personal Profile/));
     expect(mockPresentModal).toHaveBeenCalledWith(
       'ProfileModal',
       expect.objectContaining({
@@ -218,7 +219,7 @@ describe('SelfProfileV2', () => {
       });
     });
 
-    fireEvent.click(screen.getByText(/See how others see your profile/));
+    fireEvent.click(screen.getByText(/See how others see your Personal Profile/));
 
     expect(mockPresentModal).toHaveBeenLastCalledWith(
       'ProfileModal',
@@ -335,7 +336,7 @@ describe('SelfProfileV2', () => {
       photo_order: ['pic2', 'pic3', 'pic1_main'],
     });
 
-    fireEvent.click(screen.getByText(/See how others see your profile/));
+    fireEvent.click(screen.getByText(/See how others see your Personal Profile/));
     expect(mockPresentModal).toHaveBeenLastCalledWith(
       'ProfileModal',
       expect.objectContaining({
@@ -401,7 +402,7 @@ describe('SelfProfileV2', () => {
       });
     });
 
-    fireEvent.click(screen.getByText(/See how others see your profile/));
+    fireEvent.click(screen.getByText(/See how others see your Personal Profile/));
 
     expect(mockPresentModal).toHaveBeenLastCalledWith(
       'ProfileModal',
@@ -478,6 +479,47 @@ describe('SelfProfileV2', () => {
     expect(updateCurrentUserProfile).toHaveBeenCalledWith({
       covid_precautions: [10],
     });
+  });
+
+  it('opens CommunityProfileModal with the user ID when the Refreshments preview button is clicked', () => {
+    mockCurrentProfile = { ...baseProfile, user: 7 };
+    renderSelfProfile();
+
+    fireEvent.click(screen.getByText(/See how others see your Refreshments Profile/));
+
+    expect(mockPresentModal).toHaveBeenCalledWith(
+      'CommunityProfileModal',
+      expect.objectContaining({ userId: 7 })
+    );
+  });
+
+  it('shows the Create Refreshments Profile button when user has a personal profile but no refreshments handle', () => {
+    mockCurrentProfile = { ...baseProfile, username: undefined, created_profile: true };
+    mockCommunityProfile = { username: undefined };
+    renderSelfProfile();
+
+    expect(screen.getByText('Create Refreshments Profile')).toBeInTheDocument();
+    expect(screen.queryByText('community-profile-section')).not.toBeInTheDocument();
+    expect(screen.queryByText(/See how others see your Refreshments Profile/)).not.toBeInTheDocument();
+  });
+
+  it('navigates to /community-onboarding when Create Refreshments Profile is clicked', () => {
+    mockCurrentProfile = { ...baseProfile, username: undefined, created_profile: true };
+    mockCommunityProfile = { username: undefined };
+    renderSelfProfile();
+
+    fireEvent.click(screen.getByText('Create Refreshments Profile').closest('ion-button') as HTMLElement);
+
+    expect(mockHistoryPush).toHaveBeenCalledWith('/community-onboarding');
+  });
+
+  it('shows neither the Create button nor the community section when the user has no personal profile and no refreshments handle', () => {
+    mockCurrentProfile = { ...baseProfile, username: undefined, created_profile: false };
+    mockCommunityProfile = { username: undefined };
+    renderSelfProfile();
+
+    expect(screen.queryByText('Create Refreshments Profile')).not.toBeInTheDocument();
+    expect(screen.queryByText('community-profile-section')).not.toBeInTheDocument();
   });
 
   it('persists lived-experiences visibility toggle immediately', async () => {

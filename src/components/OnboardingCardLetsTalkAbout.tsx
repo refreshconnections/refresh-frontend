@@ -155,6 +155,7 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
                 label={option.label}
                 value={values[option.value] ?? ''}
                 name={option.value}
+                placeholder="Fill this in"
                 onIonInput={(event) =>
                   setValues((prev) => ({ ...prev, [option.value]: event.detail.value ?? '' }))
                 }
@@ -167,6 +168,11 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
         </div>
       </IonCardContent>
       <div className="onboarding-v2__card-footer">
+        {!canContinue && !hasThreeSelections && (
+          <IonText color="medium" style={{ textAlign: 'center', display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>
+            Choose 3!
+          </IonText>
+        )}
         <IonRow className="onboarding-v2__nav">
           <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
             {ONBOARDING_COPY.common.back}

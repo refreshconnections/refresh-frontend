@@ -84,6 +84,7 @@ const PRECAUTION_OPTIONS = [
 ];
 
 const ATTENDEE_PRECAUTION_OPTIONS = [
+  { value: 'not_specified', label: 'Not specified' },
   { value: 'precautions_only', label: 'Covid conscientious only' },
   { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
   { value: 'open', label: 'Open to everyone' },
@@ -173,6 +174,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showDefaultDateConfirm, setShowDefaultDateConfirm] = useState(false);
   const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
   const [recurrenceCount, setRecurrenceCount] = useState(1);
@@ -268,7 +270,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     [defaultStartDatetime]
   );
   const [startDatetime, setStartDatetime] = useState(defaultStartDatetime);
-  const [endDatetime, setEndDatetime] = useState('');
+  const [endDatetime, setEndDatetime] = useState(defaultEndDatetime);
+  const [startDateTouched, setStartDateTouched] = useState(false);
+  const [endDateTouched, setEndDateTouched] = useState(false);
   const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const normalizeDatetime = (value: string) => {
@@ -484,7 +488,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const hasPreSubmitIssues = hasPii || hasBlockedLinks;
   const accountAgeError = isOldEnoughForEvents ? null : 'Events can be submitted once your account is at least two weeks old.';
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (skipDefaultDateConfirm = false) => {
     if (!isOldEnoughForEvents) {
       setError('Events can be submitted once your account is at least two weeks old.');
       return;
@@ -520,7 +524,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       return;
     }
     if (hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField) {
-      setError('This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.');
+      setError('This link isn’t allowed due to guidelines.');
+      return;
+    }
+    if (!skipDefaultDateConfirm && !startDateTouched && !endDateTouched) {
+      setShowDefaultDateConfirm(true);
       return;
     }
     if (postingIdentity !== 'anonymous' && canAnswerQuestions === null) {
@@ -817,6 +825,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               name="start_datetime"
               onIonChange={(event) => {
                 const normalized = normalizeDatetime(event.detail.value ?? '');
+                setStartDateTouched(true);
                 setStartDatetime(normalized);
                 if (normalized && !endDatetime) {
                   setEndDatetime(moment(normalized).add(1, 'hour').format('YYYY-MM-DDTHH:mm'));
@@ -833,7 +842,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               step="900"
               value={endDatetime}
               name="end_datetime"
-              onIonChange={(event) => setEndDatetime(normalizeDatetime(event.detail.value ?? ''))}
+              onIonChange={(event) => {
+                setEndDateTouched(true);
+                setEndDatetime(normalizeDatetime(event.detail.value ?? ''));
+              }}
             />
             <BoxedStackedSelect
               label="Time zone"
@@ -849,7 +861,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               <IonSelectOption value="Australia/Sydney">Sydney (AEST)</IonSelectOption>
               <IonSelectOption value="UTC">UTC</IonSelectOption>
             </BoxedStackedSelect>
-            <IonText color="medium" style={{ fontSize: '0.8rem', display: 'block', marginTop: 6 }}>
+            <IonText color="navy" className="event-timezone-note">
               Event times are shown in each member's local time zone.
             </IonText>
           </div>
@@ -1109,18 +1121,16 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               </IonItem>
             )}
             {canUseRecurring && recurrenceType !== 'none' && recurrenceType !== 'custom' && displayDates.length > 0 && (
-              <>
-                <IonItem lines="none" className="recurrence-heading-item">
-                  <IonText className="recurrence-heading-text">
-                    Dates (auto-generated) • Your time zone
-                  </IonText>
-                </IonItem>
+              <><IonText color="navy" className="event-timezone-note">
+                Dates (auto-generated) • Your time zone
+                </IonText>
+                
                 {displayDates.map((dateValue, index) => {
                   const isBaseDate = (recurrenceType === 'weekly' || recurrenceType === 'monthly' || recurrenceType === 'daily') && index === 0;
                   const descriptionIndex = isBaseDate ? -1 : index - 1;
                   return (
                   <IonItem key={`recurrence-date-${dateValue}-${index}`} lines="none" className="recurrence-date-item">
-                    <div className="recurrence-date-card">
+                    <div className="recurrence-date-card recurrence-date-card--narrow">
                       <div className="recurrence-date-header">
                         <div className="recurrence-date-copy">
                           <IonText color="medium" className="recurrence-date-kicker">
@@ -1243,13 +1253,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                               />
                             );
                           })()}
-                          {dateValue && (
-                            <IonText color="medium" className="recurrence-end-note">
-                              Ends at {recurrenceEndDates[descriptionIndex]
-                                ? moment(recurrenceEndDates[descriptionIndex]).format('h:mm A')
-                                : formatEndTime(dateValue)}
-                            </IonText>
-                          )}
                         </div>
                       )}
                       {isBaseDate && !baseDescriptionExpanded && description && (
@@ -1258,7 +1261,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         </IonText>
                       )}
                       {isBaseDate && baseDescriptionExpanded && (
-                        <div className="recurrence-editor">
+                        <div className="recurrence-editor recurrence-description-editor">
+                          <div className="recurrence-field-header">
+                            <IonText color="medium" className="recurrence-field-label">Description</IonText>
+                            {description && (
+                              <IonButton fill="clear" size="small" onClick={() => setDescription('')}>
+                                Clear
+                              </IonButton>
+                            )}
+                          </div>
                           <IonTextarea
                             value={description ?? ''}
                             placeholder="Defaults to the main description unless you change it"
@@ -1267,16 +1278,26 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                               setDescription(event.detail.value ?? '');
                             }}
                           />
-                          <IonButton
-                            fill="clear"
-                            onClick={() => setDescription('')}
-                          >
-                            Clear
-                          </IonButton>
                         </div>
                       )}
                       {!isBaseDate && expandedDescriptions[descriptionIndex] && (
-                        <div className="recurrence-editor">
+                        <div className="recurrence-editor recurrence-description-editor">
+                          <div className="recurrence-field-header">
+                            <IonText color="medium" className="recurrence-field-label">Description</IonText>
+                            {(recurrenceDescriptions[descriptionIndex] ?? '') !== '' && (
+                              <IonButton
+                                fill="clear"
+                                size="small"
+                                onClick={() => {
+                                  const nextDescriptions = [...recurrenceDescriptions];
+                                  nextDescriptions[descriptionIndex] = '';
+                                  setRecurrenceDescriptions(nextDescriptions);
+                                }}
+                              >
+                                Clear
+                              </IonButton>
+                            )}
+                          </div>
                           <IonTextarea
                             value={recurrenceDescriptions[descriptionIndex] ?? ''}
                             placeholder="Defaults to the main description unless you change it"
@@ -1287,20 +1308,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                               setRecurrenceDescriptions(nextDescriptions);
                             }}
                           />
-                          <IonButton
-                            fill="clear"
-                            onClick={() => {
-                              const nextDescriptions = [...recurrenceDescriptions];
-                              nextDescriptions[descriptionIndex] = '';
-                              setRecurrenceDescriptions(nextDescriptions);
-                            }}
-                          >
-                            Clear
-                          </IonButton>
                         </div>
                       )}
                       {!isBaseDate && expandedExternalLinks[descriptionIndex] && (
-                        <div className="recurrence-editor">
+                        <div className="recurrence-editor recurrence-link-editor">
+                          <IonText color="medium" className="recurrence-field-label">Link</IonText>
                           <IonInput
                             value={recurrenceExternalLinks[descriptionIndex] ?? externalLink}
                             placeholder="Add a link for this date (optional)"
@@ -1371,13 +1383,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         />
                       );
                     })()}
-                    {dateValue && (
-                      <IonText color="medium" className="recurrence-end-note">
-                        Ends at {recurrenceEndDates[index]
-                          ? moment(recurrenceEndDates[index]).format('h:mm A')
-                          : formatEndTime(dateValue)}
-                      </IonText>
-                    )}
                     <div className="recurrence-action-row">
                       <IonButton
                         fill="clear"
@@ -1471,6 +1476,26 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             onDidDismiss={handleSuccessAlertDismiss}
           />
           <IonAlert
+            isOpen={showDefaultDateConfirm}
+            header="Use the default event date?"
+            message="Your event is still set to the default start and end time. Please make sure this is when the event is happening before submitting."
+            buttons={[
+              {
+                text: 'Go back',
+                role: 'cancel',
+                handler: () => setShowDefaultDateConfirm(false),
+              },
+              {
+                text: 'Submit anyway',
+                handler: async () => {
+                  setShowDefaultDateConfirm(false);
+                  await handleSubmit(true);
+                },
+              },
+            ]}
+            onDidDismiss={() => setShowDefaultDateConfirm(false)}
+          />
+          <IonAlert
             isOpen={showRecurringUpgrade}
             header="Recurring events"
             message="Join Community+ or Pro to post recurring events."
@@ -1509,7 +1534,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             ) : null}
             {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
               <IonText color="danger">
-                This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.
+                This link isn’t allowed due to guidelines.
               </IonText>
             ) : null}
           </div>
@@ -1518,7 +1543,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
           <IonButton
             className="create-event-submit"
             expand="block"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit()}
             disabled={submitting || hasPreSubmitIssues || !isOldEnoughForEvents}
           >
             {submitting ? 'Submitting...' : 'Submit event'}

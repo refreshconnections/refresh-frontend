@@ -1,6 +1,6 @@
 import { IonAvatar, IonItem, IonText, useIonModal } from "@ionic/react";
 import React, { useState } from "react";
-import { isPersonalPlus, onImgError } from "../../hooks/utilities";
+import { getPrimaryPhoto, isPersonalPlus, onImgError } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 
 import TextModal from "../TextModal";
@@ -30,7 +30,7 @@ const NewChatItem: React.FC<Props> = (props) => {
     const { data: profileDetails } = useProfileDetails(user, profileDetailsEnabled);
 
     const displayName = nameProp ?? profileDetails?.name ?? "";
-    const displayPic = picProp !== undefined ? picProp : profileDetails?.pic1_main;
+    const displayPic = picProp !== undefined ? picProp : getPrimaryPhoto(profileDetails);
     const isDeactivated = profileDetails?.deactivated_profile ?? false;
 
     const handleDismiss = () => {

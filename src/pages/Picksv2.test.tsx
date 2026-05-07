@@ -263,7 +263,7 @@ describe('Picksv2', () => {
     expect(await screen.findByText('loading-card')).toBeInTheDocument();
   });
 
-  it('prompts the user to create a personal profile before browsing discovery', async () => {
+  it('prompts the user to create a personal profile before browsing Discovery', async () => {
     mockCurrentProfile.mockReturnValue({
       data: { ...baseProfile, created_profile: false },
       isLoading: false,

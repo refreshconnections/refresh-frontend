@@ -20,6 +20,7 @@ const {
   mockRouterPush,
   mockSwiperOnSlideChange,
   mockInvalidateQueries,
+  mockSetQueryData,
   mockApiPatch,
   mockRefetchCommunityProfile,
   mockUpdateCurrentUserProfileWStatus,
@@ -53,6 +54,7 @@ const {
   mockRouterPush: vi.fn(),
   mockSwiperOnSlideChange: vi.fn(),
   mockInvalidateQueries: vi.fn(),
+  mockSetQueryData: vi.fn(),
   mockApiPatch: vi.fn().mockResolvedValue({}),
   mockRefetchCommunityProfile: vi.fn(),
   mockUpdateCurrentUserProfileWStatus: vi.fn().mockResolvedValue({ status: 204 }),
@@ -114,6 +116,7 @@ let mockCurrentProfile: any = {
   deactivated_profile: false,
 };
 let mockCommunityProfile: any = {
+  username: 'alex',
   community_bio: 'Masked and mingling',
   community_profile_pic: '/community.png',
   show_location: true,
@@ -287,6 +290,7 @@ vi.mock('@tanstack/react-query', async () => {
     ...actual,
     useQueryClient: () => ({
       invalidateQueries: (...args: any[]) => mockInvalidateQueries(...args),
+      setQueryData: (...args: any[]) => mockSetQueryData(...args),
     }),
   };
 });
@@ -315,6 +319,7 @@ vi.mock('../hooks/utilities', () => ({
   updateCurrentUserProfile: (...args: any[]) => mockUpdateCurrentUserProfile(...args),
   updateUsername: (...args: any[]) => mockUpdateUsername(...args),
   uploadCommunityProfilePhoto: vi.fn().mockResolvedValue(undefined),
+  isPersonalPlus: vi.fn(() => false),
   onImgError: vi.fn(),
 }));
 
@@ -355,6 +360,7 @@ vi.mock('../components/OnboardingCardLocationLabel', () => ({
       <div>
         onboarding-card-location-label
         <span>initial-location:{props.initialLocation ?? ''}</span>
+        <span>initial-location-draft:{String(Boolean(props.initialLocationIsDraft))}</span>
       </div>
     );
   },
@@ -432,6 +438,15 @@ describe('active onboarding pages', () => {
     mockUpdateCurrentUserProfileWStatus.mockResolvedValue({ status: 204 });
     mockUpdateUsername.mockResolvedValue({ status: 204 });
     mockInvalidateQueries.mockResolvedValue(undefined);
+    mockSetQueryData.mockImplementation((queryKey: any, updater: any) => {
+      if (JSON.stringify(queryKey) === JSON.stringify(['current'])) {
+        mockCurrentProfile = typeof updater === 'function' ? updater(mockCurrentProfile) : updater;
+      }
+      if (JSON.stringify(queryKey) === JSON.stringify(['global-current'])) {
+        mockGlobalProfile = typeof updater === 'function' ? updater(mockGlobalProfile) : updater;
+      }
+      return undefined;
+    });
     mockApiPatch.mockResolvedValue({});
     mockRefetchCommunityProfile.mockResolvedValue({ data: mockCommunityProfile });
     mockCompleteAgeVerificationMutate.mockReset();
@@ -465,6 +480,7 @@ describe('active onboarding pages', () => {
       deactivated_profile: false,
     };
     mockCommunityProfile = {
+      username: 'alex',
       community_bio: 'Masked and mingling',
       community_profile_pic: '/community.png',
       show_location: true,
@@ -515,7 +531,7 @@ describe('active onboarding pages', () => {
     });
     expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.welcome.secondaryCta));
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.welcome.primaryCta));
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.info.continueCta));
@@ -751,7 +767,7 @@ describe('active onboarding pages', () => {
       screen.getByText(ONBOARDING_COPY.communityOnboarding.welcome.withoutPersonalProfileSecondary)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)
+      screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)
     ).toBeInTheDocument();
     expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.connect.title)).not.toBeInTheDocument();
@@ -782,7 +798,7 @@ describe('active onboarding pages', () => {
       })
     );
     expect(
-      screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withSharedCoords)
+      screen.getByText(ONBOARDING_COPY.cards.locationLabel.withCoords)
     ).toBeInTheDocument();
     expect(screen.getByText('pre-existing-coords:true')).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).toBeInTheDocument();
@@ -800,7 +816,7 @@ describe('active onboarding pages', () => {
     renderInApp(<CommunityOnboarding />);
 
     expect(screen.getAllByText(ONBOARDING_COPY.communityOnboarding.connect.title).length).toBeGreaterThan(0);
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
     expect(screen.getByText('onboarding-card-location-coords')).toBeInTheDocument();
     expect(mockLocationCoordsProps.at(-1)).toEqual(
       expect.objectContaining({
@@ -829,7 +845,7 @@ describe('active onboarding pages', () => {
         preExistingCoords: false,
       })
     );
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
   });
 
@@ -847,9 +863,34 @@ describe('active onboarding pages', () => {
 
     fireEvent.click(screen.getByText('mock-save-coords'));
 
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withCoords)).toBeInTheDocument();
     expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).toBeInTheDocument();
-    expect(screen.getByText(/Location shown on your profile:/)).toHaveTextContent('Chicago, Illinois, United States');
+    expect(screen.queryByText(/Location shown on your Profile:/)).not.toBeInTheDocument();
+
+    fireEvent(
+      document.querySelectorAll('ion-toggle')[1] as HTMLElement,
+      new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true })
+    );
+
+    expect(screen.getByText(/Location shown on your Profile:/)).toHaveTextContent('Chicago, Illinois, United States');
+  });
+
+  it('keeps an existing personal location label visible after sharing location in refreshments onboarding', () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      location_point_lat: null,
+      location_point_long: null,
+      coordinates_near: null,
+      location: 'NYC metro',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText('mock-save-coords'));
+
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withCoords)).toBeInTheDocument();
+    expect(screen.getByText(/Location shown on your Profile:/)).toHaveTextContent('NYC metro');
   });
 
   it('clears the refreshments location label step after sharing then declining mid-flow', () => {
@@ -867,9 +908,9 @@ describe('active onboarding pages', () => {
     fireEvent.click(screen.getByText('mock-save-coords'));
     fireEvent.click(screen.getByText('mock-clear-coords'));
 
-    expect(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.withoutSharedCoords)).toBeInTheDocument();
+    expect(screen.getByText(ONBOARDING_COPY.cards.locationLabel.withoutCoords)).toBeInTheDocument();
     expect(screen.queryByText(ONBOARDING_COPY.communityOnboarding.location.toggleLabel)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Location shown on your profile:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Location shown on your Profile:/)).not.toBeInTheDocument();
   });
 
   it('renders the locked-username and age-hidden community branches', () => {
@@ -905,6 +946,31 @@ describe('active onboarding pages', () => {
     });
     await waitFor(() => {
       expect(sharedSwiper.slideNext).toHaveBeenCalled();
+    });
+  });
+
+  it('persists and restores unfinished community onboarding progress', async () => {
+    mockPreferencesGet.mockImplementation(({ key }: { key: string }) => (
+      Promise.resolve({ value: key === 'community_onboarding_slide' ? '3' : null })
+    ));
+
+    renderInApp(<CommunityOnboarding />);
+
+    await waitFor(() => {
+      expect(sharedSwiper.slideTo).toHaveBeenCalledWith(3, 0);
+    });
+
+    await act(async () => {
+      mockSwiperOnSlideChange({ activeIndex: 4 });
+    });
+
+    expect(mockPreferencesSet).toHaveBeenCalledWith({
+      key: 'community_onboarding_in_progress',
+      value: 'true',
+    });
+    expect(mockPreferencesSet).toHaveBeenCalledWith({
+      key: 'community_onboarding_slide',
+      value: '4',
     });
   });
 
@@ -944,6 +1010,8 @@ describe('active onboarding pages', () => {
     await waitFor(() => {
       expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
       expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ paused_profile: true, settings_community_profile: false });
+      expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_in_progress' });
+      expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_slide' });
     });
     await waitFor(() => {
       expect(onDismiss).toHaveBeenCalled();
@@ -951,7 +1019,28 @@ describe('active onboarding pages', () => {
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.finish));
     await waitFor(() => {
+      expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_in_progress' });
+      expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_slide' });
       expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
+    });
+  });
+
+  it('routes to personal onboarding after refreshments onboarding instead of opening a modal', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.createPersonal));
+
+    await waitFor(() => {
+      expect(mockPreferencesSet).toHaveBeenCalledWith({
+        key: 'personal_profile_onboarding_in_progress',
+        value: 'true',
+      });
+      expect(mockRouterPush).toHaveBeenCalledWith('/personal-profile-onboarding', 'root', 'replace');
     });
   });
 
@@ -1090,7 +1179,7 @@ describe('active onboarding pages', () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
-  it('opens the location editor and saves location and age visibility on next', () => {
+  it('edits the community location label inline and saves location and age visibility on next', async () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
       created_profile: true,
@@ -1100,14 +1189,20 @@ describe('active onboarding pages', () => {
 
     renderInApp(<CommunityOnboarding />);
 
-    fireEvent.click(screen.getByText(ONBOARDING_COPY.communityOnboarding.location.editLocation));
-    expect(mockPresentModal).toHaveBeenCalled();
+    const locationInputs = document.querySelectorAll<HTMLElement>('ion-input');
+    const locationInput = locationInputs[1];
+    expect(locationInput).toBeDefined();
+    fireEvent(locationInput!, new CustomEvent('ionInput', { detail: { value: 'Queens, NY, USA' }, bubbles: true }));
 
     fireEvent(
       document.querySelectorAll('ion-toggle')[1] as HTMLElement,
       new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true })
     );
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.next)[4]);
+
+    await waitFor(() => {
+      expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ location: 'Queens, NY, USA' });
+    });
 
     fireEvent(
       document.querySelector('ion-radio-group') as HTMLElement,
@@ -1143,6 +1238,38 @@ describe('active onboarding pages', () => {
         show_location: true,
       });
     });
+  });
+
+  it('prepopulates personal onboarding with the location label saved during refreshments onboarding', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
+      coordinates_near: 'Brooklyn, NY, USA',
+      location: 'Brooklyn',
+    };
+    mockUpdateCurrentUserProfile.mockResolvedValue({
+      ...mockCurrentProfile,
+      location: 'Queens, NY, USA',
+    });
+
+    const communityView = renderInApp(<CommunityOnboarding />);
+
+    const locationInput = document.querySelectorAll<HTMLElement>('ion-input')[1];
+    fireEvent(locationInput!, new CustomEvent('ionInput', { detail: { value: 'Queens, NY, USA' }, bubbles: true }));
+    const locationCard = screen.getByText(ONBOARDING_COPY.communityOnboarding.location.title).closest('ion-card');
+    expect(locationCard).toBeTruthy();
+    fireEvent.click(within(locationCard as HTMLElement).getByText(ONBOARDING_COPY.common.next));
+
+    await waitFor(() => {
+      expect(mockSetQueryData).toHaveBeenCalledWith(['current'], expect.any(Function));
+    });
+
+    communityView.unmount();
+    renderInApp(<PersonalProfile />);
+
+    expect(screen.getByText('initial-location:Queens, NY, USA')).toBeInTheDocument();
   });
 
   it('keeps community location display off when the optional no-coords label step is skipped', async () => {
@@ -1285,9 +1412,11 @@ describe('active onboarding pages', () => {
 
     fireEvent.click(screen.getByText('mock-save-coords'));
     expect(screen.getByText('initial-location:Chicago, Illinois, United States')).toBeInTheDocument();
+    expect(screen.getByText('initial-location-draft:true')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('mock-clear-coords'));
     expect(screen.getByText('initial-location:')).toBeInTheDocument();
+    expect(screen.getByText('initial-location-draft:false')).toBeInTheDocument();
     expect(screen.queryByText('initial-location:Chicago, Illinois, United States')).not.toBeInTheDocument();
   });
 
@@ -1313,7 +1442,36 @@ describe('active onboarding pages', () => {
     await Promise.resolve();
 
     expect(mockPreferencesGet).toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
+    expect(mockPreferencesSet).toHaveBeenCalledWith({
+      key: 'personal_profile_onboarding_in_progress',
+      value: 'true',
+    });
     expect(sharedSwiper.slideTo).toHaveBeenCalledWith(4, 0);
+  });
+
+  it('keeps saved personal-profile progress when shared coordinates already exist mid-flow', async () => {
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: false,
+      location_point_lat: 40.7128,
+      location_point_long: -74.006,
+    };
+    mockPreferencesGet.mockImplementation(({ key }: { key: string }) => (
+      Promise.resolve({
+        value: key === 'personal_profile_onboarding_in_progress'
+          ? 'true'
+          : key === 'personal_profile_onboarding_slide'
+            ? '5'
+            : null,
+      })
+    ));
+
+    renderInApp(<PersonalProfile />);
+
+    await waitFor(() => {
+      expect(sharedSwiper.slideTo).toHaveBeenCalledWith(5, 0);
+    });
+    expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
   });
 
   it('clears the saved personal-profile slide once the profile already exists', async () => {
@@ -1327,6 +1485,7 @@ describe('active onboarding pages', () => {
     await Promise.resolve();
 
     expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
+    expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'personal_profile_onboarding_in_progress' });
     expect(mockPreferencesGet).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
   });
 
@@ -1340,8 +1499,12 @@ describe('active onboarding pages', () => {
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]);
 
     expect(mockPreferencesSet).toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide', value: '6' });
+    expect(mockPreferencesSet).toHaveBeenCalledWith({ key: 'personal_profile_onboarding_in_progress', value: 'true' });
     await waitFor(() => {
       expect(mockUpdateCurrentUserProfile).toHaveBeenCalledWith({ paused_profile: true, settings_community_profile: false });
+      // Slide progress must be preserved so the user can resume from where they left off
+      expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_in_progress' });
+      expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
     });
     await waitFor(() => {
       expect(onDismiss).toHaveBeenCalled();

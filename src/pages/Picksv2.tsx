@@ -126,6 +126,7 @@ const Picksv2: React.FC = () => {
     text: offendingName,
     id: offendingId,
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
+    onReportSubmitted: () => { if (offendingId !== null) handleNextItem(offendingId, 'dismiss'); },
   });
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
     onDismiss: () => dismissPersonalProfile(),
@@ -238,9 +239,16 @@ const Picksv2: React.FC = () => {
   /** ---------------- Preload next image ----------------- */
   useEffect(() => {
     const next = sortedPicks?.[index + 1];
-    if (next?.pic1_main) {
+    if (!next) return;
+    const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const order: string[] = Array.isArray(next.photo_order) && next.photo_order.length > 0
+      ? next.photo_order
+      : photoKeys;
+    const firstKey = order.find((k: string) => next[k]) ?? 'pic1_main';
+    const src = next[firstKey];
+    if (src) {
       const img = new Image();
-      img.src = next.pic1_main;
+      img.src = src;
     }
   }, [index, sortedPicks]);
 

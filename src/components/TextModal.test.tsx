@@ -124,9 +124,13 @@ vi.mock('../hooks/utilities', () => ({
   heartMessage: vi.fn().mockResolvedValue(undefined),
   unheartMessage: vi.fn().mockResolvedValue(undefined),
   removeMessage: vi.fn().mockResolvedValue({}),
+  isPersonalPlus: vi.fn(() => false),
   isMobile: vi.fn().mockReturnValue(false),
   onImgError: vi.fn(),
   onAttachmentImgError: vi.fn(),
+  getPrimaryPhotoKey: vi.fn(() => 'pic1_main'),
+  getPhotoAltKey: vi.fn(() => 'pic1_alt'),
+  getPrimaryPhoto: vi.fn(() => null),
 }));
 
 vi.mock('../hooks/api/chats/accepting-messages', () => ({
@@ -506,6 +510,80 @@ describe('TextModal', () => {
         expect.anything(),
         expect.anything()
       );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // WebSocket msg_type 9 handler (NewUnreadCount)
+  // -------------------------------------------------------------------------
+
+  describe('WebSocket msg_type 9 handler (NewUnreadCount)', () => {
+    it('invalidates chats, paginated, and unread regardless of sender', async () => {
+      renderWithClient();
+      const listener = getCapturedListener();
+
+      await act(async () => {
+        listener({ msg_type: 9, sender: 'some-other-sender' });
+      });
+
+      expect(mockInvalidateQueries).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['chats'] })
+      );
+      expect(mockInvalidateQueries).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['chats', 'paginated'] })
+      );
+      expect(mockInvalidateQueries).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['unread'] })
+      );
+    });
+
+    it('calls markAllInChatAsRead when sender matches the active chat partner', async () => {
+      renderWithClient();
+      const listener = getCapturedListener();
+
+      await act(async () => {
+        listener({ msg_type: 9, sender: DEFAULT_OTHER_USER_ID });
+      });
+
+      expect(markAllInChatAsRead).toHaveBeenCalledWith(DEFAULT_OTHER_USER_ID);
+    });
+
+    it('re-invalidates unread after markAllInChatAsRead resolves', async () => {
+      renderWithClient();
+      const listener = getCapturedListener();
+
+      await act(async () => {
+        listener({ msg_type: 9, sender: DEFAULT_OTHER_USER_ID });
+      });
+
+      await waitFor(() => {
+        const unreadCalls = mockInvalidateQueries.mock.calls.filter(
+          (args: any[]) => args[0]?.queryKey?.[0] === 'unread'
+        );
+        expect(unreadCalls.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    it('does not call markAllInChatAsRead for a different sender', async () => {
+      renderWithClient();
+      const listener = getCapturedListener();
+
+      await act(async () => {
+        listener({ msg_type: 9, sender: 'not-the-active-partner' });
+      });
+
+      expect(markAllInChatAsRead).not.toHaveBeenCalled();
+    });
+
+    it('does not call markAllInChatAsRead when sender is absent', async () => {
+      renderWithClient();
+      const listener = getCapturedListener();
+
+      await act(async () => {
+        listener({ msg_type: 9 });
+      });
+
+      expect(markAllInChatAsRead).not.toHaveBeenCalled();
     });
   });
 

@@ -188,20 +188,25 @@ describe('CommunityProfileModal', () => {
     mockRemoveCommunityBlocked.mockResolvedValue(undefined);
   });
 
-  it('shows the self branch and opens the community profile editor', async () => {
-    mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex' };
+  it('shows the self branch with connect-from-refreshments note and personal profile card', async () => {
+    mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: true, name: 'Alex' };
 
     renderModal({ userId: 42 });
 
-    expect(await screen.findByText('This is you!')).toBeInTheDocument();
+    expect(await screen.findByText(/If the other member has Connect from Refreshments on/)).toBeInTheDocument();
+    expect(screen.getByText('Alex')).toBeInTheDocument();
+    expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByText('Edit Refreshments Profile'));
-    expect(mockPresentModal).toHaveBeenCalledWith(
-      'EditCommunityProfileModal',
-      expect.objectContaining({
-        onDismiss: expect.any(Function),
-      })
-    );
+  it('shows nothing in the self action area when connect from refreshments is off', async () => {
+    mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: false };
+
+    renderModal({ userId: 42 });
+
+    // Give async rendering a moment then verify neither the note nor the edit button appear
+    await screen.findByText('self-alex');
+    expect(screen.queryByText(/If the other member has Connect from Refreshments on/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
   });
 
   it('capitalizes the connect guidance correctly when the viewer already has an active personal profile', async () => {

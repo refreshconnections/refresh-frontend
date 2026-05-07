@@ -114,7 +114,9 @@ ion-item .commentdiv {
 }
 
 .comment-edit-inline ion-textarea {
-  --background: white;
+  --background: var(--ion-color-white);
+  --color: var(--ion-color-black);
+  color: var(--ion-color-black);
   --padding-start: 8px;
   --padding-end: 8px;
   --padding-top: 6px;
@@ -123,10 +125,32 @@ ion-item .commentdiv {
   border: 1px solid #d8d8e6;
 }
 
+.comment-edit-inline ion-textarea::part(native) {
+  color: var(--ion-color-black);
+}
+
 .comment-edit-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.comment-edit-actions ion-button[aria-label="Cancel edit"] {
+  --color: var(--ion-color-medium);
+}
+
+.comment-edit-actions ion-button[aria-label="Cancel edit"]::part(native) {
+  color: var(--ion-color-medium);
+}
+
+:root.ion-palette-dark.ios .comment-edit-actions ion-button[aria-label="Cancel edit"],
+:root.ion-palette-dark.md .comment-edit-actions ion-button[aria-label="Cancel edit"] {
+  --color: var(--ion-color-white);
+}
+
+:root.ion-palette-dark.ios .comment-edit-actions ion-button[aria-label="Cancel edit"]::part(native),
+:root.ion-palette-dark.md .comment-edit-actions ion-button[aria-label="Cancel edit"]::part(native) {
+  color: var(--ion-color-white);
 }
 
 .borderwtail ul{
@@ -172,6 +196,35 @@ ion-item .commentdiv {
   margin-inline-start: 0;  /* remove Ionic’s extra gap */
   pointer-events: none;
 }
+
+ion-list.comments ion-item.selfwritten .commentdiv ion-button,
+ion-list.comments ion-item.selfrecent .commentdiv ion-button {
+  --color: black;
+}
+
+:root.ion-palette-dark ion-list.comments ion-item.selfwritten .commentdiv ion-button,
+:root.ion-palette-dark ion-list.comments ion-item.selfrecent .commentdiv ion-button {
+  --color: white;
+}
+
+:root.ion-palette-dark ion-list.comments ion-item.selfwritten .commentdiv ion-text,
+:root.ion-palette-dark ion-list.comments ion-item.selfrecent .commentdiv ion-text {
+  --color: white;
+  color: white;
+}
+
+.removed-comment-card {
+  --background: transparent;
+  border: 1px solid var(--ion-color-maroon);
+  border-radius: 8px;
+  box-shadow: none !important;
+  margin: 6px 0 !important;
+}
+
+:root.ion-palette-dark .removed-comment-card p {
+  color: var(--ion-color-light) !important;
+}
+
 
 ion-avatar.connect-avatar {
   border: 2px solid var(--ion-color-primary);

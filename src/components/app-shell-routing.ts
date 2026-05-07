@@ -17,7 +17,7 @@ export const shouldShowPrimaryOnboardingScreen = (
   emailStatus?: { phone?: string | null } | null,
   hasCommunityProfile: boolean = false,
 ) => {
-  if (pathname === '/community-onboarding') {
+  if (pathname === '/community-onboarding' || pathname === '/personal-profile-onboarding') {
     return false;
   }
   if (hasCommunityProfile && profile?.onboarded !== false) {

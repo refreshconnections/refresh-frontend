@@ -65,6 +65,7 @@ import {
 import RefreshmentsEventsThisWeekRow from '../components/RefreshmentsEventsThisWeekRow';
 import CommunityBlockMigrationModal from '../components/CommunityBlockMigrationModal';
 
+const COMMUNITY_ONBOARDING_IN_PROGRESS_KEY = 'community_onboarding_in_progress';
 
 const Refreshments: React.FC = () => {
 
@@ -120,6 +121,17 @@ const Refreshments: React.FC = () => {
 
   const currentUserProfile = useGetCurrentProfile().data;
 
+  useEffect(() => {
+    const resumeCommunityOnboarding = async () => {
+      const stored = await Preferences.get({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY });
+      if (stored.value === 'true') {
+        router.push('/community-onboarding', 'root', 'replace');
+      }
+    };
+
+    resumeCommunityOnboarding();
+  }, [router]);
+
 
   const [search, setSearch] = useState<string>("")
 
@@ -132,7 +144,7 @@ const Refreshments: React.FC = () => {
   ), [local, currentUserProfile]);
 
   const postsQuery = useGetPosts(bars, search, local, radius, sort)
-  const { data: posts, isLoading: postsLoading, isFetching: postsFetching } = postsQuery
+  const { data: posts, isLoading: postsLoading } = postsQuery
   const { data: events = [] } = useGetEvents(eventFilters, {
     local: localPostsOn,
     radius,
@@ -318,7 +330,7 @@ const Refreshments: React.FC = () => {
     };
   }, []);
 
-  const isRefreshingPosts = Boolean(somePosts?.length && (postsFetching || forceRefreshing));
+  const isRefreshingPosts = Boolean(somePosts?.length && forceRefreshing);
   const upcomingEventsThisWeek = useMemo(() => {
     const now = moment();
     const weekAhead = now.clone().add(7, 'days');
@@ -441,6 +453,16 @@ const Refreshments: React.FC = () => {
                           <span
                             style={{ textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', color: 'var(--ion-color-primary)' }}
                             onClick={() => router.push('/community/submitted')}
+                          >
+                            See Submissions
+                          </span>
+                        </IonText>
+                      ) : topRefreshmentsAlert.message?.startsWith('Your event') ? (
+                        <IonText>
+                          {topRefreshmentsAlert.message}{' '}
+                          <span
+                            style={{ textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', color: 'var(--ion-color-primary)' }}
+                            onClick={() => router.push('/community/submitted?tab=events')}
                           >
                             See Submissions
                           </span>

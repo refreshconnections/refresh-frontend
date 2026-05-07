@@ -150,6 +150,7 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
       if (singleValue === 'virtual_only') return 'Virtual only';
       if (singleValue === 'in_person_only') return 'In person only';
       if (singleValue === 'in_person_with_virtual_option') return 'In person with virtual option';
+      if (singleValue === 'not_specified') return 'Not specified';
       if (singleValue === 'precautions_only') return 'Covid conscientious only';
       if (singleValue === 'precautions_preferred') return 'Covid conscientious preferred';
       if (singleValue === 'open') return 'Open to everyone';

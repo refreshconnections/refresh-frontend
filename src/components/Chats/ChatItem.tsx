@@ -1,5 +1,5 @@
 import { IonAvatar, IonBadge, IonItem, IonText, useIonModal } from "@ionic/react";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { isPersonalPlus, onImgError } from "../../hooks/utilities";
 import { useProfileDetails } from "../../hooks/api/profiles/details";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,27 +26,27 @@ const ChatItem: React.FC<Props> = (props) => {
     const profileDetails = useProfileDetails(user, profileDetailsEnabled).data;
     
 
-    const [handlingDismiss, setHandlingDismiss] = useState(false)
+    const [hasOpened, setHasOpened] = useState(false)
+    const previousUnreadCountRef = useRef(chat?.unread_count ?? 0);
 
+    useEffect(() => {
+        const unreadCount = chat?.unread_count ?? 0;
+
+        if (unreadCount === 0 || unreadCount > previousUnreadCountRef.current) {
+            setHasOpened(false);
+        }
+
+        previousUnreadCountRef.current = unreadCount;
+    }, [chat?.unread_count]);
 
     const handleDismiss = (options?: { refreshChatList?: boolean }) => {
-        setHandlingDismiss(true)
-        queryClient.invalidateQueries({
-            queryKey: ['unread'],
-        })
-        queryClient.invalidateQueries({
-            queryKey: ['chats', 'details', chat?.id],
-        })
+        queryClient.invalidateQueries({ queryKey: ['unread'] })
+        queryClient.invalidateQueries({ queryKey: ['chats', 'details', chat?.id] })
+        queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         if (options?.refreshChatList) {
-            queryClient.invalidateQueries({
-                queryKey: chatQueryKeys.all,
-            })
-            queryClient.invalidateQueries({
-                queryKey: chatQueryKeys.paginated,
-            })
+            queryClient.invalidateQueries({ queryKey: chatQueryKeys.all })
         }
         dismiss();
-        setHandlingDismiss(false)
     }
 
     const [present, dismiss] = useIonModal(TextModal, {
@@ -55,12 +55,13 @@ const ChatItem: React.FC<Props> = (props) => {
         profileDetails: profileDetails,
         pro: isPersonalPlus(currentUserProfile?.subscription_level),
         settingsAlt: currentUserProfile?.settings_alt_text,
-        from_name: currentUserProfile?.name, 
+        from_name: currentUserProfile?.name,
         onDismiss: handleDismiss,
       });
-    
+
       const openModal = () => {
         setProfileDetailsEnabled(true);
+        setHasOpened(true);
         present();
       }
 
@@ -78,7 +79,7 @@ const ChatItem: React.FC<Props> = (props) => {
                     }
                     </IonAvatar>
                     <IonText className="name">{chat?.name || "User"}</IonText>
-                    {handlingDismiss? <></> : chat?.unread_count > 0 ? <IonBadge className="unread-badge" slot="end">
+                    {!hasOpened && chat?.unread_count > 0 ? <IonBadge className="unread-badge" slot="end">
                                 {currentUserProfile?.subscription_level !== "none" && currentUserProfile?.settings_new_message_count == true ?
                                   chat?.unread_count + " new"
                                   : "New message"}

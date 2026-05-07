@@ -418,7 +418,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
       setSelectedEventInterestedCount(previousCount + 1);
     }
     try {
-      await interestEvent.mutateAsync(selectedEvent.id);
+      await interestEvent.mutateAsync(selectedEvent);
     } catch (error) {
       setSelectedEventInterested(previousInterested);
       setSelectedEventInterestedCount(previousCount);
@@ -670,7 +670,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                                       if (result === 'success') {
                                         presentCalendarAlert({
                                           header: 'Added to calendar',
-                                          message: 'The event has been saved to your calendar.',
+                                          message: 'The event has been saved to your default calendar.',
                                           buttons: [
                                             { text: 'Open Calendar', handler: () => { window.open(Capacitor.getPlatform() === 'android' ? 'content://com.android.calendar/time/' : 'calshow://', '_system'); } },
                                             { text: 'Done', role: 'cancel' },
@@ -680,6 +680,12 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                                         presentCalendarAlert({
                                           header: 'Calendar access',
                                           message: "Refresh doesn't have permission to access your calendar. You can enable it in your device settings.",
+                                          buttons: ['OK'],
+                                        });
+                                      } else if (result === 'unavailable') {
+                                        presentCalendarAlert({
+                                          header: 'Could not save event',
+                                          message: 'Something went wrong adding the event to your calendar. Please try again.',
                                           buttons: ['OK'],
                                         });
                                       }
@@ -722,7 +728,7 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
                                   }}
                                 >
                                   <IonIcon icon={calendarOutline} slot="start" />
-                                  Save to calendar
+                                  Save to device calendar
                                 </IonButton>
                               ) : null}
                             </>

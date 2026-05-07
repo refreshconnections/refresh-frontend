@@ -118,7 +118,7 @@
   box-shadow: none;
 }
 
-.refreshments-calendar-modal .calendar-day--has-event:not(.calendar-day--selected) {
+.refreshments-calendar-modal .calendar-day--has-event {
   font-weight: 700;
   border: 2px dotted #5b63d7;
 }
@@ -203,7 +203,7 @@
 .calendar-event-card-name {
   font-weight: 600;
   font-size: calc(15px * var(--text-scale, 1));
-  color: var(--ion-text-color);
+  color: var(--ion-color-black);
 }
 
 .calendar-event-card-time {
@@ -224,7 +224,7 @@
   font-weight: 700;
   font-size: calc(14px * var(--text-scale, 1));
   margin: 4px 0 6px;
-  color: var(--ion-color-dark);
+  color: var(--ion-color-black);
 }
 
 .calendar-event-registration {
@@ -234,6 +234,7 @@
 }
 
 .calendar-event-chip {
+  pointer-events: none;
   color: var(--ion-color-black);
   border: 1px solid var(--ion-color-step-150);
   --color: var(--ion-color-black);
@@ -245,7 +246,15 @@
 }
 
 .calendar-event-chip--type {
-  --background: var(--ion-color-step-150);
+  --background: color-mix(in srgb, var(--ion-color-primary) 16%, var(--ion-background-color));
+  --color: var(--ion-color-black);
+  background: var(--background);
+  color: var(--ion-color-black);
+  border-color: color-mix(in srgb, var(--ion-color-primary) 32%, var(--ion-background-color));
+}
+
+.calendar-event-chip--type ion-label {
+  color: var(--ion-color-black);
 }
 
 .calendar-event-chips {

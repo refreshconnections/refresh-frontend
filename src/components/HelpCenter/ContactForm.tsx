@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IonCard, IonItem, IonLabel, IonSelect, IonSelectOption, IonInput, IonTextarea, IonButton, IonText, IonRow, IonAlert } from '@ionic/react';
+import { IonAccordion, IonAccordionGroup, IonCard, IonItem, IonLabel, IonSelect, IonSelectOption, IonInput, IonTextarea, IonButton, IonText, IonRow, IonAlert } from '@ionic/react';
 import { Link, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
@@ -59,6 +59,8 @@ const ContactForm: React.FC = () => {
     };
 
     const isAutoFilled = reason === "profile" && (profileUpdateType === "name" || profileUpdateType === "age" || profileUpdateType === "location");
+    const showCalendarBugFaq = reason === "bug" && /\bcal|event/i.test(`${subject ?? ""} ${message ?? ""}`);
+    const showHiddenChatBugFaq = reason === "bug" && /hidden/i.test(`${subject ?? ""} ${message ?? ""}`);
 
     const sendHelpMail = async () => {
         setAfterSendWait(true);
@@ -191,6 +193,35 @@ const ContactForm: React.FC = () => {
                         autoGrow={true}
                     />
                 </IonItem>
+                {(showCalendarBugFaq || showHiddenChatBugFaq) && (
+                    <div className="help-section">
+                        <IonRow className="ion-padding ion-justify-content-center">
+                            <IonText>Here is a quick answer that may help:</IonText>
+                        </IonRow>
+                        <IonAccordionGroup className="help-faqs">
+                            {showCalendarBugFaq && (
+                                <IonAccordion value="calendar-default">
+                                    <IonItem slot="header" lines="none">
+                                        <IonLabel className="ion-text-wrap">I can't find the event saved to my calendar.</IonLabel>
+                                    </IonItem>
+                                    <div className="ion-padding" slot="content">
+                                        Refresh saves events to your device's default calendar. If you don't see the event, open your phone's Calendar settings and check which calendar is set as the default.
+                                    </div>
+                                </IonAccordion>
+                            )}
+                            {showHiddenChatBugFaq && (
+                                <IonAccordion value="hidden-chats-organizer">
+                                    <IonItem slot="header" lines="none">
+                                        <IonLabel className="ion-text-wrap">I can't find my Hidden Chats.</IonLabel>
+                                    </IonItem>
+                                    <div className="ion-padding" slot="content">
+                                        Hidden chats now appear in their own tab in the Chat Organizer in your Chats tab. If you don't see the Hidden tab, make sure both "Show Chat Organizer" and "Show Hidden Chats in Organizer" are toggled on in your Settings.
+                                    </div>
+                                </IonAccordion>
+                            )}
+                        </IonAccordionGroup>
+                    </div>
+                )}
             </IonCard>
             <IonRow className="send" style={{ paddingBottom: "20pt" }}>
                 <IonButton onClick={sendHelpMail} disabled={

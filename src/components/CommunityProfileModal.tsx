@@ -81,7 +81,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   });
 
   const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss: handleDismiss }) => (
-    <IonContent className="ion-padding">
+    <IonContent className="ion-padding edit-community-profile-modal-content">
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <IonButton fill="clear" onClick={handleDismiss}>Close</IonButton>
       </div>
@@ -321,7 +321,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                     alt="Refreshments Profile"
                     src={showRestricted ? fallbackLogo : communityAvatar.src}
                     onError={(e) => onImgError(e)}
-                    style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover' }}
+                    style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover', filter: showRestricted ? 'grayscale(1)' : 'none' }}
                   />
                   <IonText><strong>{username}</strong></IonText>
                   {!!detailsLine && !showRestricted && (
@@ -341,14 +341,20 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
                   </div>
                 )}
 
-                {isSelf && !showRestricted && (
+                {isSelf && !showRestricted && viewerConnect && (
                   <div style={{ marginTop: '16px' }}>
-                    <IonText className="community-profile-info-box community-profile-info-center">
-                      <p>This is you!</p>
+                    <IonText className="community-profile-info-box">
+                      <p>If the other member also has Connect from Refreshments on, they will also be able to see your Personal Profile like below so they can send or respond to Likes.</p>
                     </IonText>
-                    <IonButton expand="block" onClick={() => editPresent()}>
-                      Edit Refreshments Profile
-                    </IonButton>
+                    <IonItem className="community-profile-profile-item" lines="none" color="white" style={{ marginTop: '8px', marginBottom: '8px' }}>
+                      <img
+                        alt={currentProfile?.name || ''}
+                        src={normalizeLocalMediaUrl(getPrimaryOrderedPhoto(currentProfile)) || fallbackLogo}
+                        onError={onImgError}
+                        style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', marginRight: '12px' }}
+                      />
+                      <IonLabel>{currentProfile?.name}</IonLabel>
+                    </IonItem>
                   </div>
                 )}
 

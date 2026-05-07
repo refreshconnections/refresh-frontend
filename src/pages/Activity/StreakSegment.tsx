@@ -110,10 +110,13 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                 })()}
 
                 {(streak?.max_streak > 0 || streak?.savers != null || (streak?.streak_pre_break && streak?.break_date)) && (() => {
-                    const daysMissed = Math.floor((Date.now() - new Date(streak.break_date).getTime()) / 86400000);
-                    const cost = daysMissed <= 2 ? 1 : daysMissed <= 4 ? 2 : daysMissed <= 6 ? 3 : daysMissed <= 10 ? 4 : daysMissed <= 14 ? 5 : null;
+                    const daysMissed = streak?.break_date
+                        ? Math.floor((Date.now() - new Date(streak.break_date).getTime()) / 86400000)
+                        : null;
+                    const cost = daysMissed === null ? 1 : daysMissed <= 2 ? 1 : daysMissed <= 4 ? 2 : daysMissed <= 6 ? 3 : daysMissed <= 10 ? 4 : daysMissed <= 14 ? 5 : null;
                     const canAfford = cost !== null && streak.savers >= cost;
                     const windowExpired = cost === null;
+                    const showRestartRestore = streak?.streak_count === 1 && (streak?.savers ?? 0) > 0 && !(streak?.streak_pre_break && streak?.break_date);
                     return (
                         <IonCard color="white" className="streak-summary-card">
                             <div className="streak-summary-card-header">
@@ -170,6 +173,28 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                                             </IonRow>
                                         </>
                                     )}
+                                </div>
+                            )}
+                            {showRestartRestore && (
+                                <div className="streak-summary-section streak-summary-section--recovery">
+                                    <IonCardTitle className="streak-summary-title">
+                                        Restore your streak
+                                    </IonCardTitle>
+                                    <IonText color="navy">
+                                        <p>
+                                            Your streak just restarted. Use <strong>1 streak saver</strong> to restore your previous streak.
+                                            You have <strong>{streak.savers}</strong>.
+                                        </p>
+                                    </IonText>
+                                    <IonRow className="ion-justify-content-center">
+                                        <IonButton
+                                            color="primary"
+                                            disabled={streak.savers < 1 || recoveringStreak}
+                                            onClick={handleRecoverStreak}
+                                        >
+                                            {recoveringStreak ? <IonSpinner name="dots" /> : 'Restore streak (1 saver)'}
+                                        </IonButton>
+                                    </IonRow>
                                 </div>
                             )}
                             </div>

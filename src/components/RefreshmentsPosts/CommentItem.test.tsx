@@ -74,6 +74,7 @@ vi.mock('../../hooks/utilities', () => ({
   }),
   removeComment: (...args: any[]) => removeComment(...args),
   sidenoteComment: (...args: any[]) => sidenoteComment(...args),
+  isPersonalPlus: vi.fn(() => false),
   unlikeComment: (...args: any[]) => unlikeComment(...args),
 }));
 
@@ -385,7 +386,7 @@ describe('CommentItem visibility states', () => {
     );
   });
 
-  it('shows an owner their moderator-removed comment and reason without needing showSidenotes', () => {
+  it('shows an owner their moderator-removed comment and reason without needing showSidenotes', async () => {
     renderComment({
       removed: true,
       removed_reason: 'Off-topic for this thread',
@@ -394,6 +395,9 @@ describe('CommentItem visibility states', () => {
 
     expect(screen.getByText('Your removed comments are only visible to you.')).toBeInTheDocument();
     expect(screen.getByText('Removal reason: Off-topic for this thread')).toBeInTheDocument();
+
+    const showButton = screen.getByText('Show removed comment');
+    await act(async () => { fireEvent.click(showButton); });
     expect(screen.getByText('Removed comment text')).toBeInTheDocument();
   });
 

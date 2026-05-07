@@ -90,6 +90,7 @@ vi.mock('../hooks/utilities', () => ({
   containsLinkShortener: vi.fn((value?: string) => /bit\.ly/i.test(value ?? '')),
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
   eventUploadPhoto: (...args: any[]) => mockEventUploadPhoto(...args),
+  increaseStreak: vi.fn(),
   isCommunityPlus: vi.fn((level?: string) => level === 'community_plus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
 }));
@@ -204,6 +205,12 @@ const fillRequiredEventFields = (container: HTMLElement, start: string, end: str
   setIonInput(getItemControl(container, 'End', 'ion-input'), end, 'ionChange');
 };
 
+const fillRequiredEventFieldsExceptDates = (container: HTMLElement) => {
+  setIonInput(getItemControl(container, 'Event name', 'ion-input'), 'Masked picnic');
+  setIonInput(getItemControl(container, 'Description', 'ion-textarea'), 'Bring your own snacks and air purifier.');
+  setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'virtual_only');
+};
+
 const setAnonymousPosting = (container: HTMLElement) => {
   setIonSelect(getItemControl(container, 'Post as', 'ion-select'), 'anonymous');
 };
@@ -256,6 +263,37 @@ describe('CreateEventModal', () => {
     fireEvent.click(screen.getByText('Cancel'));
 
     expect(onDismiss).toHaveBeenCalledWith();
+  });
+
+  it('prepopulates start and end dates from the selected calendar date', () => {
+    const { container } = renderModal({ selectedDate: new Date('2099-07-20T12:00:00') });
+
+    expect(getItemControl(container, 'Start', 'ion-input')).toHaveAttribute('value', '2099-07-20T20:00');
+    expect(getItemControl(container, 'End', 'ion-input')).toHaveAttribute('value', '2099-07-20T21:00');
+  });
+
+  it('confirms before submitting when the default event dates are unchanged', async () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      username: undefined,
+    };
+    const { container } = renderModal({ selectedDate: new Date('2099-07-20T12:00:00') });
+
+    fillRequiredEventFieldsExceptDates(container);
+    setAnonymousPosting(container);
+
+    await clickIonicElement(screen.getByText('Submit event').closest('ion-button') as HTMLElement);
+
+    expect(await screen.findByText('Use the default event date?')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith('/api/event/', expect.objectContaining({
+        name: 'Masked picnic',
+      }));
+    });
   });
 
   it('shows a required-fields error when the core event fields are empty', async () => {
@@ -348,7 +386,7 @@ describe('CreateEventModal', () => {
 
     expect(
       await screen.findByText(
-        'This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.'
+        'This link isn’t allowed due to guidelines.'
       )
     ).toBeInTheDocument();
     expect(screen.getByText('Submit event')).toBeDisabled();

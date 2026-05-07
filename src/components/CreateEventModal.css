@@ -55,6 +55,14 @@
   padding-top: 0;
 }
 
+.event-timezone-note {
+  display: block;
+  padding: 8px 18px 2px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  text-align: center
+}
+
 .md .create-event-modal {
   --padding-top: 8px;
 }
@@ -147,9 +155,8 @@
 }
 
 .recurrence-heading-text {
-  color: var(--ion-color-dark, #1f1f3d);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.35;
 }
 
 .recurrence-date-item,
@@ -164,7 +171,11 @@
   padding: 14px 16px;
   border-radius: 18px;
   background: var(--ion-color-white);
-  border: 1px solid var(--ion-color-step-150, #e3e1f6);
+}
+
+.recurrence-date-card--narrow {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .recurrence-date-header {
@@ -206,6 +217,25 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.recurrence-description-editor,
+.recurrence-link-editor {
+  border: 1px solid var(--ion-color-step-150, #e3e1f6);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.recurrence-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recurrence-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding-left: 4px;
 }
 
 .recurrence-end-note {

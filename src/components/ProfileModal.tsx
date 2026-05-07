@@ -7,6 +7,7 @@ import { chevronBackOutline } from 'ionicons/icons';
 import axios from 'axios';
 
 import { addToHiddenDialogs, increaseStreak, newMessagePush, removeFromHiddenDialogs, sendAnOpener, updateBlockedConnections, updateDismissedConnections, updateMutualConnection, updateOutgoingConnections, updateUnmatchedConnections } from '../hooks/utilities';
+import { Preferences } from '@capacitor/preferences';
 import { useBlockProfile } from '../hooks/useBlockProfile';
 
 import './ProfileModal.css'
@@ -166,9 +167,13 @@ const ProfileModal: React.FC<Props> = (props) => {
     // }
 
     const addToHiddenChats = async (connection: number) => {
-        console.log("adding to hidden chats, then moving on")
+        const isFirstHidden = (currentUserProfile?.hidden_dialogs?.length ?? 0) === 0;
         const response = await addToHiddenDialogs(connection)
         queryClient.invalidateQueries({ queryKey: ['current'] })
+        if (isFirstHidden) {
+            await Preferences.set({ key: 'chat_organizer_show_hidden', value: 'true' });
+            window.dispatchEvent(new CustomEvent('chat_organizer_show_hidden_changed', { detail: true }));
+        }
         onActionDismiss('ActionTaken');
         onDismiss()
 

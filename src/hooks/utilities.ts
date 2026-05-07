@@ -2866,6 +2866,28 @@ export function getInternalAppPath(url: string): string | null {
     }
 }
 
+const PHOTO_KEYS = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+
+/** Returns the field key of the primary photo (e.g. 'pic1_main', 'pic2'). */
+export function getPrimaryPhotoKey(profile: any): string {
+  if (!profile) return 'pic1_main';
+  const order: string[] = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+    ? profile.photo_order
+    : PHOTO_KEYS;
+  return order.find(k => profile[k]) ?? 'pic1_main';
+}
+
+/** Returns the alt-text field name for a given photo key (handles pic1_main → pic1_alt). */
+export function getPhotoAltKey(photoKey: string): string {
+  return photoKey === 'pic1_main' ? 'pic1_alt' : `${photoKey}_alt`;
+}
+
+/** Returns the URL of the first photo in the profile's photo_order, falling back to pic1_main order. */
+export function getPrimaryPhoto(profile: any): string | null {
+  if (!profile) return null;
+  return profile[getPrimaryPhotoKey(profile)] ?? null;
+}
+
 // Version 3: July 6 2025
 // Version 4: Oct 15 2025
 // Version 5: Dec 4 2025

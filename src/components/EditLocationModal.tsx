@@ -304,7 +304,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
       header: "So just confirming, you're near " + local + "?",
       buttons: [
         {
-          text: "Nope, I'll try again.",
+          text: "No",
           role: 'cancel',
           handler: () => {
             console.log('Cancel clicked');

@@ -30,6 +30,7 @@ import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
 import PostSuggestionMini from "./PostSuggestionMini";
 
 const ATTENDEE_PRECAUTION_OPTIONS = [
+    { value: 'not_specified', label: 'Not specified' },
     { value: 'precautions_only', label: 'Covid conscientious only' },
     { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
     { value: 'open', label: 'Open to everyone' },
@@ -1773,7 +1774,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         ) : null}
                                         {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
-                                                This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.
+                                                This link isn’t allowed due to guidelines.
                                             </p>
                                         ) : null}
                                         {mentionsOneToOne ? (

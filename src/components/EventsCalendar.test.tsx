@@ -1,5 +1,5 @@
 import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IonApp } from '@ionic/react';
@@ -179,6 +179,10 @@ const renderCalendar = (props?: Partial<React.ComponentProps<typeof EventsCalend
 };
 
 describe('EventsCalendar', () => {
+  afterAll(() => {
+    vi.clearAllTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockModalConfigs.length = 0;

@@ -79,6 +79,8 @@ const OnboardingCardDone: React.FC = () => {
         key: 'ONBOARDED',
         value: 'true',
       });
+      await Preferences.remove({ key: 'personal_profile_onboarding_in_progress' });
+      await Preferences.remove({ key: 'personal_profile_onboarding_slide' });
 
       const response = await updateCurrentUserProfile({
         created_profile: true,

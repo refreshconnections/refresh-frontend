@@ -14,6 +14,7 @@ import "./Login.css"
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import ResetPasswordModalInner from "./ResetPasswordModalInner";
 import { pushOneSignalExtId } from "../hooks/utilities";
+import { clearOnLoginStorage } from "../hooks/capacitorPreferences/all";
 import { Preferences } from "@capacitor/preferences";
 import Construction from "../pages/Construction";
 import { useQueryClient } from "@tanstack/react-query";
@@ -118,6 +119,7 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
             key: 'EXPIRY',
             value: res.data["expiry"],
           });
+          await clearOnLoginStorage();
           queryClient.removeQueries({ queryKey: userQueryKeys.global_current });
           queryClient.removeQueries({ queryKey: userQueryKeys.current });
           queryClient.removeQueries({ queryKey: userQueryKeys.settings_current });

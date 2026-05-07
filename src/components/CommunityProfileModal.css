@@ -1,3 +1,20 @@
+ion-modal.edit-community-profile-modal {
+  --background: var(--ion-color-white);
+  --ion-background-color: var(--ion-color-white);
+}
+
+ion-modal.edit-community-profile-modal .edit-community-profile-modal-content {
+  --background: var(--ion-color-white);
+  --ion-background-color: var(--ion-color-white);
+}
+
+ion-modal.edit-community-profile-modal .accordion-card {
+  margin: 0;
+  width: 100%;
+  max-height: none;
+  box-shadow: none;
+}
+
 ion-modal.community-profile-modal {
   --background: transparent;
   --backdrop-opacity: 0;
@@ -128,4 +145,11 @@ ion-modal.community-profile-modal .ion-page {
 
 .community-profile-profile-item {
   margin-top: 12px;
+}
+
+:root.ion-palette-dark.ios ion-modal.community-profile-modal .community-profile-card,
+:root.ion-palette-dark.md ion-modal.community-profile-modal .community-profile-card,
+:root.ion-palette-dark.ios ion-modal.community-profile-modal .community-profile-card-content,
+:root.ion-palette-dark.md ion-modal.community-profile-modal .community-profile-card-content {
+  background: var(--ion-color-step-100);
 }

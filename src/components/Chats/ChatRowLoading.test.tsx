@@ -27,6 +27,7 @@ vi.mock('../../hooks/api/profiles/details', () => ({
 vi.mock('../../hooks/utilities', () => ({
   isPersonalPlus: vi.fn(() => false),
   onImgError: vi.fn(),
+  getPrimaryPhoto: vi.fn(() => null),
 }));
 
 vi.mock('../TextModal', () => ({
