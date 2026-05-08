@@ -116,6 +116,14 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
 
   const updateCommunityProfile = async (payload: Record<string, any>) => {
     await apiClient.patch('/api/profiles/community_profile/', payload);
+    queryClient.setQueryData(userQueryKeys.community_profile('current'), (existing: any) => (
+      existing ? { ...existing, ...payload } : existing
+    ));
+    if (currentProfile?.user) {
+      queryClient.setQueryData(userQueryKeys.community_profile(currentProfile.user), (existing: any) => (
+        existing ? { ...existing, ...payload } : existing
+      ));
+    }
     await queryClient.invalidateQueries({ queryKey: ['community-profile'] });
   };
 
@@ -217,22 +225,31 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
           <IonCardContent className="card-grid">
             <IonItem lines="none" className="no-bottom-line prof" style={{ justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                <img
-                  alt="Refreshments Profile"
-                  src={displayPhoto}
-                  onError={(e) => onImgError(e)}
+                <div
                   style={{
                     width: '120px',
                     height: '120px',
                     borderRadius: '50%',
-                    objectFit: isFallbackPhoto ? 'contain' : 'cover',
-                    padding: isFallbackPhoto ? '16px' : 0,
                     boxSizing: 'border-box',
                     background: 'var(--ion-color-white)',
-                    filter: isFallbackPhoto ? 'grayscale(1)' : 'none',
                     border: connectFromRefreshments ? '2px solid var(--ion-color-primary)' : 'none',
+                    overflow: 'hidden',
                   }}
-                />
+                >
+                  <img
+                    alt="Refreshments Profile"
+                    src={displayPhoto}
+                    onError={(e) => onImgError(e)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: isFallbackPhoto ? 'contain' : 'cover',
+                      padding: isFallbackPhoto ? '16px' : 0,
+                      boxSizing: 'border-box',
+                      filter: isFallbackPhoto ? 'grayscale(1)' : 'none',
+                    }}
+                  />
+                </div>
               </div>
             </IonItem>
             <IonItem lines="none" className="community-profile-item community-username-item">

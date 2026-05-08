@@ -15,6 +15,7 @@ const {
   sidenoteComment,
   unlikeComment,
   communityProfilePresent,
+  mockGetAvatarDisplay,
   mockPush,
   openExternalUrl,
 } = vi.hoisted(() => ({
@@ -29,6 +30,16 @@ const {
   sidenoteComment: vi.fn(),
   unlikeComment: vi.fn(),
   communityProfilePresent: vi.fn(),
+  mockGetAvatarDisplay: vi.fn(({ profileImage, viewerConnect, authorConnect, allowDefaultConnectBorder }: any) => {
+    const hasImage = Boolean(profileImage);
+    const showConnectBorder = Boolean(viewerConnect && authorConnect && (hasImage || allowDefaultConnectBorder));
+    return {
+      className: showConnectBorder ? `connect-avatar${hasImage ? '' : ' refresh-avatar'}` : hasImage ? 'community-avatar' : 'refresh-avatar',
+      src: profileImage ?? '../static/img/navynobordervector.png',
+      hasImage,
+      showConnectBorder,
+    };
+  }),
   mockPush: vi.fn(),
   openExternalUrl: vi.fn(),
 }));
@@ -51,11 +62,7 @@ vi.mock('@fortawesome/react-fontawesome', () => ({
 vi.mock('../../hooks/utilities', () => ({
   authorSidenoteComment: (...args: any[]) => authorSidenoteComment(...args),
   editComment: (...args: any[]) => editComment(...args),
-  getAvatarDisplay: vi.fn(() => ({
-    className: 'avatar',
-    src: '/avatar.png',
-    hasImage: true,
-  })),
+  getAvatarDisplay: (config: any) => mockGetAvatarDisplay(config),
   increaseStreak: vi.fn(),
   likeComment: (...args: any[]) => likeComment(...args),
   onImgError: vi.fn(),
@@ -271,6 +278,39 @@ beforeEach(() => {
   } as any);
   mockOutgoingConnections.mockReturnValue({ data: [] } as any);
   mockMutualConnections.mockReturnValue({ data: [] } as any);
+});
+
+describe('CommentItem avatar display', () => {
+  it('uses the connect avatar class for connected comments with the default image', () => {
+    const { container } = renderComment({
+      profile_image: null,
+      settings_community_profile: true,
+    });
+
+    expect(container.querySelector('ion-avatar.connect-avatar')).toBeTruthy();
+    expect(container.querySelector('ion-avatar.refresh-avatar')).toBeTruthy();
+    expect(mockGetAvatarDisplay).toHaveBeenCalledWith(expect.objectContaining({
+      profileImage: null,
+      viewerConnect: true,
+      authorConnect: true,
+      allowDefaultConnectBorder: true,
+    }));
+  });
+
+  it('does not add the default connect border for anonymous comments', () => {
+    const { container } = renderComment({
+      username: null,
+      user: null,
+      profile_image: null,
+      settings_community_profile: true,
+    });
+
+    expect(container.querySelector('ion-avatar.refresh-avatar')).toBeTruthy();
+    expect(container.querySelector('ion-avatar.connect-avatar')).toBeNull();
+    expect(mockGetAvatarDisplay).toHaveBeenCalledWith(expect.objectContaining({
+      allowDefaultConnectBorder: false,
+    }));
+  });
 });
 
 describe('CommentItem editing', () => {

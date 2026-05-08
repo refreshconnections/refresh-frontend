@@ -31,6 +31,7 @@ let mockProfileDetails: any;
 let mockIncomingStatus: any;
 let mockChats: any[];
 let mockCommunityProfile: any;
+let mockCurrentCommunityProfile: any;
 
 vi.mock('@ionic/react', async () => {
   const actual = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
@@ -61,8 +62,10 @@ vi.mock('../hooks/api/profiles/current-profile', () => ({
 }));
 
 vi.mock('../hooks/api/profiles/community-profile', () => ({
-  useGetCommunityProfile: () => ({
-    data: mockCommunityProfile,
+  useGetCommunityProfile: (userId?: number | null | 'current') => ({
+    data: userId == null || userId === 'current'
+      ? (mockCurrentCommunityProfile ?? mockCommunityProfile)
+      : mockCommunityProfile,
     isLoading: false,
   }),
 }));
@@ -183,30 +186,141 @@ describe('CommunityProfileModal', () => {
     mockIncomingStatus = { is_incoming: false };
     mockChats = [];
     mockCommunityProfile = { ...baseCommunityData };
+    mockCurrentCommunityProfile = null;
     mockUpdateBlockedConnections.mockResolvedValue(undefined);
     mockUpdateCommunityBlocked.mockResolvedValue(undefined);
     mockRemoveCommunityBlocked.mockResolvedValue(undefined);
   });
 
-  it('shows the self branch with connect-from-refreshments note and personal profile card', async () => {
+  it('shows the self preview branch with connect-from-refreshments note and personal profile card', async () => {
     mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: true, name: 'Alex' };
 
-    renderModal({ userId: 42 });
+    renderModal({ userId: 42, selfPreview: true });
 
-    expect(await screen.findByText(/If the other member has Connect from Refreshments on/)).toBeInTheDocument();
+    expect(await screen.findByText(/If the other member also has Connect from Refreshments on/)).toBeInTheDocument();
     expect(screen.getByText('Alex')).toBeInTheDocument();
     expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
   });
 
-  it('shows nothing in the self action area when connect from refreshments is off', async () => {
+  it('shows the self edit branch without the preview explanation outside the self preview', async () => {
+    mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: true, name: 'Alex' };
+
+    renderModal({ userId: 42 });
+
+    expect(await screen.findByText('This is you!')).toBeInTheDocument();
+    expect(screen.getByText('Edit your Refreshments Profile')).toBeInTheDocument();
+    expect(screen.queryByText(/If the other member also has Connect from Refreshments on/)).not.toBeInTheDocument();
+  });
+
+  it('opens the edit refreshments profile modal with its styling class from the self edit branch', async () => {
+    mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: true, name: 'Alex' };
+
+    renderModal({ userId: 42 });
+
+    fireEvent.click(await screen.findByText('Edit your Refreshments Profile'));
+
+    expect(mockPresentModal).toHaveBeenCalledWith(
+      'EditCommunityProfileModal',
+      expect.any(Object),
+      expect.objectContaining({ cssClass: 'edit-community-profile-modal' })
+    );
+  });
+
+  it('shows the self edit branch even when connect from refreshments is off outside the self preview', async () => {
     mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: false };
 
     renderModal({ userId: 42 });
 
-    // Give async rendering a moment then verify neither the note nor the edit button appear
-    await screen.findByText('self-alex');
-    expect(screen.queryByText(/If the other member has Connect from Refreshments on/)).not.toBeInTheDocument();
-    expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
+    expect(await screen.findByText('This is you!')).toBeInTheDocument();
+    expect(screen.queryByText(/If the other member also has Connect from Refreshments on/)).not.toBeInTheDocument();
+    expect(screen.getByText('Edit your Refreshments Profile')).toBeInTheDocument();
+  });
+
+  it('uses ordered personal photos for the self refreshments preview when personal photo is enabled', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      user: 42,
+      username: 'self-alex',
+      pic1_main: '/img/old-primary.jpg',
+      pic2: '/img/new-primary.jpg',
+      photo_order: ['pic2', 'pic1_main'],
+    };
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      use_personal_profile_picture: true,
+      community_profile_pic: null,
+      display_photo: '/img/backend-stale-primary.jpg',
+    };
+
+    renderModal({ userId: 42 });
+
+    const avatar = await screen.findByAltText('Refreshments Profile');
+    expect(avatar).toHaveAttribute('src', '/img/new-primary.jpg');
+  });
+
+  it('does not use a personal photo for the self refreshments preview when personal photo is disabled', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      user: 42,
+      username: 'self-alex',
+      pic1_main: '/img/old-primary.jpg',
+      pic2: '/img/new-primary.jpg',
+      photo_order: ['pic2', 'pic1_main'],
+    };
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      use_personal_profile_picture: false,
+      community_profile_pic: null,
+      display_photo: '/img/backend-stale-personal.jpg',
+    };
+
+    renderModal({ userId: 42 });
+
+    const avatar = await screen.findByAltText('Refreshments Profile');
+    expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
+  });
+
+  it('uses the current community profile setting for self preview when the public profile data is stale', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      user: 42,
+      username: 'self-alex',
+      pic1_main: '/img/old-primary.jpg',
+      pic2: '/img/new-primary.jpg',
+      photo_order: ['pic2', 'pic1_main'],
+    };
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      display_photo: '/img/backend-stale-personal.jpg',
+    };
+    mockCurrentCommunityProfile = {
+      ...baseCommunityData,
+      use_personal_profile_picture: false,
+      community_profile_pic: null,
+      display_photo: '/img/backend-stale-personal.jpg',
+    };
+
+    renderModal({ userId: 42, selfPreview: true });
+
+    const avatar = await screen.findByAltText('Refreshments Profile');
+    expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
+    expect(avatar).toHaveStyle({ filter: 'grayscale(1)' });
+    expect(avatar.parentElement).toHaveStyle({ border: '2px solid var(--ion-color-primary)' });
+  });
+
+  it('preserves the comment default avatar instead of falling back to a stale display photo', async () => {
+    mockCommunityProfile = {
+      ...baseCommunityData,
+      display_photo: '/img/stale-personal-from-public-profile.jpg',
+      connect_enabled: true,
+    };
+
+    renderModal({ userId: 42, avatarUrl: null });
+
+    const avatar = await screen.findByAltText('Refreshments Profile');
+    expect(avatar).toHaveAttribute('src', '../static/img/navynobordervector.png');
+    expect(avatar).toHaveStyle({ filter: 'grayscale(1)' });
+    expect(avatar.parentElement).toHaveStyle({ border: '2px solid var(--ion-color-primary)' });
   });
 
   it('capitalizes the connect guidance correctly when the viewer already has an active personal profile', async () => {

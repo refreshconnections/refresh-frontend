@@ -489,7 +489,7 @@ describe('SelfProfileV2', () => {
 
     expect(mockPresentModal).toHaveBeenCalledWith(
       'CommunityProfileModal',
-      expect.objectContaining({ userId: 7 })
+      expect.objectContaining({ userId: 7, selfPreview: true })
     );
   });
 

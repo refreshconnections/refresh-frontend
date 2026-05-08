@@ -5,10 +5,12 @@ import { IonApp } from '@ionic/react';
 
 const {
   mockInvalidateQueries,
+  mockSetQueryData,
   mockApiPatch,
   mockUpdateCurrentUserProfile,
 } = vi.hoisted(() => ({
   mockInvalidateQueries: vi.fn(),
+  mockSetQueryData: vi.fn(),
   mockApiPatch: vi.fn().mockResolvedValue({}),
   mockUpdateCurrentUserProfile: vi.fn().mockResolvedValue({ status: 204 }),
 }));
@@ -30,6 +32,7 @@ vi.mock('@tanstack/react-query', async () => {
     ...actual,
     useQueryClient: () => ({
       invalidateQueries: (...args: any[]) => mockInvalidateQueries(...args),
+      setQueryData: (...args: any[]) => mockSetQueryData(...args),
     }),
   };
 });
@@ -80,6 +83,7 @@ describe('CommunityProfileSection', () => {
     vi.clearAllMocks();
     mockCurrentProfile = {
       username: 'alex',
+      user: 42,
       pic1_main: '/img/personal.jpg',
       settings_community_profile: true,
       location: 'Brooklyn',

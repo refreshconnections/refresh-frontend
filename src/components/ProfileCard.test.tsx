@@ -176,7 +176,7 @@ describe('ProfileCard', () => {
 
   it('opens looking-for popovers for the enabled icon buttons', () => {
     const { container } = renderCard({
-      looking_for: ['friendship', 'housing', 'families', 'virtual only'],
+      looking_for: ['friendship', 'housing', 'families'],
     });
 
     const buttons = Array.from(container.querySelectorAll('.looking-for-buttons')) as HTMLElement[];

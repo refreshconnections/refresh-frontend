@@ -308,14 +308,6 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                                     }>
                                                         <FontAwesomeIcon icon={faComment as IconProp} visibility={cardData.looking_for.includes("virtual connection") ? "visible" : "hidden"} />
                                                     </IonButton>
-                                                    <IonButton disabled={cardData.looking_for.includes("virtual only") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
-                                                        presentPopover({
-                                                            event: e,
-                                                        }); setPopover("virtual connection ONLY")
-                                                    }
-                                                    }>
-                                                        <FontAwesomeIcon icon={faWifi as IconProp} visibility={cardData.looking_for.includes("virtual only") ? "visible" : "hidden"} />
-                                                    </IonButton>
                                                     <IonButton disabled={cardData.looking_for.includes("families") ? false : true} className="looking-for-buttons" fill="clear" onClick={(e: any) => {
                                                         presentPopover({
                                                             event: e,

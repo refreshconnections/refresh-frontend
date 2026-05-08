@@ -580,6 +580,19 @@ describe('getAvatarDisplay()', () => {
     expect(result.showConnectBorder).toBe(false);
   });
 
+  it('uses both connect-avatar and refresh-avatar when the default image is allowed to show the connect border', () => {
+    const result = getAvatarDisplay({
+      profileImage: null,
+      viewerConnect: true,
+      authorConnect: true,
+      allowDefaultConnectBorder: true,
+    });
+    expect(result.className).toContain('connect-avatar');
+    expect(result.className).toContain('refresh-avatar');
+    expect(result.hasImage).toBe(false);
+    expect(result.showConnectBorder).toBe(true);
+  });
+
   it('prepends byline-avatar class when includeBylineClass is true', () => {
     const result = getAvatarDisplay({
       profileImage: '/media/photos/user.jpg',

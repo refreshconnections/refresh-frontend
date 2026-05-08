@@ -602,7 +602,7 @@ const SelfProfile: React.FC = () => {
                                                 )}
                                             </IonItem>
 
-                                            {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map((val) => (
+                                            {['friendship', 'romance', 'virtual connection', 'job', 'housing', 'families'].map((val) => (
                                                 <IonItem key={val}>
                                                     <IonCheckbox
                                                         slot="start"
@@ -611,7 +611,7 @@ const SelfProfile: React.FC = () => {
                                                         onIonChange={e => toggleArrayString('looking_for', e.detail.value, e.detail.checked)}
                                                         disabled={!editing['looking_for']}
                                                     />
-                                                    {val === 'virtual connection' ? 'Virtual Connection' : val === 'virtual only' ? 'Virtual Connection Only' : val.charAt(0).toUpperCase() + val.slice(1)}
+                                                    {val === 'virtual connection' ? 'Virtual Connection' : val.charAt(0).toUpperCase() + val.slice(1)}
                                                 </IonItem>
                                             ))}
                                         </IonList>

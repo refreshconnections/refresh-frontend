@@ -378,11 +378,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           value: 'virtual connection',
         },
         {
-          label: 'virtual only',
-          type: 'radio',
-          value: 'virtual only',
-        },
-        {
           label: 'housing / roommates',
           type: 'radio',
           value: 'housing',

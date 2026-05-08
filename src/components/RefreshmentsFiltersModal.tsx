@@ -147,7 +147,6 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
         attendeeSpecific[0] ??
         precautionSpecific[0];
 
-      if (singleValue === 'virtual_only') return 'Virtual only';
       if (singleValue === 'in_person_only') return 'In person only';
       if (singleValue === 'in_person_with_virtual_option') return 'In person with virtual option';
       if (singleValue === 'not_specified') return 'Not specified';

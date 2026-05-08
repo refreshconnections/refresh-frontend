@@ -255,13 +255,13 @@ ion-avatar.refresh-avatar img {
 
 .comment-original-title {
   font-size: calc(14px * var(--text-scale, 1));
-  color: var(--ion-color-primary);
+  color: var(--ion-color-navy);
   margin: 0;
 }
 
 .comment-original-time {
   font-size: calc(12px * var(--text-scale, 1));
-  color: var(--ion-color-primary);
+  color: var(--ion-color-navy);
   margin: 4px 0 0;
 }
 

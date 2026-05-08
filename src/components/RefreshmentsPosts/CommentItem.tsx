@@ -76,12 +76,12 @@ const CommentItem: React.FC<Props> = (props) => {
 
   const profileLoading = false;
   const commentAnonymous = !comment?.username || String(comment?.username).toLowerCase() === 'anonymous';
-  const { className: avatarClassName, src: avatarSrc, hasImage: hasCommunityImage } = getAvatarDisplay({
+  const { className: avatarClassName, src: avatarSrc } = getAvatarDisplay({
     profileImage: commentAnonymous ? null : comment?.profile_image,
     viewerConnect: settingsCurrentProfile?.settings_community_profile,
     authorConnect: comment?.settings_community_profile,
+    allowDefaultConnectBorder: !commentAnonymous,
   });
-  const avatarOverride = hasCommunityImage ? avatarSrc : null;
 
 
 
@@ -403,7 +403,7 @@ const CommentItem: React.FC<Props> = (props) => {
   const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: comment?.user ?? null,
     isAnonymous: commentAnonymous,
-    avatarUrl: avatarOverride,
+    avatarUrl: commentAnonymous ? undefined : (comment?.profile_image ?? null),
     onDismiss: () => communityProfileDismiss(),
   });
 

@@ -2178,6 +2178,7 @@ type AvatarConfig = {
   profileImage?: string | null;
   viewerConnect?: boolean;
   authorConnect?: boolean;
+  allowDefaultConnectBorder?: boolean;
   includeBylineClass?: boolean;
   placeholderSrc?: string;
 };
@@ -2205,14 +2206,15 @@ export function getAvatarDisplay({
   profileImage,
   viewerConnect,
   authorConnect,
+  allowDefaultConnectBorder = false,
   includeBylineClass = false,
   placeholderSrc = '../static/img/navynobordervector.png',
 }: AvatarConfig) {
   const hasImage = Boolean(profileImage);
-  const showConnectBorder = Boolean(viewerConnect && authorConnect && hasImage);
+  const showConnectBorder = Boolean(viewerConnect && authorConnect && (hasImage || allowDefaultConnectBorder));
   const baseClass = includeBylineClass ? 'byline-avatar' : '';
   const className = showConnectBorder
-    ? `${baseClass} connect-avatar`.trim()
+    ? `${baseClass} connect-avatar${hasImage ? '' : ' refresh-avatar'}`.trim()
     : hasImage
       ? `${baseClass} community-avatar`.trim()
       : `${baseClass} refresh-avatar`.trim();

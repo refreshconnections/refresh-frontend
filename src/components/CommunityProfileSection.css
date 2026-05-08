@@ -19,3 +19,160 @@
   --padding-end: 0;
   padding-top: 0;
 }
+
+.community-profile-card {
+  --background: transparent;
+  margin: 0;
+  width: 100%;
+  box-shadow: none;
+}
+
+.community-profile-card ion-card-content.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.community-profile-card .card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.community-profile-card .card-field.editing {
+  align-items: stretch;
+  border: 1px solid var(--ion-color-black);
+  border-radius: 12px;
+}
+
+.community-profile-card .editing-section {
+  width: 100%;
+  padding: 6px 16px;
+}
+
+.community-profile-card .field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 34px;
+}
+
+.community-profile-card .field-header p {
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ion-color-medium);
+}
+
+.community-profile-card ion-card-content.card-grid > .field-header {
+  padding-inline-start: 0;
+}
+
+.community-profile-card .field-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 32px;
+}
+
+.community-profile-card .card-field:not(.editing) .field-actions {
+  margin-top: 0;
+}
+
+.community-profile-card .card-field .editing-section h2 {
+  margin: 0;
+  padding: 6px 0;
+  line-height: 1.3;
+  min-height: 32px;
+}
+
+.community-profile-card .card-field ion-textarea {
+  margin-top: 0;
+  width: 100%;
+  display: block;
+  --background: var(--ion-color-white);
+  --border-radius: 12px;
+  --padding-start: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-end: 0;
+}
+
+.community-profile-card .card-field.editing ion-textarea::part(native) {
+  background: var(--ion-color-white);
+  border-radius: 12px;
+}
+
+.community-profile-card .community-profile-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.community-profile-card .community-toggle-item ion-label,
+.community-profile-card .community-username-item ion-label {
+  color: var(--ion-color-medium);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.community-profile-card .community-username-item ion-label p:first-child,
+.community-profile-card .community-toggle-item ion-label p:first-child {
+  color: var(--ion-color-medium) !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.community-profile-card .community-toggle-item ion-label p.community-subtitle {
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--ion-color-navy);
+  margin-top: 2px;
+}
+
+.community-profile-card .community-subtitle {
+  font-size: 0.85rem;
+  color: var(--ion-color-navy);
+}
+
+.community-profile-card .community-bio-placeholder {
+  font-size: 0.95rem;
+}
+
+.community-profile-card .community-bio-placeholder.community-bio-empty {
+  color: var(--ion-color-navy);
+}
+
+.community-profile-card .community-bio-placeholder.community-bio-text {
+  color: var(--ion-color-black);
+}
+
+.community-profile-card .community-bio-field {
+  margin: 0;
+}
+
+.community-profile-card .community-bio-field .editing-section {
+  padding: 0;
+}
+
+.community-profile-card .community-bio-field.editing .editing-section {
+  padding: 8px 12px;
+}
+
+.community-profile-card .community-bio-field .editing-section h2 {
+  padding: 0;
+}
+
+.community-profile-card .community-bio-field:not(.editing) {
+  --background: transparent;
+}

@@ -57,6 +57,10 @@ ion-modal.community-profile-modal .ion-page {
   background: var(--ion-card-background, var(--ion-color-white));
 }
 
+ion-modal.community-profile-modal .community-profile-card {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24);
+}
+
 .community-profile-card-content {
   background: var(--ion-card-background, var(--ion-color-white));
   position: relative;
@@ -148,7 +152,11 @@ ion-modal.community-profile-modal .ion-page {
 }
 
 :root.ion-palette-dark.ios ion-modal.community-profile-modal .community-profile-card,
-:root.ion-palette-dark.md ion-modal.community-profile-modal .community-profile-card,
+:root.ion-palette-dark.md ion-modal.community-profile-modal .community-profile-card {
+  background: var(--ion-color-step-100);
+  box-shadow: none;
+}
+
 :root.ion-palette-dark.ios ion-modal.community-profile-modal .community-profile-card-content,
 :root.ion-palette-dark.md ion-modal.community-profile-modal .community-profile-card-content {
   background: var(--ion-color-step-100);

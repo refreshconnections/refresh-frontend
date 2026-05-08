@@ -371,6 +371,8 @@ const SelfProfileV2: React.FC = () => {
 
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: currentUserProfile?.user ?? null,
+    selfPreview: true,
+    selfCommunityProfileData: communityProfile,
     onDismiss: () => communityProfileDismiss(),
   });
 
@@ -1239,9 +1241,9 @@ const SelfProfileV2: React.FC = () => {
                 </IonButton>
               </div>
 
-              {form.looking_for.length > 0 ? (
+              {form.looking_for.filter(val => val !== 'virtual only').length > 0 ? (
                 <ul className="choice-summary">
-                  {form.looking_for.map(val => (
+                  {form.looking_for.filter(val => val !== 'virtual only').map(val => (
                     <li key={val}>{val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}</li>
                   ))}
                 </ul>
@@ -1252,7 +1254,7 @@ const SelfProfileV2: React.FC = () => {
               {editing.looking_for && (
                 <div className="choice-editor">
                   <IonList lines="none">
-                    {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map(val => (
+                    {['friendship', 'romance', 'virtual connection', 'job', 'housing', 'families'].map(val => (
                       <IonItem key={val} lines="none">
                         <IonCheckbox slot="start" value={val} checked={form.looking_for.includes(val)} onIonChange={e => handleLookingForToggle(val, e.detail.checked)} />
                         {val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}
