@@ -1009,7 +1009,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         )}
                     </>
                 )}
-                {!isOldEnoughForPosts ? (
+                {siteSettings?.allow_post_submissions === false ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonText className="ion-text-center">
+                            <p>Submitting posts has been temporarily paused.</p>
+                        </IonText>
+                    </IonCard>
+                ) : !isOldEnoughForPosts ? (
                     <SubmissionAgeGateCard noun="post" onUpgrade={() => navigateTo("/store")} />
                 ) : moderationSubmissionBlocked ? (
                     <IonCard color="white" className="ion-padding ion-text-center">

@@ -42,6 +42,7 @@ import BoxedStackedInput from './BoxedStackedInput';
 import BoxedStackedSelect from './BoxedStackedSelect';
 import BoxedStackedTextarea from './BoxedStackedTextarea';
 
+import { useGetSiteSettings } from '../hooks/api/sitesettings';
 import './CreateEventModal.css';
 
 
@@ -121,6 +122,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [eventType, setEventType] = useState('');
   const [showPostTip, setShowPostTip] = useState(false);
   const { data: globalProfile } = useGetGlobalAppCurrentProfile();
+  const siteSettings = useGetSiteSettings().data;
   const moderation = useGetCurrentModeration().data;
   const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate)
     || isPro(globalProfile?.subscription_level)
@@ -777,7 +779,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         </IonToolbar>
       </IonHeader>
       <IonContent className="create-event-modal">
-        {!isOldEnoughForEvents ? (
+        {siteSettings?.allow_post_submissions === false ? (
+          <IonCard className="ion-padding ion-text-center">
+            <IonText>
+              <p>Submitting events has been temporarily paused.</p>
+            </IonText>
+          </IonCard>
+        ) : !isOldEnoughForEvents ? (
           <SubmissionAgeGateCard noun="event" onUpgrade={() => { onDismiss?.(); router.push('/store'); }} />
         ) : moderationSubmissionBlocked ? (
           <IonCard className="ion-padding ion-text-center">

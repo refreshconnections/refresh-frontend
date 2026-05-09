@@ -345,7 +345,7 @@ const CommentItem: React.FC<Props> = (props) => {
             }
             else {
               queryClient.invalidateQueries({
-                queryKey: ['top-comments', parseInt(comment?.id)], exact: false,
+                queryKey: ['top-comments', parseInt(comment?.announcement)], exact: false,
               });
             }
 
@@ -385,7 +385,7 @@ const CommentItem: React.FC<Props> = (props) => {
             }
             else {
               queryClient.invalidateQueries({
-                queryKey: ['top-comments', parseInt(comment?.id)], exact: false,
+                queryKey: ['top-comments', parseInt(comment?.announcement)], exact: false,
               });
             }
             queryClient.invalidateQueries({ queryKey: ['notshown', comment?.announcement] })

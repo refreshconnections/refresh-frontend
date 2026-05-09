@@ -378,3 +378,30 @@ ion-list.change-projects ion-item ion-label h2{
   font-size: 20px;
   
 }
+
+.modal-title ion-title::part(native) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.hub-modal-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 0 12px;
+  min-height: 48px;
+}
+
+.hub-modal-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+}

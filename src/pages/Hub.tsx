@@ -1,4 +1,4 @@
-import { IonButton, IonButtons, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonHeader, IonInfiniteScroll, IonInfiniteScrollContent, IonNote, IonPage, IonRow, IonSkeletonText, IonText, IonTitle, IonToolbar, useIonModal } from '@ionic/react';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCardTitle, IonCol, IonContent, IonHeader, IonNote, IonPage, IonRow, IonSkeletonText, IonText, IonTitle, IonToolbar, useIonModal } from '@ionic/react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import moment from 'moment';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -50,15 +50,17 @@ const HubListModal = <T extends { id: number }>({
   onLoadMore,
   renderItem,
 }: HubListModalProps<T>) => (
-  <IonPage>
-    <IonHeader>
-      <IonToolbar className="modal-title">
-        <IonTitle>{title}</IonTitle>
-        <IonButtons slot="end">
-          <IonButton onClick={onDismiss}>Done</IonButton>
-        </IonButtons>
-      </IonToolbar>
-    </IonHeader>
+    <IonPage>
+      <IonHeader>
+        <IonToolbar className="modal-title">
+          <div className="hub-modal-title-bar">
+            <span className="hub-modal-title-text">{title}</span>
+          </div>
+          <IonButtons slot="end">
+            <IonButton onClick={onDismiss}>Done</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
     <IonContent className="ion-padding">
       {items.length ? (
         <IonRow className="hub-modal-list">
@@ -71,21 +73,18 @@ const HubListModal = <T extends { id: number }>({
       ) : (
         <IonNote color="medium">{emptyCopy}</IonNote>
       )}
-      <IonInfiniteScroll
-        disabled={!hasMore || !onLoadMore}
-        onIonInfinite={async (event) => {
-          if (hasMore && onLoadMore) {
-            await onLoadMore();
-          }
-          (event.target as HTMLIonInfiniteScrollElement).complete();
-        }}
-      >
-        <IonInfiniteScrollContent loadingSpinner="bubbles" />
-      </IonInfiniteScroll>
-      {isLoadingMore ? (
-        <IonRow className="ion-justify-content-center hub-modal-loading-row">
-          <IonSkeletonText animated style={{ width: '120px', height: '14px' }} />
-        </IonRow>
+      {hasMore && onLoadMore ? (
+        isLoadingMore ? (
+          <IonRow className="ion-justify-content-center hub-modal-loading-row">
+            <IonSkeletonText animated style={{ width: '120px', height: '14px' }} />
+          </IonRow>
+        ) : (
+          <IonRow className="ion-justify-content-center hub-section-action-row">
+            <IonButton size="small" fill="outline" onClick={onLoadMore}>
+              Load more
+            </IonButton>
+          </IonRow>
+        )
       ) : null}
     </IonContent>
   </IonPage>
@@ -135,7 +134,9 @@ const HubInterestedEventsModal = ({
     <IonPage>
       <IonHeader>
         <IonToolbar className="modal-title">
-          <IonTitle>Interested Events</IonTitle>
+          <div className="hub-modal-title-bar">
+            <span className="hub-modal-title-text">Interested Events</span>
+          </div>
           <IonButtons slot="end">
             <IonButton onClick={onDismiss}>Done</IonButton>
           </IonButtons>
@@ -167,22 +168,19 @@ const HubInterestedEventsModal = ({
           <IonNote color="medium">No interested events to show yet.</IonNote>
         ) : null}
 
-        <IonInfiniteScroll
-          disabled={!hasMore || !onLoadMore}
-          onIonInfinite={async (event) => {
-            if (hasMore && onLoadMore) {
-              await onLoadMore();
-            }
-            (event.target as HTMLIonInfiniteScrollElement).complete();
-          }}
-        >
-          <IonInfiniteScrollContent loadingSpinner="bubbles" />
-        </IonInfiniteScroll>
-        {isLoadingMore ? (
+      {hasMore && onLoadMore ? (
+        isLoadingMore ? (
           <IonRow className="ion-justify-content-center hub-modal-loading-row">
             <IonSkeletonText animated style={{ width: '120px', height: '14px' }} />
           </IonRow>
-        ) : null}
+        ) : (
+          <IonRow className="ion-justify-content-center hub-section-action-row">
+            <IonButton size="small" fill="outline" onClick={onLoadMore}>
+              Load more
+            </IonButton>
+          </IonRow>
+        )
+      ) : null}
       </IonContent>
     </IonPage>
   );

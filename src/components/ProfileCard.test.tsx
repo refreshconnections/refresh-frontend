@@ -182,7 +182,7 @@ describe('ProfileCard', () => {
     const buttons = Array.from(container.querySelectorAll('.looking-for-buttons')) as HTMLElement[];
     fireEvent.click(buttons[0]);
     fireEvent.click(buttons[2]);
-    fireEvent.click(buttons[6]);
+    fireEvent.click(buttons[5]);
 
     expect(mockPresentPopover).toHaveBeenCalledTimes(3);
   });

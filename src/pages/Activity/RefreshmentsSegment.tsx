@@ -214,7 +214,7 @@ const RefreshmentsSegment: React.FC<Props> = ({
                                             style={{ '--padding-start': '4px', '--padding-end': '4px', height: '20px' }}
                                             onClick={() => presentAlert({
                                                 header: 'Go to this post?',
-                                                subHeader: comment.announcement_title ?? '',
+                                                subHeader: comment.announcement_title ? `Title "${comment.announcement_title}" ` : '',
                                                 buttons: [
                                                     { text: 'Cancel', role: 'cancel' },
                                                     { text: 'Go', handler: () => router.push(`/community/${comment.announcement_id}`) },

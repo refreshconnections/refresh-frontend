@@ -1,5 +1,5 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, getInternalAppPath, increaseStreak, isCommunityPlus, likeAnnouncement, localTzAbbr, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
 import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -97,8 +97,6 @@ const OpenedPost: React.FC = () => {
 
     const moderation = useGetCurrentModeration().data;
 
-    const [pendingInvalidations, setPendingInvalidations] = useState(new Set());
-    const pendingInvalidationsRef = useRef(pendingInvalidations);
 
     const { data: staticContentPost, isLoading: staticContentPostLoading } = useGetStaticPostContent(parseInt(id));
     const dynamicContentPost = useGetDynamicPostContent(parseInt(id)).data;
@@ -192,132 +190,137 @@ const OpenedPost: React.FC = () => {
         setReplyTo(null)
         setCommentInput("")
 
-        // comment loading circle?
         let comment_id: any = null
 
-        if (replyTo) {
-            const commentReplyData = {
-                announcement: id,
-                reply_to: replyTo?.id,
-                text: text
-            }
-
-            const tempId = `temp-${Date.now()}`;
-
-            const optimisticReply = {
-                id: tempId,
-                text,
-                uploadDateTime: new Date().toISOString(),
-                user: globalCurrentProfile.user,
-                username: "Posting...",
-                profile_image: null,
-                settings_community_profile: false,
-                removed: false,
-                removed_reason: null,
-                approved: true,
-                reply_to: replyTo?.id,
-                like_count: 0,
-                reply_count: 0
-            };
-
-            queryClient.setQueryData(['comments', replyTo.id, 'replies'], (oldData: any) => {
-                if (!oldData || !Array.isArray(oldData.pages)) {
-                    return {
-                        pageParams: [undefined],
-                        pages: [{
-                            next: null,
-                            previous: null,
-                            count: 1,
-                            results: [optimisticReply]
-                        }]
-                    };
+        try {
+            if (replyTo) {
+                const commentReplyData = {
+                    announcement: id,
+                    reply_to: replyTo?.id,
+                    text: text
                 }
 
-                // Insert into last page
-                const updatedPages = oldData.pages.map((page, index) => {
-                    if (index === oldData.pages.length - 1) {
-                        return {
-                            ...page,
-                            results: [...page.results, optimisticReply]
-                        };
-                    }
-                    return page;
-                });
+                const tempId = `temp-${Date.now()}`;
 
-                return {
-                    ...oldData,
-                    pages: updatedPages
-                };
-            });
-
-            setTimeout(() => scrollToComment(`comment-${tempId}`), 100);
-
-            let add_reply_response = await addCommentReply(commentReplyData)
-            if (add_reply_response?.data?.reply_id) {
-                comment_id = add_reply_response?.data?.reply_id
-            }
-
-            queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
-            setForceShowRepliesFor(prev => new Set(prev).add(replyTo.id));
-
-
-
-        }
-        else {
-
-            const commentData = {
-                announcement: id,
-                text: text
-            }
-
-            queryClient.setQueryData<InfiniteCommentPages>(postQueryKeys.topcomments(parseInt(id), sortByRecentActivity), (oldData) => {
-                if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) return oldData;
-
-                const newComment: Comment = {
-                    id: Date.now(), // temporary ID
-                    text: text,
+                const optimisticReply = {
+                    id: tempId,
+                    text,
                     uploadDateTime: new Date().toISOString(),
-                    user: globalCurrentProfile?.user,
+                    user: globalCurrentProfile.user,
                     username: "Posting...",
                     profile_image: null,
                     settings_community_profile: false,
-                    like_count: 0,
+                    removed: false,
+                    removed_reason: null,
                     approved: true,
-                    loading: true
+                    reply_to: replyTo?.id,
+                    like_count: 0,
+                    reply_count: 0
                 };
 
-                const lastPageIndex = oldData.pages.length - 1;
-                const updatedLastPage = {
-                    ...oldData.pages[lastPageIndex],
-                    results: [...oldData.pages[lastPageIndex].results, newComment],
-                };
+                queryClient.setQueryData(['comments', replyTo.id, 'replies'], (oldData: any) => {
+                    if (!oldData || !Array.isArray(oldData.pages)) {
+                        return {
+                            pageParams: [undefined],
+                            pages: [{
+                                next: null,
+                                previous: null,
+                                count: 1,
+                                results: [optimisticReply]
+                            }]
+                        };
+                    }
 
-                const updatedPages = [...oldData.pages];
-                updatedPages[lastPageIndex] = updatedLastPage;
+                    // Insert into last page
+                    const updatedPages = oldData.pages.map((page, index) => {
+                        if (index === oldData.pages.length - 1) {
+                            return {
+                                ...page,
+                                results: [...page.results, optimisticReply]
+                            };
+                        }
+                        return page;
+                    });
 
-                return {
-                    ...oldData,
-                    pages: updatedPages,
-                };
+                    return {
+                        ...oldData,
+                        pages: updatedPages
+                    };
+                });
+
+                setTimeout(() => scrollToComment(`comment-${tempId}`), 100);
+
+                let add_reply_response = await addCommentReply(commentReplyData)
+                if (add_reply_response?.data?.reply_id) {
+                    comment_id = add_reply_response?.data?.reply_id
+                }
+
+                queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
+                setForceShowRepliesFor(prev => new Set(prev).add(replyTo.id));
+
+            } else {
+
+                const commentData = {
+                    announcement: id,
+                    text: text
+                }
+
+                queryClient.setQueryData<InfiniteCommentPages>(postQueryKeys.topcomments(parseInt(id), sortByRecentActivity), (oldData) => {
+                    if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) return oldData;
+
+                    const newComment: Comment = {
+                        id: Date.now(), // temporary ID
+                        text: text,
+                        uploadDateTime: new Date().toISOString(),
+                        user: globalCurrentProfile?.user,
+                        username: "Posting...",
+                        profile_image: null,
+                        settings_community_profile: false,
+                        like_count: 0,
+                        approved: true,
+                        loading: true
+                    };
+
+                    const lastPageIndex = oldData.pages.length - 1;
+                    const updatedLastPage = {
+                        ...oldData.pages[lastPageIndex],
+                        results: [...oldData.pages[lastPageIndex].results, newComment],
+                    };
+
+                    const updatedPages = [...oldData.pages];
+                    updatedPages[lastPageIndex] = updatedLastPage;
+
+                    return {
+                        ...oldData,
+                        pages: updatedPages,
+                    };
+                });
+
+                let add_comment_response = await addComment(commentData)
+                if (add_comment_response?.data?.comment_id) {
+                    comment_id = add_comment_response?.data?.comment_id
+                }
+                queryClient.invalidateQueries({
+                    queryKey: ['top-comments', parseInt(id)], exact: false,
+                });
             }
-            );
-            let add_comment_response = await addComment(commentData)
-            if (add_comment_response?.data?.comment_id) {
-                comment_id = add_comment_response?.data?.comment_id
-            }
-            queryClient.invalidateQueries({
-                queryKey: ['top-comments', parseInt(id)], exact: false,
-            });
-        }
-        await delay(500)
-        setNoComment(false)
-        await increaseStreak()
-        queryClient.invalidateQueries({ queryKey: ['streak'] })
-        if (comment_id) {
-            scrollToComment(`comment-${comment_id}`)
-        }
 
-        return
+            await delay(500)
+            await increaseStreak()
+            queryClient.invalidateQueries({ queryKey: ['streak'] })
+            setNoComment(false)
+            if (comment_id) {
+                scrollToComment(`comment-${comment_id}`)
+            }
+        } catch {
+            if (replyTo) {
+                queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
+            } else {
+                queryClient.invalidateQueries({ queryKey: postQueryKeys.topcomments(parseInt(id), sortByRecentActivity) });
+            }
+        } finally {
+            setNoComment(false)
+        }
     }
 
 
@@ -523,12 +526,12 @@ const OpenedPost: React.FC = () => {
         includeBylineClass: true,
     });
     const eventAvatarOverride = eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined;
-    // const [eventProfilePresent, eventProfileDismiss] = useSheetModal(CommunityProfileModal, {
-    //     userId: approvedEventForPost?.user ?? null,
-    //     isAnonymous: eventAnonymous,
-    //     avatarUrl: eventAvatarOverride,
-    //     onDismiss: () => eventProfileDismiss(),
-    // });
+    const [eventProfilePresent, eventProfileDismiss] = useSheetModal(CommunityProfileModal, {
+        userId: approvedEventForPost?.user ?? null,
+        isAnonymous: eventAnonymous,
+        avatarUrl: eventAvatarOverride,
+        onDismiss: () => eventProfileDismiss(),
+    });
 
     const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
         queryClient.invalidateQueries({
@@ -567,38 +570,15 @@ const OpenedPost: React.FC = () => {
 
     }
 
-    // Debounced invalidation function
     const batchInvalidateComments = useCallback(
         debounce(() => {
-            const invalidationIds = Array.from(pendingInvalidationsRef.current);
-            if (invalidationIds.length > 0) {
-                console.log('Invalidating comments:', invalidationIds);
-                // Invalidate queries for all pending comments
-                pendingInvalidations.forEach((comment_id) => {
-                    queryClient.invalidateQueries({ queryKey: ['posts', 'comment', 'dynamic', comment_id] })
-                });
-
-                queryClient.invalidateQueries({ queryKey: ['refreshments-current'] })
-                queryClient.invalidateQueries({ queryKey: ['streak'] })
-                setPendingInvalidations(new Set()); // Clear the set after invalidating
-                pendingInvalidationsRef.current = new Set(); // Clear the ref as well
-            }
-        }, 500),  // 500ms debounce delay
-        [queryClient]  // Dependencies for debounce
+            queryClient.invalidateQueries({ queryKey: ['refreshments-current'] });
+            queryClient.invalidateQueries({ queryKey: ['streak'] });
+        }, 500),
+        [queryClient]
     );
 
-    // Function to add commentId to pending invalidations
-    const handleLikeUnlike = (comment_id) => {
-        setPendingInvalidations((prev) => {
-            const newSet = new Set(prev);
-            newSet.add(comment_id);
-            return newSet;
-        });
-
-        // Update the ref directly to ensure batchInvalidateComments gets the latest value
-        pendingInvalidationsRef.current.add(comment_id);
-
-        // Call the debounced function to handle invalidation
+    const handleLikeUnlike = (_comment_id) => {
         batchInvalidateComments();
     };
 
@@ -800,7 +780,7 @@ const OpenedPost: React.FC = () => {
                                             anonymous={eventAnonymous}
                                             avatarDisplay={eventAvatarDisplay}
                                             onProfilePresent={!eventAnonymous && approvedEventForPost?.user
-                                                ? () => communityProfilePresent({ cssClass: 'community-profile-modal' })
+                                                ? () => eventProfilePresent({ cssClass: 'community-profile-modal' })
                                                 : undefined}
                                             onExternalLinkClick={approvedEventForPost.external_link
                                                 ? () => presentLinkAlert({
@@ -818,7 +798,7 @@ const OpenedPost: React.FC = () => {
                             )}
                             <IonRow className="post-likes" id="comments-top">
                                 <IonCol>
-                                    <IonRow onClick={liked ? () => { } : () => likePost()}>
+                                    <IonRow>
                                         {liked ?
                                             <IonButton size="small" fill="clear" onClick={() => unlikePost()}><FontAwesomeIcon color="red" icon={heartFull} /></IonButton> :
                                             <IonButton size="small" fill="clear" onClick={() => likePost()}><FontAwesomeIcon icon={heartOutline} /></IonButton>}
@@ -986,9 +966,9 @@ const OpenedPost: React.FC = () => {
                                                                 : globalCurrentProfile?.deactivated_profile
                                                                     ? "You need an active account to comment."
                                                                     : commentingPauseActive
-                                                                        ? `Your commenting is temporarily paused until ${commentingPausedLabel}.`
+                                                                        ? `Your commenting is temporarily paused until ${commentingPausedLabel}. Please check your Me tab > Activity for any moderation details.`
                                                                         : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
-                                                                            ? "Your account needs to be reviewed before you can comment."
+                                                                            ? "Your account needs to be reviewed before you can comment. Please check your Me tab > Activity for any moderation details."
                                                                             : "Leave a comment"
                                                 }
                                                 autocapitalize='sentences'
@@ -1018,20 +998,6 @@ const OpenedPost: React.FC = () => {
                                      <ContactDetailsPopover />
                                 </IonRow>
                                 }
-                                {moderationCommentBlockMessage && (
-                                <IonRow class="ion-padding">
-                                    <IonCol size="12">
-                                        <IonText color="medium">
-                                            {moderationCommentBlockMessage} Check your Activity for moderation details and our guidelines.
-                                        </IonText>
-                                    </IonCol>
-                                    <IonCol size="12">
-                                        <IonButton fill="outline" color="primary" onClick={() => router.push('/activity')}>
-                                            View Activity
-                                        </IonButton>
-                                    </IonCol>
-                                </IonRow>
-                                )}
                                 </>
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">

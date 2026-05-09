@@ -1376,7 +1376,7 @@ const TextModal: React.FC<Props> = (props) => {
                                         </div>
 
                                     </PhotoProvider>
-                                    <IonButton size="small" onClick={() => setImage(null)}>
+                                    <IonButton size="small" onClick={() => { setImage(null); setBlob(null); }}>
                                         <IonIcon slot="icon-only" icon={trashIcon} />
                                     </IonButton>
                                 </IonCol>

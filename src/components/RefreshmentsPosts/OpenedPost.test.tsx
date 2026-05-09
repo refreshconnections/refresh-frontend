@@ -502,24 +502,23 @@ describe('OpenedPost', () => {
     const { container } = renderOpenedPost();
 
     const textarea = container.querySelector('ion-textarea.comment-creator') as HTMLElement;
-    expect(textarea).toHaveAttribute('placeholder', 'Your account needs to be reviewed before you can comment.');
+    expect(textarea).toHaveAttribute('placeholder', 'Your account needs to be reviewed before you can comment. Please check your Me tab > Activity for any moderation details.');
 
     const sendButton = container.querySelector('.send-button') as HTMLButtonElement;
     expect(sendButton).toBeDisabled();
   });
 
-  it('links paused-on-creation moderation states to the activity page', async () => {
+  it('links paused-on-creation moderation states to the activity page via placeholder text', async () => {
     mockGlobalProfile.mockReturnValue({
       data: { user: 9, username: 'alex', deactivated_profile: false, paused_profile: true },
       isLoading: false,
     } as any);
     mockModeration.mockReturnValue({ data: { paused_on_creation: true } } as any);
 
-    renderOpenedPost();
+    const { container } = renderOpenedPost();
 
-    fireEvent.click(await screen.findByText('View Activity'));
-
-    expect(routerPush).toHaveBeenCalledWith('/activity');
+    const textarea = container.querySelector('ion-textarea.comment-creator') as HTMLElement;
+    expect(textarea.getAttribute('placeholder')).toContain('Please check your Me tab > Activity for any moderation details.');
   });
 
   it('does not submit a comment when paused-on-creation moderation has disabled commenting', async () => {
@@ -714,9 +713,6 @@ describe('OpenedPost', () => {
 
     const sendButton = container.querySelector('.send-button') as HTMLButtonElement;
     expect(sendButton).toBeDisabled();
-
-    fireEvent.click(screen.getByText('View Activity'));
-    expect(routerPush).toHaveBeenCalledWith('/activity');
   });
 
   it('blocks commenting until commenting_paused_until and links to activity', async () => {
@@ -731,12 +727,10 @@ describe('OpenedPost', () => {
 
     const textarea = container.querySelector('ion-textarea.comment-creator') as HTMLElement;
     expect(textarea.getAttribute('placeholder')).toContain('Your commenting is temporarily paused until');
+    expect(textarea.getAttribute('placeholder')).toContain('Please check your Me tab > Activity for any moderation details.');
 
     const sendButton = container.querySelector('.send-button') as HTMLButtonElement;
     expect(sendButton).toBeDisabled();
-
-    fireEvent.click(screen.getByText('View Activity'));
-    expect(routerPush).toHaveBeenCalledWith('/activity');
   });
 
   it('does not submit a comment when the viewer is deactivated', async () => {

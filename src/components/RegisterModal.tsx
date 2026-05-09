@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import axios from "axios";
 // import myConfig from "../../configs";
 // import { ToastContainer, toast } from "react-toastify";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonModal, IonButtons, IonNote, IonAlert, IonRow, IonCheckbox, IonText } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonModal, IonButtons, IonNote, IonAlert, IonRow, IonCheckbox, IonText, IonCard } from '@ionic/react';
 import Cookies from 'js-cookie';
 import BoxedStackedInput from './BoxedStackedInput';
 
@@ -14,11 +14,13 @@ if (!process.env.BASE_URL) {
     var BASE_URL = process.env.REACT_APP_BASE_URL
 }
 
+import { useGetSiteSettings } from '../hooks/api/sitesettings';
 import "./RegisterModal.css"
 
 
 const RegisterModal: React.FC = () => {
     const modal = useRef<HTMLIonModalElement>(null);
+    const siteSettings = useGetSiteSettings().data;
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -161,6 +163,13 @@ const RegisterModal: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
+                {siteSettings?.allow_account_sign_ups === false ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonText className="ion-text-center">
+                            <p>Account sign ups have been temporarily paused.</p>
+                        </IonText>
+                    </IonCard>
+                ) : <>
                 <IonAlert
                     isOpen={showAlert}
                     onDidDismiss={registrationSuccessful}
@@ -235,6 +244,7 @@ const RegisterModal: React.FC = () => {
                         ))
                     )}
                 </form>
+                </>}
             </IonContent>
         </IonModal>
     )

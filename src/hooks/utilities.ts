@@ -2893,7 +2893,8 @@ export function getPrimaryPhoto(profile: any): string | null {
 // Version 3: July 6 2025
 // Version 4: Oct 15 2025
 // Version 5: Dec 4 2025
-export const CURRENT_APP_VERSION: number = 5;
+// Version 6: May 2026
+export const CURRENT_APP_VERSION: number = 6;
 
 export function maxBirthdateForAdult(): string {
     const date = new Date();

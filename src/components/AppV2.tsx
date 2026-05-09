@@ -101,7 +101,6 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useGetSettingsCurrentProfile } from '../hooks/api/profiles/settings-current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
-import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
 import { useMultipleAccountsCheck } from '../hooks/api/profiles/multiple_accounts_check';
 import MultipleAccountsDetected from '../pages/MultipleAccountsDetected';
 import { IconPop } from './IconPop';
@@ -158,9 +157,6 @@ const TabsShell: React.FC<TabsShellProps> = ({ chatBadgeCount }) => {
           </Route>
           <Route path="/chats">
             <Chats />
-          </Route>
-          <Route path="/communityold">
-            <Community />
           </Route>
           <Route exact path="/community">
             <Refreshments />
@@ -354,7 +350,12 @@ const AppV2: React.FC = () => {
   const current_settings = useChatSettings().data;
 
 
-  if (Capacitor.getPlatform() === 'android') {
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return;
+
+    let mql: MediaQueryList | null = null;
+    let handler: (() => void) | null = null;
+
     (async () => {
       const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
       const { StatusBar, Style } = await import('@capacitor/status-bar');
@@ -362,25 +363,22 @@ const AppV2: React.FC = () => {
       const applyBars = async () => {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const color = isDark ? '#2f2f2f' : '#f2f2fd';
-
-        // Paint status + nav bars
         await EdgeToEdge.setBackgroundColor({ color });
-
-        // Make icons readable on that color
         await StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
       };
 
       await EdgeToEdge.enable();
       await applyBars();
 
-      // React to theme changes at runtime
-      const mql = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = () => void applyBars();
+      mql = window.matchMedia('(prefers-color-scheme: dark)');
+      handler = () => void applyBars();
       mql.addEventListener('change', handler);
-      // optional: cleanup on hot reload/unmount
-      // return () => mql.removeEventListener('change', handler);
     })();
-  }
+
+    return () => {
+      if (mql && handler) mql.removeEventListener('change', handler);
+    };
+  }, []);
 
 
   // const paths = ['/community', '/change', '/chats', '/picks', '/me', '/profile']
@@ -538,12 +536,10 @@ const AppV2: React.FC = () => {
       prefetchChatOrganizerData();
     }
 
-    const badgeCount = async () => {
+    const badgeCount = () => {
       if (unreadBadgeCount) {
         setChatBadgeCount(unreadBadgeCount?.unread)
-        if (unreadBadgeCount > 0) {
-          console.log("unread count more than one so refetching chats")
-          await removeFromCapacitorLocalStorage('chats')
+        if (unreadBadgeCount?.unread > 0) {
           refetchChats()
         }
       }
@@ -715,9 +711,11 @@ const AppV2: React.FC = () => {
           }
           else if ("communityplus" in revenueCatCustomerInfo.entitlements.active) {
             await updateCurrentUserProfile({ "subscription_level": "communityplus", "subscription_source": "RevenueCat" })
+            queryClient.invalidateQueries({ queryKey: ['current'] })
           }
           else if ("personalplus" in revenueCatCustomerInfo.entitlements.active) {
             await updateCurrentUserProfile({ "subscription_level": "personalplus", "subscription_source": "RevenueCat" })
+            queryClient.invalidateQueries({ queryKey: ['current'] })
           }
           else {
             await updateCurrentUserProfile({ "subscription_level": "none" })

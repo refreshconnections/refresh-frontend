@@ -160,8 +160,8 @@ function OneSignalInit(): void {
 }
 
 if (isMobile()) {
-  console.log("Is mobile!")
-  OneSignalInit();
+  // console.log("Is mobile!")
+  // OneSignalInit();
 }
 
 const App: React.FC = () => {
@@ -576,9 +576,6 @@ const App: React.FC = () => {
             </Route>
             <Route path="/chats">
               <Chats />
-            </Route>
-            <Route path="/communityold">
-              <Community />
             </Route>
             <Route exact path="/community">
               <Refreshments />

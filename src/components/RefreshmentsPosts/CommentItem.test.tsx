@@ -644,7 +644,7 @@ describe('CommentItem interactions', () => {
 
     expect(authorSidenoteComment).toHaveBeenCalledWith(10);
     expect(invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['top-comments', 10],
+      queryKey: ['top-comments', 42],
       exact: false,
     });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['posts', 'comment', 10] });
@@ -679,7 +679,7 @@ describe('CommentItem interactions', () => {
     expect(removeComment).toHaveBeenCalledWith(10);
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['posts', 'comment', 10] });
     expect(invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['top-comments', 10],
+      queryKey: ['top-comments', 42],
       exact: false,
     });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['notshown', 42] });
