@@ -87,7 +87,7 @@ const ChangePasswordModal: React.FC<Props> = (props) => {
                 console.log("ERROR", error);
                 console.log("Password change didn't work.");
                 console.log(error.response)
-                const errorsString = JSON.stringify(error.response.data)
+                const errorsString = error.response?.data ? JSON.stringify(error.response.data) : 'Something went wrong. Please try again.'
                 setErrors(errorsString)
             });
     }

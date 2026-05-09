@@ -644,10 +644,9 @@ const Store: React.FC = () => {
             setActiveEntitlement(purchaseResult.customerInfo.entitlements.active)
         } catch (error: any) {
             if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-                // Purchase cancelled
-            } else {
-                // Error making purchase
+                return;
             }
+            // Error making purchase
         }
         await delay(3000)
         queryClient.invalidateQueries({ queryKey: ['current'] })

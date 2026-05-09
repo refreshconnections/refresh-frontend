@@ -191,7 +191,6 @@ const Settings: React.FC = () => {
     catch {
       console.log("Something went wrong.")
     }
-    window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")
     }
@@ -199,6 +198,7 @@ const Settings: React.FC = () => {
       console.log("Doing OneSignal logout");
       (window as any).plugins.OneSignal.logout();
     }
+    window.location.href = "/";
   };
 
   async function clearCachedData() {
@@ -219,7 +219,6 @@ const Settings: React.FC = () => {
     localStorage.clear();
     Cookies.remove('sessionid')
     Cookies.remove('csrftoken')
-    window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")
     }
@@ -227,6 +226,7 @@ const Settings: React.FC = () => {
       console.log("Doing OneSignal logout");
       (window as any).plugins.OneSignal.logout();
     }
+    window.location.href = "/";
   };
 
 

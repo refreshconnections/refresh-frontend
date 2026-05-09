@@ -103,9 +103,11 @@ const Likes: React.FC = () => {
   const incomingCount = incomingPages?.pages?.[0]?.count;
 
   useEffect(() => {
+    let handle: any;
     App.addListener('resume', async () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-paginated'] });
-    });
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
   }, []);
 
    useEffect(() => {

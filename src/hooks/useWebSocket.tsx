@@ -214,8 +214,12 @@ export function useWebSocket(onError?: (msg: string) => void) {
             };
 
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                listenersRef.current.forEach((cb) => cb(data));
+                try {
+                    const data = JSON.parse(event.data);
+                    listenersRef.current.forEach((cb) => cb(data));
+                } catch {
+                    console.warn("[WebSocket] Dropped non-JSON frame:", event.data);
+                }
             };
 
             ws.onclose = (event) => {

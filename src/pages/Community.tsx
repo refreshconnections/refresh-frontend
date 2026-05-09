@@ -134,12 +134,12 @@ const Community: React.FC = () => {
 
     var postIndex = data?.results.findIndex(p => p.id == int);
 
-    console.log("*", postIndex)
-
-    postRefs.current[postIndex].scrollIntoView({
-      behavior: "auto",
-      block: "center"
-    })
+    if (postIndex >= 0 && postRefs.current[postIndex]) {
+      postRefs.current[postIndex].scrollIntoView({
+        behavior: "auto",
+        block: "center"
+      })
+    }
   }
 
 

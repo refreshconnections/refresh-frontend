@@ -520,12 +520,15 @@ const Refreshments: React.FC = () => {
         : <></>
       } */}
         <IonInfiniteScroll
+          disabled={!(posts?.length > length)}
           onIonInfinite={(ev) => {
+            const target = ev.target;
             if (posts?.length > length) {
-              setLength(length + 2)
-              setTimeout(() => ev.target.complete(), 500);
+              setLength(length + 2);
+              setTimeout(() => target.complete(), 500);
+            } else {
+              target.complete();
             }
-            setTimeout(() => ev.target.complete(), 0);
           }}
         >
           <IonInfiniteScrollContent loadingSpinner="bubbles" style={{ minHeight: "14px" }}></IonInfiniteScrollContent>
