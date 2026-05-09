@@ -740,32 +740,32 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setShowAlert(true)
         }
         catch (error: any) {
-            console.log(error.response.data)
             const errorsList: string[] = []
-            if (error.response.data["title"]?.length > 0) {
-                error.response.data["title"].forEach((element: any) => {
-                    errorsList.push("Title: " + element["message"])
-                })
-            }
-            if (error.response.data["category"]?.length > 0) {
-                error.response.data["category"].forEach((element: any) => {
-                    errorsList.push("Category: " + element["message"])
-                })
-            }
-            if (error.response.data["content"]?.length > 0) {
-                error.response.data["content"].forEach((element: any) => {
-                    errorsList.push("Content: " + element["message"])
-                })
-            }
-            if (error.response.data["link"]?.length > 0) {
-                error.response.data["link"].forEach((element: any) => {
-                    errorsList.push("Link: " + element["message"])
-                })
-            }
-            else {
-                if (errorsList.length == 0) {
-                    errorsList.push("Something went wrong.")
+            if (error.response?.data) {
+                console.log(error.response.data)
+                if (error.response.data["title"]?.length > 0) {
+                    error.response.data["title"].forEach((element: any) => {
+                        errorsList.push("Title: " + element["message"])
+                    })
                 }
+                if (error.response.data["category"]?.length > 0) {
+                    error.response.data["category"].forEach((element: any) => {
+                        errorsList.push("Category: " + element["message"])
+                    })
+                }
+                if (error.response.data["content"]?.length > 0) {
+                    error.response.data["content"].forEach((element: any) => {
+                        errorsList.push("Content: " + element["message"])
+                    })
+                }
+                if (error.response.data["link"]?.length > 0) {
+                    error.response.data["link"].forEach((element: any) => {
+                        errorsList.push("Link: " + element["message"])
+                    })
+                }
+            }
+            if (errorsList.length == 0) {
+                errorsList.push("Something went wrong.")
             }
             setErrors(errorsList)
         }

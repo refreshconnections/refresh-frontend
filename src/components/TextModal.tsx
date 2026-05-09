@@ -175,7 +175,7 @@ const isAudioExpired = (userSubscription, uploadDate: Date) => {
 
 const isAudioFile = (file: string) => {
 
-    if (file.endsWith("webmcodecsopus") || file.endsWith("aac") || file.includes("webmcodecsopus?Expires") || file.includes("aac?Expires")) {
+    if (file.endsWith("webmcodecsopus") || file.endsWith("aac") || file.endsWith("webm") || file.endsWith("mp4") || file.includes("webmcodecsopus?Expires") || file.includes("aac?Expires") || file.includes("webm?Expires") || file.includes("mp4?Expires")) {
         return true
     }
     else {
@@ -201,6 +201,8 @@ const MessageAttachment: React.FC<AttachmentProps> = (props) => {
     const { id } = props;
     const file = useMessageFile(id)
     const currentUser = useGetCurrentProfile().data
+
+    if (!currentUser) return <div style={{ padding: "5pt", display: "flex", justifyContent: "center", minHeight: "85pt", alignItems: "center" }}><IonSpinner name="bubbles" /></div>;
 
     return (
         <div style={{
@@ -334,6 +336,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const messagesEndRef = useRef<null | HTMLDivElement>(null)
     const scrollAfterSendRef = useRef(false)
+    const sendingRef = useRef(false)
 
     const [justHearted, setJustHearted] = useState<number[]>([]);
 
@@ -669,7 +672,6 @@ const TextModal: React.FC<Props> = (props) => {
 
     const sendOutgoingTextMessageWithFileAudio = async (user_pk: string, file: any) => {
         setWaitBeforeSendingMore(true);
-
         try {
             const filedata = new FormData();
             filedata.append("file", file);
@@ -879,31 +881,24 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const sendHandler = async () => {
-
-        if (blob) { 
+        if (sendingRef.current) return;
+        sendingRef.current = true;
+        try {
             if (blob) {
-                await sendOutgoingTextMessageWithFileImage(
-                    textModalData?.other_user_id,
-                    blob as File
-                );
+                await sendOutgoingTextMessageWithFileImage(textModalData?.other_user_id, blob as File);
+            } else if (audioRef?.src) {
+                await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src);
+            } else if (messageInput) {
+                await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
             }
-        }
-        if (audioRef?.src) {
-            await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src)
-        }
-        if (messageInput) {
-            await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
-        }
 
-
-        // Streak increase
-        if (currentUserProfile?.settings_streak_tracker) {
-            await increaseStreak()
-            queryClient.invalidateQueries({ queryKey: ['streak'] })
+            if (currentUserProfile?.settings_streak_tracker) {
+                await increaseStreak();
+                queryClient.invalidateQueries({ queryKey: ['streak'] });
+            }
+        } finally {
+            sendingRef.current = false;
         }
-
-        // scrollToBottom()
-
     }
 
 

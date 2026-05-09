@@ -36,11 +36,11 @@ axios.interceptors.response.use(function (response) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
     console.log("error", error)
-    if (error.response.status == 401) {
+    if (error.response?.status == 401) {
         await handleLogoutCommon()
         console.log("Time to sign back in.")
     }
-    else if (error.response.status == 503) {
+    else if (error.response?.status == 503) {
         (window as any).location.href = '/construction'
         console.log("The site is under maintenance.")
     }
