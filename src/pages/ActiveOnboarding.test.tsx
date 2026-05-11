@@ -40,7 +40,7 @@ const {
 } = vi.hoisted(() => ({
   mockCompleteOnboardingMutate: vi.fn(),
   mockCompleteOnboardingMutateAsync: vi.fn().mockResolvedValue(undefined),
-  mockCheckVerificationCode: vi.fn().mockResolvedValue(undefined),
+  mockCheckVerificationCode: vi.fn().mockResolvedValue({ status: 200 }),
   mockPresentAlert: vi.fn(),
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
@@ -197,6 +197,7 @@ vi.mock('../hooks/api/account/onboarding', () => ({
 }));
 
 vi.mock('../hooks/api/account/emails', () => ({
+  accountEmailKeys: { status: ['account', 'email-status'] },
   useEmailStatus: () => ({ data: mockEmailStatus, isLoading: false }),
 }));
 
@@ -634,8 +635,8 @@ describe('active onboarding pages', () => {
     );
   });
 
-  it('shows the verification failure alert when code verification throws', async () => {
-    mockCheckVerificationCode.mockRejectedValueOnce(new Error('Wrong code'));
+  it('shows the verification failure alert when code verification fails', async () => {
+    mockCheckVerificationCode.mockResolvedValueOnce({ status: 400, data: { detail: 'Wrong code' } });
 
     renderInApp(<OnboardingV2 />);
 
@@ -659,6 +660,7 @@ describe('active onboarding pages', () => {
         message: 'Wrong code',
       })
     );
+    expect(sharedSwiper.slideTo).not.toHaveBeenCalledWith(3);
   });
 
   it('saves an adult birthday and advances after confirmation', async () => {

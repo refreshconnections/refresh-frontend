@@ -133,6 +133,202 @@ const initialForm: SimpleFormState = {
   settings_show_lived_experiences: false,
 };
 
+const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
+
+type FieldLabels = Record<keyof SimpleFormState, { label: string; description: string }>;
+type EditingState = Record<keyof SimpleFormState, boolean>;
+
+type EditableFieldProps = {
+  fieldKey: keyof SimpleFormState;
+  multiline?: boolean;
+  form: SimpleFormState;
+  editing: EditingState;
+  fieldLabels: FieldLabels;
+  isFieldEmpty: (field: keyof SimpleFormState) => boolean;
+  startEdit: (field: keyof SimpleFormState) => void;
+  cancelEdit: (field: keyof SimpleFormState) => void;
+  saveField: (field: keyof SimpleFormState, value?: string) => Promise<void>;
+};
+
+type EditablePronounsProps = Omit<EditableFieldProps, 'fieldKey' | 'multiline'> & {
+  pronounOptions: readonly string[];
+};
+
+const EditableField: React.FC<EditableFieldProps> = ({
+  fieldKey,
+  multiline,
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+}) => {
+  const value = form[fieldKey];
+  const [editorValue, setEditorValue] = useState((value as string) ?? '');
+
+  useEffect(() => {
+    if (!editing[fieldKey]) return;
+    setEditorValue((form[fieldKey] as string) ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing[fieldKey]]);
+
+  return (
+    <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels[fieldKey].label}</p>
+          {!editing[fieldKey] && (
+            <div className="field-actions">
+              <IonButton
+                size="small"
+                fill="outline"
+                color="primary"
+                className={`edit-button ${isFieldEmpty(fieldKey) ? 'blank-edit' : ''}`}
+                onClick={() => startEdit(fieldKey)}
+              >
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing[fieldKey] ? (
+          multiline ? (
+            <IonTextarea
+              value={editorValue}
+              onIonInput={e => setEditorValue(e.detail.value ?? '')}
+              placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+              autoGrow
+              rows={4}
+              autocapitalize='sentences'
+              autoCorrect='on'
+            />
+          ) : (
+            <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
+          )
+        ) : (
+          <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
+        )}
+
+        {editing[fieldKey] && (
+          <div className="field-actions editing-actions">
+            {!!editorValue && (
+              <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
+const EditablePronouns: React.FC<EditablePronounsProps> = ({
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+  pronounOptions,
+}) => {
+  const value = form.pronouns;
+  const [editorValue, setEditorValue] = useState(value ?? '');
+  const [editorChoice, setEditorChoice] = useState<string>(
+    pronounOptions.includes(value ?? '') ? value : 'custom',
+  );
+
+  useEffect(() => {
+    if (!editing.pronouns) return;
+    const nextValue = form.pronouns ?? '';
+    setEditorValue(nextValue);
+    setEditorChoice(pronounOptions.includes(nextValue) ? nextValue : 'custom');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing.pronouns]);
+
+  return (
+    <IonItem className={`card-field ${editing.pronouns ? 'editing' : ''}`}>
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels.pronouns.label}</p>
+          {!editing.pronouns && (
+            <div className="field-actions">
+              <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`} onClick={() => startEdit('pronouns')}>
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing.pronouns ? (
+          <>
+            <IonSelect
+              value={editorChoice}
+              placeholder="Select pronouns"
+              onIonChange={e => {
+                const nextChoice = e.detail.value as string;
+                setEditorChoice(nextChoice);
+                if (nextChoice !== 'custom') {
+                  setEditorValue(nextChoice);
+                }
+              }}
+            >
+              {pronounOptions.map(option => (
+                <IonSelectOption key={option} value={option}>
+                  {option}
+                </IonSelectOption>
+              ))}
+              <IonSelectOption value="custom">Custom</IonSelectOption>
+            </IonSelect>
+
+            {editorChoice === 'custom' && (
+              <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder="Enter your pronouns" debounce={250} />
+            )}
+          </>
+        ) : (
+          <h2 className="multi-line">{value || '-'}</h2>
+        )}
+
+        {editing.pronouns && (
+          <div className="field-actions editing-actions">
+            {!!editorValue && (
+              <IonButton
+                className="clear-button"
+                size="small"
+                fill="clear"
+                color="danger"
+                onClick={() => {
+                  setEditorChoice('custom');
+                  setEditorValue('');
+                }}
+                type="button"
+              >
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
 const SelfProfileV2: React.FC = () => {
   const history = useHistory();
   const currentUserProfile: any = useGetCurrentProfile().data;
@@ -372,7 +568,6 @@ const SelfProfileV2: React.FC = () => {
   const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
     userId: currentUserProfile?.user ?? null,
     selfPreview: true,
-    selfCommunityProfileData: communityProfile,
     onDismiss: () => communityProfileDismiss(),
   });
 
@@ -562,7 +757,6 @@ const SelfProfileV2: React.FC = () => {
     .map(value => getLivedExperienceLabel(value))
     .filter(Boolean) as string[];
 
-  const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
   const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
 
   const photoLabels: Record<string, string> = {
@@ -616,7 +810,7 @@ const SelfProfileV2: React.FC = () => {
     'fixation_album',
   ] as const;
 
-  const fieldLabels: Record<keyof SimpleFormState, { label: string; description: string }> = {
+  const fieldLabels: FieldLabels = {
     location: { label: 'Location', description: 'Where you spend most of your time.' },
     pronouns: { label: 'Pronouns', description: 'How others can refer to you.' },
     job: { label: 'Job', description: 'Current profession or focus.' },
@@ -662,160 +856,14 @@ const SelfProfileV2: React.FC = () => {
     </div>
   );
 
-  const EditableField: React.FC<{ fieldKey: keyof SimpleFormState; multiline?: boolean }> = ({ fieldKey, multiline }) => {
-    const value = form[fieldKey];
-    const [editorValue, setEditorValue] = useState((value as string) ?? '');
-
-    useEffect(() => {
-      if (!editing[fieldKey]) return;
-      setEditorValue((form[fieldKey] as string) ?? '');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing[fieldKey]]);
-
-    return (
-      <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
-        <div className="editing-section">
-          <div className="field-header">
-            <p>{fieldLabels[fieldKey].label}</p>
-            {!editing[fieldKey] && (
-              <div className="field-actions">
-                <IonButton
-                  size="small"
-                  fill="outline"
-                  color="primary"
-                  className={`edit-button ${isFieldEmpty(fieldKey) ? 'blank-edit' : ''}`}
-                  onClick={() => startEdit(fieldKey)}
-                >
-                  Edit
-                </IonButton>
-              </div>
-            )}
-          </div>
-
-          {editing[fieldKey] ? (
-            multiline ? (
-              <IonTextarea
-                value={editorValue}
-                onIonInput={e => setEditorValue(e.detail.value ?? '')}
-                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
-                autoGrow
-                rows={4}
-                autocapitalize='sentences'
-                autoCorrect='on'
-              />
-            ) : (
-              <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
-            )
-          ) : (
-            <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
-          )}
-
-          {editing[fieldKey] && (
-            <div className="field-actions editing-actions">
-              {!!editorValue && (
-                <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
-                  Clear
-                </IonButton>
-              )}
-              <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
-                Cancel
-              </IonButton>
-              <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
-                Save
-              </IonButton>
-            </div>
-          )}
-        </div>
-      </IonItem>
-    );
-  };
-
-  const EditablePronouns: React.FC = () => {
-    const value = form.pronouns;
-    const [editorValue, setEditorValue] = useState(value ?? '');
-    const [editorChoice, setEditorChoice] = useState<string>(
-      pronounOptions.includes(value as (typeof pronounOptions)[number]) ? (value as string) : 'custom',
-    );
-
-    useEffect(() => {
-      if (!editing.pronouns) return;
-      const nextValue = form.pronouns ?? '';
-      setEditorValue(nextValue);
-      setEditorChoice(pronounOptions.includes(nextValue as (typeof pronounOptions)[number]) ? nextValue : 'custom');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing.pronouns]);
-
-    return (
-      <IonItem className={`card-field ${editing.pronouns ? 'editing' : ''}`}>
-        <div className="editing-section">
-          <div className="field-header">
-            <p>{fieldLabels.pronouns.label}</p>
-            {!editing.pronouns && (
-              <div className="field-actions">
-                <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`} onClick={() => startEdit('pronouns')}>
-                  Edit
-                </IonButton>
-              </div>
-            )}
-          </div>
-
-          {editing.pronouns ? (
-            <>
-              <IonSelect
-                value={editorChoice}
-                placeholder="Select pronouns"
-                onIonChange={e => {
-                  const nextChoice = e.detail.value as string;
-                  setEditorChoice(nextChoice);
-                  if (nextChoice !== 'custom') {
-                    setEditorValue(nextChoice);
-                  }
-                }}
-              >
-                {pronounOptions.map(option => (
-                  <IonSelectOption key={option} value={option}>
-                    {option}
-                  </IonSelectOption>
-                ))}
-                <IonSelectOption value="custom">Custom</IonSelectOption>
-              </IonSelect>
-
-              {editorChoice === 'custom' && (
-                <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder="Enter your pronouns" debounce={250} />
-              )}
-            </>
-          ) : (
-            <h2 className="multi-line">{value || '-'}</h2>
-          )}
-
-          {editing.pronouns && (
-            <div className="field-actions editing-actions">
-              {!!editorValue && (
-                <IonButton
-                  className="clear-button"
-                  size="small"
-                  fill="clear"
-                  color="danger"
-                  onClick={() => {
-                    setEditorChoice('custom');
-                    setEditorValue('');
-                  }}
-                  type="button"
-                >
-                  Clear
-                </IonButton>
-              )}
-              <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
-                Cancel
-              </IonButton>
-              <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
-                Save
-              </IonButton>
-            </div>
-          )}
-        </div>
-      </IonItem>
-    );
+  const editableFieldProps = {
+    form,
+    editing,
+    fieldLabels,
+    isFieldEmpty,
+    startEdit,
+    cancelEdit,
+    saveField,
   };
 
   const handlePhotoReorder = (event: CustomEvent) => {
@@ -1102,11 +1150,15 @@ const SelfProfileV2: React.FC = () => {
                 </IonItem>
               </div>
 
-              {summaryKeys.map(key => (key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />))}
+              {summaryKeys.map(key => (
+                key === 'pronouns'
+                  ? <EditablePronouns key="pronouns" {...editableFieldProps} pronounOptions={pronounOptions} />
+                  : <EditableField key={key} {...editableFieldProps} fieldKey={key} />
+              ))}
 
               <div style={{ marginTop: '12px' }}>
                 {aboutKeys.map(key => (
-                  <EditableField key={key} fieldKey={key} multiline />
+                  <EditableField key={key} {...editableFieldProps} fieldKey={key} multiline />
                 ))}
               </div>
             </IonCardContent>
@@ -1460,7 +1512,7 @@ const SelfProfileV2: React.FC = () => {
                         </div>
                       )}
 
-                      <EditableField fieldKey="covid_precaution_info" multiline />
+                      <EditableField {...editableFieldProps} fieldKey="covid_precaution_info" multiline />
                     </IonCardContent>
                   </IonCard>
                 </IonCol>
@@ -1482,15 +1534,15 @@ const SelfProfileV2: React.FC = () => {
                   <IonCard className="accordion-card">
                     <IonCardContent className="card-grid">
                       {talkAboutKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} multiline />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} multiline />
                       ))}
                       <SectionHeader title="Favorites" />
                       {favoriteKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} />
                       ))}
                       <SectionHeader title="Current Interests" />
                       {fixationKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} />
                       ))}
                     </IonCardContent>
                   </IonCard>

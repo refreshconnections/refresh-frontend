@@ -9,6 +9,7 @@ import "./Settings.css"
 
 import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref, isCommunityPlus, isPersonalPlus, updateCurrentUserChatSettings } from '../hooks/utilities';
 import { UPSELL_POPUPS_ENABLED_KEY } from '../hooks/useUpsellAlert';
+import { STREAK_BREAK_POPUPS_ENABLED_KEY } from '../hooks/streakPreferences';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
@@ -75,6 +76,8 @@ const Settings: React.FC = () => {
   const [reduceAnimations, setReduceAnimations] = useState<boolean>(false);
   const [chatOrganizer, setChatOrganizer] = useState<boolean>(true);
   const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
+  const [showLocalTab, setShowLocalTab] = useState<boolean>(true);
+  const [showInLocalChats, setShowInLocalChats] = useState<boolean | null>(null);
   const [showHiddenChatNewMessageBadges, setShowHiddenChatNewMessageBadges] = useState<boolean>(true);
   const [allowImagesGlobal, setAllowImagesGlobal] = useState<boolean>(false);
   const [allowAudioGlobal, setAllowAudioGlobal] = useState<boolean>(false);
@@ -84,6 +87,7 @@ const Settings: React.FC = () => {
   const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState<boolean>(true);
   const [showAddToCalendar, setShowAddToCalendar] = useState<boolean>(true);
   const [showSubscriptionPopups, setShowSubscriptionPopups] = useState<boolean>(true);
+  const [showStreakBreakPopups, setShowStreakBreakPopups] = useState<boolean>(true);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
@@ -121,8 +125,8 @@ const Settings: React.FC = () => {
   );
 
   const isBeforeExpiration = useMemo(
-    () => settingsStatus?.active && new Date() < new Date(settingsStatus?.expirationDateTime),
-    [settingsStatus?.expirationDateTime]
+    () => settingsStatus?.active && !!settingsStatus?.expirationDateTime && new Date() < new Date(settingsStatus?.expirationDateTime),
+    [settingsStatus?.active, settingsStatus?.expirationDateTime]
   );
 
   const isProUser = data?.subscription_level === 'pro';
@@ -297,6 +301,8 @@ const Settings: React.FC = () => {
           handler: async () => {
             await clearStreak()
             await updateCurrentUserProfile({ "settings_streak_tracker": false, "settings_show_streak_increase": false })
+            await Preferences.set({ key: STREAK_BREAK_POPUPS_ENABLED_KEY, value: 'false' });
+            setShowStreakBreakPopups(false);
             queryClient.invalidateQueries({ queryKey: ['current'] })
             queryClient.invalidateQueries({ queryKey: ['streak'] })
           },
@@ -496,6 +502,9 @@ const Settings: React.FC = () => {
         const { value: chatOrganizerShowHiddenPref } = await Preferences.get({ key: 'chat_organizer_show_hidden' });
         if (cancelled) return;
         setChatOrganizerShowHidden(chatOrganizerShowHiddenPref === 'true');
+        const { value: showLocalTabPref } = await Preferences.get({ key: 'show_local_tab' });
+        if (cancelled) return;
+        setShowLocalTab(showLocalTabPref !== 'false');
         const { value: hiddenChatNewMessageBadgesPref } = await Preferences.get({ key: HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY });
         if (cancelled) return;
         setShowHiddenChatNewMessageBadges(hiddenChatNewMessageBadgesPref !== 'false');
@@ -510,6 +519,9 @@ const Settings: React.FC = () => {
         const { value: upsellPref } = await Preferences.get({ key: UPSELL_POPUPS_ENABLED_KEY });
         if (cancelled) return;
         setShowSubscriptionPopups(upsellPref !== 'false');
+        const { value: streakBreakPref } = await Preferences.get({ key: STREAK_BREAK_POPUPS_ENABLED_KEY });
+        if (cancelled) return;
+        setShowStreakBreakPopups(streakBreakPref !== 'false');
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
@@ -784,6 +796,42 @@ const Settings: React.FC = () => {
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Local Chats in Organizer</span>
+                  <p>Show a Local tab in the chat organizer for connections near you ("Appear in Local Chats" must be on to enable).</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!chatOrganizer || !data?.location_point_lat || !(showInLocalChats ?? (data?.settings_show_in_local_chats ?? true))}
+                  checked={chatOrganizer && !!data?.location_point_lat && (showInLocalChats ?? (data?.settings_show_in_local_chats ?? true)) && showLocalTab}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowLocalTab(val);
+                    await Preferences.set({ key: 'show_local_tab', value: String(val) });
+                    window.dispatchEvent(new CustomEvent('show_local_tab_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Appear in Local Chats</span>
+                  <p>Allow connections to see you in their Local tab based on your profile location.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!data?.location_point_lat}
+                  checked={!!data?.location_point_lat && (showInLocalChats ?? (data?.settings_show_in_local_chats ?? true))}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowInLocalChats(val);
+                    await updateCurrentUserProfile({ "settings_show_in_local_chats": val });
+                    if (!val) {
+                      setShowLocalTab(false);
+                      await Preferences.set({ key: 'show_local_tab', value: 'false' });
+                      window.dispatchEvent(new CustomEvent('show_local_tab_changed', { detail: false }));
+                    }
+                  }}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
                   <PremiumLabel available={canUseHiddenChatNewMessageBadges}>Show Hidden Chat New Message Badges</PremiumLabel>
                   <p>Show a new-message badge on chats in your Hidden tab.</p>
                 </IonLabel>
@@ -934,6 +982,18 @@ const Settings: React.FC = () => {
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_show_streak_increase": e.detail.checked })}
                   checked={data?.settings_show_streak_increase}>
                 </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Streak Break Pop-ups</span>
+                  <p>Get a pop-up offering to restore your streak when it breaks.</p></IonLabel>
+                <IonToggle slot="end"
+                  checked={showStreakBreakPopups}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowStreakBreakPopups(val);
+                    await Preferences.set({ key: STREAK_BREAK_POPUPS_ENABLED_KEY, value: String(val) });
+                  }}
+                />
               </IonItem>
               <IonItem>
                 <IonLabel className="ion-text-wrap">

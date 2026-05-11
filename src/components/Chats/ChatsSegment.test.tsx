@@ -6,14 +6,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const {
   filteredMutualsHook,
   chatGroupsHook,
-  localHook,
+  localChatsHook,
   hiddenChatsHook,
   filteredChatsHook,
   preferencesGet,
 } = vi.hoisted(() => ({
   filteredMutualsHook: vi.fn(),
   chatGroupsHook: vi.fn(),
-  localHook: vi.fn(),
+  localChatsHook: vi.fn(),
   hiddenChatsHook: vi.fn(),
   filteredChatsHook: vi.fn(),
   preferencesGet: vi.fn(),
@@ -35,8 +35,8 @@ vi.mock('../../hooks/api/chats/chat-groups', () => ({
   useChatGroups: (...args: any[]) => chatGroupsHook(...args),
 }));
 
-vi.mock('../../hooks/api/chats/local-mutual-connections', () => ({
-  useLocalMutualConnections: (...args: any[]) => localHook(...args),
+vi.mock('../../hooks/api/chats/local-chats', () => ({
+  useLocalChats: (...args: any[]) => localChatsHook(...args),
 }));
 
 vi.mock('../../hooks/api/chats/hidden-chats', () => ({
@@ -112,7 +112,7 @@ beforeEach(() => {
   preferencesGet.mockResolvedValue({ value: null });
   filteredMutualsHook.mockReturnValue({ data: [7, 8] });
   chatGroupsHook.mockReturnValue({ data: defaultGroups });
-  localHook.mockReturnValue({ data: null });
+  localChatsHook.mockReturnValue({ data: undefined, isFetchingNextPage: false, hasNextPage: false, fetchNextPage: vi.fn() });
   hiddenChatsHook.mockReturnValue({
     data: undefined,
     isFetchingNextPage: false,
@@ -213,23 +213,23 @@ describe('ChatsSegment tab system', () => {
     expect(await screen.findByText('All')).toBeInTheDocument();
   });
 
-  it('shows a Local chip when localIds has entries', async () => {
-    localHook.mockReturnValue({ data: [101, 102] });
+  it('shows a Local chip when localChats has results', async () => {
+    localChatsHook.mockReturnValue({ data: { pages: [{ count: 2, results: [] }] }, isFetchingNextPage: false, hasNextPage: false, fetchNextPage: vi.fn() });
     renderSegment();
 
     expect(await screen.findByText('Local')).toBeInTheDocument();
   });
 
-  it('does not show a Local chip when localIds is empty', async () => {
-    localHook.mockReturnValue({ data: [] });
+  it('does not show a Local chip when localChats count is 0', async () => {
+    localChatsHook.mockReturnValue({ data: { pages: [{ count: 0, results: [] }] }, isFetchingNextPage: false, hasNextPage: false, fetchNextPage: vi.fn() });
     renderSegment();
 
     await screen.findByText('All');
     expect(screen.queryByText('Local')).not.toBeInTheDocument();
   });
 
-  it('does not show a Local chip when localIds is null', async () => {
-    localHook.mockReturnValue({ data: null });
+  it('does not show a Local chip when localChats data is not yet loaded', async () => {
+    localChatsHook.mockReturnValue({ data: undefined, isFetchingNextPage: false, hasNextPage: false, fetchNextPage: vi.fn() });
     renderSegment();
 
     await screen.findByText('All');

@@ -6,6 +6,7 @@ import { IonApp } from '@ionic/react';
 
 const {
   recoverStreak,
+  increaseStreak,
   invalidateQueries,
   mockPresentAlert,
   mockPresentModal,
@@ -13,6 +14,7 @@ const {
   mockRouterPush,
 } = vi.hoisted(() => ({
   recoverStreak: vi.fn(),
+  increaseStreak: vi.fn(),
   invalidateQueries: vi.fn(),
   mockPresentAlert: vi.fn(),
   mockPresentModal: vi.fn(),
@@ -81,6 +83,7 @@ vi.mock('../../hooks/api/profiles/my-comments', () => ({
 
 vi.mock('../../hooks/utilities', () => ({
   recoverStreak: (...args: any[]) => recoverStreak(...args),
+  increaseStreak: (...args: any[]) => increaseStreak(...args),
 }));
 
 vi.mock('../../components/CreatePostModal', () => ({
@@ -148,6 +151,7 @@ const goToSegment = (label: 'Refreshments' | 'Streak') => {
 beforeEach(() => {
   vi.clearAllMocks();
   recoverStreak.mockResolvedValue(undefined);
+  increaseStreak.mockResolvedValue(undefined);
 
   mockCurrentProfile.mockReturnValue({ data: baseProfile } as any);
   mockRecentNotifications.mockReturnValue({ data: [], isLoading: false } as any);
@@ -550,6 +554,64 @@ describe('Activity page', () => {
       expect(screen.getByText(/Not enough savers/)).toBeInTheDocument();
       const btn = container.querySelector('ion-button[disabled]');
       expect(btn).toBeTruthy();
+    });
+
+    it('shows the expired recovery window message when the break is older than 14 days', () => {
+      const breakDate = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+      mockCurrentStreak.mockReturnValue({
+        data: { ...baseStreak, streak_count: 0, streak_pre_break: 10, break_date: breakDate, savers: 5 },
+        isLoading: false,
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/The recovery window for your 10-day streak has expired/)).toBeInTheDocument();
+      expect(screen.queryByText(/Restore \(/)).not.toBeInTheDocument();
+    });
+
+    it('scales the recovery cost based on days missed', () => {
+      const breakDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      mockCurrentStreak.mockReturnValue({
+        data: { ...baseStreak, streak_count: 0, streak_pre_break: 14, break_date: breakDate, savers: 5 },
+        isLoading: false,
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/Restore \(3 savers\)/)).toBeInTheDocument();
+    });
+
+    it('shows 0-savers message when the user has no streak savers', () => {
+      mockCurrentStreak.mockReturnValue({
+        data: { ...baseStreak, savers: 0 },
+        isLoading: false,
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/You have no streak savers\. Earn 1 every 7 active days\./)).toBeInTheDocument();
+    });
+
+    it('shows the max-savers message when the user has 10 or more streak savers', () => {
+      mockCurrentStreak.mockReturnValue({
+        data: { ...baseStreak, savers: 10 },
+        isLoading: false,
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/10 streak savers \(max\)/)).toBeInTheDocument();
+    });
+
+    it('displays the personal best', () => {
+      mockCurrentStreak.mockReturnValue({
+        data: { ...baseStreak, max_streak: 21 },
+        isLoading: false,
+      } as any);
+
+      goToSegment('Streak');
+
+      expect(screen.getByText(/Personal best: 21 days/)).toBeInTheDocument();
     });
   });
 });

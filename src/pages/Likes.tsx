@@ -21,6 +21,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   isPersonalPlus,
   onImgError
@@ -152,7 +153,7 @@ const Likes: React.FC = () => {
   });
 
   const openModal = (item: any) => {
-    setProfileCardData(item);
+    flushSync(() => setProfileCardData(item));
     profilePresent();
   };
 

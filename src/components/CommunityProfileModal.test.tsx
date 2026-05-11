@@ -566,4 +566,123 @@ describe('CommunityProfileModal', () => {
     expect(await screen.findByText(/Create an active Personal Profile and turn on your Connect from Refreshments/i)).toBeInTheDocument();
     expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
   });
+
+  it('shows the thread reply prompt when the other user has connect from refreshments off', async () => {
+    mockCommunityProfile = { ...baseCommunityData, connect_enabled: false };
+
+    renderModal();
+
+    expect(await screen.findByText('Please reply to jordan in the thread.')).toBeInTheDocument();
+    expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
+  });
+
+  it('shows no connect options when the viewer has been personally blocked by the target', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      blocked_by: [42],
+    };
+
+    renderModal();
+
+    await screen.findByText('jordan');
+    expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Like.*back/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Continue your chat')).not.toBeInTheDocument();
+  });
+
+  it('shows no connect options when the viewer has personally blocked the target', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      blocked_connections: [42],
+    };
+
+    renderModal();
+
+    await screen.findByText('jordan');
+    expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Like.*back/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Continue your chat')).not.toBeInTheDocument();
+  });
+
+  it('shows the thread reply prompt when the connection has been unmatched', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      unmatched_connections: [42],
+    };
+
+    renderModal();
+
+    expect(await screen.findByText('Please reply to jordan in the thread.')).toBeInTheDocument();
+    expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the restricted view when the target profile is deactivated', async () => {
+    mockProfileDetails = { ...baseProfileDetails, deactivated_profile: true };
+
+    renderModal();
+
+    expect(await screen.findByText('Refresh member')).toBeInTheDocument();
+    expect(screen.queryByText(/You both have Connect from Refreshments turned on/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Like.*back/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit your Refreshments Profile')).not.toBeInTheDocument();
+  });
+
+  it('omits the personal block button from the action menu when the viewer has already blocked the target', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      blocked_connections: [42],
+    };
+
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    const buttonTexts = sheetConfig.buttons.map((b: any) => b.text);
+    expect(buttonTexts).not.toContain('Personal block');
+    expect(buttonTexts).toContain('Full community block');
+  });
+
+  it('omits the full community block button from the action menu when the viewer has already community blocked the target', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      community_blocked: [42],
+    };
+
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    const buttonTexts = sheetConfig.buttons.map((b: any) => b.text);
+    expect(buttonTexts).not.toContain('Full community block');
+    expect(buttonTexts).toContain('Personal block');
+  });
+
+  it('shows start chat label when connected but no existing chat exists', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      mutual_connections: [42],
+    };
+    mockChats = [];
+
+    renderModal();
+
+    expect(await screen.findByText('Start your chat with them')).toBeInTheDocument();
+  });
+
+  it('still shows the chat option when connected and the other user is paused', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      mutual_connections: [42],
+    };
+    mockProfileDetails = { ...baseProfileDetails, paused_profile: true };
+    mockChats = [{ id: 'chat-42', other_user_id: '42', unread_count: 0 }];
+
+    renderModal();
+
+    expect(await screen.findByText('Continue your chat')).toBeInTheDocument();
+  });
 });

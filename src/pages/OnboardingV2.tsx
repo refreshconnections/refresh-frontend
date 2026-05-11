@@ -24,7 +24,7 @@ import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import 'swiper/css';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
-import { useEmailStatus } from '../hooks/api/account/emails';
+import { accountEmailKeys, useEmailStatus } from '../hooks/api/account/emails';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
 import AgeVerificationFlow, { AgeCheckState } from './AgeVerificationFlow';
@@ -166,15 +166,18 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
         {
           text: copy.codeAlert.verify,
           handler: async ({ code }) => {
-            try {
-              await checkVerificationCode(phone!, code);
+            const response = await checkVerificationCode(phone!, code);
+            if (response?.status === 200) {
               onComplete();
               swiper.slideTo(3);
-            } catch (verificationError: any) {
+            } else {
               presentError({
                 header: copy.verificationFailed.header,
-                message: verificationError?.message || copy.verificationFailed.fallback,
-                buttons: ['OK']
+                message: response?.data?.detail || copy.verificationFailed.fallback,
+                buttons: [
+                  { text: 'Cancel', role: 'cancel' },
+                  { text: 'Try again', handler: () => handleCodeEntry() },
+                ]
               });
             }
           }
@@ -683,10 +686,9 @@ const OnboardingV2: React.FC = () => {
     if (completeOnboarding.isPending) return;
     try {
       await completeOnboarding.mutateAsync();
+      afterComplete();
     } catch (error) {
       console.error('Failed to complete onboarding', error);
-    } finally {
-      afterComplete();
     }
   }, [completeOnboarding]);
 
@@ -847,7 +849,10 @@ const OnboardingV2: React.FC = () => {
             <PhoneSlide
               existingPhone={emailStatus?.phone}
               loading={emailStatusLoading}
-              onComplete={() => setPhoneComplete(true)}
+              onComplete={() => {
+                setPhoneComplete(true);
+                queryClient.invalidateQueries({ queryKey: accountEmailKeys.status });
+              }}
             />
           </SwiperSlide>
           <SwiperSlide>

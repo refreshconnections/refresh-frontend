@@ -1596,19 +1596,18 @@ export async function checkVerificationCode(phone, code) {
         'X-CSRFToken': csrftoken
     }
 
-    const response = await axios({
-        method: 'post',
-        url: url,
-        // 'X-CSRFToken': csrftoken,
-        // 'allow': "GET, PUT, PATCH",
-        data: data,
-        headers: headers
-    });
-
-
-    console.log("Verify:", response)
-
-    return response.data
+    try {
+        const response = await axios({
+            method: 'post',
+            url: url,
+            data: data,
+            headers: headers
+        });
+        console.log("Verify:", response)
+        return response
+    } catch (error) {
+        return (error as any).response
+    }
 }
 
 export async function sendPhoneVerification(phone) {
@@ -2338,7 +2337,7 @@ export const getBadgeCount = async (chatsArray) => {
 
 export async function increaseStreak() {
 
-    const lastUpdate = localStorage.getItem("lastStreakUpdate");
+    const { value: lastUpdate } = await Preferences.get({ key: 'lastStreakUpdate' });
 
     if (lastUpdate) {
         const lastDate = new Date(lastUpdate);
@@ -2359,7 +2358,6 @@ export async function increaseStreak() {
         'X-CSRFToken': csrftoken
     }
 
-
     const response = await axios({
         method: 'get',
         url: url,
@@ -2368,7 +2366,7 @@ export async function increaseStreak() {
 
     if (response?.data?.streak) {
         console.log("Increase streak to", response?.data?.streak)
-        localStorage.setItem("lastStreakUpdate", new Date().toISOString());
+        await Preferences.set({ key: 'lastStreakUpdate', value: new Date().toISOString() });
     }
 
     return response

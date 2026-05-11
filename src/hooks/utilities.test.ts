@@ -1544,7 +1544,7 @@ describe('updateCurrentModeration()', () => {
 // ===========================================================================
 
 describe('increaseStreak()', () => {
-  // increaseStreak() reads the "lastStreakUpdate" key from localStorage.
+  // increaseStreak() reads the "lastStreakUpdate" key from Capacitor Preferences.
   // If the last update was less than 20 hours ago, it skips the API call.
   // Otherwise it calls the API and writes the current timestamp back.
 
@@ -1555,38 +1555,36 @@ describe('increaseStreak()', () => {
   });
 
   it('skips the API call when last update was less than 20 hours ago', async () => {
-    // Store a timestamp from 1 hour ago
     const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
-    localStorage.setItem('lastStreakUpdate', oneHourAgo);
+    vi.mocked(Preferences.get).mockResolvedValueOnce({ value: oneHourAgo });
     const result = await increaseStreak();
     expect(axiosFn).not.toHaveBeenCalled();
     expect(result).toEqual({ skipped: true });
   });
 
   it('makes the API call when last update was more than 20 hours ago', async () => {
-    // Store a timestamp from 21 hours ago
     const twentyOneHoursAgo = new Date(Date.now() - 21 * 60 * 60 * 1000).toISOString();
-    localStorage.setItem('lastStreakUpdate', twentyOneHoursAgo);
+    vi.mocked(Preferences.get).mockResolvedValueOnce({ value: twentyOneHoursAgo });
     axiosFn.mockResolvedValue(makeAxiosResponse({ streak: 3 }));
     await increaseStreak();
     expect(axiosFn).toHaveBeenCalledOnce();
     expect(axiosFn.mock.calls[0][0].url).toContain('/api/profiles/increase_streak/');
   });
 
-  it('writes the current timestamp to localStorage when the API returns a streak', async () => {
+  it('writes the current timestamp to Preferences when the API returns a streak', async () => {
     axiosFn.mockResolvedValue(makeAxiosResponse({ streak: 5 }));
     await increaseStreak();
-    const stored = localStorage.getItem('lastStreakUpdate');
-    expect(stored).toBeTruthy();
-    // The stored date should be within the last 5 seconds
-    const diff = Date.now() - new Date(stored!).getTime();
+    const setCall = vi.mocked(Preferences.set).mock.calls.find(c => c[0].key === 'lastStreakUpdate');
+    expect(setCall).toBeDefined();
+    const diff = Date.now() - new Date(setCall![0].value).getTime();
     expect(diff).toBeLessThan(5000);
   });
 
-  it('does NOT write to localStorage when the response has no streak', async () => {
-    axiosFn.mockResolvedValue(makeAxiosResponse({})); // no streak field
+  it('does NOT write to Preferences when the response has no streak', async () => {
+    axiosFn.mockResolvedValue(makeAxiosResponse({}));
     await increaseStreak();
-    expect(localStorage.getItem('lastStreakUpdate')).toBeNull();
+    const setCall = vi.mocked(Preferences.set).mock.calls.find(c => c[0].key === 'lastStreakUpdate');
+    expect(setCall).toBeUndefined();
   });
 });
 

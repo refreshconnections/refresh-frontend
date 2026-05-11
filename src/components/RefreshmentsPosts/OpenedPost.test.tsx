@@ -226,6 +226,7 @@ const staticPost = {
   comment_instructions: null,
   comments_deactivated: false,
   closed: false,
+  approved: true,
   event: {
     name: 'Picnic meetup',
     start_datetime: '2099-04-10T17:30:00.000Z',

@@ -64,6 +64,7 @@ import OneSignal from 'onesignal-cordova-plugin';
 /* Theme variables */
 import '../theme/variables.css';
 import { isMobile, updateCurrentUserProfile, handleLogoutCommon, applyThemeFromPref, getBadgeCount, setTextZoom, checkForBrokenStreak, recoverStreak, isStagingEnvironment, linkInstall, CURRENT_APP_VERSION, getReduceAnimations } from '../hooks/utilities';
+import { STREAK_BREAK_POPUPS_ENABLED_KEY } from '../hooks/streakPreferences';
 import { ChatBadgeContext } from './ChatBadgeContext';
 import FAQs from '../pages/FAQs';
 import Tips from '../pages/Tips';
@@ -405,7 +406,8 @@ const AppV2: React.FC = () => {
           await setTextZoom();
           if (settingsCurrentProfile?.settings_streak_tracker) {
             const result = await checkForBrokenStreak();
-            if (result?.data?.broken === 'true' && result?.data?.savers > 0 && result?.data?.streak_pre_break) {
+            const { value: streakBreakPref } = await Preferences.get({ key: STREAK_BREAK_POPUPS_ENABLED_KEY });
+            if (result?.data?.broken === 'true' && result?.data?.savers > 0 && result?.data?.streak_pre_break > 2 && streakBreakPref !== 'false') {
               const computedCost = (() => {
                 if (result.data.recovery_cost != null) return result.data.recovery_cost;
                 if (result.data.break_date) {
@@ -522,13 +524,6 @@ const AppV2: React.FC = () => {
           return response.data;
         },
       });
-      queryClient.prefetchQuery({
-        queryKey: ['chats', 'local'],
-        queryFn: async () => {
-          const response = await apiClient.get('/api/profiles/local_mutual_connections/');
-          return response.data;
-        },
-      });
     }
 
     if (chats) {
@@ -595,7 +590,8 @@ const AppV2: React.FC = () => {
           else {
             setLoggedin(true)
             const brokenResult = await checkForBrokenStreak();
-            if (brokenResult?.data?.broken === 'true' && brokenResult?.data?.savers > 0 && brokenResult?.data?.streak_pre_break) {
+            const { value: streakBreakPref } = await Preferences.get({ key: STREAK_BREAK_POPUPS_ENABLED_KEY });
+            if (brokenResult?.data?.broken === 'true' && brokenResult?.data?.savers > 0 && brokenResult?.data?.streak_pre_break > 2 && streakBreakPref !== 'false') {
               const computedCost = (() => {
                 if (brokenResult.data.recovery_cost != null) return brokenResult.data.recovery_cost;
                 if (brokenResult.data.break_date) {

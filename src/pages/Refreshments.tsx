@@ -190,8 +190,8 @@ const Refreshments: React.FC = () => {
   );
 
   const isBeforeExpiration = useMemo(
-    () => refreshmentsStatus?.active && new Date() < new Date(refreshmentsStatus?.expirationDateTime),
-    [refreshmentsStatus?.expirationDateTime]
+    () => refreshmentsStatus?.active && !!refreshmentsStatus?.expirationDateTime && new Date() < new Date(refreshmentsStatus?.expirationDateTime),
+    [refreshmentsStatus?.active, refreshmentsStatus?.expirationDateTime]
   );
 
   const refreshmentsTop = useRef<null | HTMLDivElement>(null)

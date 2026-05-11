@@ -43,7 +43,6 @@ const Community: React.FC = () => {
 
   const [pageUrl, setPageUrl] = useState<string>("");
   const [filterTags, setFilterTags] = useState<string[]>([]);
-  const tagsFilterChecked: string[] = filterTags;
 
   const [altShow, setAltShow] = useState<number | null>(null);
 
@@ -247,26 +246,15 @@ const Community: React.FC = () => {
     }, 2000);
   }
 
-  //Adds the checkedbox to the array and check if you unchecked it
   const addTagsFilterCheckbox = (event: any) => {
     if (event.detail.checked) {
-      tagsFilterChecked.push(event.detail.value);
+      setFilterTags(prev => [...prev, event.detail.value]);
     } else {
-      let index = removeTagsFilterCheckedFromArray(event.detail.value);
-      tagsFilterChecked.splice(index, 1);
+      setFilterTags(prev => prev.filter((cat: string) => cat !== event.detail.value));
     }
   }
 
-  //Removes checkbox from array when you uncheck it
-  const removeTagsFilterCheckedFromArray = (checkbox: string) => {
-    return tagsFilterChecked.findIndex((category: string) => {
-      return category === checkbox;
-    })
-  }
-
   const saveFilters = async () => {
-    console.log("tags FC", tagsFilterChecked)
-    setFilterTags(tagsFilterChecked)
     setPageUrl("")
     dismiss();
     setTimeout(async () => {

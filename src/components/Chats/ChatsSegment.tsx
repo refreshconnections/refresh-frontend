@@ -18,7 +18,7 @@ import './Chats.css';
 import { useGetMutualConnectionsFiltered } from "../../hooks/api/profiles/mutual-connections-filtered";
 import NewChatItem from "./NewChatItem";
 import { useChatGroups } from "../../hooks/api/chats/chat-groups";
-import { useLocalMutualConnections } from "../../hooks/api/chats/local-mutual-connections";
+import { useLocalChats, LocalChatItem } from "../../hooks/api/chats/local-chats";
 import { useGetHiddenChats } from "../../hooks/api/chats/hidden-chats";
 import { useFilteredChats } from "../../hooks/api/chats/filtered-chats";
 import OrganizeChatsModal from "./OrganizeChatsModal";
@@ -43,6 +43,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('all');
     const [chatOrganizerEnabled, setChatOrganizerEnabled] = useState<boolean>(true);
     const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
+    const [showLocalTab, setShowLocalTab] = useState<boolean>(true);
 
     useEffect(() => {
         Preferences.get({ key: 'chat_organizer' }).then(({ value }) => {
@@ -51,13 +52,19 @@ const ChatsSegment: React.FC<Props> = (props) => {
         Preferences.get({ key: 'chat_organizer_show_hidden' }).then(({ value }) => {
             setChatOrganizerShowHidden(value === 'true');
         });
+        Preferences.get({ key: 'show_local_tab' }).then(({ value }) => {
+            setShowLocalTab(value !== 'false');
+        });
         const handler = (e: Event) => setChatOrganizerEnabled((e as CustomEvent<boolean>).detail);
         const hiddenHandler = (e: Event) => setChatOrganizerShowHidden((e as CustomEvent<boolean>).detail);
+        const localTabHandler = (e: Event) => setShowLocalTab((e as CustomEvent<boolean>).detail);
         window.addEventListener('chat_organizer_changed', handler);
         window.addEventListener('chat_organizer_show_hidden_changed', hiddenHandler);
+        window.addEventListener('show_local_tab_changed', localTabHandler);
         return () => {
             window.removeEventListener('chat_organizer_changed', handler);
             window.removeEventListener('chat_organizer_show_hidden_changed', hiddenHandler);
+            window.removeEventListener('show_local_tab_changed', localTabHandler);
         };
     }, []);
 
@@ -65,7 +72,10 @@ const ChatsSegment: React.FC<Props> = (props) => {
         if (activeTab === 'hidden' && !chatOrganizerShowHidden) {
             setActiveTab('all');
         }
-    }, [chatOrganizerShowHidden, activeTab]);
+        if (activeTab === 'local' && !showLocalTab) {
+            setActiveTab('all');
+        }
+    }, [chatOrganizerShowHidden, showLocalTab, activeTab]);
 
     const subscriptionLevel = currentUserProfile?.subscription_level;
     const userIsPro = isPro(subscriptionLevel);
@@ -73,7 +83,13 @@ const ChatsSegment: React.FC<Props> = (props) => {
 
     const searchedChats = useGetMutualConnectionsFiltered(search).data;
     const { data: groupsData } = useChatGroups();
-    const { data: localIds } = useLocalMutualConnections();
+    const {
+        data: localChatsData,
+        isFetchingNextPage: localIsFetchingNextPage,
+        hasNextPage: localHasNextPage,
+        fetchNextPage: fetchLocalNextPage,
+    } = useLocalChats();
+    const localChats = localChatsData?.pages.flatMap(page => page?.results ?? []) ?? [];
     const {
         data: hiddenChatsData,
         isFetchingNextPage: hiddenIsFetchingNextPage,
@@ -88,7 +104,6 @@ const ChatsSegment: React.FC<Props> = (props) => {
     const group3Ids = groupsData?.group3?.map(m => m.id) ?? [];
 
     const getFilterIds = (): number[] | null => {
-        if (activeTab === 'local') return localIds ?? [];
         if (activeTab === 'group1') return group1Ids;
         if (activeTab === 'group2') return group2Ids;
         if (activeTab === 'group3') return group3Ids;
@@ -120,7 +135,7 @@ const ChatsSegment: React.FC<Props> = (props) => {
     // Build tab list — order: All, Local, named lists, Hidden, address-book chip
     type TabDef = { key: ActiveTab; label: string };
     const tabs: TabDef[] = [{ key: 'all', label: 'All' }];
-    if (localIds !== null && localIds !== undefined && localIds.length > 0) {
+    if (showLocalTab && (localChatsData?.pages[0]?.count ?? 0) > 0) {
         tabs.push({ key: 'local', label: 'Local' });
     }
 
@@ -254,30 +269,57 @@ const ChatsSegment: React.FC<Props> = (props) => {
                                 </>
                             }
 
-                            {/* Local / custom list tabs: fetch on demand */}
-                            {activeTab !== 'all' && activeTab !== 'hidden' &&
+                            {/* Local tab */}
+                            {activeTab === 'local' &&
+                                <>
+                                    {localChats.length === 0 && !localIsFetchingNextPage ? (
+                                        <IonRow className="ion-justify-content-center ion-padding">
+                                            <IonText color="medium" style={{ textAlign: 'center', padding: '0 16px' }}>
+                                                Chats with connections whose profile location is near yours will appear here.
+                                            </IonText>
+                                        </IonRow>
+                                    ) : (
+                                        <IonList id="wl" lines="full">
+                                            {localChats.map((item: LocalChatItem) => (
+                                                <li key={item.user_id}>
+                                                    {item.has_dialog ? (
+                                                        <ChatItem
+                                                            user={item.user_id}
+                                                            currentUserProfile={currentUserProfile}
+                                                            chat={{ id: item.dialog_id, other_user_id: item.other_user_id, name: item.name, pic1_main: item.pic1_main, unread_count: item.unread_count, time_last_message: item.time_last_message, keep_it_going: item.keep_it_going }}
+                                                        />
+                                                    ) : (
+                                                        <NewChatItem user={item.user_id} currentUserProfile={currentUserProfile} opener={item.opener} name={item.name} pic1_main={item.pic1_main} />
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </IonList>
+                                    )}
+                                    {localHasNextPage && (
+                                        <IonRow className="ion-justify-content-center">
+                                            <IonButton size="small" fill="outline" color="navy" onClick={() => fetchLocalNextPage()} disabled={localIsFetchingNextPage}>
+                                                {localIsFetchingNextPage ? <IonSpinner name="dots" /> : 'Load more'}
+                                            </IonButton>
+                                        </IonRow>
+                                    )}
+                                </>
+                            }
+
+                            {/* Custom list tabs (group1/2/3): fetch on demand */}
+                            {(activeTab === 'group1' || activeTab === 'group2' || activeTab === 'group3') &&
                                 <>
                                     {filteredIsFetching && filteredChats.length === 0 ? (
                                         <IonRow className="ion-justify-content-center ion-padding">
                                             <IonSpinner name="dots" />
                                         </IonRow>
                                     ) : (
-                                        <>
-                                            {activeTab === 'local' && filteredChats.length === 0 && (
-                                                <IonRow className="ion-justify-content-center ion-padding">
-                                                    <IonText color="medium" style={{ textAlign: 'center', padding: '0 16px' }}>
-                                                        This will show chats with members whose location on their profile is near yours.
-                                                    </IonText>
-                                                </IonRow>
-                                            )}
-                                            <IonList id="wl" lines="full">
-                                                {filteredChats.map((e: any) => (
-                                                    <li key={e.id}>
-                                                        <ChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
-                                                    </li>
-                                                ))}
-                                            </IonList>
-                                        </>
+                                        <IonList id="wl" lines="full">
+                                            {filteredChats.map((e: any) => (
+                                                <li key={e.id}>
+                                                    <ChatItem user={parseInt(e.other_user_id)} currentUserProfile={currentUserProfile} chat={e} />
+                                                </li>
+                                            ))}
+                                        </IonList>
                                     )}
                                     <NewChats currentUserProfile={currentUserProfile} filterUserIds={filterIds!} />
                                 </>

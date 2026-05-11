@@ -50,7 +50,7 @@ describe('StreakSaverAlert', () => {
       preBreak: 7,
       savers: 3,
       recoveryCost: 2,
-    })).toBe('Your 7-day streak broke. Restoring it will cost 2 streak savers. You have 3 streak savers — restore it now?');
+    })).toBe('Your 7-day streak broke. Restoring it will use 2 streak savers. You have 3 streak savers — restore it now?');
   });
 
   it('renders the broken streak popup copy', () => {
@@ -66,7 +66,7 @@ describe('StreakSaverAlert', () => {
 
     expect(screen.getByRole('dialog', { name: 'Your streak broke!' })).toBeInTheDocument();
     expect(screen.getByText(/Your 7-day streak broke\./)).toBeInTheDocument();
-    expect(screen.getByText(/Restoring it will cost 2 streak savers\./)).toBeInTheDocument();
+    expect(screen.getByText(/Restoring it will use 2 streak savers\./)).toBeInTheDocument();
     expect(screen.getByText(/You have 3 streak savers/)).toBeInTheDocument();
   });
 
@@ -86,6 +86,33 @@ describe('StreakSaverAlert', () => {
     await waitFor(() => {
       expect(onRestore).toHaveBeenCalledTimes(1);
       expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('uses singular wording when the cost and saver count are both 1', () => {
+    expect(buildStreakSaverAlertMessage({
+      preBreak: 3,
+      savers: 1,
+      recoveryCost: 1,
+    })).toBe('Your 3-day streak broke. Restoring it will use 1 streak saver. You have 1 streak saver — restore it now?');
+  });
+
+  it('calls only dismiss when the user taps Maybe later', async () => {
+    render(
+      <IonApp>
+        <StreakSaverAlert
+          alert={{ preBreak: 7, savers: 3, recoveryCost: 2 }}
+          onDismiss={onDismiss}
+          onRestore={onRestore}
+        />
+      </IonApp>
+    );
+
+    fireEvent.click(screen.getByText('Maybe later'));
+
+    await waitFor(() => {
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+      expect(onRestore).not.toHaveBeenCalled();
     });
   });
 });

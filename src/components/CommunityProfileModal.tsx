@@ -37,11 +37,19 @@ type Props = {
   isAnonymous?: boolean;
   avatarUrl?: string | null;
   selfPreview?: boolean;
-  selfCommunityProfileData?: any;
   onDismiss: () => void;
 };
 
-const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl, selfPreview = false, selfCommunityProfileData, onDismiss }) => {
+const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss: handleDismiss }) => (
+  <IonContent className="ion-padding edit-community-profile-modal-content">
+    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <IonButton fill="clear" onClick={handleDismiss}>Close</IonButton>
+    </div>
+    <CommunityProfileSection useAccordion={false} />
+  </IonContent>
+);
+
+const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl, selfPreview = false, onDismiss }) => {
   const { data: currentProfile } = useGetCurrentProfile();
   const communityProfile = useGetCommunityProfile(userId, Boolean(userId));
   const data = communityProfile.data ?? null;
@@ -52,9 +60,9 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
 
   const isConnected = Boolean(userId && currentProfile?.mutual_connections?.includes(userId));
   const isSelf = Boolean(userId && currentProfile?.user && String(currentProfile.user) === String(userId));
-  const currentCommunityProfile = useGetCommunityProfile(undefined, Boolean(isSelf && !selfCommunityProfileData));
-  const selfCommunityData = selfCommunityProfileData ?? currentCommunityProfile.data ?? data;
-  const displayData = isSelf ? selfCommunityData : data;
+  const currentCommunityProfile = useGetCommunityProfile(undefined, isSelf);
+  const displayData = data;
+  const selfCommunityData = isSelf ? (currentCommunityProfile.data ?? data) : data;
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
     cardData: profileDetails.data,
     profiletype: isConnected ? 'connected-nodismiss' : 'unconnected-nodismiss',
@@ -85,15 +93,6 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     onDismiss: () => blockTypesDismiss(),
   });
 
-  const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss: handleDismiss }) => (
-    <IonContent className="ion-padding edit-community-profile-modal-content">
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <IonButton fill="clear" onClick={handleDismiss}>Close</IonButton>
-      </div>
-      <CommunityProfileSection useAccordion={false} />
-    </IonContent>
-  );
-
   const [editPresent, editDismiss] = useIonModal(EditCommunityProfileModal, {
     onDismiss: () => editDismiss(),
   });
@@ -102,8 +101,8 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     return String(chat?.other_user_id) === String(userId);
   });
   const chatLabel = existingChat ? 'Continue your chat' : 'Start your chat with them';
-  const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile && !currentProfile?.paused_profile);
-  const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile && !profileDetails.data?.paused_profile);
+  const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile);
+  const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile);
   const hasOutgoingLike = Boolean(userId && currentProfile?.outgoing_connections?.includes(userId));
   const hasIncomingLike = Boolean(userId && (incomingStatus?.is_incoming ?? false));
   const isBlocked = Boolean(
@@ -139,29 +138,29 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     : isSelf
       ? (currentProfile?.username || displayData?.username || 'You')
       : (otherDeactivated ? 'Refresh member' : (data?.username || 'Anonymous'));
+  const orderedPersonalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(currentProfile));
+  const selfCommunityAvatarSource = (() => {
+    if (!isSelf || !selfCommunityData) return null;
+    if (selfCommunityData.use_personal_profile_picture) {
+      return orderedPersonalPhoto ?? null;
+    }
+    return normalizeLocalMediaUrl(selfCommunityData.community_profile_pic) ?? null;
+  })();
   const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
-  const currentCommunityPhoto = normalizeLocalMediaUrl((selfCommunityData as any)?.community_profile_pic);
-  const currentOrderedPersonalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(currentProfile));
-  const selfCommunityDisplayPhoto = isSelf
-    ? selfCommunityData?.use_personal_profile_picture === false
-      ? currentCommunityPhoto ?? null
-      : (currentOrderedPersonalPhoto || currentCommunityPhoto || null)
-    : undefined;
   const communityAvatar = getAvatarDisplay({
     profileImage: showRestricted
       ? null
       : isSelf
-        ? selfCommunityDisplayPhoto
+        ? selfCommunityAvatarSource
         : avatarOverride ?? null,
     viewerConnect: currentProfile?.settings_community_profile,
-    authorConnect: displayData?.connect_enabled,
+    authorConnect: isSelf ? selfCommunityData?.connect_enabled : displayData?.connect_enabled,
     allowDefaultConnectBorder: !isSelf && !avatarOverride,
   });
   const showFallbackAvatar = showRestricted || !communityAvatar.hasImage;
   const showCommunityAvatarBorder = Boolean(
-    !showRestricted && currentProfile?.settings_community_profile && displayData?.connect_enabled
+    !showRestricted && currentProfile?.settings_community_profile && (isSelf ? selfCommunityData?.connect_enabled : displayData?.connect_enabled)
   );
-  const orderedPersonalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(profileDetails.data));
   const fallbackLogo = '../static/img/navynobordervector.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
   const otherConnect = Boolean(displayData?.connect_enabled);
@@ -170,7 +169,8 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const showCommunityDetails = Boolean(!showRestricted && (displayData?.community_bio || displayData?.location || displayData?.age_display));
   const showSelfPreviewNote = Boolean(isSelf && !showRestricted && viewerConnect && selfPreview);
   const showSelfManageActions = Boolean(isSelf && !showRestricted && !selfPreview);
-  const personalPhoto = showRestricted ? undefined : (orderedPersonalPhoto || normalizeLocalMediaUrl(data?.personal_photo));
+  const otherOrderedPersonalPhoto = normalizeLocalMediaUrl(getPrimaryOrderedPhoto(profileDetails.data));
+  const personalPhoto = showRestricted ? undefined : (otherOrderedPersonalPhoto || normalizeLocalMediaUrl(data?.personal_photo));
   const connectName = profileDetails.data?.name || username;
   const detailsLine = [displayData?.location, displayData?.age_display].filter(Boolean).join(' • ');
   const canShowChat = Boolean(isConnected && otherConnect && viewerActive && otherActive);
@@ -327,8 +327,14 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
             >
               Close
             </IonButton>
-            {communityProfile.isLoading && !data ? (
-              <IonSpinner name="dots" />
+            {(!userId || (communityProfile.isLoading && !data)) ? (
+              <div className="community-profile-skeleton">
+                <div className="community-profile-skeleton__block community-profile-skeleton__circle" />
+                <div className="community-profile-skeleton__block" style={{ width: '120px', height: '16px' }} />
+                <div className="community-profile-skeleton__block" style={{ width: '80px', height: '12px' }} />
+                <div className="community-profile-skeleton__block" style={{ width: '100%', height: '12px' }} />
+                <div className="community-profile-skeleton__block" style={{ width: '85%', height: '12px' }} />
+              </div>
             ) : (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>

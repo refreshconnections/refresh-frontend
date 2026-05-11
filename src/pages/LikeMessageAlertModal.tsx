@@ -44,9 +44,27 @@ export const LikeMessageAlertModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (!isMobile()) return;
-    Keyboard.addListener('keyboardWillShow', () => setKeyboardOpen(true));
-    Keyboard.addListener('keyboardWillHide', () => setKeyboardOpen(false));
-    return () => { Keyboard.removeAllListeners(); };
+
+    let cancelled = false;
+    let showListener: { remove: () => Promise<void> | void } | null = null;
+    let hideListener: { remove: () => Promise<void> | void } | null = null;
+
+    const attachListeners = async () => {
+      showListener = await Keyboard.addListener('keyboardWillShow', () => {
+        if (!cancelled) setKeyboardOpen(true);
+      });
+      hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+        if (!cancelled) setKeyboardOpen(false);
+      });
+    };
+
+    attachListeners();
+
+    return () => {
+      cancelled = true;
+      showListener?.remove();
+      hideListener?.remove();
+    };
   }, []);
 
   return (

@@ -15,7 +15,7 @@ type Props = {
 
 export const buildStreakSaverAlertMessage = (alert: StreakSaverAlertState | null) => {
   if (!alert) return '';
-  return `Your ${alert.preBreak}-day streak broke. Restoring it will cost ${alert.recoveryCost ?? '?'} streak saver${alert.recoveryCost === 1 ? '' : 's'}. You have ${alert.savers} streak saver${alert.savers === 1 ? '' : 's'} — restore it now?`;
+  return `Your ${alert.preBreak}-day streak broke. Restoring it will use ${alert.recoveryCost ?? '?'} streak saver${alert.recoveryCost === 1 ? '' : 's'}. You have ${alert.savers} streak saver${alert.savers === 1 ? '' : 's'} — restore it now?`;
 };
 
 const StreakSaverAlert: React.FC<Props> = ({ alert, onDismiss, onRestore }) => {

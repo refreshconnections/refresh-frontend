@@ -20,7 +20,10 @@ const { profilePresent, profileDismiss, capturedProfileModalProps, mockAddListen
 
 vi.mock('@capacitor/app', () => ({
   App: {
-    addListener: (...args: any[]) => mockAddListener(...args),
+    addListener: (...args: any[]) => {
+      mockAddListener(...args);
+      return Promise.resolve({ remove: vi.fn() });
+    },
   },
 }));
 

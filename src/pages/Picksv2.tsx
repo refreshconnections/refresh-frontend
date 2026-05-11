@@ -313,7 +313,7 @@ const Picksv2: React.FC = () => {
         setShouldScrollToTop(true);
       }
 
-      const nearEnd = (sortedPicks && index >= (sortedPicks.length - 3));
+      const nearEnd = newData.length > 0 && newData.length <= 3;
       if (nearEnd && !picksFetching) {
         await queryClient.prefetchQuery({
           queryKey: userQueryKeys.picks_and_profiles,

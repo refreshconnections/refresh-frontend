@@ -194,6 +194,11 @@ const OpenedPost: React.FC = () => {
 
         try {
             if (replyTo) {
+                if (!globalCurrentProfile?.user) {
+                    setNoComment(false);
+                    return;
+                }
+
                 const commentReplyData = {
                     announcement: id,
                     reply_to: replyTo?.id,
@@ -622,7 +627,7 @@ const OpenedPost: React.FC = () => {
 
     return (
         <IonPage>
-            {staticContentPost ?
+            {(staticContentPost && staticContentPost.approved) ?
                 <>
                     <IonContent>
                         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>

@@ -1131,7 +1131,8 @@ const TextModal: React.FC<Props> = (props) => {
                                 <IonCard color="white" className="ion-padding">
                                     <IonCardContent>
                                         <IonText color="navy">
-                                            <h3>Same team, different support process!</h3>
+                                            <h2>Same team, different support process!</h2>
+                                            <br/>
                                             <p>All new support requests should now be submitted through the Help feature. Messages sent to Freshy are no longer routinely monitored and will only be used when needed for an active Help request.</p>
                                             <br />
                                             <p>As we've grown, we've moved to a more structured support system to make sure requests are handled clearly and consistently.</p>

@@ -214,7 +214,7 @@ ion-item.streak ion-label h2{
 .streak-summary-card-header-title {
     font-size: 18px;
     font-weight: 800;
-    color: black;
+    color: var(--ion-color-black);
 }
 
 .streak-summary-card-body {

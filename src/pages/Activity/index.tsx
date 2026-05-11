@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonRow, IonFab, IonFabButton, IonIcon, IonCol, IonSegment, IonSegmentButton, IonLabel, useIonAlert, useIonModal, useIonRouter } from '@ionic/react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { chevronBackOutline } from 'ionicons/icons';
 
 import '../Page.css';
@@ -14,7 +14,8 @@ import { useGetSubmissionSummary } from '../../hooks/api/refreshments/submission
 import { useGetSubmittedEvents } from '../../hooks/api/submitted-events';
 import { useGetGlobalAppCurrentProfile } from '../../hooks/api/profiles/global-app-current-profile';
 import { useGetMyComments } from '../../hooks/api/profiles/my-comments';
-import { recoverStreak } from '../../hooks/utilities';
+import { recoverStreak, increaseStreak } from '../../hooks/utilities';
+import { Preferences } from '@capacitor/preferences';
 import { useQueryClient } from '@tanstack/react-query';
 import CreatePostModal from '../../components/CreatePostModal';
 
@@ -74,6 +75,25 @@ const Activity: React.FC = () => {
     const [presentAlert] = useIonAlert();
     const [recoveringStreak, setRecoveringStreak] = useState(false);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (currSegment !== 'streak') return;
+        const run = async () => {
+            await queryClient.refetchQueries({ queryKey: ['streak'] });
+            const streakData = queryClient.getQueryData<any>(['streak']);
+            // Don't auto-increase if the user has a recoverable broken streak — calling
+            // increaseStreak would reset streak_count to 1 and clear the restore window.
+            if (streakData?.streak_pre_break && streakData?.break_date) return;
+            await Preferences.remove({ key: 'lastStreakUpdate' });
+            await increaseStreak();
+            await queryClient.refetchQueries({ queryKey: ['streak'] });
+            const updated = queryClient.getQueryData<any>(['streak']);
+            if (updated?.last_updated) {
+                await Preferences.set({ key: 'lastStreakUpdate', value: new Date(updated.last_updated).toISOString() });
+            }
+        };
+        run().catch(() => {});
+    }, [currSegment]);
 
     const handleRecoverStreak = async () => {
         setRecoveringStreak(true);

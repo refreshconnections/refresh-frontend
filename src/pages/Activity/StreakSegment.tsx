@@ -104,7 +104,8 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                     return (
                         <IonNote color="navy" className="ion-padding ion-text-center">
                             Last updated {lastUpdated.fromNow()}.
-                            {canUpdateNow ? ' Send a message or a like to grow your streak now!' : ''}
+                            {/* This should be unreachable — visiting this page clears lastStreakUpdate and calls increaseStreak automatically */}
+                        {canUpdateNow ? ' Send a message or a like to grow your streak now!' : ''}
                         </IonNote>
                     );
                 })()}
@@ -116,7 +117,6 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                     const cost = daysMissed === null ? 1 : daysMissed <= 2 ? 1 : daysMissed <= 4 ? 2 : daysMissed <= 6 ? 3 : daysMissed <= 10 ? 4 : daysMissed <= 14 ? 5 : null;
                     const canAfford = cost !== null && streak.savers >= cost;
                     const windowExpired = cost === null;
-                    const showRestartRestore = streak?.streak_count === 1 && (streak?.savers ?? 0) > 0 && !(streak?.streak_pre_break && streak?.break_date);
                     return (
                         <IonCard color="white" className="streak-summary-card">
                             <div className="streak-summary-card-header">
@@ -173,28 +173,6 @@ const StreakSegment: React.FC<Props> = ({ currentUserProfile, streak, isLoading,
                                             </IonRow>
                                         </>
                                     )}
-                                </div>
-                            )}
-                            {showRestartRestore && (
-                                <div className="streak-summary-section streak-summary-section--recovery">
-                                    <IonCardTitle className="streak-summary-title">
-                                        Restore your streak
-                                    </IonCardTitle>
-                                    <IonText color="navy">
-                                        <p>
-                                            Your streak just restarted. Use <strong>1 streak saver</strong> to restore your previous streak.
-                                            You have <strong>{streak.savers}</strong>.
-                                        </p>
-                                    </IonText>
-                                    <IonRow className="ion-justify-content-center">
-                                        <IonButton
-                                            color="primary"
-                                            disabled={streak.savers < 1 || recoveringStreak}
-                                            onClick={handleRecoverStreak}
-                                        >
-                                            {recoveringStreak ? <IonSpinner name="dots" /> : 'Restore streak (1 saver)'}
-                                        </IonButton>
-                                    </IonRow>
                                 </div>
                             )}
                             </div>
