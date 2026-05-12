@@ -74,10 +74,22 @@ const Picksv2: React.FC = () => {
   const [isHydratedFromCache, setIsHydratedFromCache] = useState(false);
   const [shouldScrollToTop, setShouldScrollToTop] = useState(false);
   const skipCachedLastShownRef = useRef(false);
+  const actionedPickIdsRef = useRef<Set<number>>(new Set());
 
   const picksTopRef = useRef<null | HTMLDivElement>(null);
 
   const profileDetails = sortedPicks?.[index] ?? null;
+
+  const filterDisplayablePicks = (picks: typeof picksData) => {
+    if (!picks) return picks;
+    const seen = new Set<number>();
+    return picks.filter((pick) => {
+      if (!pick || typeof pick.user !== 'number') return false;
+      if (actionedPickIdsRef.current.has(pick.user) || seen.has(pick.user)) return false;
+      seen.add(pick.user);
+      return true;
+    }) as typeof picksData;
+  };
 
   /* refs for scroll logic */
   const lastY = useRef(0);
@@ -188,7 +200,7 @@ const Picksv2: React.FC = () => {
 
       if (cancelled) return;
 
-      let merged: typeof picksData = picksData;
+      let merged: typeof picksData = filterDisplayablePicks(picksData);
       const shouldSkipCached = skipCachedLastShownRef.current;
       if (shouldSkipCached) {
         skipCachedLastShownRef.current = false;
@@ -199,10 +211,23 @@ const Picksv2: React.FC = () => {
           : null;
 
       if (!shouldSkipCached && lastShownUserId != null) {
-        const alreadyIncluded = picksData.some(p => p.user === lastShownUserId);
-        if (!alreadyIncluded) {
-          merged = [lastShownPick, ...picksData];
+        const alreadyIncluded = merged?.some(p => p.user === lastShownUserId);
+        if (!alreadyIncluded && !actionedPickIdsRef.current.has(lastShownUserId)) {
+          merged = [lastShownPick, ...(merged ?? [])];
         }
+      }
+
+      const currentPick = sortedPicks?.[index] ?? null;
+      const currentPickUserId =
+        currentPick && typeof currentPick.user === 'number'
+          ? currentPick.user
+          : null;
+      if (
+        currentPickUserId != null &&
+        !actionedPickIdsRef.current.has(currentPickUserId) &&
+        !merged?.some(p => p.user === currentPickUserId)
+      ) {
+        merged = [currentPick, ...(merged ?? [])];
       }
 
       const targetUser =
@@ -276,7 +301,11 @@ const Picksv2: React.FC = () => {
 
     setFiltersVisible(false);
 
-    if (index < (picksData?.length ?? 0) - 1) {
+    if (typeof connection === 'number') {
+      actionedPickIdsRef.current.add(connection);
+    }
+
+    if (index < (sortedPicks?.length ?? 0) - 1) {
       await delay(300);
       setIndex(i => i + 1);
       setShouldScrollToTop(true);
@@ -284,8 +313,6 @@ const Picksv2: React.FC = () => {
       await doTheThing();
     } else {
       setNextLoading(true);
-      setSortedPicks([]);
-      setIndex(0);
       setShouldScrollToTop(true);
       jumpToTopViaAnchor();
 
@@ -295,7 +322,7 @@ const Picksv2: React.FC = () => {
       await doTheThing();
 
       const result = await picksRefetch();
-      const newData = result?.data ?? [];
+      const newData = filterDisplayablePicks(result?.data ?? []) ?? [];
       setShouldScrollToTop(true);
 
       if (newData.length > 0) {
@@ -371,7 +398,8 @@ const Picksv2: React.FC = () => {
         await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
         await removeFromCapacitorLocalStorage('last_shown_pick_v2');
         const result = await picksRefetch();
-        const freshData = result?.data ?? [];
+        actionedPickIdsRef.current = new Set();
+        const freshData = filterDisplayablePicks(result?.data ?? []) ?? [];
         setSortedPicks(freshData);
         setIndex(freshData.length ? 0 : 0);
         setFiltersLoading(false);

@@ -212,6 +212,17 @@ describe('Activity page', () => {
       expect(screen.getByText(/You joined Refresh Connections/)).toBeInTheDocument();
     });
 
+    it('shows today for the join date card when registrationDate is within 24 hours', () => {
+      mockGlobalProfile.mockReturnValue({
+        data: { registrationDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() },
+        isLoading: false,
+      } as any);
+
+      renderActivity();
+
+      expect(screen.getByText('You joined Refresh Connections today')).toBeInTheDocument();
+    });
+
     it('shows usage limits for removed comments and unsent chats', () => {
       mockLimits.mockReturnValue({
         data: { comments_removed: 3, chats_removed: 2 },

@@ -476,6 +476,35 @@ describe('Picksv2', () => {
     });
   });
 
+  it('skips already-actioned profiles when the next batch overlaps the previous batch', async () => {
+    mockPicks.mockReturnValue({
+      data: [{ user: 21, name: 'Jamie' }, { user: 22, name: 'Alex' }],
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      refetch: picksRefetch,
+    } as any);
+    picksRefetch.mockResolvedValueOnce({
+      data: [{ user: 21, name: 'Jamie again' }, { user: 23, name: 'Taylor' }],
+    });
+
+    const { container } = renderPicks();
+    expect(await screen.findByText('profile-card-21')).toBeInTheDocument();
+
+    fireEvent.click(getFabButtonByLabel(container, 'Ignore for now') as HTMLElement);
+    await waitFor(() => {
+      expect(screen.getByText('profile-card-22')).toBeInTheDocument();
+    });
+
+    fireEvent.click(getFabButtonByLabel(container, 'Ignore for now') as HTMLElement);
+
+    await waitFor(() => {
+      expect(picksRefetch).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('profile-card-23')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('profile-card-21')).not.toBeInTheDocument();
+  });
+
   it('blocks a profile through the block helper callback', async () => {
     const { container } = renderPicks();
     expect(await screen.findByText('profile-card-21')).toBeInTheDocument();

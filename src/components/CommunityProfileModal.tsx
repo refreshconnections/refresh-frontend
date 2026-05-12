@@ -40,6 +40,14 @@ type Props = {
   onDismiss: () => void;
 };
 
+const getAgeDisplay = (age: number | null | undefined, showAgeTier: string | null | undefined) => {
+  if (showAgeTier === 'none' || age == null) return null;
+  if (showAgeTier === 'decade') {
+    return age < 20 ? 'late teens' : `${Math.floor(age / 10) * 10}s`;
+  }
+  return age;
+};
+
 const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDismiss: handleDismiss }) => (
   <IonContent className="ion-padding edit-community-profile-modal-content">
     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -51,18 +59,39 @@ const EditCommunityProfileModal: React.FC<{ onDismiss: () => void }> = ({ onDism
 
 const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl, selfPreview = false, onDismiss }) => {
   const { data: currentProfile } = useGetCurrentProfile();
-  const communityProfile = useGetCommunityProfile(userId, Boolean(userId));
+  const effectiveUserId = userId ?? (selfPreview ? currentProfile?.user ?? null : null);
+  const communityProfile = useGetCommunityProfile(effectiveUserId, Boolean(effectiveUserId));
   const data = communityProfile.data ?? null;
-  const profileDetails = useProfileDetails(Number(userId), Boolean(userId));
+  const profileDetails = useProfileDetails(Number(effectiveUserId), Boolean(effectiveUserId));
   const chatsList = useGetCurrentUserChats().data || [];
-  const incomingStatus = useGetIncomingConnectionStatus(userId ?? undefined).data;
+  const incomingStatus = useGetIncomingConnectionStatus(effectiveUserId ?? undefined).data;
   const queryClient = useQueryClient();
 
-  const isConnected = Boolean(userId && currentProfile?.mutual_connections?.includes(userId));
-  const isSelf = Boolean(userId && currentProfile?.user && String(currentProfile.user) === String(userId));
+  const isConnected = Boolean(effectiveUserId && currentProfile?.mutual_connections?.includes(effectiveUserId));
+  const isSelf = Boolean(
+    selfPreview ||
+    (effectiveUserId && currentProfile?.user && String(currentProfile.user) === String(effectiveUserId))
+  );
   const currentCommunityProfile = useGetCommunityProfile(undefined, isSelf);
-  const displayData = data;
   const selfCommunityData = isSelf ? (currentCommunityProfile.data ?? data) : data;
+  const selfDisplayData = isSelf && currentProfile
+    ? {
+        ...(data ?? {}),
+        ...(selfCommunityData ?? {}),
+        user_id: currentProfile.user,
+        username: currentProfile.username ?? selfCommunityData?.username ?? data?.username,
+        has_community_profile: Boolean(selfCommunityData?.username ?? data?.has_community_profile),
+        community_bio: selfCommunityData?.community_bio ?? data?.community_bio,
+        location: selfCommunityData?.show_location ? currentProfile.location : null,
+        age_display: getAgeDisplay(currentProfile.age, selfCommunityData?.show_age_tier),
+        connect_enabled: Boolean(
+          currentProfile.settings_community_profile &&
+          !currentProfile.deactivated_profile &&
+          !currentProfile.paused_profile
+        ),
+      }
+    : null;
+  const displayData = selfDisplayData ?? data;
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
     cardData: profileDetails.data,
     profiletype: isConnected ? 'connected-nodismiss' : 'unconnected-nodismiss',
@@ -80,7 +109,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     yourName: currentProfile?.name || '',
     onDismiss: () => likeBackDismiss(),
     onActionDismiss: () => {
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming_status(userId ?? undefined) });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming_status(effectiveUserId ?? undefined) });
       queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming });
       queryClient.invalidateQueries({ queryKey: userQueryKeys.incoming_paginated });
       likeBackDismiss();
@@ -98,19 +127,19 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   });
 
   const existingChat = chatsList?.find((chat: { other_user_id?: string | number }) => {
-    return String(chat?.other_user_id) === String(userId);
+    return String(chat?.other_user_id) === String(effectiveUserId);
   });
   const chatLabel = existingChat ? 'Continue your chat' : 'Start your chat with them';
   const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile);
   const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile);
-  const hasOutgoingLike = Boolean(userId && currentProfile?.outgoing_connections?.includes(userId));
-  const hasIncomingLike = Boolean(userId && (incomingStatus?.is_incoming ?? false));
+  const hasOutgoingLike = Boolean(effectiveUserId && currentProfile?.outgoing_connections?.includes(effectiveUserId));
+  const hasIncomingLike = Boolean(effectiveUserId && (incomingStatus?.is_incoming ?? false));
   const isBlocked = Boolean(
-    userId &&
-      (currentProfile?.blocked_connections?.includes(userId) || currentProfile?.blocked_by?.includes(userId))
+    effectiveUserId &&
+      (currentProfile?.blocked_connections?.includes(effectiveUserId) || currentProfile?.blocked_by?.includes(effectiveUserId))
   );
-  const isCommunityBlocked = Boolean(userId && currentProfile?.community_blocked?.includes(userId));
-  const isUnmatched = Boolean(userId && currentProfile?.unmatched_connections?.includes(userId));
+  const isCommunityBlocked = Boolean(effectiveUserId && currentProfile?.community_blocked?.includes(effectiveUserId));
+  const isUnmatched = Boolean(effectiveUserId && currentProfile?.unmatched_connections?.includes(effectiveUserId));
 
   const handleChatDismiss = () => {
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
@@ -123,7 +152,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const [presentChat, dismissChat] = useIonModal(TextModal, {
     textModalData: existingChat
       ? existingChat
-      : { other_user_id: userId ? String(userId) : undefined, unread_count: 0 },
+      : { other_user_id: effectiveUserId ? String(effectiveUserId) : undefined, unread_count: 0 },
     profileDetails: profileDetails.data,
     pro: isPersonalPlus(currentProfile?.subscription_level),
     settingsAlt: currentProfile?.settings_alt_text,
@@ -147,6 +176,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     return normalizeLocalMediaUrl(selfCommunityData.community_profile_pic) ?? null;
   })();
   const avatarOverride = showRestricted ? undefined : normalizeLocalMediaUrl(avatarUrl);
+  const authorConnect = Boolean(displayData?.connect_enabled);
   const communityAvatar = getAvatarDisplay({
     profileImage: showRestricted
       ? null
@@ -154,16 +184,16 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
         ? selfCommunityAvatarSource
         : avatarOverride ?? null,
     viewerConnect: currentProfile?.settings_community_profile,
-    authorConnect: isSelf ? selfCommunityData?.connect_enabled : displayData?.connect_enabled,
+    authorConnect,
     allowDefaultConnectBorder: !isSelf && !avatarOverride,
   });
   const showFallbackAvatar = showRestricted || !communityAvatar.hasImage;
   const showCommunityAvatarBorder = Boolean(
-    !showRestricted && currentProfile?.settings_community_profile && (isSelf ? selfCommunityData?.connect_enabled : displayData?.connect_enabled)
+    !showRestricted && currentProfile?.settings_community_profile && authorConnect
   );
   const fallbackLogo = '../static/img/navynobordervector.png';
   const viewerConnect = Boolean(currentProfile?.settings_community_profile);
-  const otherConnect = Boolean(displayData?.connect_enabled);
+  const otherConnect = authorConnect;
   const canSendLikeFromCommunity = viewerConnect && otherConnect && !isConnected && !isBlocked && !isUnmatched && (hasIncomingLike || !hasOutgoingLike);
   const canLikeBack = viewerConnect && otherConnect && hasIncomingLike && !isConnected && !isBlocked && !isUnmatched;
   const showCommunityDetails = Boolean(!showRestricted && (displayData?.community_bio || displayData?.location || displayData?.age_display));
@@ -174,7 +204,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const connectName = profileDetails.data?.name || username;
   const detailsLine = [displayData?.location, displayData?.age_display].filter(Boolean).join(' • ');
   const canShowChat = Boolean(isConnected && otherConnect && viewerActive && otherActive);
-  const showActionControls = Boolean(userId && !isSelf && !showRestricted);
+  const showActionControls = Boolean(effectiveUserId && !isSelf && !showRestricted);
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
   const blockProfile = useBlockProfile();
@@ -182,9 +212,9 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const [reportRequiresDetails, setReportRequiresDetails] = useState(false);
 
   const blockUser = async (alsoCommunity = false) => {
-    if (!userId) return;
-    await updateBlockedConnections(userId);
-    if (alsoCommunity) await updateCommunityBlocked(userId);
+    if (!effectiveUserId) return;
+    await updateBlockedConnections(effectiveUserId);
+    if (alsoCommunity) await updateCommunityBlocked(effectiveUserId);
     queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
@@ -193,10 +223,10 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   };
 
   const communityBlockUser = async (alsoPersonal = false) => {
-    if (!userId) return;
-    await updateCommunityBlocked(userId);
-    if (alsoPersonal && !currentProfile?.blocked_connections?.includes(userId)) {
-      await updateBlockedConnections(userId);
+    if (!effectiveUserId) return;
+    await updateCommunityBlocked(effectiveUserId);
+    if (alsoPersonal && !currentProfile?.blocked_connections?.includes(effectiveUserId)) {
+      await updateBlockedConnections(effectiveUserId);
       queryClient.invalidateQueries({ queryKey: chatQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated });
     }
@@ -206,12 +236,12 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   };
 
   const handleBlockConfirm = () => {
-    if (!userId) return;
-    blockProfile(userId, () => blockUser(false));
+    if (!effectiveUserId) return;
+    blockProfile(effectiveUserId, () => blockUser(false));
   };
 
   const handleCommunityBlockConfirm = async () => {
-    if (!userId) return;
+    if (!effectiveUserId) return;
     presentAlert({
       header: 'Full community block?',
       subHeader: 'The personal block is permanent. Type "block" to confirm.',
@@ -246,7 +276,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
   const [createReportPresent, createReportDismiss] = useIonModal(ReportModal, {
     offender: "user",
     text: connectName,
-    id: userId ?? undefined,
+    id: effectiveUserId ?? undefined,
     requireDetails: reportRequiresDetails,
     onDismiss: (data: string, role: string) => {
       createReportDismiss(data, role);
@@ -327,7 +357,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
             >
               Close
             </IonButton>
-            {(!userId || (communityProfile.isLoading && !data)) ? (
+            {((!effectiveUserId && !selfPreview) || (communityProfile.isLoading && !data && !selfDisplayData)) ? (
               <div className="community-profile-skeleton">
                 <div className="community-profile-skeleton__block community-profile-skeleton__circle" />
                 <div className="community-profile-skeleton__block" style={{ width: '120px', height: '16px' }} />

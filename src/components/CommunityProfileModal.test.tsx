@@ -202,6 +202,57 @@ describe('CommunityProfileModal', () => {
     expect(screen.queryByText('Edit Refreshments Profile')).not.toBeInTheDocument();
   });
 
+  it('renders the self preview from current profile data even when opened before a user ID is passed', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      user: 42,
+      username: 'self-alex',
+      settings_community_profile: true,
+      name: 'Alex',
+      location: 'Brooklyn',
+      age: 34,
+    };
+    mockCurrentCommunityProfile = {
+      username: 'self-alex',
+      community_bio: 'Current self bio',
+      show_location: true,
+      show_age_tier: 'decade',
+      use_personal_profile_picture: false,
+      community_profile_pic: null,
+    };
+
+    renderModal({ userId: null, selfPreview: true });
+
+    expect(await screen.findByText('self-alex')).toBeInTheDocument();
+    expect(screen.getByText('Brooklyn • 30s')).toBeInTheDocument();
+    expect(screen.getByText('Current self bio')).toBeInTheDocument();
+  });
+
+  it('does not show self preview location when show_location is off', async () => {
+    mockCurrentProfile = {
+      ...baseCurrentProfile,
+      user: 42,
+      username: 'self-alex',
+      settings_community_profile: true,
+      location: 'Brooklyn',
+      age: 34,
+    };
+    mockCurrentCommunityProfile = {
+      username: 'self-alex',
+      community_bio: 'Current self bio',
+      show_location: false,
+      show_age_tier: 'decade',
+      use_personal_profile_picture: false,
+      community_profile_pic: null,
+    };
+
+    renderModal({ userId: null, selfPreview: true });
+
+    expect(await screen.findByText('self-alex')).toBeInTheDocument();
+    expect(screen.queryByText(/Brooklyn/)).not.toBeInTheDocument();
+    expect(screen.getByText('30s')).toBeInTheDocument();
+  });
+
   it('shows the self edit branch without the preview explanation outside the self preview', async () => {
     mockCurrentProfile = { ...baseCurrentProfile, user: 42, username: 'self-alex', settings_community_profile: true, name: 'Alex' };
 

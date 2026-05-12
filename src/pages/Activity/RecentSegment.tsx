@@ -15,6 +15,15 @@ interface Props {
     isLoading: boolean;
 }
 
+const getJoinedRefreshConnectionsLabel = (registrationDate: string) => {
+    const registeredAt = moment(registrationDate);
+    if (!registeredAt.isValid()) return moment(registrationDate).fromNow();
+
+    if (Math.abs(moment().diff(registeredAt, 'hours', true)) < 24) return 'today';
+
+    return registeredAt.fromNow();
+};
+
 const RecentSegment: React.FC<Props> = ({ recentNotifications, globalProfile, limits, isLoading }) => {
     if (isLoading) return <div className="segment-loading"><IonSpinner name="dots" /></div>;
 
@@ -45,7 +54,7 @@ const RecentSegment: React.FC<Props> = ({ recentNotifications, globalProfile, li
                 {(recentNotifications?.length ?? 0) < 10 && globalProfile?.registrationDate && (
                     <div className="comment-card">
                         <div className="comment-card-text expanded">
-                            <FontAwesomeIcon icon={faSparkles} /> &nbsp; You joined Refresh Connections {moment(globalProfile.registrationDate).fromNow()}
+                            <FontAwesomeIcon icon={faSparkles} /> &nbsp; You joined Refresh Connections {getJoinedRefreshConnectionsLabel(globalProfile.registrationDate)}
                         </div>
                     </div>
                 )}
