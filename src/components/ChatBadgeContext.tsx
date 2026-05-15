@@ -1,6 +1,5 @@
 import { createContext, useEffect, useState } from "react";
 
-import { useGetCurrentUserChats } from "../hooks/api/chats/current-user-chats";
 import { useGetUnreadCount } from "../hooks/api/chats/unread-count";
 
 
@@ -19,18 +18,13 @@ export const ChatBadgeContext = createContext<ChatBadgeContext>({
 export const ChatBadgeContextProvider = (props: any) => {
   
   const [chatBadgeCount, setChatBadgeCount] = useState<number>(0)
-  const chats = useGetCurrentUserChats().data;
   const unreadCount = useGetUnreadCount().data;
 
 
 
   useEffect(() => {
     setChatBadgeCount(unreadCount?.unread ?? 0)
-    // if (chats?.data) {
-    //   let newCount = chatBadgeCount
-    //   chats.data.forEach((chat) => newCount = newCount + chat.unread_count);
-    // }
-}, [chats]);
+}, [unreadCount]);
 
 
   

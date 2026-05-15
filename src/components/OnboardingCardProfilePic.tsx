@@ -27,10 +27,12 @@ import CroppedImageModal from './CroppedImageModal';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { decode } from 'base64-arraybuffer';
 import StayPausedModal from './StayPausedModal';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 const OnboardingCardProfilePic: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.profilePic;
 
   const swiper = useSwiper();
 
@@ -123,42 +125,37 @@ const OnboardingCardProfilePic: React.FC = () => {
 
 
   return (
-    <>
-      <IonCard className="onboarding-slide">
-        <IonCardContent>
-          <IonCardTitle>Upload a profile picture!</IonCardTitle>
-
-          <IonText>Make a good first impression. This is the first thing that will show on your profile. We recommend it be of just you. Remember, your profile needs to include at least one photo that shows your face.</IonText>
-          <IonItem className="no-bottom-line prof" style={{ overflow: "auto" }}>
-            {data ?
-              <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-                {loading ?
-                  <img alt="loading" src={"../static/img/loading-refresh-faster.gif"}></img> :
-                  data.pic1_main !== null ?
-                    <img alt="Picture 1" src={data.pic1_main} onError={(e) => onImgError(e)} />
-                    : <img alt="Picture 1 null" src={"../static/img/null.png"} />
-                }
-                <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic1_main")}><FontAwesomeIcon icon={faPenToSquare} />&nbsp; Upload</IonButton>
-              </div>
-
-              :
-              <div>
-                loading
-              </div>
-            }
-          </IonItem>
-
-
-        </IonCardContent>
-        <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-          <IonButton onClick={() => swiper.slideNext()} disabled={data && data.pic1_main == null ? true : false}>Next</IonButton>
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
+      <IonCardContent>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText style={{ whiteSpace: 'pre-line' }}>{copy.body}</IonText>
+        <IonItem className="no-bottom-line prof onboarding-photo-panel" style={{ overflow: "auto" }}>
+          {data ? (
+            <div className="onboarding-photo-upload-row">
+              {loading ? (
+                <img alt="loading" src={"../static/img/loading-refresh-faster.gif"} />
+              ) : data.pic1_main !== null ? (
+                <img alt="Picture 1" src={data.pic1_main} onError={(e) => onImgError(e)} />
+              ) : (
+                <img alt="Picture 1 null" src={"../static/img/null.png"} />
+              )}
+              <IonButton className="onboarding-pic-upload" color="tertiary" onClick={() => updatePicture("pic1_main")}><FontAwesomeIcon icon={faPenToSquare} />&nbsp; {copy.upload}</IonButton>
+            </div>
+          ) : (
+            <div>loading</div>
+          )}
+        </IonItem>
+      </IonCardContent>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={() => swiper.slideNext()} disabled={data && data.pic1_main == null}>{ONBOARDING_COPY.common.next}</IonButton>
         </IonRow>
-      </IonCard>
-      <IonRow className="notyet">
-        <IonButton fill="clear" onClick={() => stayPausedOpen()}>Don't feel like adding pictures yet?</IonButton>
-      </IonRow>
-    </>
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="clear" size="small" onClick={() => stayPausedOpen()}>{copy.skip}</IonButton>
+        </IonRow>
+      </div>
+    </IonCard>
   )
 };
 export default OnboardingCardProfilePic;

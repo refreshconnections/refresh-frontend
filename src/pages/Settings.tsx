@@ -1,4 +1,4 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonGrid, IonToggle, useIonActionSheet, IonSelect, IonSelectOption, ToggleCustomEvent } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonGrid, IonToggle, useIonActionSheet, IonSelect, IonSelectOption, ToggleCustomEvent, useIonRouter } from '@ionic/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { chevronBackOutline } from 'ionicons/icons';
 import OneSignal from 'onesignal-cordova-plugin';
@@ -7,11 +7,12 @@ import OneSignal from 'onesignal-cordova-plugin';
 import "./Page.css"
 import "./Settings.css"
 
-import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage } from '../hooks/utilities';
+import { updateCurrentUserProfile, logoutAll, logoutCurrent, applyThemeFromPref, setThemePref, isMobile, setFontSizePref, setTextZoom, clearStreak, removeAllProfilesFromCapacitorStorage, getReduceAnimations, setReduceAnimationsPref, isCommunityPlus, isPersonalPlus, updateCurrentUserChatSettings } from '../hooks/utilities';
+import { UPSELL_POPUPS_ENABLED_KEY } from '../hooks/useUpsellAlert';
+import { STREAK_BREAK_POPUPS_ENABLED_KEY } from '../hooks/streakPreferences';
 
 
 import ChangePasswordModal from '../components/ChangePasswordModal';
-import ProfileCreationModal from '../components/ProfileCreationModal';
 import { Preferences } from '@capacitor/preferences';
 import Cookies from 'js-cookie';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons/faRightFromBracket';
@@ -32,33 +33,87 @@ import { useGetStatuses } from '../hooks/api/status';
 import StatusToast from '../components/StatusToast';
 import EditHiddenContentModal from '../components/EditHiddenContentModal';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
-import EditChatSettingsModal from '../components/EditChatSettingsModal';
 import EditPushNotifications from '../components/EditPushNotifications';
-import { removeFromCapacitorLocalStorage } from '../hooks/capacitorPreferences/all';
+import { clearTransientAppStorage } from '../hooks/capacitorPreferences/all';
 import { faBroomWide, faEnvelope, faEnvelopeCircleCheck } from '@fortawesome/pro-solid-svg-icons';
+import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
 import EmailSettingsModal from '../components/EmailSettingsModal';
 import { faEnvelopes } from '@fortawesome/pro-regular-svg-icons';
+import {
+  getShowInterestedCountPref,
+  setShowInterestedCountPref,
+  SHOW_INTERESTED_COUNT_CHANGED_EVENT,
+  getHideInterestedCountOnMySubmissionsPref,
+  setHideInterestedCountOnMySubmissionsPref,
+  HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/interested-counts';
+import {
+  getShowEventsThisWeekRowPref,
+  setShowEventsThisWeekRowPref,
+  SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/events-this-week-row';
+import {
+  getShowAddToCalendarPref,
+  setShowAddToCalendarPref,
+  SHOW_ADD_TO_CALENDAR_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/add-to-calendar';
+import { useChatSettings } from '../hooks/api/chats/chat-settings';
+import SettingsSupportCard from '../components/SettingsSupportCard';
+
+const HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY = 'hidden_chat_new_message_badges';
+const HIDDEN_CHAT_NEW_MESSAGE_BADGES_CHANGED_EVENT = 'hidden_chat_new_message_badges_changed';
 
 
 
 
 
 const Settings: React.FC = () => {
-
-  const [loading, setLoading] = useState<boolean>(false);
+  const router = useIonRouter();
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<any>(null);
   const [theme, setTheme] = useState<'auto' | 'light' | 'dark' | null>(null);
   const [fontZoom, setFontZoom] = useState<'auto' | 'default' | 'large' | 'xl' | null>(null);
-
-  const [streakTracker, setStreakTracker] = useState<boolean | null>(null);
-
+  const [reduceAnimations, setReduceAnimations] = useState<boolean>(false);
+  const [chatOrganizer, setChatOrganizer] = useState<boolean>(true);
+  const [chatOrganizerShowHidden, setChatOrganizerShowHidden] = useState<boolean>(false);
+  const [showLocalTab, setShowLocalTab] = useState<boolean>(true);
+  const [showInLocalChats, setShowInLocalChats] = useState<boolean | null>(null);
+  const [showHiddenChatNewMessageBadges, setShowHiddenChatNewMessageBadges] = useState<boolean>(true);
+  const [allowImagesGlobal, setAllowImagesGlobal] = useState<boolean>(false);
+  const [allowAudioGlobal, setAllowAudioGlobal] = useState<boolean>(false);
+  const [conversationStarter, setConversationStarter] = useState<boolean>(false);
+  const [showInterestedCount, setShowInterestedCount] = useState<boolean>(true);
+  const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState<boolean>(false);
+  const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState<boolean>(true);
+  const [showAddToCalendar, setShowAddToCalendar] = useState<boolean>(true);
+  const [showSubscriptionPopups, setShowSubscriptionPopups] = useState<boolean>(true);
+  const [showStreakBreakPopups, setShowStreakBreakPopups] = useState<boolean>(true);
 
   const queryClient = useQueryClient()
   const data = useGetCurrentProfile().data
+  const [streakTracker, setStreakTracker] = useState<boolean | null>(
+    typeof data?.settings_streak_tracker === 'boolean' ? data.settings_streak_tracker : null
+  );
   const moderation = useGetCurrentModeration().data;
+  const currentChatSettings = useChatSettings().data;
 
 
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
+
+  const conversationPrompts = [
+    "If you could live anywhere, real or fictional, where would you live?",
+    "What's a random fun fact about you?",
+    "What food combo do you secretly, or not so secretly, love?",
+    "What's the last TV show you binged?",
+    "When was the last time you saw someone else wearing a mask in public?",
+    "If you had to give a 45 minute lecture right now on any one topic, what would that topic be?",
+    "What three words would best describe your day?",
+    "What's an underrated book in your opinion?",
+    "When do you feel the most connected to other people?",
+    "What's a question you wish people asked you more often?",
+    "What's something that fascinates you even if you don't fully understand it?",
+    "What's the last thing you did just for fun?"
+  ];
 
   const statuses = useGetStatuses().data;
 
@@ -70,8 +125,57 @@ const Settings: React.FC = () => {
   );
 
   const isBeforeExpiration = useMemo(
-    () => settingsStatus?.active && new Date() < new Date(settingsStatus?.expirationDateTime),
-    [settingsStatus?.expirationDateTime]
+    () => settingsStatus?.active && !!settingsStatus?.expirationDateTime && new Date() < new Date(settingsStatus?.expirationDateTime),
+    [settingsStatus?.active, settingsStatus?.expirationDateTime]
+  );
+
+  const isProUser = data?.subscription_level === 'pro';
+  const canUseHiddenChatNewMessageBadges = isPersonalPlus(data?.subscription_level);
+  const canShowInterestedCounts = isCommunityPlus(data?.subscription_level);
+  const [presentPremiumUpsellAlert] = useIonAlert();
+
+  const openPremiumUpsellAlert = () => {
+    if (!showSubscriptionPopups) return;
+    presentPremiumUpsellAlert({
+      header: 'Get + or Pro!',
+      message: 'This feature is available with a subscription.',
+      buttons: [
+        {
+          text: 'Back',
+          role: 'cancel',
+        },
+        {
+          text: 'Store',
+          handler: () => {
+            router.push('/store');
+          },
+        },
+      ],
+    });
+  };
+
+  const PremiumLabel = ({ children, available }: { children: React.ReactNode; available: boolean }) => (
+    <span className="settings__label-heading settings__label-heading--premium">
+      <span>{children}</span>
+      {available ? (
+        <span className="settings__premium-icon-button" aria-hidden="true">
+          <FontAwesomeIcon className="settings__premium-icon" icon={faCirclePlus} aria-hidden="true" />
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="settings__premium-icon-button"
+          aria-label="See plans"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openPremiumUpsellAlert();
+          }}
+        >
+          <FontAwesomeIcon className="settings__premium-icon" icon={faCirclePlus} aria-hidden="true" />
+        </button>
+      )}
+    </span>
   );
 
 
@@ -79,7 +183,8 @@ const Settings: React.FC = () => {
 
   async function handleLogout() {
     await Preferences.remove({ key: 'EXPIRY' })
-    await Preferences.clear();
+    await clearTransientAppStorage();
+    await removeAllProfilesFromCapacitorStorage();
     localStorage.removeItem('token')
     localStorage.clear();
     Cookies.remove('sessionid')
@@ -90,7 +195,6 @@ const Settings: React.FC = () => {
     catch {
       console.log("Something went wrong.")
     }
-    window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")
     }
@@ -98,18 +202,19 @@ const Settings: React.FC = () => {
       console.log("Doing OneSignal logout");
       (window as any).plugins.OneSignal.logout();
     }
+    window.location.href = "/";
   };
 
   async function clearCachedData() {
-    await removeFromCapacitorLocalStorage('picks_with_filters')
-    await removeFromCapacitorLocalStorage('last_shown_pick')
-    await removeFromCapacitorLocalStorage('chats')
-    await removeFromCapacitorLocalStorage('radius')
-    await removeFromCapacitorLocalStorage('local')
-    await removeFromCapacitorLocalStorage('filters')
-    await removeFromCapacitorLocalStorage('sort')
+    await clearTransientAppStorage()
     await removeAllProfilesFromCapacitorStorage()
+    queryClient.clear()
   };
+
+  async function reloadApp() {
+    await clearCachedData();
+    window.location.reload();
+  }
 
   async function handleLogoutAll() {
     const response = await logoutAll()
@@ -118,7 +223,6 @@ const Settings: React.FC = () => {
     localStorage.clear();
     Cookies.remove('sessionid')
     Cookies.remove('csrftoken')
-    window.location.href = "/";
     if (!isMobile()) {
       console.log("Skipping OneSignal logout ")
     }
@@ -126,6 +230,7 @@ const Settings: React.FC = () => {
       console.log("Doing OneSignal logout");
       (window as any).plugins.OneSignal.logout();
     }
+    window.location.href = "/";
   };
 
 
@@ -145,7 +250,7 @@ const Settings: React.FC = () => {
   const pauseProfileClicked = async () => {
     console.log('Pause clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to pause your profile?',
+      header: 'Are you sure you want to pause your Personal Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -166,7 +271,7 @@ const Settings: React.FC = () => {
 
   const cantUnpause = async (message: string) => {
     cantUnpauseAlert({
-      header: 'Uh oh. Your profile is not ready to be un-paused!',
+      header: 'Uh oh. Your Personal Profile is not ready to be un-paused!',
       subHeader: message,
       buttons: [
         {
@@ -196,6 +301,8 @@ const Settings: React.FC = () => {
           handler: async () => {
             await clearStreak()
             await updateCurrentUserProfile({ "settings_streak_tracker": false, "settings_show_streak_increase": false })
+            await Preferences.set({ key: STREAK_BREAK_POPUPS_ENABLED_KEY, value: 'false' });
+            setShowStreakBreakPopups(false);
             queryClient.invalidateQueries({ queryKey: ['current'] })
             queryClient.invalidateQueries({ queryKey: ['streak'] })
           },
@@ -231,7 +338,7 @@ const Settings: React.FC = () => {
   const unpauseProfileClicked = async () => {
     console.log('Pause clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to unpause your profile?',
+      header: 'Are you sure you want to unpause your Personal Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -252,7 +359,7 @@ const Settings: React.FC = () => {
   const deactivateProfileClicked = async () => {
     console.log('Deactivate clicked');
     presentConfirmAlert({
-      header: 'Are you sure you want to deactivate your profile?',
+      header: 'Are you sure you want to deactivate your Profile?',
       buttons: [
         {
           text: 'Nevermind.',
@@ -290,7 +397,7 @@ const Settings: React.FC = () => {
     }
     else {
       presentConfirmAlert({
-        header: 'Are you sure you want to reactivate your profile?',
+        header: 'Are you sure you want to reactivate your Profile?',
         buttons: [
           {
             text: 'Nevermind.',
@@ -314,7 +421,7 @@ const Settings: React.FC = () => {
     console.log('clear cache clicked');
     presentConfirmAlert({
       header: 'Are you sure you want to clear your cached data?',
-      message: 'This will temporarily slow the loading of your app. Your theme and font size preferences will not be affected.',
+      message: 'This will temporarily slow the loading of your app. Your local preferences and filters will stay the same.',
       buttons: [
         {
           text: 'Nevermind.',
@@ -362,35 +469,68 @@ const Settings: React.FC = () => {
   const [editHiddenContentPresent, editHiddenContentDismiss] = useIonModal(EditHiddenContentModal, {
     onDismiss: () => editHiddenContentDismiss(),
   });
-
-  const [editChatSettingsPresent, editChatSettingsDismiss] = useIonModal(EditChatSettingsModal, {
-    onDismiss: () => editChatSettingsDismiss(),
-  });
-
     const [emailSettingsPresent, editEmailSettingsDismiss] = useIonModal(EmailSettingsModal, {
     onDismiss: () => editEmailSettingsDismiss(),
   });
 
 
   useEffect(() => {
-
-    setLoading(true); // set loading to true
+    let cancelled = false;
 
     const fetchData = async () => {
-      setError(null);
-      setLoading(true);
-
       try {
         const themePref = await getThemePreference()
+        if (cancelled) {
+          return;
+        }
         setTheme(themePref == 'dark' ? 'dark' : themePref == 'light' ? 'light' : 'auto')
         const textSizePref = await getFontSizePreference()
+        if (cancelled) {
+          return;
+        }
         setFontZoom((textSizePref == 'default' || textSizePref == 'large' || textSizePref == 'xl') ? textSizePref : 'auto')
+        const reduceAnimPref = await getReduceAnimations()
+        if (cancelled) {
+          return;
+        }
+        setReduceAnimations(reduceAnimPref)
+        const { value: chatOrganizerPref } = await Preferences.get({ key: 'chat_organizer' });
+        if (cancelled) {
+          return;
+        }
+        setChatOrganizer(chatOrganizerPref !== 'false');
+        const { value: chatOrganizerShowHiddenPref } = await Preferences.get({ key: 'chat_organizer_show_hidden' });
+        if (cancelled) return;
+        setChatOrganizerShowHidden(chatOrganizerShowHiddenPref === 'true');
+        const { value: showLocalTabPref } = await Preferences.get({ key: 'show_local_tab' });
+        if (cancelled) return;
+        setShowLocalTab(showLocalTabPref !== 'false');
+        const { value: hiddenChatNewMessageBadgesPref } = await Preferences.get({ key: HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY });
+        if (cancelled) return;
+        setShowHiddenChatNewMessageBadges(hiddenChatNewMessageBadgesPref !== 'false');
+        setShowInterestedCount(await getShowInterestedCountPref());
+        if (cancelled) return;
+        setHideInterestedCountOnMySubmissions(await getHideInterestedCountOnMySubmissionsPref());
+        if (cancelled) return;
+        setShowEventsThisWeekRow(await getShowEventsThisWeekRowPref());
+        if (cancelled) return;
+        setShowAddToCalendar(await getShowAddToCalendarPref());
+        if (cancelled) return;
+        const { value: upsellPref } = await Preferences.get({ key: UPSELL_POPUPS_ENABLED_KEY });
+        if (cancelled) return;
+        setShowSubscriptionPopups(upsellPref !== 'false');
+        const { value: streakBreakPref } = await Preferences.get({ key: STREAK_BREAK_POPUPS_ENABLED_KEY });
+        if (cancelled) return;
+        setShowStreakBreakPopups(streakBreakPref !== 'false');
         // if (isMobile()) {
         //   setRealSettingsPushAllowed(await (window as any).plugins.OneSignal.Notifications.getPermissionAsync())
         // }
         // setPushOptedIn(await (window as any).plugins.OneSignal.User.pushSubscription.getOptedInAsync())
         setLoading(false);
       } catch (error: any) {
+        if (cancelled) {
+          return;
+        }
         setError(error.message);
         setLoading(false)
         console.log(error)
@@ -404,6 +544,10 @@ const Settings: React.FC = () => {
     // }
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
 
     // if (isMobile() && realSettingsPushAllowed) {
     //   setOptin();
@@ -426,21 +570,33 @@ const Settings: React.FC = () => {
   }, [theme]);
 
   useEffect(() => {
-
-    console.log("data changed", data?.settings_streak_tracker)
-
-    if (data?.settings_streak_tracker == false) {
-      setStreakTracker(false)
-    }
-    else if (data?.settings_streak_tracker == true) {
-      setStreakTracker(true)
+    if (typeof data?.settings_streak_tracker !== 'boolean') {
+      return;
     }
 
-  }, [data]);
+    setStreakTracker((currentValue) =>
+      currentValue === data.settings_streak_tracker
+        ? currentValue
+        : data.settings_streak_tracker
+    );
+  }, [data?.settings_streak_tracker]);
 
   useEffect(() => {
+    setAllowImagesGlobal(Boolean(currentChatSettings?.allow_images_global));
+  }, [currentChatSettings?.allow_images_global]);
 
-    console.log("Streak tracker", streakTracker)
+  useEffect(() => {
+    setAllowAudioGlobal(Boolean(currentChatSettings?.allow_audio_global));
+  }, [currentChatSettings?.allow_audio_global]);
+
+  useEffect(() => {
+    setConversationStarter(Boolean(currentChatSettings?.conversation_starter));
+  }, [currentChatSettings?.conversation_starter]);
+
+  useEffect(() => {
+    if (streakTracker === null || streakTracker === data?.settings_streak_tracker) {
+      return;
+    }
 
     const setToTrue = async () => {
       await updateCurrentUserProfile({ "settings_streak_tracker": true })
@@ -448,7 +604,6 @@ const Settings: React.FC = () => {
     }
 
     if (streakTracker == false && data?.settings_streak_tracker == true) {
-      console.log("hi this has changed")
       clearStreakTracker()
 
     }
@@ -457,7 +612,7 @@ const Settings: React.FC = () => {
     }
 
 
-  }, [streakTracker]);
+  }, [data?.settings_streak_tracker, queryClient, streakTracker]);
 
 
   useEffect(() => {
@@ -503,96 +658,15 @@ const Settings: React.FC = () => {
         <IonRow className="page-title bigger">
           <img className="color-invertible" src="../static/img/settings-navy.png" alt="settings" />
         </IonRow>
-        {data ?
+        {data && (
           <>
-            <IonNote>Pro Settings</IonNote>
+            <SettingsSupportCard isProUser={isProUser} onPremiumIconClick={openPremiumUpsellAlert} />
             <IonList>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">New message count</IonLabel>
-                <IonToggle slot="end"
-                  onIonChange={async e => await updateCurrentUserProfile({ "settings_new_message_count": e.detail.checked })}
-                  disabled={data?.subscription_level !== "pro"}
-                  checked={data?.subscription_level == "pro" && data?.settings_new_message_count}>
-                </IonToggle>
-              </IonItem>
-              {/* <IonItem>
-                <IonLabel className="ion-text-wrap">Create group chats</IonLabel>
-                <IonToggle slot="end"
-                  onIonChange={async e => await updateCurrentUserProfile({ "settings_create_groups": e.detail.checked })}
-                  disabled={data?.subscription_level !== "pro"}
-                  checked={data?.subscription_level == "pro" && data?.settings_create_groups}>
-                </IonToggle>
-              </IonItem> */}
-              <IonItem>
-              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Initiate mode</span>
-                  {data?.subscription_level == "pro" ?
-                    <p>Only connect with people you Like first</p>
-                    : <></>}
-                </IonLabel>
-                <IonToggle slot="end"
-                  onIonChange={async e => await updateCurrentUserProfile({ "initiate_mode": e.detail.checked })}
-                  disabled={data?.subscription_level !== "pro"}
-                  checked={data?.initiate_mode}>
-                </IonToggle>
-              </IonItem>
-              <IonItem>
-              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Pro banner</span>
-                  {data?.subscription_level == "pro" ?
-                    <p>Choose your banner in the Me tab under Profile - The Basics.</p>
-                    : <></>}
-                </IonLabel>
-                <IonToggle slot="end"
-                  onIonChange={async e => await updateCurrentUserProfile({ "settings_profile_banner_bool": e.detail.checked })}
-                  disabled={data?.subscription_level !== "pro"}
-                  checked={data?.subscription_level == "pro" && data?.settings_profile_banner_bool}>
-                </IonToggle>
-              </IonItem>
-              <IonItem>
-              <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Chats Keep-it-going</span></IonLabel>
-                <IonToggle slot="end"
-                  onIonChange={async e => await updateCurrentUserProfile({ "settings_chats_next_reminder": e.detail.checked })}
-                  disabled={data?.subscription_level !== "pro"}
-                  checked={data?.settings_chats_next_reminder}>
-                </IonToggle>
-              </IonItem>
-            </IonList>
-
-            <IonNote className="ion-text-wrap">Objectionable Content Settings</IonNote>
-            <IonItem>
-              <IonLabel className="ion-text-wrap">Hide sensitive Community posts</IonLabel>
-              <IonToggle slot="end"
-                onIonChange={async e => await updateCurrentUserProfile({ "settings_show_sensitive_content": !e.detail.checked })}
-                checked={!(data?.settings_show_sensitive_content)}>
-              </IonToggle>
-            </IonItem>
-            <IonItem>
-              <IonLabel className="ion-text-wrap">Hidden Content</IonLabel>
-              <IonButton slot="end" onClick={() => editHiddenContentPresent()}> Edit </IonButton>
-            </IonItem>
-
-            <IonNote className="ion-text-wrap">Communication Settings</IonNote>
-            <IonItem>
-              <IonLabel className="ion-text-wrap">Push notifications preferences</IonLabel>
-              <IonButton slot="end" onClick={() => editPushNotificationsPresent()}> Edit </IonButton>
-            </IonItem>
-            <IonItem>
-              <IonLabel className="ion-text-wrap">Chat preferences</IonLabel>
-              <IonButton slot="end" onClick={() => editChatSettingsPresent()}> Edit </IonButton>
-            </IonItem>
-            <IonItem>
-              <IonLabel className="ion-text-wrap">Receive marketing emails</IonLabel>
-              <IonToggle slot="end"
-                onIonChange={async e => await updateCurrentUserProfile({ "email_marketing": e.detail.checked })}
-                checked={data?.email_marketing}
-              >
-              </IonToggle>
-            </IonItem>
-            <IonNote className="ion-text-wrap">Profile Actions</IonNote>
-            <IonList>
+              <IonNote className="ion-text-wrap">Refreshments Community</IonNote>
               <IonItem>
                 <IonLabel className="ion-text-wrap">
                   <span className="settings__label-heading">Connect from Refreshments</span>
-                  <p>View Profiles and send / receive Likes from posts and comments in the Refreshments Bar.</p>
+                  <p>Turn this on to let people discover your Personal Profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar.</p>
                 </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_community_profile": e.detail.checked })}
@@ -602,39 +676,365 @@ const Settings: React.FC = () => {
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap">Create community posts</IonLabel>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Create Community Posts</span>
+                  <p>Start conversations in the Refreshments Bar by creating your own posts.</p>
+                </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_create_posts": e.detail.checked })}
                   checked={data?.settings_create_posts}>
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Track your streak</span>
-                  <p>Earned streaks can unlock Pro features.</p></IonLabel>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={canShowInterestedCounts}>Show Interested Counts Everywhere</PremiumLabel>
+                  <p>See how many members are interested in posts and calendar events across the app.</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowInterestedCount(val);
+                    await setShowInterestedCountPref(val);
+                    window.dispatchEvent(new CustomEvent(SHOW_INTERESTED_COUNT_CHANGED_EVENT, { detail: val }));
+                  }}
+                  disabled={!canShowInterestedCounts}
+                  checked={canShowInterestedCounts && showInterestedCount}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Interested Counts on My Submissions</span>
+                  <p>Show interested counts next to posts and calendar events you submitted.</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={!hideInterestedCountOnMySubmissions}
+                  onIonChange={async e => {
+                    const hideValue = !e.detail.checked;
+                    setHideInterestedCountOnMySubmissions(hideValue);
+                    await setHideInterestedCountOnMySubmissionsPref(hideValue);
+                    window.dispatchEvent(new CustomEvent(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, { detail: hideValue }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Events This Week Row</span>
+                  <p>Keep this week’s events easy to spot above Refreshments Bar posts.</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={showEventsThisWeekRow}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowEventsThisWeekRow(val);
+                    await setShowEventsThisWeekRowPref(val);
+                    window.dispatchEvent(new CustomEvent(SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT, { detail: val }));
+                  }}
+                />
+              </IonItem>
+
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Add to Calendar Button</span>
+                  <p>Show a button on events to save them directly to your device calendar.</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={showAddToCalendar}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowAddToCalendar(val);
+                    await setShowAddToCalendarPref(val);
+                    window.dispatchEvent(new CustomEvent(SHOW_ADD_TO_CALENDAR_CHANGED_EVENT, { detail: val }));
+                  }}
+                />
+              </IonItem>
+
+              <IonNote className="ion-text-wrap">Chats</IonNote>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={isProUser}>Show Exact Unread Message Counts</PremiumLabel>
+                  <p>See exact unread counts on your chats.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "settings_new_message_count": e.detail.checked })}
+                  disabled={!isProUser}
+                  checked={isProUser && data?.settings_new_message_count}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Chat Organizer</span>
+                  <p>Organize your chats into sections like Local and Hidden. Personal+ and Pro add editable custom sections.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setChatOrganizer(val);
+                    await Preferences.set({ key: 'chat_organizer', value: String(val) });
+                    window.dispatchEvent(new CustomEvent('chat_organizer_changed', { detail: val }));
+                  }}
+                  checked={chatOrganizer}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Hidden Chats in Organizer</span>
+                  <p>Include your Hidden tab in the organizer.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!chatOrganizer}
+                  checked={chatOrganizer && chatOrganizerShowHidden}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setChatOrganizerShowHidden(val);
+                    await Preferences.set({ key: 'chat_organizer_show_hidden', value: String(val) });
+                    window.dispatchEvent(new CustomEvent('chat_organizer_show_hidden_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Local Chats in Organizer</span>
+                  <p>Show a Local tab in the chat organizer for connections near you ("Appear in Local Chats" must be on to enable).</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!chatOrganizer || !data?.location_point_lat || !(showInLocalChats ?? (data?.settings_show_in_local_chats ?? true))}
+                  checked={chatOrganizer && !!data?.location_point_lat && (showInLocalChats ?? (data?.settings_show_in_local_chats ?? true)) && showLocalTab}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowLocalTab(val);
+                    await Preferences.set({ key: 'show_local_tab', value: String(val) });
+                    window.dispatchEvent(new CustomEvent('show_local_tab_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Appear in Local Chats</span>
+                  <p>Allow connections to see you in their Local tab based on your profile location.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!data?.location_point_lat}
+                  checked={!!data?.location_point_lat && (showInLocalChats ?? (data?.settings_show_in_local_chats ?? true))}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowInLocalChats(val);
+                    await updateCurrentUserProfile({ "settings_show_in_local_chats": val });
+                    if (!val) {
+                      setShowLocalTab(false);
+                      await Preferences.set({ key: 'show_local_tab', value: 'false' });
+                      window.dispatchEvent(new CustomEvent('show_local_tab_changed', { detail: false }));
+                    }
+                  }}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={canUseHiddenChatNewMessageBadges}>Show Hidden Chat New Message Badges</PremiumLabel>
+                  <p>Show a new-message badge on chats in your Hidden tab.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  disabled={!canUseHiddenChatNewMessageBadges}
+                  checked={canUseHiddenChatNewMessageBadges && showHiddenChatNewMessageBadges}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowHiddenChatNewMessageBadges(val);
+                    await Preferences.set({ key: HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY, value: String(val) });
+                    window.dispatchEvent(new CustomEvent(HIDDEN_CHAT_NEW_MESSAGE_BADGES_CHANGED_EVENT, { detail: val }));
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Receive Images</span>
+                  <p>Allow other members to send you images in Chats.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => {
+                    const checked = e.detail.checked;
+                    setAllowImagesGlobal(checked);
+                    await updateCurrentUserChatSettings({ allow_images_global: checked });
+                  }}
+                  checked={allowImagesGlobal}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Receive Audio Messages</span>
+                  <p>Allow other members to send you audio messages in Chats.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => {
+                    const checked = e.detail.checked;
+                    setAllowAudioGlobal(checked);
+                    await updateCurrentUserChatSettings({ allow_audio_global: checked });
+                  }}
+                  checked={allowAudioGlobal}>
+                </IonToggle>
+              </IonItem>
+              <IonItem lines={conversationStarter ? 'none' : 'full'}>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Conversation Starter</span>
+                  <p>When a new chat hasn’t started yet, show a prompt to help get the conversation going.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => {
+                    const checked = e.detail.checked;
+                    setConversationStarter(checked);
+                    await updateCurrentUserChatSettings({ conversation_starter: checked });
+                  }}
+                  checked={conversationStarter}>
+                </IonToggle>
+              </IonItem>
+              <IonItem
+                className={`with-select settings__conversation-starter-select${conversationStarter ? '' : ' settings__conversation-starter-select--hidden'}`}
+                aria-hidden={!conversationStarter}
+              >
+                <IonLabel className="ion-text-wrap settings__conversation-starter-field">
+                  <span className="settings__label-heading">Conversation Starter Prompt</span>
+                  <IonSelect
+                    value={currentChatSettings?.conversation_starter_text ?? null}
+                    placeholder="Choose a prompt"
+                    onIonChange={async e => {
+                      await updateCurrentUserChatSettings({ conversation_starter_text: e.detail.value });
+                    }}
+                    interface="alert"
+                    disabled={!conversationStarter}
+                  >
+                    {conversationPrompts.map((prompt, index) => (
+                      <IonSelectOption key={index} value={prompt}>
+                        {prompt}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonLabel>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={isProUser}>Show Keep It Going Reminder</PremiumLabel>
+                  <p>Show a gentle reminder when a chat could use a follow-up.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "settings_chats_next_reminder": e.detail.checked })}
+                  disabled={!isProUser}
+                  checked={isProUser && data?.settings_chats_next_reminder}>
+                </IonToggle>
+              </IonItem>
+
+              <IonNote className="ion-text-wrap">Discovery</IonNote>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={isProUser}>Initiate Mode</PremiumLabel>
+                  <p>Only appear to members whose profiles you Like first.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "initiate_mode": e.detail.checked })}
+                  disabled={!isProUser}
+                  checked={isProUser && data?.initiate_mode}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <PremiumLabel available={isProUser}>Show Pro Banner</PremiumLabel>
+                  <p>Display your Pro banner on your Personal Profile while other members browse in Discovery.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "settings_profile_banner_bool": e.detail.checked })}
+                  disabled={!isProUser}
+                  checked={isProUser && data?.settings_profile_banner_bool}>
+                </IonToggle>
+              </IonItem>
+
+              <IonNote className="ion-text-wrap">Sensitive Content Preferences</IonNote>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Hide Sensitive Community Posts</span>
+                  <p>Hide posts marked sensitive in the Refreshments Community unless you choose to view them.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "settings_show_sensitive_content": !e.detail.checked })}
+                  checked={!(data?.settings_show_sensitive_content)}>
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Hidden Content and Blocks</span>
+                  <p>View and manage hidden chats, hidden posts, and blocked members.</p>
+                </IonLabel>
+                <IonButton slot="end" onClick={() => editHiddenContentPresent()}> Edit </IonButton>
+              </IonItem>
+
+              <IonNote className="ion-text-wrap">App Preferences</IonNote>
+              <IonItem>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Track Your Streak</span>
+                  <p>Show your activity streak. Some streak milestones can unlock Pro features.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => setStreakTracker(e.detail.checked)}
-                  checked={streakTracker == true ? true : false}
-                >
+                  checked={streakTracker == true ? true : false}>
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show streak increases</span>
-                  <p>A little pop-up will tell you every time your streak increases.</p></IonLabel>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Streak Increases</span>
+                  <p>Get a little pop-up when your streak goes up.</p></IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_show_streak_increase": e.detail.checked })}
-                  checked={data?.settings_show_streak_increase}
-                >
+                  checked={data?.settings_show_streak_increase}>
                 </IonToggle>
               </IonItem>
               <IonItem>
-                <IonLabel className="ion-text-wrap">Show Image Descriptions</IonLabel>
+                <IonLabel className="ion-text-wrap"><span className="settings__label-heading">Show Streak Break Pop-ups</span>
+                  <p>Get a pop-up offering to restore your streak when it breaks.</p></IonLabel>
+                <IonToggle slot="end"
+                  checked={showStreakBreakPopups}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowStreakBreakPopups(val);
+                    await Preferences.set({ key: STREAK_BREAK_POPUPS_ENABLED_KEY, value: String(val) });
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Subscription Pop-ups</span>
+                  <p>Show prompts to subscribe when tapping locked features.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  checked={showSubscriptionPopups}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setShowSubscriptionPopups(val);
+                    await Preferences.set({ key: UPSELL_POPUPS_ENABLED_KEY, value: String(val) });
+                  }}
+                />
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Show Image Descriptions</span>
+                  <p>Show text descriptions for images when available.</p>
+                </IonLabel>
                 <IonToggle slot="end"
                   onIonChange={async e => await updateCurrentUserProfile({ "settings_alt_text": e.detail.checked })}
                   checked={data?.settings_alt_text}
                 >
                 </IonToggle>
               </IonItem>
-
+              <IonItem>
+                <IonLabel className="ion-text-wrap">
+                  <span className="settings__label-heading">Reduce Animations</span>
+                  <p>Reduce motion throughout the app.</p>
+                </IonLabel>
+                <IonToggle slot="end"
+                  checked={reduceAnimations}
+                  onIonChange={async e => {
+                    const val = e.detail.checked;
+                    setReduceAnimations(val);
+                    await setReduceAnimationsPref(val);
+                    window.dispatchEvent(new CustomEvent('reduce_animations_changed', { detail: val }));
+                  }}
+                />
+              </IonItem>
               <IonItem>
                 <IonSelect label="Theme" value={theme ?? 'auto'} onIonChange={(e) => setTheme(e.detail.value)}>
                   <IonSelectOption value="auto">Auto</IonSelectOption>
@@ -651,58 +1051,80 @@ const Settings: React.FC = () => {
                 </IonSelect>
               </IonItem>
               <IonItem>
-              <IonLabel className="ion-text-wrap">Change/Add Email</IonLabel>
-              <IonButton slot="end" size="default" onClick={() => emailSettingsPresent()}><FontAwesomeIcon icon={faEnvelopes} /></IonButton>
+                <IonLabel className="ion-text-wrap">Push Notification Preferences</IonLabel>
+                <IonButton slot="end" onClick={() => editPushNotificationsPresent()}> Edit </IonButton>
               </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">Change password</IonLabel>
-                <IonButton slot="end" size="default" onClick={() => passwordChangePresent()}><FontAwesomeIcon icon={faUnlock} /></IonButton>
-              </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">Logout just this device</IonLabel>
-                <IonButton slot="end" size="default" onClick={handleLogout}><FontAwesomeIcon icon={faRightFromBracket} /></IonButton>
-              </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">Logout on all devices</IonLabel>
-                <IonButton slot="end" size="default" onClick={() => handleLogoutAll()}><FontAwesomeIcon icon={faRightFromLine} /></IonButton>
-              </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">Clear cache</IonLabel>
-                <IonButton size="default" slot="end" onClick={() => clearCacheClicked()}><FontAwesomeIcon icon={faBroomWide} /></IonButton>
-              </IonItem>
-              <IonItem>
-                <IonLabel className="ion-text-wrap">Reload app</IonLabel>
-                <IonButton size="default" slot="end" onClick={() => window.location.reload()}><FontAwesomeIcon icon={faRefresh} /></IonButton>
-              </IonItem>
+
+              <IonNote className="ion-text-wrap">Profile Actions</IonNote>
               {data?.paused_profile ?
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Unpause profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Unpause Profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => unPauseProfileHandler()}><FontAwesomeIcon icon={faCirclePlay} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Pause profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">
+                    <span className="settings__label-heading">Pause Profile</span>
+                    <p>Stop showing your Personal Profile in Discovery while keeping existing chats and community participation.</p>
+                  </IonLabel>
                   <IonButton slot="end" size="default" onClick={() => pauseProfileClicked()}><FontAwesomeIcon icon={faCirclePause} /></IonButton>
                 </IonItem>
               }
               {data?.deactivated_profile ?
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Reactivate profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Reactivate Profile</IonLabel>
                   <IonButton slot="end" size="default" onClick={() => reactivateProfileClicked()}><FontAwesomeIcon icon={faSquarePlus} /></IonButton>
                 </IonItem>
                 :
                 <IonItem>
-                  <IonLabel className="ion-text-wrap">Deactivate profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">
+                    <span className="settings__label-heading">Deactivate Profile</span>
+                    <p>Hide your Personal Profile and pause Discovery, messaging, posting, and commenting until you reactivate. You can still read Refreshments posts and view the calendar.</p>
+                  </IonLabel>
                   <IonButton slot="end" size="default" onClick={() => deactivateProfileClicked()}><FontAwesomeIcon icon={faSquareMinus} /></IonButton>
                 </IonItem>
               }
+
+              <IonNote className="ion-text-wrap">Account</IonNote>
               <IonItem>
-                <IonLabel className="ion-text-wrap">Delete your account</IonLabel>
+                <IonLabel className="ion-text-wrap">Receive Marketing Emails</IonLabel>
+                <IonToggle slot="end"
+                  onIonChange={async e => await updateCurrentUserProfile({ "email_marketing": e.detail.checked })}
+                  checked={data?.email_marketing}
+                >
+                </IonToggle>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Add or Change Email</IonLabel>
+                <IonButton slot="end" size="default" onClick={() => emailSettingsPresent()}><FontAwesomeIcon icon={faEnvelopes} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Change Password</IonLabel>
+                <IonButton slot="end" size="default" onClick={() => passwordChangePresent()}><FontAwesomeIcon icon={faUnlock} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Log Out of This Device</IonLabel>
+                <IonButton slot="end" size="default" onClick={handleLogout}><FontAwesomeIcon icon={faRightFromBracket} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Log Out of All Devices</IonLabel>
+                <IonButton slot="end" size="default" onClick={() => handleLogoutAll()}><FontAwesomeIcon icon={faRightFromLine} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Clear Cached Data</IonLabel>
+                <IonButton size="default" slot="end" onClick={() => clearCacheClicked()}><FontAwesomeIcon icon={faBroomWide} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Reload App</IonLabel>
+                <IonButton size="default" slot="end" onClick={() => reloadApp()}><FontAwesomeIcon icon={faRefresh} /></IonButton>
+              </IonItem>
+              <IonItem>
+                <IonLabel className="ion-text-wrap">Delete Account</IonLabel>
                 <IonButton color="danger" size="default" slot="end" onClick={() => deleteAccountClicked()}><FontAwesomeIcon icon={faTrashCan} /></IonButton>
               </IonItem>
             </IonList>
           </>
-          : <></>}
+        )}
         {settingsStatus?.active && (settingsStatus?.header || settingsStatus?.message) && isBeforeExpiration ?
           <StatusToast isToastOpen={true} setIsToastOpen={setIsToastOpen} header={settingsStatus?.header} message={settingsStatus?.message} />
           : <></>}

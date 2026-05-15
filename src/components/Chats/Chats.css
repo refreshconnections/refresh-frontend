@@ -1,3 +1,9 @@
+.modal-title ion-title::part(native) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
 ion-fab ion-badge.chats-likes {
     width: 25pt;
     height: 25pt;
@@ -13,4 +19,20 @@ ion-fab ion-badge.chats-likes {
     justify-content: center;
     display: flex;
     align-items: center;
+}
+
+.chat-organizer-scroll {
+    overflow-x: auto;
+    padding: 4px 8px 0;
+}
+
+.chat-organizer-row {
+    display: flex;
+    gap: 6px;
+    width: max-content;
+    margin-inline: auto;
+}
+
+.chat-organizer-row ion-chip {
+    flex-shrink: 0;
 }

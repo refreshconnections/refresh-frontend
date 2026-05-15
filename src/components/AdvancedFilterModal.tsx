@@ -8,7 +8,7 @@ import './AdvancedFilterModal.css'
 import EditLocationModal from "./EditLocationModal";
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 import { useQueryClient } from "@tanstack/react-query";
-import { faStar, faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
+import { faCirclePlus, faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { removeFromCapacitorLocalStorage } from "../hooks/capacitorPreferences/all";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
@@ -292,7 +292,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     { value: "trans", label: "Trans" },
     { value: "intersex", label: "Intersex" },
     { value: "mono", label: "Monogamous" },
-    { value: "poly", label: "Polyamorous" },
+    { value: "poly", label: "Nonmonogamous" },
   ];
 
   const formatGenderSexualityLabel = (value: string) => {
@@ -378,11 +378,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           value: 'virtual connection',
         },
         {
-          label: 'virtual only',
-          type: 'radio',
-          value: 'virtual only',
-        },
-        {
           label: 'housing / roommates',
           type: 'radio',
           value: 'housing',
@@ -465,7 +460,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const whatGenderSexualityNot = async () => {
     presentGenderSexualityNotAlert({
-      header: "Anyone you don't want to see in your Picks?",
+      header: "Anyone you don't want to see in Discovery?",
       subHeader: 'Choose one',
       buttons: [
         {
@@ -674,7 +669,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
   const whatDistance = async () => {
     presentDistanceAlert({
-      header: 'What is the farthest away your Picks should be?',
+      header: 'What is the farthest away profiles in Discovery should be?',
       subHeader: '(in kilometers)',
       buttons: [
         {
@@ -722,7 +717,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const clearFilterAlert = async () => {
     presentClearFiltersAlert({
       header: 'Are you sure you want to clear your filters?',
-      subHeader: 'You can always put them back. Note: This does not clear your profile visibility preferences.',
+      subHeader: 'You can always put them back. Note: This does not clear your Profile visibility preferences.',
       buttons: [
         {
           text: 'Nevermind',
@@ -1173,7 +1168,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           <IonAccordion disabled={!isPersonalPlus(currentProfileData?.subscription_level)}>
             <IonItem slot="header" lines="none">
               <IonLabel className="side">
-                <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></h3>
+                <h3>Keyword &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /></h3>
                 {(keywordFilter == null || keywordFilter == "") && (keywordExcludeFilter == null || keywordExcludeFilter == "") ?
                   <p>Talking about any topic</p>
                   : keywordFilter && keywordFilter !== "" ?
@@ -1185,11 +1180,11 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonRadioGroup value={keywordMode} onIonChange={(e) => setKeywordMode(e.detail.value)}>
                 <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('include')}>
                   <IonRadio slot="start" value="include" />
-                  <IonLabel className="ion-text-wrap">Talking about this in their profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Talking about this in their Profile</IonLabel>
                 </IonItem>
                 <IonItem lines="none" button detail={false} onClick={() => setKeywordMode('exclude')}>
                   <IonRadio slot="start" value="exclude" />
-                  <IonLabel className="ion-text-wrap">Not talking about this in their profile</IonLabel>
+                  <IonLabel className="ion-text-wrap">Not talking about this in their Profile</IonLabel>
                 </IonItem>
               </IonRadioGroup>
               <IonItem lines="none" className="keyword-input-item">
@@ -1349,7 +1344,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
               <IonRow className="any-all-row">
-                <IonSegment value={gsAnyGender ? "none" : anyOrAll} style={{ width: "100%" }}>
+                <IonSegment value={gsAnyGender ? "none" : anyOrAll} style={{ width: "100%" }} mode="ios">
                   <IonSegmentButton
                     value="none"
                     onClick={() => {
@@ -1389,7 +1384,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
 
                     {anyOrAll == "all" ?
                       <IonText color="danger" className="ion-text-wrap">
-                        <p>Remember: searching by "all" results in far fewer Picks!</p>
+                        <p>Remember: searching by "all" results in far fewer Discovery results!</p>
 
                       </IonText> : <></>}
                     <IonText className="ion-padding ion-text-wrap">
@@ -1480,7 +1475,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   </IonItem>
                   <IonItem>
                     <IonCheckbox slot="start" value="poly" checked={genderSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addGenderSexualityFilterCheckbox(e)} />
-                    Polyamorous
+                    Nonmonogamous
                   </IonItem>
                 </IonCol>
               </IonRow>
@@ -1493,12 +1488,13 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                   lines="none"
                   onClick={whatGenderSexualityNot}
                   className="gender-not-item"
+                  style={{"width": "100%"}}
                 >
                   <IonLabel className="ion-text-wrap gender-not-label">
                     <h3>
                       {genderSexualityNot
-                        ? "I am not looking for anyone who identifies as:"
-                        : "Anyone you don’t want to see in your Picks?"}
+                        ? "But I am not looking for anyone who identifies as:"
+                        : "Anyone you don’t want to see in Discovery?"}
                     </h3>
                     <p>
                       {genderSexualityNot
@@ -1523,7 +1519,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonRow>
               <IonRow >
                 <IonText className="ion-padding ion-text-wrap" style={{ fontSize: "14px" }}>
-                  ● Only show my profile to people who:
+                  ● Only show my Profile to people who:
                 </IonText>
               </IonRow>
               <IonItem>
@@ -1547,12 +1543,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               <IonAccordionGroup className="blue-bg">
                 <IonAccordion value="first">
                   <IonItem slot="header">
-                    <IonLabel style={{ paddingLeft: 0 }} className="ion-text-wrap">● Only show my profile to people who identify as: </IonLabel>
+                    <IonLabel style={{ paddingLeft: 0 }} className="ion-text-wrap">● Only show my Profile to people who identify as:</IonLabel>
                     {onlyshowSexualityFilterChecked.length > 0 ? <IonBadge color={(onlyShowAnyOrAll == "all") ? "danger" : "primary"}>{onlyshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
                     <IonRow className="any-all-row">
-                      <IonSegment value={onlyShowAnyOrAll} style={{ width: "100%" }}>
+                      <IonSegment value={onlyShowAnyOrAll} style={{ width: "100%" }} mode="ios">
                         <IonSegmentButton value="none" onClick={() => { setOnlyShowAnyOrAll("none"); setSomethingChanged(true) }}>
                           <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
                         </IonSegmentButton>
@@ -1583,7 +1579,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                           </> : <></>}
                         <IonRow className="lr-pad">
                           <IonText className="ion-padding ion-text-wrap">
-                            Only show my profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
+                            Only show my Profile to to people who identify as <i>{onlyShowAnyOrAll}</i> of the following:
                           </IonText>
                         </IonRow>
                         <IonRow>
@@ -1665,7 +1661,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                             </IonItem>
                             <IonItem>
                               <IonCheckbox slot="start" value="poly" disabled={onlyshowSexualityFilterChecked.includes("mono")} checked={onlyshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addOnlyShowGenderFilterCheckbox(e)} />
-                              Polyamorous
+                              Nonmonogamous
                             </IonItem>
 
                           </IonCol>
@@ -1677,12 +1673,12 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                 </IonAccordion>
                 <IonAccordion value="second">
                   <IonItem slot="header">
-                    <IonLabel className="ion-text-wrap">● Only show my profile to people who do NOT identify as</IonLabel>
+                    <IonLabel className="ion-text-wrap">● Only show my Profile to people who do NOT identify as</IonLabel>
                     {dontshowSexualityFilterChecked.length > 0 ? <IonBadge color={(dontShowAnyOrAll == "any") ? "danger" : "primary"}>{dontshowSexualityFilterChecked.length} preferences</IonBadge> : <></>}
                   </IonItem>
                   <div slot="content">
                     <IonRow className="any-all-row">
-                      <IonSegment value={dontShowAnyOrAll} style={{ width: "100%" }}>
+                      <IonSegment value={dontShowAnyOrAll} style={{ width: "100%" }} mode="ios">
                         <IonSegmentButton value="none" onClick={() => { setDontShowAnyOrAll("none"); setSomethingChanged(true) }}>
                           <IonLabel className="ion-text-wrap">(No preferences)</IonLabel>
                         </IonSegmentButton>
@@ -1713,7 +1709,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                           </> : <></>}
                         <IonRow className="lr-pad">
                           <IonText className="ion-padding ion-text-wrap">
-                            Only show my profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
+                            Only show my Profile to people who do NOT identify as <i>{dontShowAnyOrAll}</i> of the following:
                           </IonText>
                         </IonRow>
                         <IonRow>
@@ -1795,7 +1791,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
                             </IonItem>
                             <IonItem>
                               <IonCheckbox slot="start" value="poly" disabled={dontshowSexualityFilterChecked.includes("mono")} checked={dontshowSexualityFilterChecked.includes("poly") ? true : false} onIonChange={e => addDontShowGenderFilterCheckbox(e)} />
-                              Polyamorous
+                              Nonmonogamous
                             </IonItem>
 
                           </IonCol>
@@ -1810,7 +1806,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
               </IonAccordionGroup>
               <IonRow className="lr-pad">
                 <IonText style={{ fontSize: "10pt" }} className="ion-padding ion-text-wrap">
-                  *Using visibility preferences does not guarantee that your profile will only be shown to people with your choices.
+                  *Using visibility preferences does not guarantee that your Profile will only be shown to people with your choices.
                   Members self-select any number of attributes and can change them at any time.
                   Using preferences should not lower the caution you take in what you reveal on your profile.
                   Please check out our How Tos for specific examples and our

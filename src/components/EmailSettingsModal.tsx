@@ -34,6 +34,7 @@ import {
 import { checkmarkCircle, closeCircle, refreshOutline } from "ionicons/icons";
 import "./StatusToast.css";
 import "./EditModal.css";
+import "../pages/Settings.css";
 
 type Props = { onDismiss: () => void };
 
@@ -182,19 +183,45 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
   // Auto recheck on resume
   useEffect(() => {
     if (!needsRecheck) return;
-    const listen = async () => {
-      App.addListener("resume", async () => {
+    let isActive = true;
+    let resumeHandle: { remove: () => Promise<void> | void } | undefined;
+    let pauseHandle: { remove: () => Promise<void> | void } | undefined;
+
+    const attachListeners = async () => {
+      const handleResume = async () => {
         try {
           await statusQuery.refetch();
         } catch (e) {
           console.warn("Failed to refetch on resume", e);
         }
-      });
-      App.addListener("pause", async () => {
+      };
+
+      const noopPause = async () => {
         // no-op
-      });
+      };
+
+      const [nextResumeHandle, nextPauseHandle] = await Promise.all([
+        App.addListener("resume", handleResume),
+        App.addListener("pause", noopPause),
+      ]);
+
+      if (!isActive) {
+        await nextResumeHandle.remove();
+        await nextPauseHandle.remove();
+        return;
+      }
+
+      resumeHandle = nextResumeHandle;
+      pauseHandle = nextPauseHandle;
     };
-    listen();
+
+    attachListeners();
+
+    return () => {
+      isActive = false;
+      void resumeHandle?.remove();
+      void pauseHandle?.remove();
+    };
   }, [needsRecheck, statusQuery]);
 
   // password dialog handler (always required to add a backup, including after removal)
@@ -250,18 +277,18 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
             </IonButtons>
           </IonToolbar>
         </IonHeader>
-        <IonContent className="edit-modal" fullscreen>
+        <IonContent fullscreen>
           <div style={{ padding: 16 }}>
             <IonItem lines="full">
               <IonLabel className="ion-text-wrap">
-                <div style={{ fontSize: 17, fontWeight: 600 }}>Primary email</div>
+                <span className="settings__field-label">Primary email</span>
                 <IonSkeletonText animated style={{ width: "60%", height: 14 }} />
               </IonLabel>
             </IonItem>
 
             <IonItem lines="none">
               <IonLabel className="ion-text-wrap">
-                <div style={{ fontSize: 17, fontWeight: 600 }}>Backup email</div>
+                <span className="settings__field-label">Backup email</span>
                 <IonSkeletonText animated style={{ width: "50%", height: 14 }} />
               </IonLabel>
             </IonItem>
@@ -304,19 +331,19 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="edit-modal">
+      <IonContent>
         {/* Current status */}
         <IonItem lines="full">
           <IonLabel className="ion-text-wrap">
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Primary email</div>
-            <div>{status?.primary_email}</div>
+            <span className="settings__field-label">Primary email</span>
+            <span className="settings__field-value">{status?.primary_email}</span>
           </IonLabel>
         </IonItem>
 
         <IonItem lines="none">
           <IonLabel className="ion-text-wrap">
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Backup email</div>
-            <div>
+            <span className="settings__field-label">Backup email</span>
+            <span className="settings__field-value">
               {status?.secondary_email ? (
                 <>
                   <span>{status?.secondary_email}</span>&nbsp;
@@ -325,7 +352,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
               ) : (
                 <em>None</em>
               )}
-            </div>
+            </span>
           </IonLabel>
 
           {status?.secondary_email && (
@@ -482,7 +509,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
 
       {/* Password dialog used by both actions */}
       <IonAlert
-        key={pwdAlertKey} // force fresh mount each time to avoid sticky value
+        key={`pwd-${pwdAlertKey}`} // force fresh mount each time to avoid sticky value
         isOpen={pwdOpen}
         header="Confirm password"
         backdropDismiss={false}
@@ -513,7 +540,7 @@ const EmailSettingsModal: React.FC<Props> = ({ onDismiss }) => {
       />
 
       <IonAlert
-        key={smsAlertKey} // force fresh mount only when actually opened
+        key={`sms-${smsAlertKey}`} // force fresh mount only when actually opened
         isOpen={smsOpen}
         header="Enter SMS code"
         message={`We texted a 6-digit code to your phone number ending in ••${lastTwoDigits || "??"}`}

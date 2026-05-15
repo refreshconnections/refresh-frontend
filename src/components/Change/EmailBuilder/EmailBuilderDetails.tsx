@@ -234,7 +234,7 @@ const EmailBuilderDetails: React.FC = () => {
                 <IonCard>
                     <IonItem className="ion-text-wrap" color="white" lines="none">
                         <IonLabel position="stacked">Personal Statement:</IonLabel>
-                        <IonTextarea autoGrow autoCapitalize="sentences" debounce={1000} rows={3} autoCorrect="on" spellcheck={true} placeholder="(Optional, but makes your email far more powerful. If you are local to this issue, DEFINITELY put that here.)"  value={personal} onIonChange={(e)=>setPersonal(e.detail.value!)}/>
+                        <IonTextarea autoGrow autocapitalize="sentences" debounce={1000} rows={3} autoCorrect="on" spellcheck={true} placeholder="(Optional, but makes your email far more powerful. If you are local to this issue, DEFINITELY put that here.)"  value={personal} onIonChange={(e)=>setPersonal(e.detail.value!)}/>
                     </IonItem>
                 </IonCard>
 

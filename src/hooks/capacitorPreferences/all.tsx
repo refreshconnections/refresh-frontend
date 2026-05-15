@@ -1,5 +1,20 @@
 import { Preferences } from '@capacitor/preferences';
 
+const TRANSIENT_CACHE_KEYS = [
+  'picks_with_filters',
+  'last_shown_pick',
+  'last_shown_pick_v2',
+  'picks_and_profiles_with_filters',
+  'chats',
+  'personal_profile_onboarding_in_progress',
+  'personal_profile_onboarding_slide',
+  'community_onboarding_in_progress',
+  'community_onboarding_slide',
+  'ONBOARDED',
+];
+
+const TRANSIENT_CACHE_PREFIXES = ['warm_', 'profile-'];
+
 // Function to set data with an expiry time
 export const setWithExpiry = async (key, value, ttl) => {
   const expiryTime = Date.now() + ttl;
@@ -71,3 +86,20 @@ export const removeFromCapacitorLocalStorage = async (key) => {
   console.log(`[🗑️ removeFromCapacitorLocalStorage] key: ${key}`);
   await Preferences.remove({ key });
 };
+
+export const clearTransientAppStorage = async () => {
+  const { keys } = await Preferences.keys();
+  const removablePreferenceKeys = keys.filter(
+    (key) =>
+      TRANSIENT_CACHE_KEYS.includes(key) ||
+      TRANSIENT_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
+
+  for (const key of removablePreferenceKeys) {
+    await Preferences.remove({ key });
+  }
+};
+
+// Call on every login (including after auto-logout) to avoid stale state
+// from a previous session bleeding into the new one.
+export const clearOnLoginStorage = clearTransientAppStorage;

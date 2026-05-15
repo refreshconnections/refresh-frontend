@@ -1,5 +1,6 @@
 import { IonCard, IonCardTitle, IonContent, IonPage, IonRow, IonText, useIonModal, useIonAlert, IonNote, IonCol, IonGrid, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { Link } from 'react-router-dom'
+import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
 
 import "./Page.css"
@@ -8,6 +9,8 @@ import "./Me.css"
 
 
 const Me: React.FC = () => {
+    // Prewarm the full profile for the profile-heavy flows reachable from Me.
+    useGetCurrentProfile();
 
 
   

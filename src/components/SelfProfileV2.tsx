@@ -24,24 +24,31 @@ import {
   IonReorder,
   IonReorderGroup,
   IonThumbnail,
+  IonModal,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
   useIonActionSheet,
   useIonModal,
   useIonAlert,
   useIonPopover,
 } from '@ionic/react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useHistory } from 'react-router-dom';
 import './SelfProfileV2.css';
 
-import { updateCurrentUserProfile } from '../hooks/utilities';
+import { updateCurrentUserProfile, onImgError } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import ProfileModal from './ProfileModal';
 import EditLocationModal from './EditLocationModal';
 import CroppedImageModal from './CroppedImageModal';
 import CommunityProfileSection from './CommunityProfileSection';
+import CommunityProfileModal from './CommunityProfileModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { faFaceViewfinder, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
+import { faFaceViewfinder, faInfoCircle, faMugSaucer } from '@fortawesome/pro-solid-svg-icons';
 import { chevronDownOutline, ellipsisHorizontal } from 'ionicons/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import Resizer from 'react-image-file-resizer';
@@ -126,7 +133,204 @@ const initialForm: SimpleFormState = {
   settings_show_lived_experiences: false,
 };
 
+const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
+
+type FieldLabels = Record<keyof SimpleFormState, { label: string; description: string }>;
+type EditingState = Record<keyof SimpleFormState, boolean>;
+
+type EditableFieldProps = {
+  fieldKey: keyof SimpleFormState;
+  multiline?: boolean;
+  form: SimpleFormState;
+  editing: EditingState;
+  fieldLabels: FieldLabels;
+  isFieldEmpty: (field: keyof SimpleFormState) => boolean;
+  startEdit: (field: keyof SimpleFormState) => void;
+  cancelEdit: (field: keyof SimpleFormState) => void;
+  saveField: (field: keyof SimpleFormState, value?: string) => Promise<void>;
+};
+
+type EditablePronounsProps = Omit<EditableFieldProps, 'fieldKey' | 'multiline'> & {
+  pronounOptions: readonly string[];
+};
+
+const EditableField: React.FC<EditableFieldProps> = ({
+  fieldKey,
+  multiline,
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+}) => {
+  const value = form[fieldKey];
+  const [editorValue, setEditorValue] = useState((value as string) ?? '');
+
+  useEffect(() => {
+    if (!editing[fieldKey]) return;
+    setEditorValue((form[fieldKey] as string) ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing[fieldKey]]);
+
+  return (
+    <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels[fieldKey].label}</p>
+          {!editing[fieldKey] && (
+            <div className="field-actions">
+              <IonButton
+                size="small"
+                fill="outline"
+                color="primary"
+                className={`edit-button ${isFieldEmpty(fieldKey) ? 'blank-edit' : ''}`}
+                onClick={() => startEdit(fieldKey)}
+              >
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing[fieldKey] ? (
+          multiline ? (
+            <IonTextarea
+              value={editorValue}
+              onIonInput={e => setEditorValue(e.detail.value ?? '')}
+              placeholder={`Update your ${fieldLabels[fieldKey].label}`}
+              autoGrow
+              rows={4}
+              autocapitalize='sentences'
+              autoCorrect='on'
+            />
+          ) : (
+            <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
+          )
+        ) : (
+          <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
+        )}
+
+        {editing[fieldKey] && (
+          <div className="field-actions editing-actions">
+            {!!editorValue && (
+              <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
+const EditablePronouns: React.FC<EditablePronounsProps> = ({
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+  pronounOptions,
+}) => {
+  const value = form.pronouns;
+  const [editorValue, setEditorValue] = useState(value ?? '');
+  const [editorChoice, setEditorChoice] = useState<string>(
+    pronounOptions.includes(value ?? '') ? value : 'custom',
+  );
+
+  useEffect(() => {
+    if (!editing.pronouns) return;
+    const nextValue = form.pronouns ?? '';
+    setEditorValue(nextValue);
+    setEditorChoice(pronounOptions.includes(nextValue) ? nextValue : 'custom');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing.pronouns]);
+
+  return (
+    <IonItem className={`card-field ${editing.pronouns ? 'editing' : ''}`}>
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels.pronouns.label}</p>
+          {!editing.pronouns && (
+            <div className="field-actions">
+              <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`} onClick={() => startEdit('pronouns')}>
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing.pronouns ? (
+          <>
+            <IonSelect
+              value={editorChoice}
+              placeholder="Select pronouns"
+              onIonChange={e => {
+                const nextChoice = e.detail.value as string;
+                setEditorChoice(nextChoice);
+                if (nextChoice !== 'custom') {
+                  setEditorValue(nextChoice);
+                }
+              }}
+            >
+              {pronounOptions.map(option => (
+                <IonSelectOption key={option} value={option}>
+                  {option}
+                </IonSelectOption>
+              ))}
+              <IonSelectOption value="custom">Custom</IonSelectOption>
+            </IonSelect>
+
+            {editorChoice === 'custom' && (
+              <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder="Enter your pronouns" debounce={250} />
+            )}
+          </>
+        ) : (
+          <h2 className="multi-line">{value || '-'}</h2>
+        )}
+
+        {editing.pronouns && (
+          <div className="field-actions editing-actions">
+            {!!editorValue && (
+              <IonButton
+                className="clear-button"
+                size="small"
+                fill="clear"
+                color="danger"
+                onClick={() => {
+                  setEditorChoice('custom');
+                  setEditorValue('');
+                }}
+                type="button"
+              >
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
 const SelfProfileV2: React.FC = () => {
+  const history = useHistory();
   const currentUserProfile: any = useGetCurrentProfile().data;
   const { data: communityProfile } = useGetCommunityProfile();
   const [form, setForm] = useState<SimpleFormState>(initialForm);
@@ -137,6 +341,9 @@ const SelfProfileV2: React.FC = () => {
   const [photoEditImage, setPhotoEditImage] = useState<any>(null);
   const [photoEditName, setPhotoEditName] = useState<string | null>(null);
   const [photoEditField, setPhotoEditField] = useState<string | null>(null);
+  const [photoTextEditor, setPhotoTextEditor] = useState<{ photoKey: string; mode: 'caption' | 'alt' } | null>(null);
+  const [photoTextValue, setPhotoTextValue] = useState('');
+  const [expandedPhotoMeta, setExpandedPhotoMeta] = useState<Record<string, boolean>>({});
 
   const [editing, setEditing] = useState<Record<keyof SimpleFormState, boolean>>({
     pronouns: false,
@@ -182,11 +389,11 @@ const SelfProfileV2: React.FC = () => {
 
   const [presentShowContactSupportAlert] = useIonAlert();
   const [presentPhotoAlert] = useIonAlert();
+  const [presentUnsavedAlert] = useIonAlert();
+  const pendingLocationRef = useRef<string | null>(null);
+  const unblockRef = useRef<(() => void) | null>(null);
   const [presentPhotoActionSheet] = useIonActionSheet();
   const [photosAccordionValue, setPhotosAccordionValue] = useState<string | undefined>(undefined);
-
-  // ✅ Option A for useIonModal: store the exact data you want the modal to render
-  const [profileModalData, setProfileModalData] = useState<any>(null);
 
   const previewProfile = React.useMemo(() => {
     if (!currentUserProfile) return null;
@@ -295,6 +502,42 @@ const SelfProfileV2: React.FC = () => {
     });
   }, [currentUserProfile]);
 
+  const hasUnsavedChanges = Object.values(editing).some(Boolean) || editingPhotoOrder;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      unblockRef.current?.();
+      unblockRef.current = null;
+      return;
+    }
+
+    unblockRef.current = history.block((location) => {
+      pendingLocationRef.current = location.pathname;
+      presentUnsavedAlert({
+        header: 'Unsaved changes',
+        message: 'You have unsaved changes. Leave anyway?',
+        buttons: [
+          {
+            text: 'Leave',
+            role: 'destructive',
+            handler: () => {
+              unblockRef.current?.();
+              unblockRef.current = null;
+              history.push(pendingLocationRef.current!);
+            },
+          },
+          { text: 'Keep editing', role: 'cancel' },
+        ],
+      });
+      return false;
+    });
+
+    return () => {
+      unblockRef.current?.();
+      unblockRef.current = null;
+    };
+  }, [hasUnsavedChanges]);
+
   const isFieldEmpty = (key: keyof SimpleFormState) => {
     const value = form[key];
     if (Array.isArray(value)) {
@@ -317,18 +560,24 @@ const SelfProfileV2: React.FC = () => {
       subHeader: `Please use our Help feature and include what you would like your ${field2} updated to.`,
       buttons: [
         { text: 'Nevermind', role: 'cancel' },
-        { text: 'Get Help', handler: () => { window.location.href = '/help'; } },
+        { text: 'Get Help', handler: () => { history.push(`/help?prefill=${field}`); } },
       ],
     });
   };
 
+  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    userId: currentUserProfile?.user ?? null,
+    selfPreview: true,
+    onDismiss: () => communityProfileDismiss(),
+  });
+
   // ✅ useIonModal version: feed from profileModalData state
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
-    cardData: profileModalData,
+    cardData: previewProfile,
     pro: true,
     settingsAlt: true,
     profiletype: 'self',
-    yourName: profileModalData?.name || '',
+    yourName: previewProfile?.name || '',
     onDismiss: (data: any, role: any) => {
       refreshProfile();
       profileDismiss(data, role);
@@ -470,7 +719,7 @@ const SelfProfileV2: React.FC = () => {
       ['trans', 'Trans'],
       ['intersex', 'Intersex'],
       ['mono', 'Monogamous'],
-      ['poly', 'Polyamorous'],
+      ['poly', 'Nonmonogamous'],
     ],
   ];
 
@@ -491,7 +740,7 @@ const SelfProfileV2: React.FC = () => {
     "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
 
   const showOnProfileInfoText =
-    "These choices are used when other members filter their Picks. You can also choose whether or not to show them on your profile.";
+    "These choices are used when other members use their Discovery filters. You can choose to show or hide them on your profile. ";
 
   const ShowOnProfilePopover = () => (
     <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
@@ -508,7 +757,6 @@ const SelfProfileV2: React.FC = () => {
     .map(value => getLivedExperienceLabel(value))
     .filter(Boolean) as string[];
 
-  const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
   const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
 
   const photoLabels: Record<string, string> = {
@@ -562,7 +810,7 @@ const SelfProfileV2: React.FC = () => {
     'fixation_album',
   ] as const;
 
-  const fieldLabels: Record<keyof SimpleFormState, { label: string; description: string }> = {
+  const fieldLabels: FieldLabels = {
     location: { label: 'Location', description: 'Where you spend most of your time.' },
     pronouns: { label: 'Pronouns', description: 'How others can refer to you.' },
     job: { label: 'Job', description: 'Current profession or focus.' },
@@ -608,154 +856,14 @@ const SelfProfileV2: React.FC = () => {
     </div>
   );
 
-  const EditableField: React.FC<{ fieldKey: keyof SimpleFormState; multiline?: boolean }> = ({ fieldKey, multiline }) => {
-    const value = form[fieldKey];
-    const [editorValue, setEditorValue] = useState((value as string) ?? '');
-
-    useEffect(() => {
-      if (!editing[fieldKey]) return;
-      setEditorValue((form[fieldKey] as string) ?? '');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing[fieldKey]]);
-
-    return (
-      <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
-        <div className="editing-section">
-          <div className="field-header">
-            <p>{fieldLabels[fieldKey].label}</p>
-            <div className="field-actions">
-              {editing[fieldKey] ? (
-                <>
-                  {!!editorValue && (
-                    <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
-                      Clear
-                    </IonButton>
-                  )}
-                  <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit(fieldKey)} type="button">
-                    Cancel
-                  </IonButton>
-                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
-                    Save
-                  </IonButton>
-                </>
-              ) : (
-                <IonButton
-                  size="small"
-                  fill="outline"
-                  color="primary"
-                  className={`edit-button ${isFieldEmpty(fieldKey) ? 'blank-edit' : ''}`}
-                  onClick={() => startEdit(fieldKey)}
-                >
-                  Edit
-                </IonButton>
-              )}
-            </div>
-          </div>
-
-          {editing[fieldKey] ? (
-            multiline ? (
-              <IonTextarea
-                value={editorValue}
-                onIonInput={e => setEditorValue(e.detail.value ?? '')}
-                placeholder={`Update your ${fieldLabels[fieldKey].label}`}
-                autoGrow
-                rows={4}
-              />
-            ) : (
-              <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
-            )
-          ) : (
-            <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
-          )}
-        </div>
-      </IonItem>
-    );
-  };
-
-  const EditablePronouns: React.FC = () => {
-    const value = form.pronouns;
-    const [editorValue, setEditorValue] = useState(value ?? '');
-    const [editorChoice, setEditorChoice] = useState<string>(
-      pronounOptions.includes(value as (typeof pronounOptions)[number]) ? (value as string) : 'custom',
-    );
-
-    useEffect(() => {
-      if (!editing.pronouns) return;
-      const nextValue = form.pronouns ?? '';
-      setEditorValue(nextValue);
-      setEditorChoice(pronounOptions.includes(nextValue as (typeof pronounOptions)[number]) ? nextValue : 'custom');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing.pronouns]);
-
-    return (
-      <IonItem className={`card-field ${editing.pronouns ? 'editing' : ''}`}>
-        <div className="editing-section">
-          <div className="field-header">
-            <p>{fieldLabels.pronouns.label}</p>
-            <div className="field-actions">
-              {editing.pronouns ? (
-                <>
-                  {!!editorValue && (
-                    <IonButton
-                      className="clear-button"
-                      size="small"
-                      fill="clear"
-                      color="danger"
-                      onClick={() => {
-                        setEditorChoice('custom');
-                        setEditorValue('');
-                      }}
-                      type="button"
-                    >
-                      Clear
-                    </IonButton>
-                  )}
-                  <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('pronouns')} type="button">
-                    Cancel
-                  </IonButton>
-                  <IonButton className="save-button" size="small" color="success" onClick={() => saveField('pronouns', editorValue)}>
-                    Save
-                  </IonButton>
-                </>
-              ) : (
-                <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('pronouns') ? 'blank-edit' : ''}`} onClick={() => startEdit('pronouns')}>
-                  Edit
-                </IonButton>
-              )}
-            </div>
-          </div>
-
-          {editing.pronouns ? (
-            <>
-              <IonSelect
-                value={editorChoice}
-                placeholder="Select pronouns"
-                onIonChange={e => {
-                  const nextChoice = e.detail.value as string;
-                  setEditorChoice(nextChoice);
-                  if (nextChoice !== 'custom') {
-                    setEditorValue(nextChoice);
-                  }
-                }}
-              >
-                {pronounOptions.map(option => (
-                  <IonSelectOption key={option} value={option}>
-                    {option}
-                  </IonSelectOption>
-                ))}
-                <IonSelectOption value="custom">Custom</IonSelectOption>
-              </IonSelect>
-
-              {editorChoice === 'custom' && (
-                <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder="Enter your pronouns" debounce={250} />
-              )}
-            </>
-          ) : (
-            <h2 className="multi-line">{value || '-'}</h2>
-          )}
-        </div>
-      </IonItem>
-    );
+  const editableFieldProps = {
+    form,
+    editing,
+    fieldLabels,
+    isFieldEmpty,
+    startEdit,
+    cancelEdit,
+    saveField,
   };
 
   const handlePhotoReorder = (event: CustomEvent) => {
@@ -791,97 +899,34 @@ const SelfProfileV2: React.FC = () => {
 
   const getPhotoAltText = (key: string) => currentUserProfile?.[`${key}_alt`] || '';
 
-  const openAltTextAlert = async (photoKey: string) => {
-    presentShowContactSupportAlert({
-      header: `Add alt text`,
-      subHeader: 'This description is used by screen readers and shown to help others understand your photo.',
-      inputs: [
-        {
-          name: 'description',
-          type: 'text',
-          placeholder: 'Add alt text',
-          value: currentUserProfile?.[`${photoKey}_alt`] || '',
-        },
-      ],
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const value = (data?.description || '').slice(0, 300);
-            await updateCurrentUserProfile({ [`${photoKey}_alt`]: value });
-            refreshProfile();
-          },
-        },
-      ],
-    });
+  const isPhotoMetaLong = (photoKey: string) => {
+    const caption = getPhotoCaption(photoKey);
+    const alt = getPhotoAltText(photoKey);
+    return caption.length > 36 || alt.length > 120;
   };
 
-  const openCustomCaptionAlert = async (photoKey: string) => {
-    const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
-    presentShowContactSupportAlert({
-      header: 'Add your own caption',
-      message: '',
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const value = (data?.description || '').slice(0, 30);
-            await updateCurrentUserProfile({ [`${photoKey}_caption`]: value });
-            refreshProfile();
-          },
-        },
-      ],
-      inputs: [
-        {
-          name: 'description',
-          type: 'text',
-          placeholder: 'Add custom caption',
-          value: currentCaption,
-          attributes: { maxlength: 30 },
-        },
-      ],
-    } as any);
+  const openPhotoTextEditor = (photoKey: string, mode: 'caption' | 'alt') => {
+    setPhotoTextEditor({ photoKey, mode });
+    setPhotoTextValue(
+      mode === 'caption'
+        ? currentUserProfile?.[`${photoKey}_caption`] || ''
+        : currentUserProfile?.[`${photoKey}_alt`] || ''
+    );
   };
 
-  const openCaptionAlert = async (photoKey: string) => {
-    const currentCaption = currentUserProfile?.[`${photoKey}_caption`] || '';
-    presentPhotoAlert({
-      header: 'Edit caption',
-      message: '',
-      inputs: [
-        ...captionOptions.map(option => ({
-          type: 'radio',
-          name: 'caption',
-          label: option === '' ? '(No caption)' : option,
-          value: option,
-          checked: option === currentCaption,
-        })),
-        {
-          type: 'radio',
-          name: 'caption',
-          label: '(Write your own)',
-          value: '__custom__',
-          checked: currentCaption && !captionOptions.includes(currentCaption),
-        },
-      ],
-      buttons: [
-        { text: 'Nevermind', role: 'cancel' },
-        {
-          text: 'Save',
-          handler: async (data: any) => {
-            const selected = data?.caption ?? data;
-            if (selected === '__custom__') {
-              setTimeout(() => openCustomCaptionAlert(photoKey), 250);
-              return;
-            }
-            await updateCurrentUserProfile({ [`${photoKey}_caption`]: selected ?? '' });
-            refreshProfile();
-          },
-        },
-      ],
-    } as any);
+  const closePhotoTextEditor = () => {
+    setPhotoTextEditor(null);
+    setPhotoTextValue('');
+  };
+
+  const savePhotoTextEditor = async () => {
+    if (!photoTextEditor) return;
+    const { photoKey, mode } = photoTextEditor;
+    const fieldName = `${photoKey}_${mode === 'caption' ? 'caption' : 'alt'}`;
+    const maxLength = mode === 'caption' ? 32 : 300;
+    await updateCurrentUserProfile({ [fieldName]: photoTextValue.slice(0, maxLength) });
+    refreshProfile();
+    closePhotoTextEditor();
   };
 
   const replacePhoto = async (photoKey: string, photoLabel: string) => {
@@ -927,13 +972,13 @@ const SelfProfileV2: React.FC = () => {
           ? [
               {
                 text: 'Edit caption',
-                handler: () => openCaptionAlert(photoKey),
+                handler: () => openPhotoTextEditor(photoKey, 'caption'),
               },
             ]
           : []),
         {
           text: 'Edit alt text',
-          handler: () => openAltTextAlert(photoKey),
+          handler: () => openPhotoTextEditor(photoKey, 'alt'),
         },
         {
           text: 'Delete photo',
@@ -973,23 +1018,101 @@ const SelfProfileV2: React.FC = () => {
 
   return (
     <div className="self-profile-v2">
+      <IonModal isOpen={Boolean(photoTextEditor)} onDidDismiss={closePhotoTextEditor}>
+        <IonHeader>
+          <IonToolbar className="modal-title">
+            <IonTitle>{photoTextEditor?.mode === 'caption' ? 'Edit caption' : 'Edit alt text'}</IonTitle>
+            <IonButtons slot="start">
+              <IonButton onClick={closePhotoTextEditor}>Cancel</IonButton>
+            </IonButtons>
+            <IonButtons slot="end">
+              <IonButton onClick={savePhotoTextEditor}>Save</IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          {photoTextEditor?.mode === 'caption' ? (
+            <>
+              <IonText color="medium">
+                <p>Pick one of ours or write your own.</p>
+              </IonText>
+              <div className="photo-caption-presets">
+                <IonButton
+                  size="small"
+                  fill={!captionOptions.filter(option => option !== '').includes(photoTextValue) ? 'solid' : 'outline'}
+                  onClick={() => setPhotoTextValue('')}
+                >
+                  (None or write your own)
+                </IonButton>
+                {captionOptions
+                  .filter(option => option !== '')
+                  .map(option => (
+                    <IonButton
+                      key={option}
+                      size="small"
+                      fill={photoTextValue === option ? 'solid' : 'outline'}
+                      onClick={() => setPhotoTextValue(option)}
+                    >
+                      {option}
+                    </IonButton>
+                  ))}
+              </div>
+              <IonItem lines="none" className="photo-text-editor-field">
+                <IonTextarea
+                  value={photoTextValue}
+                  autoGrow
+                  maxlength={32}
+                  counter
+                  placeholder="Add a custom caption"
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 32))}
+                />
+              </IonItem>
+            </>
+          ) : (
+            <>
+              <IonText color="medium">
+                <p>This description is used by screen readers and shown to help others understand your photo.</p>
+              </IonText>
+              <IonItem lines="none" className="photo-text-editor-field">
+                <IonTextarea
+                  value={photoTextValue}
+                  autoGrow
+                  maxlength={300}
+                  counter
+                  placeholder="Add alt text"
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 300))}
+                />
+              </IonItem>
+            </>
+          )}
+          <div className="photo-text-editor-actions">
+            <IonButton
+              fill="clear"
+              color="medium"
+              onClick={() => setPhotoTextValue('')}
+            >
+              Clear
+            </IonButton>
+          </div>
+        </IonContent>
+      </IonModal>
       <IonGrid>
         <IonRow className="preview-row">
           <IonCol className="ion-text-center">
             <IonButton
+              className="profile-preview-button"
               color="primary"
               onClick={() => {
-                setProfileModalData(previewProfile);
                 profilePresent();
               }}
             >
               <FontAwesomeIcon icon={faFaceViewfinder as IconProp} />
-              &nbsp; See how others see your profile
+              &nbsp; See how others see your Personal Profile
             </IonButton>
           </IonCol>
         </IonRow>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="basics">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1027,18 +1150,22 @@ const SelfProfileV2: React.FC = () => {
                 </IonItem>
               </div>
 
-              {summaryKeys.map(key => (key === 'pronouns' ? <EditablePronouns key="pronouns" /> : <EditableField key={key} fieldKey={key} />))}
+              {summaryKeys.map(key => (
+                key === 'pronouns'
+                  ? <EditablePronouns key="pronouns" {...editableFieldProps} pronounOptions={pronounOptions} />
+                  : <EditableField key={key} {...editableFieldProps} fieldKey={key} />
+              ))}
 
               <div style={{ marginTop: '12px' }}>
                 {aboutKeys.map(key => (
-                  <EditableField key={key} fieldKey={key} multiline />
+                  <EditableField key={key} {...editableFieldProps} fieldKey={key} multiline />
                 ))}
               </div>
             </IonCardContent>
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup value={photosAccordionValue} onIonChange={ev => setPhotosAccordionValue(ev.detail.value as string | undefined)}>
+        <IonAccordionGroup className="profile-accordion-group" value={photosAccordionValue} onIonChange={ev => setPhotosAccordionValue(ev.detail.value as string | undefined)}>
           <IonAccordion value="photos">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1091,16 +1218,31 @@ const SelfProfileV2: React.FC = () => {
                   {photoOrderDraft.map(key => (
                     <IonItem key={key} button onClick={() => openPhotoActions(key)} detailIcon={ellipsisHorizontal}>
                       <IonThumbnail slot="start" style={{ width: '96px', height: '96px' }}>
-                        <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} />
+                        <img alt={photoLabels[key] || 'Profile photo'} src={currentUserProfile?.[key]} onError={onImgError} />
                       </IonThumbnail>
-                      <IonLabel>
-                        {getPhotoCaption(key) ? (
-                          <IonText color="dark">
-                            <p>{getPhotoCaption(key)}</p>
-                          </IonText>
-                        ) : null}
-                        {getPhotoAltText(key) ? <p>Alt: {getPhotoAltText(key)}</p> : null}
+                      <IonLabel className="photo-meta-label">
+                        <div className={`photo-meta-preview${expandedPhotoMeta[key] ? ' expanded' : ''}`}>
+                          {getPhotoCaption(key) ? (
+                            <IonText color="dark">
+                              <p className="photo-meta-caption">{getPhotoCaption(key)}</p>
+                            </IonText>
+                          ) : null}
+                          {getPhotoAltText(key) ? <p className="photo-meta-alt">Alt: {getPhotoAltText(key)}</p> : null}
+                        </div>
                         {!getPhotoCaption(key) && !getPhotoAltText(key) ? <p className="placeholder">Add a caption or alt text</p> : null}
+                        {isPhotoMetaLong(key) ? (
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            className="photo-meta-toggle"
+                            onClick={event => {
+                              event.stopPropagation();
+                              setExpandedPhotoMeta(prev => ({ ...prev, [key]: !prev[key] }));
+                            }}
+                          >
+                            {expandedPhotoMeta[key] ? 'Show less' : 'Show more'}
+                          </IonButton>
+                        ) : null}
                       </IonLabel>
                       <IonReorder slot="end" />
                     </IonItem>
@@ -1135,7 +1277,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="lookingFor">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1151,9 +1293,9 @@ const SelfProfileV2: React.FC = () => {
                 </IonButton>
               </div>
 
-              {form.looking_for.length > 0 ? (
+              {form.looking_for.filter(val => val !== 'virtual only').length > 0 ? (
                 <ul className="choice-summary">
-                  {form.looking_for.map(val => (
+                  {form.looking_for.filter(val => val !== 'virtual only').map(val => (
                     <li key={val}>{val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}</li>
                   ))}
                 </ul>
@@ -1164,7 +1306,7 @@ const SelfProfileV2: React.FC = () => {
               {editing.looking_for && (
                 <div className="choice-editor">
                   <IonList lines="none">
-                    {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map(val => (
+                    {['friendship', 'romance', 'virtual connection', 'job', 'housing', 'families'].map(val => (
                       <IonItem key={val} lines="none">
                         <IonCheckbox slot="start" value={val} checked={form.looking_for.includes(val)} onIonChange={e => handleLookingForToggle(val, e.detail.checked)} />
                         {val === 'virtual connection' ? 'Virtual connection' : val.charAt(0).toUpperCase() + val.slice(1)}
@@ -1177,7 +1319,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="genderSexuality">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1208,7 +1350,7 @@ const SelfProfileV2: React.FC = () => {
                       </div>
 
                       <div className="field-header">
-                        <p>Choices</p>
+                        <p>Your selections</p>
                         <IonButton size="small" fill="outline" color="primary" onClick={() => setEditing(prev => ({ ...prev, gender_sexuality_choices: !prev.gender_sexuality_choices }))}>
                           {editing.gender_sexuality_choices ? 'Done' : 'Edit'}
                         </IonButton>
@@ -1248,7 +1390,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="livedExperiences">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1281,7 +1423,7 @@ const SelfProfileV2: React.FC = () => {
                       </div>
 
                       <div className="field-header">
-                        <p>Choices</p>
+                        <p>Your selections</p>
                         <IonButton size="small" fill="outline" color="primary" onClick={() => setEditing(prev => ({ ...prev, lived_experiences: !prev.lived_experiences }))}>
                           {editing.lived_experiences ? 'Done' : 'Edit'}
                         </IonButton>
@@ -1321,7 +1463,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="covidBehaviors">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1370,7 +1512,7 @@ const SelfProfileV2: React.FC = () => {
                         </div>
                       )}
 
-                      <EditableField fieldKey="covid_precaution_info" multiline />
+                      <EditableField {...editableFieldProps} fieldKey="covid_precaution_info" multiline />
                     </IonCardContent>
                   </IonCard>
                 </IonCol>
@@ -1379,7 +1521,7 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        <IonAccordionGroup>
+        <IonAccordionGroup className="profile-accordion-group personal-profile-final-group">
           <IonAccordion value="talk">
             <IonItem slot="header" lines="none" className="accordion-header">
               <IonLabel>
@@ -1392,15 +1534,15 @@ const SelfProfileV2: React.FC = () => {
                   <IonCard className="accordion-card">
                     <IonCardContent className="card-grid">
                       {talkAboutKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} multiline />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} multiline />
                       ))}
                       <SectionHeader title="Favorites" />
                       {favoriteKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} />
                       ))}
-                      <SectionHeader title="Fixations" />
+                      <SectionHeader title="Current Interests" />
                       {fixationKeys.map(key => (
-                        <EditableField key={key} fieldKey={key} />
+                        <EditableField key={key} {...editableFieldProps} fieldKey={key} />
                       ))}
                     </IonCardContent>
                   </IonCard>
@@ -1410,7 +1552,37 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
-        {(currentUserProfile?.username ?? communityProfile?.username) ? <CommunityProfileSection /> : null}
+        {(currentUserProfile?.username ?? communityProfile?.username)
+          ? (
+            <>
+              <hr style={{ margin: '24px 16px 8px', borderColor: 'var(--ion-color-light)' }} />
+              <IonRow className="preview-row">
+                <IonCol className="ion-text-center">
+                  <IonButton
+                    className="profile-preview-button"
+                    color="navy"
+                    onClick={() => communityProfilePresent()}
+                  >
+                    <FontAwesomeIcon icon={faMugSaucer as IconProp} />
+                    &nbsp; See how others see your Refreshments Profile
+                  </IonButton>
+                </IonCol>
+              </IonRow>
+              <div className="standalone-community-profile">
+                <CommunityProfileSection />
+              </div>
+            </>
+          )
+          : currentUserProfile?.created_profile
+            ? (
+              <IonRow className="ion-justify-content-center" style={{ margin: '16px 0' }}>
+                <IonButton onClick={() => history.push('/community-onboarding')} color="navy">
+                  Create Refreshments Profile
+                </IonButton>
+              </IonRow>
+            )
+            : null
+        }
       </IonGrid>
     </div>
   );

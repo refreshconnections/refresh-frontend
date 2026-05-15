@@ -8,10 +8,10 @@ const getCurrentStreakFn = async () => {
   return response.data;
 };
 
-export function useGetCurrentStreak() {
+export function useGetCurrentStreak(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: userQueryKeys.streak(),
     queryFn: getCurrentStreakFn,
-    enabled: !!localStorage.getItem('token')
+    enabled: !!localStorage.getItem('token') && (options?.enabled ?? true),
   });
 }

@@ -13,7 +13,7 @@ import './OnboardingV2.css';
 
 export type AgeCheckState = 'required' | 'success' | 'canceled' | 'failed' | 'error';
 export const YOTI_BROWSER_CLOSED_EVENT = 'refresh:yoti-browser-closed';
-const BROWSER_CLOSE_LOADING_MS = 2000;
+export const BROWSER_CLOSE_LOADING_MS = 2000;
 
 type Props = {
   state: AgeCheckState;

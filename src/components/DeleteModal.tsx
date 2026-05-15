@@ -34,7 +34,7 @@ const DeleteModal: React.FC<Props> = (props) => {
     const deactivateProfileClicked = async () => {
         console.log('Deactivate clicked');
         presentConfirmAlert({
-            header: 'Are you sure you want to deactivate your profile?',
+            header: 'Are you sure you want to deactivate your Profile?',
             subHeader: 'You can reactivate whenever you want.',
             buttons: [
                 {
@@ -148,7 +148,7 @@ const DeleteModal: React.FC<Props> = (props) => {
                         <IonText>
                             Refresh Connections is built for authentic relationships, not account hopping. For community safety, each member may make one account—and if you delete it, <span style={{fontWeight: "bold"}}>you'll need to contact support if you decide to return to the community</span>. This safeguards connection integrity, keeps blocking effective, and prevents misuse.
                             <br /><br />
-                            If you need a break, consider pausing your profile or deactivating your account.
+                            If you need a break, consider pausing your Profile or deactivating your account.
                             <br /><br />
                             You can read more about the difference between pausing, deactivating, and deleting in our{' '}
                             <span
@@ -171,16 +171,14 @@ const DeleteModal: React.FC<Props> = (props) => {
 
 
                 </IonCard>
-                <IonRow className="ion-justify-content-center">
-                    <IonButton fill="outline" onClick={deactivateProfileClicked}>
-                        Deactivate instead
-                    </IonButton>
-                </IonRow>
-                <IonRow className="ion-justify-content-center" style={{ paddingBottom: "30pt" }}>
-                    <IonButton onClick={onDismiss}>
+                <IonRow className="ion-justify-content-center" style={{ flexDirection: 'column', alignItems: 'center', gap: '8px', paddingBottom: '30pt', paddingInline: '16px' }}>
+                    <IonButton expand="block" style={{ width: '100%' }} onClick={onDismiss}>
                         Go Back
                     </IonButton>
-                    <IonButton color="danger" onClick={deleteAccountClickedAgain} >
+                    <IonButton expand="block" style={{ width: '100%' }} fill="outline" onClick={deactivateProfileClicked}>
+                        Deactivate instead
+                    </IonButton>
+                    <IonButton expand="block" style={{ width: '100%' }} color="danger" onClick={deleteAccountClickedAgain}>
                         Proceed with deleting
                     </IonButton>
                 </IonRow>

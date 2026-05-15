@@ -7,7 +7,7 @@ export function useAcceptingMessages(id: number) {
 
   const getAcceptingMessagesFn = async () => {
     const response = await apiClient.get(`/api/profiles/accepting_messages/` + id);
-    if (response.data['accepting'] == "true") {
+    if (response.data['accepting'] === true || response.data['accepting'] === "true") {
       return true
     }
     else {

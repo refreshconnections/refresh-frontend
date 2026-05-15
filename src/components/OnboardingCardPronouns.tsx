@@ -3,7 +3,6 @@ import {
   IonCard,
   IonCardContent,
   IonCardTitle,
-  IonInput,
   IonItem,
   IonLabel,
   IonRow,
@@ -15,18 +14,15 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './OnboardingCard.css';
 
-const pronounOptions = [
-  { label: 'She / Her', value: 'She/Her' },
-  { label: 'He / Him', value: 'He/Him' },
-  { label: 'They / Them', value: 'They/Them' },
-  { label: 'Prefer not to say', value: 'Prefer not to say' },
-  { label: 'Custom', value: 'custom' },
-];
+const pronounOptions = ONBOARDING_COPY.cards.pronouns.options;
 
 const OnboardingCardPronouns: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.pronouns;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [selected, setSelected] = useState<string>('');
@@ -57,18 +53,24 @@ const OnboardingCardPronouns: React.FC = () => {
     swiper.slideNext();
   };
 
+  const skipPronouns = async () => {
+    const existing = currentProfile?.pronouns ?? '';
+    if (existing !== '') {
+      await updateCurrentUserProfile({ pronouns: '' });
+    }
+    swiper.slideNext();
+  };
+
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>What are your pronouns?</IonCardTitle>
-        <IonText>
-          Select your pronouns or add your own. You can always update this later in your profile.
-        </IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem>
-          <IonLabel position="stacked">Pronouns</IonLabel>
+          <IonLabel position="stacked">{copy.label}</IonLabel>
           <IonSelect
             value={selected}
-            placeholder="Select"
+            placeholder={copy.placeholder}
             onIonChange={(event) => {
               const value = event.detail.value as string;
               setSelected(value);
@@ -85,30 +87,30 @@ const OnboardingCardPronouns: React.FC = () => {
           </IonSelect>
         </IonItem>
         {selected === 'custom' && (
-          <IonItem>
-            <IonLabel position="stacked">Custom pronouns</IonLabel>
-            <IonInput
-              value={custom}
-              placeholder="e.g. ze/zir"
-              maxlength={30}
-              onIonInput={(event) => setCustom(event.detail.value ?? '')}
-              onKeyUp={(event) => {
-                if (event.key === 'Enter' && canContinue) {
-                  updateProfile();
-                }
-              }}
-            />
-          </IonItem>
+          <BoxedStackedInput
+            label={copy.customLabel}
+            value={custom}
+            name="custom_pronouns"
+            placeholder={copy.customPlaceholder}
+            onIonInput={(event) => setCustom(event.detail.value ?? '')}
+          />
         )}
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
-        </IonButton>
-        <IonButton onClick={updateProfile} disabled={!canContinue}>
-          Next
-        </IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={!canContinue}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="clear" size="small" onClick={skipPronouns}>
+            {ONBOARDING_COPY.common.skip}
+          </IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

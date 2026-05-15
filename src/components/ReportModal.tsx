@@ -12,6 +12,7 @@ type Props = {
     id: number,
     requireDetails?: boolean;
     onDismiss: () => void;
+    onReportSubmitted?: () => void;
 };
 
 interface ReportDetails {
@@ -22,7 +23,7 @@ interface ReportDetails {
 }
 const ReportModal: React.FC<Props> = (props) => {
 
-    const { offender, text, id, onDismiss, requireDetails } = props;
+    const { offender, text, id, onDismiss, requireDetails, onReportSubmitted } = props;
 
 
     const [reason, setReason] = useState("");
@@ -38,6 +39,7 @@ const ReportModal: React.FC<Props> = (props) => {
 
     function reportSubmitSuccessful() {
         setShowAlert(false)
+        onReportSubmitted?.();
         onDismiss();
     }
 
@@ -148,12 +150,12 @@ const ReportModal: React.FC<Props> = (props) => {
                     : <></>
                     }
                     <IonItem>
-                        <IonLabel position="stacked">Details</IonLabel>
+                        <IonLabel position="stacked">Details (required)</IonLabel>
                         <IonTextarea value={details}
                             style={{ minHeight: "63pt" }}
                             name="details"
                             autoGrow={true}
-                            autoCapitalize='sentences'
+                            autocapitalize='sentences'
                             onIonInput={e => setDetails(e.detail.value!)}
                             placeholder="Add specifics for the moderation team to check out."
                         />
@@ -163,7 +165,7 @@ const ReportModal: React.FC<Props> = (props) => {
                         className="ion-margin-top"
                         type="submit"
                         expand="block"
-                        disabled={!reason || afterSendWait || (requireDetails && !details.trim())}
+                        disabled={!reason || afterSendWait || !details.trim()}
                     >
                         Submit
                     </IonButton>

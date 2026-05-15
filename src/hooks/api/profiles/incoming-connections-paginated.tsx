@@ -7,7 +7,6 @@ export function useIncomingConnectionsInf() {
     const response = await apiClient.get('/api/profiles/paginated_incoming_connections_with_openers/', {
       params: { page },
     });
-    console.log("Fetched page:", page, "Response:", response.data);
     return response.data;
   };
 

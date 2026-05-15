@@ -1,5 +1,4 @@
 import {
-  IonAlert,
   IonButton,
   IonCard,
   IonCardTitle,
@@ -22,10 +21,12 @@ import {
   useIonModal
 } from '@ionic/react';
 import { useEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   isPersonalPlus,
   onImgError
 } from '../hooks/utilities';
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import './Likes.css';
 import './Page.css';
 
@@ -55,7 +56,7 @@ const Likes: React.FC = () => {
   const statuses = useGetStatuses().data;
 
   const [profileCardData, setProfileCardData] = useState<any>(null);
-  const [showStoreAlert, setShowStoreAlert] = useState(false);
+  const presentUpsellAlert = useUpsellAlert();
   const [littleLoading, setLittleLoading] = useState(false);
   const [isToastOpen, setIsToastOpen] = useState(false);
 
@@ -85,7 +86,7 @@ const Likes: React.FC = () => {
     isPersonalPlus(currentUserProfile?.subscription_level) || currentStreak?.streak_count >= 7;
 
   const mutuals = useMemo(
-    () => mutualsData?.pages.flatMap(page => page?.results ?? []) ?? [],
+    () => mutualsData?.pages?.flatMap(page => page?.results ?? []) ?? [],
     [mutualsData]
   );
 
@@ -103,9 +104,11 @@ const Likes: React.FC = () => {
   const incomingCount = incomingPages?.pages?.[0]?.count;
 
   useEffect(() => {
+    let handle: any;
     App.addListener('resume', async () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-paginated'] });
-    });
+    }).then((h) => { handle = h; });
+    return () => { handle?.remove(); };
   }, []);
 
    useEffect(() => {
@@ -131,7 +134,7 @@ const Likes: React.FC = () => {
   }
 
   // Optionally update other queries (non-destructive)
-  ['mutuals', 'mutuals-no-dialog-paginated'].forEach((key) => {
+  ['mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3'].forEach((key) => {
     queryClient.invalidateQueries({ queryKey: [key] });
   });
   profileDismiss();
@@ -141,7 +144,7 @@ const Likes: React.FC = () => {
     cardData: profileCardData,
     profiletype: 'unconnected',
     pro: isPersonalPlus(currentUserProfile?.subscription_level),
-    settingsAlt: currentUserProfile?.settings_show_alt || true,
+    settingsAlt: Boolean(currentUserProfile?.settings_show_alt),
     yourName: currentUserProfile?.name || '',
     onDismiss: () => handleProfileDismiss('NoAction'), // optional, can keep for legacy
     onActionDismiss: (action: 'NoAction' | 'ActionTaken') => {
@@ -150,13 +153,13 @@ const Likes: React.FC = () => {
   });
 
   const openModal = (item: any) => {
-    setProfileCardData(item);
+    flushSync(() => setProfileCardData(item));
     profilePresent();
   };
 
   const handleRefresh = (event: CustomEvent<RefresherEventDetail>) => {
     setTimeout(async () => {
-      ['current', 'mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
+      ['current', 'mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
       event.detail.complete();
@@ -180,7 +183,7 @@ const Likes: React.FC = () => {
 
   const handleLeaveLikes = () => {
     setTimeout(async () => {
-      ['mutuals', 'mutuals-no-dialog-paginated', 'incoming-paginated'].forEach((key) => {
+      ['mutuals', 'mutuals-no-dialog-paginated', 'mutuals-no-dialog-paginated-v3', 'incoming-paginated'].forEach((key) => {
         queryClient.invalidateQueries({ queryKey: [key] });
       });
     }, 500);
@@ -193,7 +196,7 @@ const Likes: React.FC = () => {
         !currentUserProfile?.paused_profile ? (
         <IonContent fullscreen>
           <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-            <IonRefresherContent />
+            <IonRefresherContent refreshingSpinner="dots" />
           </IonRefresher>
 
           <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
@@ -270,24 +273,12 @@ const Likes: React.FC = () => {
                     </IonCard>
                     {(paginatedVisibleConnections.length >= 1 && paginatedVisibleConnections[0].length >= 1) ? 
                     <IonRow className="ion-justify-content-center ion-padding">
-                      <IonButton onClick={() => setShowStoreAlert(true)} fill="clear" className="ion-text-wrap">You have {paginatedVisibleConnections[0].length > 6 ? "5+ " : ""} more likes waiting for you!</IonButton>
-                    </IonRow>  
+                      <IonButton onClick={() => presentUpsellAlert({
+                        header: 'See all your likes at once!',
+                        message: 'Upgrade to Personal+ or Pro (or increase your streak).',
+                      })} fill="clear" className="ion-text-wrap">You have {paginatedVisibleConnections[0].length > 6 ? "5+ " : ""} more likes waiting for you!</IonButton>
+                    </IonRow>
                       : <></>}
-                      <IonAlert
-                      isOpen={showStoreAlert}
-                      onDidDismiss={() => setShowStoreAlert(false)}
-                      header="See all your likes at once with Personal+ or Refresh Pro (or increase your streak)!"
-                      subHeader="Click the picture to see who Liked you."
-                      buttons={[{
-                        text: "Not now",
-                        role: 'destructive'
-                      },
-                      {
-                        text: 'Get Pro!',
-                        handler: async () => {
-                          window.location.pathname = "/store"
-                        }
-                      }]}></IonAlert>
                       </IonRow>)}
                     
 

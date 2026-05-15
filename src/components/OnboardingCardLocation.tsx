@@ -1,10 +1,9 @@
 import {
   IonButton,
-  IonCard, IonCardContent, IonCardTitle, IonInput, IonItem, IonLabel, IonList, IonNote, IonRow, IonSelect, IonSelectOption, IonText,
-  useIonModal,
+  IonCard, IonCardContent, IonCardTitle, IonRow, IonText,
 } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
-import useFetch from '../hooks/useFetch';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 
@@ -49,21 +48,15 @@ const OnboardingCardLocation: React.FC = () => {
       <IonCardContent>
         <IonCardTitle>What area do you live in?</IonCardTitle>
             <IonText>We will show this on your profile. Put down what city or region you live in. For example, you might say you live on the Upper West Side of NYC. Or Northern Kentucky. Be as vague or as specific as you'd like (but don't share your exact address!).</IonText>
-            <IonItem>
-            <IonInput value={location}
-                            name="location"
-                            required={true}
-                            onIonInput={e => setLocation(e.detail.value!)}
-                            maxlength={30}
-                            type="text" 
-                            autoCapitalize='words'
-                            onKeyUp={event => {
-                              if (event.key === 'Enter') {
-                                swiper.slideNext()
-                              }
-                            }}
-                            enterkeyhint="next"/>
-            </IonItem>
+            <BoxedStackedInput
+              label="Area"
+              value={location ?? ''}
+              name="location"
+              onIonInput={e => setLocation(e.detail.value!)}
+              placeholder="Neighborhood, city, or region"
+              type="text"
+              autocapitalize="words"
+            />
             <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>
         <IonButton onClick={updateProfile} disabled={location == null ? true : false}>Next</IonButton>

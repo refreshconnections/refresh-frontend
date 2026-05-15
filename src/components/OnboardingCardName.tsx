@@ -1,9 +1,10 @@
 import {
   IonButton,
-  IonCard, IonCardContent, IonCardTitle, IonFab, IonFabButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonRow, IonSelect, IonSelectOption, IonText,
+  IonCard, IonCardContent, IonCardTitle, IonFab, IonFabButton, IonIcon, IonRow, IonText,
 } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
 import { chevronBackOutline } from 'ionicons/icons';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import { getCurrentUserProfile, onImgError, updateCurrentUserProfile, uploadPhoto } from '../hooks/utilities';
 
@@ -16,10 +17,12 @@ import 'swiper/css';
 import 'swiper/css/effect-cards';
 import 'swiper/css/navigation';
 import { useSwiper } from 'swiper/react';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 const OnboardingCardZipcode: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.name;
 
   const [nickname, setNickname] = useState<string | null>(null);
   const swiper = useSwiper();
@@ -74,36 +77,29 @@ const OnboardingCardZipcode: React.FC = () => {
 
 
   return (
-    <IonCard  className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>What's your name?</IonCardTitle>
-            <IonText>This is the name (a first name or a nickname) that will be shown on your profile.</IonText>
-            <IonText>We require you to contact support if you need to change your name later.</IonText>
-            {data ?
-            <IonItem>
-            
-            <IonInput value={nickname}
-                            name="nickname"
-                            placeholder={data.name}
-                            required={true}
-                            onIonInput={e => setNickname(e.detail.value!)}
-                            maxlength={30}
-                            autoCapitalize='words'
-                            onKeyUp={event => {
-                              if (event.key === 'Enter') {
-                                swiper.slideNext()
-                              }
-                            }}
-                            enterkeyhint="next"
-                            type="text" />
-            </IonItem>
-            : <>Loading</>}
-            
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.bodyPrimary}</IonText>
+        <IonText>{copy.bodySecondary}</IonText>
+        {data ? (
+          <BoxedStackedInput
+            label="Name"
+            value={nickname ?? ''}
+            name="nickname"
+            placeholder={data.name}
+            onIonInput={e => setNickname(e.detail.value!)}
+            type="text"
+            autocapitalize="words"
+          />
+        ) : <>Loading</>}
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons ">
-            <IonButton color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>
-            <IonButton onClick={updateProfile}>Next</IonButton>
-            </IonRow>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   )
 };

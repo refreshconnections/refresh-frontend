@@ -3,6 +3,8 @@ import axios from "axios";
 import { Preferences } from '@capacitor/preferences';
 import { TextZoom } from "@capacitor/text-zoom"
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
+import { clearTransientAppStorage } from './capacitorPreferences/all';
 
 
 
@@ -34,11 +36,11 @@ axios.interceptors.response.use(function (response) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
     console.log("error", error)
-    if (error.response.status == 401) {
+    if (error.response?.status == 401) {
         await handleLogoutCommon()
         console.log("Time to sign back in.")
     }
-    else if (error.response.status == 503) {
+    else if (error.response?.status == 503) {
         (window as any).location.href = '/construction'
         console.log("The site is under maintenance.")
     }
@@ -384,6 +386,27 @@ export async function removeBlockedConnection(connection_id) {
 
     return response.data
 
+}
+
+export async function updateCommunityBlocked(connection_id) {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/community_blocked/`, headers, data: { id: connection_id } });
+    return response.data
+}
+
+export async function removeCommunityBlocked(connection_id) {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/remove_community_blocked/`, headers, data: { id: connection_id } });
+    return response.data
+}
+
+export async function communityBlockMigration() {
+    const token = localStorage.getItem("token")
+    const headers = { 'Authorization': "Token " + token, 'X-CSRFToken': csrftoken }
+    const response = await axios({ method: 'patch', url: `${BASE_URL}/api/profiles/community_block_migration/`, headers });
+    return response.data
 }
 
 export async function getIncomingConnections() {
@@ -771,7 +794,7 @@ export async function editComment(comment_id, text) {
 }
 
 export async function markAllInChatAsRead(sender_id) {
-    const url = `${BASE_URL}/api/profiles/chats/mark_all_messages_in_chat_as_read/`;
+    const url = `${BASE_URL}/api/profiles/chats/mark_all_messages_in_chat_as_read_v2/`;
 
     const data = {
         "sender_id": sender_id
@@ -1573,19 +1596,18 @@ export async function checkVerificationCode(phone, code) {
         'X-CSRFToken': csrftoken
     }
 
-    const response = await axios({
-        method: 'post',
-        url: url,
-        // 'X-CSRFToken': csrftoken,
-        // 'allow': "GET, PUT, PATCH",
-        data: data,
-        headers: headers
-    });
-
-
-    console.log("Verify:", response)
-
-    return response.data
+    try {
+        const response = await axios({
+            method: 'post',
+            url: url,
+            data: data,
+            headers: headers
+        });
+        console.log("Verify:", response)
+        return response
+    } catch (error) {
+        return (error as any).response
+    }
 }
 
 export async function sendPhoneVerification(phone) {
@@ -1663,6 +1685,7 @@ export async function handleLogoutCommon() {
     }
     // Invalidate every query in the cache
     await Preferences.remove({ key: 'EXPIRY' })
+    await clearTransientAppStorage()
     localStorage.removeItem('token')
     Cookies.remove('sessionid');
     Cookies.remove('csrftoken');
@@ -2029,6 +2052,15 @@ const DARK_BG  = '#2f2f2f';
 
 type ThemePref = 'light' | 'dark' | 'auto';
 
+export async function getReduceAnimations(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: 'reduce_animations' });
+  return value === 'true';
+}
+
+export async function setReduceAnimationsPref(reduce: boolean): Promise<void> {
+  await Preferences.set({ key: 'reduce_animations', value: String(reduce) });
+}
+
 export async function setThemePref(theme?: ThemePref) {
   await Preferences.set({ key: 'theme', value: theme ?? 'auto' });
   // Immediately apply after saving
@@ -2145,22 +2177,43 @@ type AvatarConfig = {
   profileImage?: string | null;
   viewerConnect?: boolean;
   authorConnect?: boolean;
+  allowDefaultConnectBorder?: boolean;
   includeBylineClass?: boolean;
   placeholderSrc?: string;
 };
+
+export function getPrimaryOrderedPhoto(profile: any) {
+  if (!profile) {
+    return null;
+  }
+
+  const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+  const preferredOrder = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+    ? profile.photo_order
+    : photoKeys;
+  const existingPhotos = photoKeys.filter((key) => Boolean(profile[key]));
+  const orderedPhotos = [
+    ...preferredOrder.filter((key: string) => existingPhotos.includes(key)),
+    ...existingPhotos.filter((key) => !preferredOrder.includes(key)),
+  ];
+  const primaryPhotoKey = orderedPhotos[0];
+
+  return primaryPhotoKey ? profile[primaryPhotoKey] : null;
+}
 
 export function getAvatarDisplay({
   profileImage,
   viewerConnect,
   authorConnect,
+  allowDefaultConnectBorder = false,
   includeBylineClass = false,
-  placeholderSrc = '../static/img/refresh-flower-blue.png',
+  placeholderSrc = '../static/img/navynobordervector.png',
 }: AvatarConfig) {
   const hasImage = Boolean(profileImage);
-  const showConnectBorder = Boolean(viewerConnect && authorConnect && hasImage);
+  const showConnectBorder = Boolean(viewerConnect && authorConnect && (hasImage || allowDefaultConnectBorder));
   const baseClass = includeBylineClass ? 'byline-avatar' : '';
   const className = showConnectBorder
-    ? `${baseClass} connect-avatar`.trim()
+    ? `${baseClass} connect-avatar${hasImage ? '' : ' refresh-avatar'}`.trim()
     : hasImage
       ? `${baseClass} community-avatar`.trim()
       : `${baseClass} refresh-avatar`.trim();
@@ -2284,7 +2337,7 @@ export const getBadgeCount = async (chatsArray) => {
 
 export async function increaseStreak() {
 
-    const lastUpdate = localStorage.getItem("lastStreakUpdate");
+    const { value: lastUpdate } = await Preferences.get({ key: 'lastStreakUpdate' });
 
     if (lastUpdate) {
         const lastDate = new Date(lastUpdate);
@@ -2305,7 +2358,6 @@ export async function increaseStreak() {
         'X-CSRFToken': csrftoken
     }
 
-
     const response = await axios({
         method: 'get',
         url: url,
@@ -2314,7 +2366,7 @@ export async function increaseStreak() {
 
     if (response?.data?.streak) {
         console.log("Increase streak to", response?.data?.streak)
-        localStorage.setItem("lastStreakUpdate", new Date().toISOString());
+        await Preferences.set({ key: 'lastStreakUpdate', value: new Date().toISOString() });
     }
 
     return response
@@ -2364,6 +2416,26 @@ export async function clearStreak() {
     });
 
     console.log("Drop streak to zero", response?.data?.broken)
+
+    return response
+
+}
+
+export async function recoverStreak() {
+
+    const url = `${BASE_URL}/api/profiles/recover_streak/`
+
+    const token = localStorage.getItem("token")
+    const headers = {
+        'Authorization': "Token " + token,
+        'X-CSRFToken': csrftoken
+    }
+
+    const response = await axios({
+        method: 'post',
+        url: url,
+        headers: headers
+    });
 
     return response
 
@@ -2765,4 +2837,76 @@ export function containsGoogleDocLink(input) {
         if (GOOGLE_DOC_HOSTS.has(host)) return true;
         return host.endsWith(".docs.google.com") || host.endsWith(".drive.google.com");
     });
+}
+
+export async function openExternalUrl(url: string) {
+    await Browser.open({ url });
+}
+
+export function getInternalAppPath(url: string): string | null {
+    if (!url) {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url, window.location.origin);
+        const isSameOrigin = parsed.origin === window.location.origin;
+
+        if (!isSameOrigin) {
+            return null;
+        }
+
+        if (!parsed.pathname.startsWith('/')) {
+            return null;
+        }
+
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+        return null;
+    }
+}
+
+const PHOTO_KEYS = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+
+/** Returns the field key of the primary photo (e.g. 'pic1_main', 'pic2'). */
+export function getPrimaryPhotoKey(profile: any): string {
+  if (!profile) return 'pic1_main';
+  const order: string[] = Array.isArray(profile.photo_order) && profile.photo_order.length > 0
+    ? profile.photo_order
+    : PHOTO_KEYS;
+  return order.find(k => profile[k]) ?? 'pic1_main';
+}
+
+/** Returns the alt-text field name for a given photo key (handles pic1_main → pic1_alt). */
+export function getPhotoAltKey(photoKey: string): string {
+  return photoKey === 'pic1_main' ? 'pic1_alt' : `${photoKey}_alt`;
+}
+
+/** Returns the URL of the first photo in the profile's photo_order, falling back to pic1_main order. */
+export function getPrimaryPhoto(profile: any): string | null {
+  if (!profile) return null;
+  return profile[getPrimaryPhotoKey(profile)] ?? null;
+}
+
+// Version 3: July 6 2025
+// Version 4: Oct 15 2025
+// Version 5: Dec 4 2025
+// Version 6: May 2026
+export const CURRENT_APP_VERSION: number = 6;
+
+export function maxBirthdateForAdult(): string {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 18);
+    return date.toISOString().split('T')[0];
+}
+
+export function localTzAbbr(date?: Date | string | null): string {
+    try {
+        const d = date ? new Date(date) : new Date();
+        return new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+            .formatToParts(d)
+            .find(p => p.type === 'timeZoneName')?.value ?? '';
+    } catch {
+        return '';
+    }
 }

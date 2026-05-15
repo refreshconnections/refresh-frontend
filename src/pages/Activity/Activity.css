@@ -1,0 +1,254 @@
+ion-content.activity ion-note.header {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    background: var(--ion-color-navy);
+    color: var(--ion-color-white);
+    font-size: 14pt;
+    padding: 10pt;
+  }
+
+
+
+ion-content.activity ion-segment-button ion-label {
+    font-size: clamp(0.7rem, 3vw, 1rem);
+    white-space: nowrap;
+}
+
+.segment-loading {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+ion-item.streak {
+    border-radius: 8pt;
+    margin: 5pt
+
+}
+
+ion-item.streak ion-label h2{
+    font-size: 20px;
+
+}
+
+.submission-summary {
+    list-style: none;
+    margin: 8px auto 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    color: var(--ion-color-navy);
+    font-size: 14pt;
+}
+
+.submission-summary strong {
+    font-weight: 700;
+}
+
+.submission-summary-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+}
+
+.submission-callout {
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.submission-callout--edit {
+    background: var(--ion-color-lightyellow);
+    color: var(--ion-color-navy);
+    justify-content: center;
+    gap: 6px;
+}
+
+.submission-callout--pending {
+    background: var(--ion-color-white);
+    color: var(--ion-color-navy);
+    justify-content: center;
+    gap: 6px;
+}
+
+.submission-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+    justify-content: center;
+}
+
+.submission-chip {
+    background: var(--ion-color-light);
+    color: var(--ion-color-navy);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+:root.ion-palette-dark.ios,
+:root.ion-palette-dark.md {
+  .submission-callout--edit {
+    background: rgba(var(--ion-color-warning-rgb), 0.2);
+    color: var(--ion-color-warning);
+  }
+  .submission-callout--pending {
+    background: var(--ion-color-step-100);
+    color: var(--ion-text-color);
+  }
+  .submission-chip {
+    background: var(--ion-color-step-200);
+    color: var(--ion-text-color);
+  }
+}
+
+.comment-card {
+    background: var(--ion-color-white);
+    border-radius: 8px;
+    padding: 12px 14px 10px;
+    margin: 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.comment-card-text {
+    color: var(--ion-color-navy);
+    font-size: 14px;
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    word-break: break-word;
+    width: 100%;
+}
+
+.comment-card-text.expanded {
+    display: block;
+    overflow: visible;
+}
+
+.comment-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.comment-card-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.comment-card-title {
+    color: var(--ion-color-medium);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comment-card-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.comment-card-time {
+    color: var(--ion-color-medium);
+    font-size: 10pt;
+}
+
+.comment-card-chevron {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--ion-color-medium);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.comment-card-removed-reason {
+    font-size: 12px;
+    color: var(--ion-color-maroon);
+    margin-top: 4px;
+}
+
+.comment-card-moderation-note {
+    font-size: 12px;
+    color: var(--ion-color-secondary);
+    margin-top: 4px;
+}
+
+.streak-summary-card {
+    width: 100%;
+    margin: 8px 8px 0;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+.streak-summary-card-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 12px 0;
+}
+
+.streak-summary-card-header-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ion-color-black);
+}
+
+.streak-summary-card-body {
+    padding: 6px 12px 12px;
+}
+
+.streak-summary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.streak-summary-section--recovery {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(31, 31, 61, 0.08);
+}
+
+.streak-summary-title {
+    color: var(--ion-color-dark);
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.streak-summary-line {
+    display: block;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.streak-summary-section p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.35;
+}

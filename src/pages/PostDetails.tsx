@@ -8,6 +8,7 @@ import "./Page.css"
 import "./PostDetails.css"
 
 import { getAvatarDisplay, onImgError, getAnnouncementDetails, addComment, unlikeComment, likeComment } from '../hooks/utilities';
+import { useSheetModal } from '../hooks/useSheetModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons/faHeart';
 import { faCommentPlus } from '@fortawesome/pro-solid-svg-icons/faCommentPlus';
@@ -19,6 +20,7 @@ import CommunityProfileModal from '../components/CommunityProfileModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 
+// Deprecated: legacy Community.tsx detail component. AppV2 uses CommunityPostRoute and SubmittedPostPreview instead.
 
 type Props = {
   comments: any;
@@ -132,7 +134,7 @@ const PostDetails: React.FC<Props> = (props) => {
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
   });
 
-  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
     avatarUrl: communityProfileAvatar,
@@ -171,14 +173,7 @@ const PostDetails: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (communityProfileUserId !== null) {
-      communityProfilePresent({
-        showBackdrop: false,
-        backdropDismiss: true,
-        initialBreakpoint: 0.8,
-        handleBehavior: 'none',
-        expandToScroll: false,
-        cssClass: 'community-profile-modal',
-      });
+      communityProfilePresent({ cssClass: 'community-profile-modal' });
     }
   }, [communityProfileUserId, communityProfilePresent]);
 
@@ -190,7 +185,7 @@ const PostDetails: React.FC<Props> = (props) => {
   return (
     <IonList className="comments">
       {data.map((item: any, index: number) => (
-            <>
+            <React.Fragment key={item?.id ?? index}>
             <IonItemSliding key={index}>
               {item.approved?
               <IonItem className={me?.user == item.user ? "selfwritten" : "written"}>
@@ -243,7 +238,7 @@ const PostDetails: React.FC<Props> = (props) => {
               </IonItemOptions>
               : <></>}
             </IonItemSliding>
-            </>
+            </React.Fragment>
 
       ))}
       {loading || me?.username ?
@@ -256,7 +251,7 @@ const PostDetails: React.FC<Props> = (props) => {
                 disabled={closed}
                 maxlength={400}
                 placeholder={closed ? "Discussion closed. Want to start a new one?" : "Leave your own comment"}
-                autoCapitalize='sentences'
+                autocapitalize='sentences'
                 counter
               />
             </IonItem>
@@ -270,7 +265,7 @@ const PostDetails: React.FC<Props> = (props) => {
         :
         <IonRow className="ion-justify-content-center comment-username">
           <IonButton routerLink="/community-onboarding" color="tertiary">
-            Create a community profile to post a comment
+            Create a Refreshments Profile to post a comment
           </IonButton>
         </IonRow>}
     </IonList>

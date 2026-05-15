@@ -1,10 +1,11 @@
 import { IonActionSheet, IonAvatar, IonBadge, IonButton, IonCard, IonCardContent, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFooter, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSpinner, IonText, IonTextarea, IonTitle, RefresherEventDetail, useIonAlert, useIonModal, useIonRouter } from "@ionic/react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, increaseStreak, likeAnnouncement, onImgError, unlikeAnnouncement } from "../../hooks/utilities";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { addComment, addCommentReply, addToHiddenAuthors, addToHiddenPosts, containsPii, getAvatarDisplay, getInternalAppPath, increaseStreak, isCommunityPlus, likeAnnouncement, localTzAbbr, onImgError, openExternalUrl, unlikeAnnouncement } from "../../hooks/utilities";
+import { useSheetModal } from "../../hooks/useSheetModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys, useGetPostContent } from "../../hooks/api/refreshments";
 import { useParams } from "react-router-dom"
-import { chevronBackOutline, informationCircleOutline } from 'ionicons/icons';
+import { chevronBackOutline, informationCircleOutline, star, starOutline } from 'ionicons/icons';
 
 
 import './OpenedPost.css'
@@ -39,7 +40,15 @@ import debounce from "lodash.debounce";
 import { useGetCurrentModeration } from "../../hooks/api/profiles/current-moderation";
 import Poll from "./Polls/Poll";
 import ContactDetailsPopover from "../ContactDetailsPopover";
+import RefreshmentsEventDetails from "../RefreshmentsEventDetails";
 import moment from "moment";
+import { useInterestPost, useUninterestPost } from "../../hooks/api/interests";
+import {
+    getHideInterestedCountOnMySubmissionsPref,
+    getShowInterestedCountPref,
+    HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT,
+    SHOW_INTERESTED_COUNT_CHANGED_EVENT,
+} from "../../hooks/capacitorPreferences/interested-counts";
 
 type Comment = {
     id: number;
@@ -88,8 +97,6 @@ const OpenedPost: React.FC = () => {
 
     const moderation = useGetCurrentModeration().data;
 
-    const [pendingInvalidations, setPendingInvalidations] = useState(new Set());
-    const pendingInvalidationsRef = useRef(pendingInvalidations);
 
     const { data: staticContentPost, isLoading: staticContentPostLoading } = useGetStaticPostContent(parseInt(id));
     const dynamicContentPost = useGetDynamicPostContent(parseInt(id)).data;
@@ -113,6 +120,10 @@ const OpenedPost: React.FC = () => {
 
     const [liked, setLiked] = useState<boolean>(false)
     const [likedLength, setLikedLength] = useState(0)
+    const [interested, setInterested] = useState<boolean>(false)
+    const [interestedCount, setInterestedCount] = useState(0)
+    const [showInterestedCountPref, setShowInterestedCountPrefState] = useState(true)
+    const [hideInterestedCountOnMySubmissions, setHideInterestedCountOnMySubmissions] = useState(false)
 
     const [showSidenotes, setShowSidenotes] = useState<boolean>(false)
 
@@ -131,150 +142,190 @@ const OpenedPost: React.FC = () => {
     });
 
     const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
+    const interestPost = useInterestPost();
+    const uninterestPost = useUninterestPost();
+    const canViewInterestedCount = isCommunityPlus(globalCurrentProfile?.subscription_level) && showInterestedCountPref;
+    const isOwnSubmission = staticContentPost?.user != null && staticContentPost.user === globalCurrentProfile?.user;
+    const shouldShowInterestedCount = canViewInterestedCount && interestedCount > 3 && !(hideInterestedCountOnMySubmissions && isOwnSubmission);
+    const normalizeInterestedCount = (value: unknown) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
 
     const hasPii: boolean = useMemo(() => containsPii(commentInput), [commentInput]);
     const approvedEventForPost = staticContentPost?.event ?? null;
+    const eventCalendarAnchor = approvedEventForPost?.end_datetime ?? approvedEventForPost?.start_datetime ?? null;
+    const isPastEvent = Boolean(
+        eventCalendarAnchor &&
+        moment(eventCalendarAnchor).isValid() &&
+        moment(eventCalendarAnchor).isBefore(moment())
+    );
+    const canOpenEventCalendar = Boolean(
+        approvedEventForPost?.start_datetime &&
+        eventCalendarAnchor &&
+        moment(eventCalendarAnchor).isValid() &&
+        moment(eventCalendarAnchor).isSameOrAfter(moment().subtract(7, 'days'))
+    );
     const handleOpenEventCalendar = () => {
-        if (!approvedEventForPost?.start_datetime) return;
+        if (!canOpenEventCalendar || !approvedEventForPost?.start_datetime) return;
         const dateParam = moment(approvedEventForPost.start_datetime).format('YYYY-MM-DD');
         router.push(`/community?calendarDate=${dateParam}`);
+    };
+    const openAppOrExternalUrl = (url: string) => {
+        const internalPath = getInternalAppPath(url);
+        if (internalPath) {
+            router.push(internalPath);
+            return;
+        }
+        openExternalUrl(url);
     };
 
 
 
     const [presentWhyHiddenAlert] = useIonAlert();
+    const [presentLinkAlert] = useIonAlert();
 
     const createComment = async (text: string, replyTo: any) => {
         setNoComment(true)
         setReplyTo(null)
         setCommentInput("")
 
-        // comment loading circle?
         let comment_id: any = null
 
-        if (replyTo) {
-            const commentReplyData = {
-                announcement: id,
-                reply_to: replyTo?.id,
-                text: text
-            }
-
-            const tempId = `temp-${Date.now()}`;
-
-            const optimisticReply = {
-                id: tempId,
-                text,
-                uploadDateTime: new Date().toISOString(),
-                user: globalCurrentProfile.user,
-                username: "Posting...",
-                profile_image: null,
-                settings_community_profile: false,
-                removed: false,
-                removed_reason: null,
-                approved: true,
-                reply_to: replyTo?.id,
-                like_count: 0,
-                reply_count: 0
-            };
-
-            queryClient.setQueryData(['comments', replyTo.id, 'replies'], (oldData: any) => {
-                if (!oldData || !Array.isArray(oldData.pages)) {
-                    return {
-                        pageParams: [undefined],
-                        pages: [{
-                            next: null,
-                            previous: null,
-                            count: 1,
-                            results: [optimisticReply]
-                        }]
-                    };
+        try {
+            if (replyTo) {
+                if (!globalCurrentProfile?.user) {
+                    setNoComment(false);
+                    return;
                 }
 
-                // Insert into last page
-                const updatedPages = oldData.pages.map((page, index) => {
-                    if (index === oldData.pages.length - 1) {
-                        return {
-                            ...page,
-                            results: [...page.results, optimisticReply]
-                        };
-                    }
-                    return page;
-                });
+                const commentReplyData = {
+                    announcement: id,
+                    reply_to: replyTo?.id,
+                    text: text
+                }
 
-                return {
-                    ...oldData,
-                    pages: updatedPages
-                };
-            });
+                const tempId = `temp-${Date.now()}`;
 
-            setTimeout(() => scrollToComment(`comment-${tempId}`), 100);
-
-            let add_reply_response = await addCommentReply(commentReplyData)
-            if (add_reply_response?.data?.reply_id) {
-                comment_id = add_reply_response?.data?.reply_id
-            }
-
-            queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
-            setForceShowRepliesFor(prev => new Set(prev).add(replyTo.id));
-
-
-
-        }
-        else {
-
-            const commentData = {
-                announcement: id,
-                text: text
-            }
-
-            queryClient.setQueryData<InfiniteCommentPages>(postQueryKeys.topcomments(parseInt(id), sortByRecentActivity), (oldData) => {
-                if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) return oldData;
-
-                const newComment: Comment = {
-                    id: Date.now(), // temporary ID
-                    text: text,
+                const optimisticReply = {
+                    id: tempId,
+                    text,
                     uploadDateTime: new Date().toISOString(),
-                    user: globalCurrentProfile?.user,
+                    user: globalCurrentProfile.user,
                     username: "Posting...",
                     profile_image: null,
                     settings_community_profile: false,
-                    like_count: 0,
+                    removed: false,
+                    removed_reason: null,
                     approved: true,
-                    loading: true
+                    reply_to: replyTo?.id,
+                    like_count: 0,
+                    reply_count: 0
                 };
 
-                const lastPageIndex = oldData.pages.length - 1;
-                const updatedLastPage = {
-                    ...oldData.pages[lastPageIndex],
-                    results: [...oldData.pages[lastPageIndex].results, newComment],
-                };
+                queryClient.setQueryData(['comments', replyTo.id, 'replies'], (oldData: any) => {
+                    if (!oldData || !Array.isArray(oldData.pages)) {
+                        return {
+                            pageParams: [undefined],
+                            pages: [{
+                                next: null,
+                                previous: null,
+                                count: 1,
+                                results: [optimisticReply]
+                            }]
+                        };
+                    }
 
-                const updatedPages = [...oldData.pages];
-                updatedPages[lastPageIndex] = updatedLastPage;
+                    // Insert into last page
+                    const updatedPages = oldData.pages.map((page, index) => {
+                        if (index === oldData.pages.length - 1) {
+                            return {
+                                ...page,
+                                results: [...page.results, optimisticReply]
+                            };
+                        }
+                        return page;
+                    });
 
-                return {
-                    ...oldData,
-                    pages: updatedPages,
-                };
+                    return {
+                        ...oldData,
+                        pages: updatedPages
+                    };
+                });
+
+                setTimeout(() => scrollToComment(`comment-${tempId}`), 100);
+
+                let add_reply_response = await addCommentReply(commentReplyData)
+                if (add_reply_response?.data?.reply_id) {
+                    comment_id = add_reply_response?.data?.reply_id
+                }
+
+                queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
+                setForceShowRepliesFor(prev => new Set(prev).add(replyTo.id));
+
+            } else {
+
+                const commentData = {
+                    announcement: id,
+                    text: text
+                }
+
+                queryClient.setQueryData<InfiniteCommentPages>(postQueryKeys.topcomments(parseInt(id), sortByRecentActivity), (oldData) => {
+                    if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) return oldData;
+
+                    const newComment: Comment = {
+                        id: Date.now(), // temporary ID
+                        text: text,
+                        uploadDateTime: new Date().toISOString(),
+                        user: globalCurrentProfile?.user,
+                        username: "Posting...",
+                        profile_image: null,
+                        settings_community_profile: false,
+                        like_count: 0,
+                        approved: true,
+                        loading: true
+                    };
+
+                    const lastPageIndex = oldData.pages.length - 1;
+                    const updatedLastPage = {
+                        ...oldData.pages[lastPageIndex],
+                        results: [...oldData.pages[lastPageIndex].results, newComment],
+                    };
+
+                    const updatedPages = [...oldData.pages];
+                    updatedPages[lastPageIndex] = updatedLastPage;
+
+                    return {
+                        ...oldData,
+                        pages: updatedPages,
+                    };
+                });
+
+                let add_comment_response = await addComment(commentData)
+                if (add_comment_response?.data?.comment_id) {
+                    comment_id = add_comment_response?.data?.comment_id
+                }
+                queryClient.invalidateQueries({
+                    queryKey: ['top-comments', parseInt(id)], exact: false,
+                });
             }
-            );
-            let add_comment_response = await addComment(commentData)
-            if (add_comment_response?.data?.comment_id) {
-                comment_id = add_comment_response?.data?.comment_id
-            }
-            queryClient.invalidateQueries({
-                queryKey: ['top-comments', parseInt(id)], exact: false,
-            });
-        }
-        await delay(500)
-        setNoComment(false)
-        await increaseStreak()
-        queryClient.invalidateQueries({ queryKey: ['streak'] })
-        if (comment_id) {
-            scrollToComment(`comment-${comment_id}`)
-        }
 
-        return
+            await delay(500)
+            await increaseStreak()
+            queryClient.invalidateQueries({ queryKey: ['streak'] })
+            setNoComment(false)
+            if (comment_id) {
+                scrollToComment(`comment-${comment_id}`)
+            }
+        } catch {
+            if (replyTo) {
+                queryClient.invalidateQueries({ queryKey: ['comments', replyTo.id, 'replies'] });
+            } else {
+                queryClient.invalidateQueries({ queryKey: postQueryKeys.topcomments(parseInt(id), sortByRecentActivity) });
+            }
+        } finally {
+            setNoComment(false)
+        }
     }
 
 
@@ -346,6 +397,78 @@ const OpenedPost: React.FC = () => {
     }, [currentProfileRefreshments])
 
     useEffect(() => {
+        setInterested(Boolean(dynamicContentPost?.interested))
+    }, [dynamicContentPost?.interested])
+
+    useEffect(() => {
+        setInterestedCount(normalizeInterestedCount(staticContentPost?.interested_count))
+    }, [staticContentPost?.interested_count])
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const syncPrefs = async () => {
+            const [showInterestedCount, hideOnMySubmissions] = await Promise.all([
+                getShowInterestedCountPref(),
+                getHideInterestedCountOnMySubmissionsPref(),
+            ]);
+            if (cancelled) {
+                return;
+            }
+            setShowInterestedCountPrefState(showInterestedCount);
+            setHideInterestedCountOnMySubmissions(hideOnMySubmissions);
+        };
+
+        const handleShowInterestedCountChanged = (event: Event) => {
+            setShowInterestedCountPrefState(Boolean((event as CustomEvent<boolean>).detail));
+        };
+
+        const handleHideOnMySubmissionsChanged = (event: Event) => {
+            setHideInterestedCountOnMySubmissions(Boolean((event as CustomEvent<boolean>).detail));
+        };
+
+        syncPrefs();
+        window.addEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
+        window.addEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+
+        return () => {
+            cancelled = true;
+            window.removeEventListener(SHOW_INTERESTED_COUNT_CHANGED_EVENT, handleShowInterestedCountChanged);
+            window.removeEventListener(HIDE_INTERESTED_COUNT_ON_MY_SUBMISSIONS_CHANGED_EVENT, handleHideOnMySubmissionsChanged);
+        };
+    }, []);
+
+    const markInterested = async () => {
+        const previousInterested = interested
+        const previousCount = interestedCount
+        setInterested(true)
+        if (!previousInterested) {
+            setInterestedCount(previousCount + 1)
+        }
+        try {
+            await interestPost.mutateAsync(parseInt(id))
+        } catch (error) {
+            setInterested(previousInterested)
+            setInterestedCount(previousCount)
+        }
+    }
+
+    const unmarkInterested = async () => {
+        const previousInterested = interested
+        const previousCount = interestedCount
+        setInterested(false)
+        if (previousInterested) {
+            setInterestedCount(Math.max(0, previousCount - 1))
+        }
+        try {
+            await uninterestPost.mutateAsync(parseInt(id))
+        } catch (error) {
+            setInterested(previousInterested)
+            setInterestedCount(previousCount)
+        }
+    }
+
+    useEffect(() => {
         document.querySelector("ion-item-sliding")?.closeOpened();
     }, [replyTo])
 
@@ -394,7 +517,7 @@ const OpenedPost: React.FC = () => {
         includeBylineClass: true,
     });
     const postAvatarOverride = postAvatarDisplay.hasImage ? postAvatarDisplay.src : undefined;
-    const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+    const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
         userId: staticContentPost?.user ?? null,
         isAnonymous: postAnonymous,
         avatarUrl: postAvatarOverride,
@@ -408,7 +531,7 @@ const OpenedPost: React.FC = () => {
         includeBylineClass: true,
     });
     const eventAvatarOverride = eventAvatarDisplay.hasImage ? eventAvatarDisplay.src : undefined;
-    const [eventProfilePresent, eventProfileDismiss] = useIonModal(CommunityProfileModal, {
+    const [eventProfilePresent, eventProfileDismiss] = useSheetModal(CommunityProfileModal, {
         userId: approvedEventForPost?.user ?? null,
         isAnonymous: eventAnonymous,
         avatarUrl: eventAvatarOverride,
@@ -452,58 +575,66 @@ const OpenedPost: React.FC = () => {
 
     }
 
-    // Debounced invalidation function
     const batchInvalidateComments = useCallback(
         debounce(() => {
-            const invalidationIds = Array.from(pendingInvalidationsRef.current);
-            if (invalidationIds.length > 0) {
-                console.log('Invalidating comments:', invalidationIds);
-                // Invalidate queries for all pending comments
-                pendingInvalidations.forEach((comment_id) => {
-                    queryClient.invalidateQueries({ queryKey: ['posts', 'comment', 'dynamic', comment_id] })
-                });
-
-                queryClient.invalidateQueries({ queryKey: ['refreshments-current'] })
-                queryClient.invalidateQueries({ queryKey: ['streak'] })
-                setPendingInvalidations(new Set()); // Clear the set after invalidating
-                pendingInvalidationsRef.current = new Set(); // Clear the ref as well
-            }
-        }, 500),  // 500ms debounce delay
-        [queryClient]  // Dependencies for debounce
+            queryClient.invalidateQueries({ queryKey: ['refreshments-current'] });
+            queryClient.invalidateQueries({ queryKey: ['streak'] });
+        }, 500),
+        [queryClient]
     );
 
-    // Function to add commentId to pending invalidations
-    const handleLikeUnlike = (comment_id) => {
-        setPendingInvalidations((prev) => {
-            const newSet = new Set(prev);
-            newSet.add(comment_id);
-            return newSet;
-        });
-
-        // Update the ref directly to ensure batchInvalidateComments gets the latest value
-        pendingInvalidationsRef.current.add(comment_id);
-
-        // Call the debounced function to handle invalidation
+    const handleLikeUnlike = (_comment_id) => {
         batchInvalidateComments();
     };
 
     const hasSensitive  = !!staticContentPost?.sensitive;
     const hasDisclaimer = !!staticContentPost?.disclaimer;
     const sensitiveText = staticContentPost?.sensitive_description ?? 'This post contains sensitive content.';
+    const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
+    const commentingPausedUntil = moderation?.commenting_paused_until;
+    const commentingPauseActive = Boolean(
+        commentingPausedUntil &&
+        moment(commentingPausedUntil).isValid() &&
+        moment(commentingPausedUntil).isAfter(moment())
+    );
+    const commentingPausedLabel = commentingPauseActive
+        ? moment(commentingPausedUntil).format('MMM D [at] h:mm A')
+        : null;
+    const commentingBlocked = Boolean(
+        staticContentPost?.comments_deactivated ||
+        staticContentPost?.closed ||
+        moderatorDeactivated ||
+        globalCurrentProfile?.deactivated_profile ||
+        commentingPauseActive ||
+        (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+    );
+    const moderationCommentBlockMessage = moderatorDeactivated
+        ? 'Your account is currently suspended from commenting.'
+        : commentingPauseActive
+            ? `Your commenting is temporarily paused until ${commentingPausedLabel}.`
+            : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                ? 'Your account needs to be reviewed before you can comment.'
+                : null;
+    const disableHideAuthorAction = Boolean(globalCurrentProfile?.user == staticContentPost?.user || staticContentPost?.user == 24);
+    const disableHidePostAction = Boolean(
+        currentProfileRefreshments?.hidden_announcements?.includes(parseInt(id)) ||
+        currentProfileRefreshments?.hidden_authors?.includes(staticContentPost?.user)
+    );
+    const disableSidenotesAction = Boolean(commentsNotShownCount <= 0);
 
 
 
 
     return (
         <IonPage>
-            {staticContentPost ?
+            {(staticContentPost && staticContentPost.approved) ?
                 <>
                     <IonContent>
                         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                            <IonRefresherContent></IonRefresherContent>
+                            <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
                         </IonRefresher>
                         <IonFab className="very-top" slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light" onClick={() => backToAllPosts()}>
+                            <IonFabButton color="light" onClick={() => { backToAllPosts(); router.canGoBack() ? router.goBack() : router.push('/community', 'back'); }}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
@@ -549,14 +680,7 @@ const OpenedPost: React.FC = () => {
                                       size="7"
                                       onClick={() =>
                                         !postAnonymous && staticContentPost?.user
-                                          ? communityProfilePresent({
-                                              showBackdrop: false,
-                                              backdropDismiss: true,
-                                              initialBreakpoint: 0.8,
-                                              handleBehavior: 'none',
-                                              expandToScroll: false,
-                                              cssClass: 'community-profile-modal',
-                                            })
+                                          ? communityProfilePresent({ cssClass: 'community-profile-modal' })
                                           : null
                                       }
                                     >
@@ -607,7 +731,7 @@ const OpenedPost: React.FC = () => {
 
                                 {hasDisclaimer && (
                                 <IonCol size="12">
-                                    <Linkify>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>
                                     <IonText color="medium" className="ion-text-center">
                                         <FontAwesomeIcon icon={faCircleExclamation} /> &nbsp;
                                         {staticContentPost!.disclaimer}
@@ -622,61 +746,64 @@ const OpenedPost: React.FC = () => {
                                 {staticContentPost?.poll && 
                                 <Poll id={staticContentPost?.poll}/>}
                                 {staticContentPost?.markdown ?
-                                    <Markdown>{staticContentPost?.content}</Markdown>
+                                    <Markdown components={{ a: ({ href, children }) => <a onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href ?? ''); }} style={{ cursor: 'pointer' }}>{children}</a> }}>{staticContentPost?.content}</Markdown>
                                     : staticContentPost?.content
                                 }
                             </IonCardContent>
                             {approvedEventForPost && (
                                 <IonCard
-                                    className="opened-post-event"
-                                    onClick={handleOpenEventCalendar}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(event) => {
+                                    className={`opened-post-event calendar-event-card calendar-event-card--expanded ${canOpenEventCalendar ? 'opened-post-event--clickable' : 'opened-post-event--stale'}`}
+                                    onClick={canOpenEventCalendar ? handleOpenEventCalendar : undefined}
+                                    role={canOpenEventCalendar ? "button" : undefined}
+                                    tabIndex={canOpenEventCalendar ? 0 : -1}
+                                    onKeyDown={canOpenEventCalendar ? (event) => {
                                         if (event.key === 'Enter' || event.key === ' ') {
                                             event.preventDefault();
                                             handleOpenEventCalendar();
                                         }
-                                    }}
+                                    } : undefined}
                                 >
                                     <IonCardContent>
-                                        <IonCardTitle>Event details</IonCardTitle>
-                                        {approvedEventForPost.name && (
-                                            <IonText className="opened-post-event-name">
-                                                {approvedEventForPost.name}
-                                            </IonText>
-                                        )}
-                                        <IonText color="medium">
-                                            {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
-                                            {moment(approvedEventForPost.end_datetime).format('h:mm A')}
-                                        </IonText>
-                                        {approvedEventForPost.location && (
-                                            <IonText className="opened-post-event-line">
-                                                <strong>Location:</strong> {approvedEventForPost.location}
-                                            </IonText>
-                                        )}
-                                        {approvedEventForPost.description && (
-                                            <IonText className="opened-post-event-line">
-                                                {approvedEventForPost.description}
-                                            </IonText>
-                                        )}
-                                        {approvedEventForPost.external_link && (
-                                            <IonButton
-                                                fill="outline"
-                                                size="small"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                href={approvedEventForPost.external_link}
-                                            >
-                                                Learn more
-                                            </IonButton>
-                                        )}
+                                        <div className="calendar-event-card-toggle-row">
+                                            <div className="calendar-event-card-toggle">
+                                                {approvedEventForPost.name && (
+                                                    <span className="calendar-event-card-name">
+                                                        {approvedEventForPost.name}
+                                                    </span>
+                                                )}
+                                                <span className="calendar-event-card-time">
+                                                    {moment(approvedEventForPost.start_datetime).format('MMM D, h:mm A')} –{' '}
+                                                    {moment(approvedEventForPost.end_datetime).format('h:mm A')} {localTzAbbr(approvedEventForPost.start_datetime)}
+                                                </span>
+                                            </div>
+                                            {isPastEvent ? (
+                                                <span className="event-status-badge">Past event</span>
+                                            ) : null}
+                                        </div>
+                                        <RefreshmentsEventDetails
+                                            event={approvedEventForPost}
+                                            anonymous={eventAnonymous}
+                                            avatarDisplay={eventAvatarDisplay}
+                                            onProfilePresent={!eventAnonymous && approvedEventForPost?.user
+                                                ? () => eventProfilePresent({ cssClass: 'community-profile-modal' })
+                                                : undefined}
+                                            onExternalLinkClick={approvedEventForPost.external_link
+                                                ? () => presentLinkAlert({
+                                                    header: 'Open link?',
+                                                    message: approvedEventForPost.external_link!,
+                                                    buttons: [
+                                                      { text: 'Cancel', role: 'cancel' },
+                                                      { text: 'Open', handler: () => openExternalUrl(approvedEventForPost.external_link!) },
+                                                    ],
+                                                  })
+                                                : undefined}
+                                        />
                                     </IonCardContent>
                                 </IonCard>
                             )}
                             <IonRow className="post-likes" id="comments-top">
                                 <IonCol>
-                                    <IonRow onClick={liked ? () => { } : () => likePost()}>
+                                    <IonRow>
                                         {liked ?
                                             <IonButton size="small" fill="clear" onClick={() => unlikePost()}><FontAwesomeIcon color="red" icon={heartFull} /></IonButton> :
                                             <IonButton size="small" fill="clear" onClick={() => likePost()}><FontAwesomeIcon icon={heartOutline} /></IonButton>}
@@ -693,15 +820,43 @@ const OpenedPost: React.FC = () => {
                                             : <></>}
                                     </IonRow>
                                 </IonCol>
+                                <IonCol>
+                                    <IonRow>
+                                        {interested ? (
+                                            <IonButton
+                                                aria-label="Remove post interest"
+                                                size="small"
+                                                fill="clear"
+                                                onClick={() => unmarkInterested()}
+                                                disabled={interestPost.isPending || uninterestPost.isPending}
+                                            >
+                                                <IonIcon color="warning" icon={star} />
+                                            </IonButton>
+                                        ) : (
+                                            <IonButton
+                                                aria-label="Mark post interested"
+                                                size="small"
+                                                fill="clear"
+                                                onClick={() => markInterested()}
+                                                disabled={interestPost.isPending || uninterestPost.isPending}
+                                            >
+                                                <IonIcon icon={starOutline} />
+                                            </IonButton>
+                                        )}
+                                        {shouldShowInterestedCount ? (
+                                            <IonText data-testid="opened-post-interest-count">{interestedCount}</IonText>
+                                        ) : null}
+                                    </IonRow>
+                                </IonCol>
                             </IonRow>
                             {staticContentPost?.comment_instructions ?
                                 <IonRow className="comment-instructions-note">
-                                    <Linkify><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
+                                    <Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}><IonNote>{staticContentPost?.comment_instructions}</IonNote></Linkify>
                                 </IonRow>
                                 : <></>}
                             {!staticContentPost?.comments_deactivated &&
                                 <>
-                                    <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity} />
+                                    <Comments showSidenotes={showSidenotes} replyTo={replyTo} setReplyTo={setReplyTo} onLikeUnlike={handleLikeUnlike} forceShowRepliesFor={forceShowRepliesFor} sortByRecentActivity={sortByRecentActivity} setSortByRecentActivity={setSortByRecentActivity} onViewThread={(id) => setForceShowRepliesFor(prev => { const next = new Set(prev); next.add(id); return next; })} isMegathread={!!staticContentPost?.megathread} />
                                     {!comments?.isPending && commentsNotShownCount > 0 ?
                                         <>
                                             {showSidenotes ?
@@ -734,23 +889,26 @@ const OpenedPost: React.FC = () => {
                                 {
                                     text: 'Hide all posts by this author',
                                     handler: () => {
+                                        if (disableHideAuthorAction) return;
                                         hideAuthorHandler()
                                     },
-                                    cssClass: ((globalCurrentProfile?.user == staticContentPost?.user || staticContentPost?.user == 24) ? "disabled-action-button" : "")
+                                    cssClass: (disableHideAuthorAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: 'Hide post',
                                     handler: () => {
+                                        if (disableHidePostAction) return;
                                         hidePostHandler()
                                     },
-                                    cssClass: ((currentProfileRefreshments?.hidden_announcements?.includes(parseInt(id)) || currentProfileRefreshments?.hidden_authors?.includes(staticContentPost?.user)) ? "disabled-action-button" : "")
+                                    cssClass: (disableHidePostAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: showSidenotes ? 'Hide sidenotes' : 'Show sidenotes',
                                     handler: () => {
+                                        if (disableSidenotesAction) return;
                                         { showSidenotes ? setShowSidenotes(false) : setShowSidenotes(true) }
                                     },
-                                    cssClass: (commentsNotShownCount <= 0 ? "disabled-action-button" : "")
+                                    cssClass: (disableSidenotesAction ? "disabled-action-button" : "")
                                 },
                                 {
                                     text: 'Nevermind',
@@ -794,21 +952,45 @@ const OpenedPost: React.FC = () => {
                                                 : <></>}
                                             <IonTextarea value={commentInput}
                                                 className="comment-creator"
+                                                color="black"
                                                 name="comment_input"
                                                 onIonInput={e => setCommentInput(e.detail.value!)}
-                                                disabled={staticContentPost?.comments_deactivated || staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)}
+                                                disabled={commentingBlocked}
                                                 maxlength={900}
                                                 autoGrow={true}
                                                 autoCorrect="on"
                                                 spellcheck
-                                                rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile) ? 2 : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? 3 : 1}
-                                                placeholder={staticContentPost?.comments_deactivated ? 'Comments are closed.' : staticContentPost?.closed ? "Discussion closed. Want to start a new one?" : globalCurrentProfile?.deactivated_profile ? "You need an active account to comment." : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile) ? "Your account needs to be reviewed before you can comment." : "Leave a comment"}
-                                                autoCapitalize='sentences'
+                                                rows={(staticContentPost?.closed || globalCurrentProfile?.deactivated_profile || moderatorDeactivated) ? 2 : (commentingPauseActive || (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)) ? 3 : 1}
+                                                placeholder={
+                                                    staticContentPost?.comments_deactivated
+                                                        ? 'Comments are closed.'
+                                                        : staticContentPost?.closed
+                                                            ? "Discussion closed. Want to start a new one?"
+                                                            : moderatorDeactivated
+                                                                ? 'Your account is currently suspended from commenting.'
+                                                                : globalCurrentProfile?.deactivated_profile
+                                                                    ? "You need an active account to comment."
+                                                                    : commentingPauseActive
+                                                                        ? `Your commenting is temporarily paused until ${commentingPausedLabel}. Please check your Me tab > Activity for any moderation details.`
+                                                                        : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                                                                            ? "Your account needs to be reviewed before you can comment. Please check your Me tab > Activity for any moderation details."
+                                                                            : "Leave a comment"
+                                                }
+                                                autocapitalize='sentences'
                                             />
                                         </IonItem>
                                     </IonCol>
                                     <IonCol size="2">
-                                        <IonButton expand="block" className="send-button" color="tertiary" disabled={noComment || staticContentPost?.closed || !commentInput || hasPii} onClick={() => createComment(commentInput!, replyTo)}>
+                                        <IonButton
+                                            expand="block"
+                                            className="send-button"
+                                            color="tertiary"
+                                            disabled={noComment || commentingBlocked || !commentInput || hasPii}
+                                            onClick={() => {
+                                                if (commentingBlocked || !commentInput || hasPii || noComment) return;
+                                                createComment(commentInput!, replyTo);
+                                            }}
+                                        >
                                             <FontAwesomeIcon icon={faCommentPlus} />
                                         </IonButton>
                                     </IonCol>
@@ -825,7 +1007,7 @@ const OpenedPost: React.FC = () => {
                                 :
                                 <IonRow className="ion-justify-content-center comment-username">
                                     <IonButton routerLink="/community-onboarding" color="tertiary">
-                                        Create a community profile to post a comment
+                                        Create a Refreshments Profile to post a comment
                                     </IonButton>
                                 </IonRow>}
                         </IonFooter>
@@ -835,7 +1017,7 @@ const OpenedPost: React.FC = () => {
                 (staticContentPostLoading) ?
                     <IonContent>
                         <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community#${id}`} routerDirection="back" color="light">
+                            <IonFabButton color="light" onClick={() => router.canGoBack() ? router.goBack() : router.push('/community', 'back')}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>
@@ -843,7 +1025,7 @@ const OpenedPost: React.FC = () => {
                     :
                     <IonContent>
                         <IonFab className="very-top " slot="fixed" vertical="top" horizontal="start">
-                            <IonFabButton routerLink={`/community`} routerDirection="back" color="light">
+                            <IonFabButton color="light" onClick={() => router.canGoBack() ? router.goBack() : router.push('/community', 'back')}>
                                 <IonIcon icon={chevronBackOutline}></IonIcon>
                             </IonFabButton>
                         </IonFab>

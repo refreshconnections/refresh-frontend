@@ -17,16 +17,14 @@ import {
 import { IonDatetime, IonDatetimeButton, IonModal } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 import moment from 'moment';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
-import { Pagination } from 'swiper';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import BoxedStackedPhoneInput from '../components/BoxedStackedPhoneInput';
+import BoxedStackedInput from '../components/BoxedStackedInput';
 import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/pagination';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
-import { useEmailStatus } from '../hooks/api/account/emails';
+import { accountEmailKeys, useEmailStatus } from '../hooks/api/account/emails';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
 import { useEligibilityStatus, useCompleteAgeVerification } from '../hooks/api/eligibility';
 import AgeVerificationFlow, { AgeCheckState } from './AgeVerificationFlow';
@@ -47,19 +45,19 @@ import {
 } from '../hooks/utilities';
 import './OnboardingV2.css';
 import PersonalProfile from './PersonalProfile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
+import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 const WelcomeSlide: React.FC = () => {
   const swiper = useSwiper();
+  const copy = ONBOARDING_COPY.onboardingV2.welcome;
   return (
     <IonContent className="onboarding-v2__slide onboarding-v2__welcome onboarding-v2__welcome-wrapper">
       <div className="onboarding-v2__welcome-content onboarding-v2__welcome-content--compact">
         <div className="onboarding-v2__welcome-hero">
           <img src="../static/img/flower-mask.png" alt="Refresh Connections" />
-          <h1>Welcome to Refresh Connections</h1>
-          <p>
-            We're a Covid conscientious community for building friendships, support, and (if you
-            choose) one-on-one connections.
-          </p>
+          <h1>{copy.title}</h1>
+          <p>{copy.body}</p>
         </div>
         <div className="onboarding-v2__cta">
           <IonButton
@@ -67,21 +65,10 @@ const WelcomeSlide: React.FC = () => {
             onClick={() => {
               swiper.allowSlideNext = true;
               swiper.allowSlidePrev = true;
-              swiper.slideTo(2, 0);
-            }}
-          >
-            I'm ready to get started
-          </IonButton>
-          <IonButton
-            expand="block"
-            fill="outline"
-            onClick={() => {
-              swiper.allowSlideNext = true;
-              swiper.allowSlidePrev = true;
               swiper.slideNext();
             }}
           >
-            I want to know more first
+            {copy.primaryCta}
           </IonButton>
         </div>
         <IonButton
@@ -90,7 +77,7 @@ const WelcomeSlide: React.FC = () => {
           className="onboarding-v2__alt"
           onClick={handleLogoutCommon}
         >
-          Return to login
+          {ONBOARDING_COPY.common.returnToLogin}
         </IonButton>
       </div>
     </IonContent>
@@ -99,6 +86,7 @@ const WelcomeSlide: React.FC = () => {
 
 const InfoSlide: React.FC = () => {
   const swiper = useSwiper();
+  const copy = ONBOARDING_COPY.onboardingV2.info;
   return (
     <IonContent
       scrollY
@@ -107,7 +95,7 @@ const InfoSlide: React.FC = () => {
       <div className="onboarding-v2__welcome-content">
         <div className="onboarding-v2__welcome-hero">
           <img src="../static/img/flower-mask.png" alt="Refresh Connections" />
-          <h1>What to expect</h1>
+          <h1>{copy.title}</h1>
         </div>
         <div
           className="onboarding-v2__welcome-details"
@@ -116,38 +104,18 @@ const InfoSlide: React.FC = () => {
             paddingRight: 'clamp(16px, 4vw, 48px)'
           }}
         >
-          <section className="fade-in">
-            <h2>Community connections</h2>
-            <p>
-              You'll start on the community side of the app--a shared space where members can gather,
-              listen, and join in when they're ready. Here you can join conversations, community
-              check-ins at the Refreshments Bar, and other spaces to share wins, resources, and
-              gatherings that match your comfort level.
-            </p>
-          </section>
-          <section className="fade-in">
-            <h2>Personal connections</h2>
-            <p>
-              Refresh Connections also has a personal side, where you can discover intentional
-              one-on-one connections. Create a profile that reflects how you approach Covid and what
-              you're looking for, then explore potential matches for friendship, support, or dating.
-              Messaging always requires mutual consent.
-            </p>
-          </section>
-          <section className="fade-in">
-            <h2>Getting started</h2>
-            <p>
-              On the next two screens we’ll ask for your mobile number and birthdate. They help keep your account and the community safer.
-              <br/>
-            After that, you can start exploring the community—and, if you’d like, fill out a profile so you can join the discovery on the one-on-one connections side of the app.
-            </p>
-          </section>
+          {copy.sections.map((section) => (
+            <section className="fade-in" key={section.title}>
+              <h2>{section.title}</h2>
+              <p>{section.body}</p>
+            </section>
+          ))}
         </div>
         <IonRow className="onboarding-v2__nav">
           <IonButton color="medium" onClick={() => swiper.slidePrev()}>
-            Back
+            {ONBOARDING_COPY.common.back}
           </IonButton>
-          <IonButton onClick={() => swiper.slideTo(2)}>Sounds good, let's verify</IonButton>
+          <IonButton onClick={() => swiper.slideTo(2)}>{copy.continueCta}</IonButton>
         </IonRow>
         <IonButton
           fill="clear"
@@ -155,7 +123,7 @@ const InfoSlide: React.FC = () => {
           className="onboarding-v2__alt"
           onClick={handleLogoutCommon}
         >
-          Return to login
+          {ONBOARDING_COPY.common.returnToLogin}
         </IonButton>
       </div>
     </IonContent>
@@ -175,6 +143,15 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
   const swiper = useSwiper();
   const [presentAlert] = useIonAlert();
   const [presentError] = useIonAlert();
+  const copy = ONBOARDING_COPY.onboardingV2.phone;
+  const maskedExistingPhone = useMemo(() => {
+    if (!existingPhone) return '';
+    const digits = existingPhone.replace(/\D/g, '');
+    if (!digits) return existingPhone;
+    const lastTwo = digits.slice(-2);
+    const maskedPrefix = `${digits.slice(0, -2)}`.replace(/\d/g, '•');
+    return existingPhone.trim().startsWith('+') ? `+${maskedPrefix}${lastTwo}` : `${maskedPrefix}${lastTwo}`;
+  }, [existingPhone]);
 
   useEffect(() => {
     setPhone(existingPhone ?? undefined);
@@ -182,22 +159,25 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
 
   const handleCodeEntry = () => {
     presentAlert({
-      header: 'Enter the 6-digit code we texted you',
-      inputs: [{ name: 'code', type: 'number', placeholder: 'Code' }],
+      header: copy.codeAlert.header,
+      inputs: [{ name: 'code', type: 'number', placeholder: copy.codeAlert.placeholder }],
       buttons: [
-        { text: 'Cancel', role: 'cancel' },
+        { text: copy.codeAlert.cancel, role: 'cancel' },
         {
-          text: 'Verify',
+          text: copy.codeAlert.verify,
           handler: async ({ code }) => {
-            try {
-              await checkVerificationCode(phone!, code);
+            const response = await checkVerificationCode(phone!, code);
+            if (response?.status === 200) {
               onComplete();
               swiper.slideTo(3);
-            } catch (verificationError: any) {
+            } else {
               presentError({
-                header: 'Verification failed',
-                message: verificationError?.message || 'Please try again',
-                buttons: ['OK']
+                header: copy.verificationFailed.header,
+                message: response?.data?.detail || copy.verificationFailed.fallback,
+                buttons: [
+                  { text: 'Cancel', role: 'cancel' },
+                  { text: 'Try again', handler: () => handleCodeEntry() },
+                ]
               });
             }
           }
@@ -208,7 +188,7 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
 
   const handleSendCode = async () => {
     if (!phone) {
-      setError('Enter a valid phone number.');
+      setError(copy.invalidError);
       return;
     }
     setError(null);
@@ -218,28 +198,27 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
         handleCodeEntry();
       } else if (response.status === 409) {
         presentError({
-          header: 'Phone number in use',
-          message:
-            'This phone number is already associated with another account. Return to the login page and choose "Forgot email / password" to search for another account, or contact help@refreshconnections.com if you deleted a previous account in error.',
+          header: copy.inUse.header,
+          message: copy.inUse.message,
           buttons: ['OK']
         });
       } else if (response.status === 429) {
         presentError({
-          header: 'Too many attempts',
-          message: 'Please wait a bit before trying again.',
+          header: copy.tooManyAttempts.header,
+          message: copy.tooManyAttempts.message,
           buttons: ['OK']
         });
       } else {
         presentError({
-          header: 'Unable to send code',
-          message: response?.data || 'Please try again later.',
+          header: copy.unableToSend.header,
+          message: response?.data || copy.unableToSend.fallback,
           buttons: ['OK']
         });
       }
     } catch (err: any) {
       presentError({
-        header: 'Unable to send code',
-        message: err?.message || 'Please try again later.',
+        header: copy.unableToSend.header,
+        message: err?.message || copy.unableToSend.fallback,
         buttons: ['OK']
       });
     }
@@ -249,24 +228,31 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
     <div className="onboarding-v2__slide">
       <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
         <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-          <IonCardTitle>Verify your mobile number </IonCardTitle>
-          <p>
-            We’ll send a short code by SMS to confirm this number is yours.
-          </p>
+          <IonCardTitle>{copy.title}</IonCardTitle>
+          <p>{copy.body}</p>
           <div className="onboarding-v2__input-wrapper">
-            <IonItem lines="none" className="onboarding-v2__input onboarding-v2__input--card">
-              {loading ? (
-                <IonSpinner />
-              ) : (
-                <PhoneInput
-                  placeholder="Enter phone number"
-                  defaultCountry="US"
-                  value={phone}
-                  onChange={setPhone}
-                  disabled={Boolean(existingPhone)}
+            {loading ? (
+              <IonSpinner />
+            ) : existingPhone ? (
+              <>
+                <BoxedStackedInput
+                  label="Phone number"
+                  value={maskedExistingPhone}
+                  name="phone-number"
+                  disabled
                 />
-              )}
-            </IonItem>
+                <IonNote className="onboarding-v2__error">
+                  You have already verified your phone number.
+                </IonNote>
+              </>
+            ) : (
+              <BoxedStackedPhoneInput
+                label="Phone number"
+                placeholder={copy.placeholder}
+                value={phone}
+                onChange={setPhone}
+              />
+            )}
             {error && (
               <IonNote color="danger" className="onboarding-v2__error">
                 {error}
@@ -280,29 +266,25 @@ const PhoneSlide: React.FC<PhoneSlideProps> = ({ existingPhone, loading, onCompl
               className="onboarding-v2__why-toggle"
               onClick={() => setShowWhy((prev) => !prev)}
             >
-              {showWhy ? 'Hide why we ask' : 'Why do you need my phone number?'}
+              {showWhy ? copy.whyHide : copy.whyShow}
             </IonButton>
             {showWhy && (
-              <IonText color="medium">
-                We use your mobile number to help secure your account, support community safety by preventing duplicate accounts, and as a second check when you make important account changes.
-                Your number is never shown to other members or used for marketing texts, and how we handle it is explained in our Privacy Policy.
-                Temporary or anonymous numbers can’t be used.
-              </IonText>
+              <IonText color="medium">{copy.whyBody}</IonText>
             )}
           </div>
         </IonCardContent>
         <div className="onboarding-v2__card-footer">
           <IonRow className="onboarding-v2__nav">
             <IonButton color="medium" onClick={() => swiper.slidePrev()}>
-              Back
+              {ONBOARDING_COPY.common.back}
             </IonButton>
             {existingPhone ? (
               <IonButton onClick={() => swiper.slideNext()} disabled={loading}>
-                Next
+                {copy.existingPhoneCta}
               </IonButton>
             ) : (
               <IonButton onClick={handleSendCode} disabled={!phone || loading}>
-                Send code
+                {copy.sendCodeCta}
               </IonButton>
             )}
           </IonRow>
@@ -335,6 +317,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   const [showWhy, setShowWhy] = useState(false);
   const swiper = useSwiper();
   const [presentAlert] = useIonAlert();
+  const copy = ONBOARDING_COPY.onboardingV2.birthday;
 
   const maxBirthday = () => moment().format('YYYY-MM-DD');
 
@@ -370,11 +353,11 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
       if (response?.status === 204) {
         const nextSlide = isAdult ? adultSlideIndex : underAgeSlideIndex;
         presentAlert({
-          header: `${age} will show as your age. Is this correct?`,
+          header: `${age}${copy.confirm.suffix}`,
           buttons: [
-            { text: 'No, go back', role: 'cancel' },
+            { text: copy.confirm.cancel, role: 'cancel' },
             {
-              text: 'Yes',
+              text: copy.confirm.confirm,
               handler: () => {
                 onComplete(Boolean(isAdult));
                 targetSlide(nextSlide);
@@ -392,15 +375,12 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
     <div className="onboarding-v2__slide">
       <IonCard className="onboarding-v2__card">
         <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight onboarding-v2__birthday">
-          <IonCardTitle>When is your birthday?</IonCardTitle>
-          <p>
-            We use your birthdate to verify that you're eligible to use Refresh Connections and to support
-            community safety features like age-based filters.
-          </p>
+          <IonCardTitle>{copy.title}</IonCardTitle>
+          <p>{copy.body}</p>
           <div className="onboarding-v2__input-wrapper">
             <IonItem className="onboarding-v2__input" lines="none">
               <IonLabel color={birthday ? 'dark' : 'medium'}>
-                {birthday?.split('T')[0] || 'Choose your birthday'}
+                {birthday?.split('T')[0] || copy.emptyLabel}
               </IonLabel>
               <IonDatetimeButton
                 datetime="birthdayPicker"
@@ -426,21 +406,17 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
               className="onboarding-v2__why-toggle"
               onClick={() => setShowWhy((prev) => !prev)}
             >
-              {showWhy ? 'Hide why we ask' : 'Why do you need my birthday?'}
+              {showWhy ? copy.whyHide : copy.whyShow}
             </IonButton>
             {showWhy && (
-              <IonText color="medium">
-                Used for account verification, community safety, and making sure age filters work the way
-                members expect. You won't be able to edit your birthdate yourself later. Your full birthdate
-                isn't shown to other members, and how we handle it is explained in our Privacy Policy.
-              </IonText>
+              <IonText color="medium">{copy.whyBody}</IonText>
             )}
           </div>
         </IonCardContent>
         <div className="onboarding-v2__card-footer">
           <IonRow className="onboarding-v2__nav">
             <IonButton color="medium" onClick={() => swiper.slidePrev()}>
-              Back
+              {ONBOARDING_COPY.common.back}
             </IonButton>
             <IonButton
               onClick={saveBirthday}
@@ -448,7 +424,7 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
               className="onboarding-v2__primary-action"
             >
               <span className={`onboarding-v2__button-label ${submitting ? 'loading' : ''}`}>
-                Save birthday
+                {copy.saveCta}
               </span>
               {submitting && <IonSpinner name="dots" className="onboarding-v2__button-spinner" />}
             </IonButton>
@@ -459,26 +435,26 @@ const BirthdaySlide: React.FC<BirthdaySlideProps> = ({
   );
 };
 
-const UnderAgeSlide: React.FC = () => (
+const UnderAgeSlide: React.FC = () => {
+  const copy = ONBOARDING_COPY.onboardingV2.underAge;
+  return (
   <div className="onboarding-v2__slide onboarding-v2__ready">
     <IonCard className="onboarding-v2__card onboarding-v2__card--shallow">
       <IonCardContent className="onboarding-v2__card-body onboarding-v2__card-body--tight">
-        <IonCardTitle>Thanks for your interest</IonCardTitle>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <p>{copy.body}</p>
         <p>
-          Refresh Connections is only available to members who are 18 or older. Since you're under 18, we
-          can't create an account for you right now. We'll be here when you're ready.
-        </p>
-        <p>
-          If you feel a mistake has been made, please contact{' '}
-          <a href="mailto:ageverification@refreshconnections.com">ageverification@refreshconnections.com</a>.
+          {copy.contactPrefix}
+          <a href={`mailto:${copy.contactEmail}`}>{copy.contactEmail}</a>.
         </p>
         <IonButton expand="block" onClick={handleLogoutCommon}>
-          Log out
+          {copy.logoutCta}
         </IonButton>
       </IonCardContent>
     </IonCard>
   </div>
-);
+  );
+};
 
 const AgeVerificationSlide: React.FC<{
   state: AgeCheckState;
@@ -544,63 +520,53 @@ type ReadySlideProps = {
   ) => void;
   isCompleting: boolean;
   onStartPersonalProfile: () => void;
-  onMarkOnboarded: () => void;
 };
 
 const ReadySlide: React.FC<ReadySlideProps> = ({
   onFinish,
   isCompleting,
   onStartPersonalProfile,
-  onMarkOnboarded,
 }) => {
+  const copy = ONBOARDING_COPY.onboardingV2.ready;
   return (
     <div className="onboarding-v2__slide onboarding-v2__ready">
       <IonCard className="onboarding-v2__card">
         <IonCardContent>
-          <IonCardTitle>You're ready to get started!</IonCardTitle>
+          <IonCardTitle>{copy.title}</IonCardTitle>
           <div className="onboarding-v2__ready-options">
             <div className="onboarding-v2__option">
-              <h2>Set up a community profile</h2>
-              <p>Join in on conversations at the Refreshments Bar and other shared spaces.</p>
+              <h2>{copy.community.title}</h2>
+              <p>{copy.community.body}</p>
               <IonButton
                 expand="block"
                 disabled={isCompleting}
-                onClick={(event) => {
-                  onMarkOnboarded?.();
-                  onFinish('/community-onboarding', event);
-                }}
+                onClick={(event) => onFinish('/community-onboarding', event)}
               >
-                {isCompleting ? <IonSpinner name="dots" /> : 'Start community profile'}
+                {isCompleting ? <IonSpinner name="dots" /> : copy.community.cta}
               </IonButton>
             </div>
     
             <div className="onboarding-v2__option">
-              <h2>Set up a personal profile</h2>
-              <p>Send Likes and exchange one-on-one messages when you're ready for personal connections.</p>
+              <h2>{copy.personal.title}</h2>
+              <p>{copy.personal.body}</p>
             <IonButton
               expand="block"
               disabled={isCompleting}
-              onClick={() => {
-                onMarkOnboarded?.();
-                onStartPersonalProfile();
-              }}
+              onClick={onStartPersonalProfile}
             >
-              {isCompleting ? <IonSpinner name="dots" /> : 'Start personal profile'}
+              {isCompleting ? <IonSpinner name="dots" /> : copy.personal.cta}
             </IonButton>
             </div>
             <div className="onboarding-v2__option">
-              <h2>Check things out first</h2>
-              <p>Take a look around first. You can always add a community and personal profile later.</p>
+              <h2>{copy.explore.title}</h2>
+              <p>{copy.explore.body}</p>
               <IonButton
                 expand="block"
                 fill="outline"
                 disabled={isCompleting}
-                onClick={(event) => {
-                  onMarkOnboarded?.();
-                  onFinish('/community', event);
-                }}
+                onClick={(event) => onFinish('/community', event)}
               >
-                {isCompleting ? <IonSpinner name="dots" /> : 'Explore the app'}
+                {isCompleting ? <IonSpinner name="dots" /> : copy.explore.cta}
               </IonButton>
             </div>
           </div>
@@ -612,6 +578,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
 
 const OnboardingV2: React.FC = () => {
   const queryClient = useQueryClient();
+  const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const { data: globalCurrentProfile } = useGetGlobalAppCurrentProfile();
   const { data: emailStatus, isLoading: emailStatusLoading } = useEmailStatus();
   const { data: eligibilityStatus } = useEligibilityStatus(true);
@@ -628,9 +595,6 @@ const OnboardingV2: React.FC = () => {
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
     onDismiss: () => dismissPersonalProfile(),
   });
-  const handleStartPersonalProfile = () => {
-    presentPersonalProfile();
-  };
   useEffect(() => {
     if (eligibilityStatus?.failed_result) {
       setAgeCheckState('failed');
@@ -655,12 +619,6 @@ const OnboardingV2: React.FC = () => {
       await Preferences.set({ key: 'ONBOARDED', value: 'true' });
     }
   });
-  const markOnboarded = useCallback(() => {
-    if (completeOnboarding.isPending) {
-      return;
-    }
-    completeOnboarding.mutate();
-  }, [completeOnboarding]);
   const completeAgeVerification = useCompleteAgeVerification({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eligibility', 'status'] });
@@ -724,20 +682,31 @@ const OnboardingV2: React.FC = () => {
     }
   }, [ageCheckState, needsAgeVerification, completeAgeVerification]);
 
+  const completeOnboardingAndProceed = useCallback(async (afterComplete: () => void) => {
+    if (completeOnboarding.isPending) return;
+    try {
+      await completeOnboarding.mutateAsync();
+      afterComplete();
+    } catch (error) {
+      console.error('Failed to complete onboarding', error);
+    }
+  }, [completeOnboarding]);
+
   const handleFinish = async (
     destination: string,
     event?: React.MouseEvent<HTMLIonButtonElement>
   ) => {
     event?.preventDefault();
-    if (completeOnboarding.isPending) return;
-    try {
-      await completeOnboarding.mutateAsync();
-    } catch (error) {
-      console.error('Failed to complete onboarding', error);
-    } finally {
+    await completeOnboardingAndProceed(() => {
       window.location.href = destination;
-    }
+    });
   };
+
+  const handleStartPersonalProfile = useCallback(async () => {
+    await completeOnboardingAndProceed(() => {
+      presentPersonalProfile();
+    });
+  }, [completeOnboardingAndProceed, presentPersonalProfile]);
 
   const handleTargetSlide = (index: number) => {
     if (!swiperRef.current) return;
@@ -856,10 +825,12 @@ const OnboardingV2: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="onboarding-v2__content">
+      <IonContent
+        className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
+        style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
+      >
           <Swiper
-            modules={[Pagination]}
-            pagination={{ clickable: true }}
+
             className="onboarding-v2__swiper"
             centeredSlides
             allowTouchMove={false}
@@ -878,7 +849,10 @@ const OnboardingV2: React.FC = () => {
             <PhoneSlide
               existingPhone={emailStatus?.phone}
               loading={emailStatusLoading}
-              onComplete={() => setPhoneComplete(true)}
+              onComplete={() => {
+                setPhoneComplete(true);
+                queryClient.invalidateQueries({ queryKey: accountEmailKeys.status });
+              }}
             />
           </SwiperSlide>
           <SwiperSlide>
@@ -922,7 +896,6 @@ const OnboardingV2: React.FC = () => {
               onFinish={handleFinish}
               isCompleting={completeOnboarding.isPending}
               onStartPersonalProfile={handleStartPersonalProfile}
-              onMarkOnboarded={markOnboarded}
             />
           </SwiperSlide>
           <SwiperSlide>

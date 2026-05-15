@@ -9,7 +9,10 @@ export const chatQueryKeys = {
     details: (id: number) => ['chats', 'details', id],
     file: (file_id: string) => ['chats', 'file', file_id],
     messages: (id: number) => ['chats', 'messages', id],
-    settings: (id: number) => ['chats', 'settings', id],
+    settings: (id?: number) => id !== undefined ? ['chats', 'settings', id] : ['chats', 'settings', 'own'],
+    groups: ['chats', 'groups'],
+    localChats: ['chats', 'local-chats'],
+    filtered: (userIds: number[]) => ['chats', 'filtered', ...userIds],
     accepting: (id: number) => ['chats', 'messages', 'accepting', id],
     unread: ['unread']
     // pagination: (page: number) => [...userQueryKeys.all, 'pagination', page],

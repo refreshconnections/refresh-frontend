@@ -33,9 +33,6 @@ import { handleLogoutCommon, setFontSizePref, setTextZoom, setThemePref } from '
 import StayPausedModal from '../components/StayPausedModal';
 
 const Onboarding: React.FC = () => {
-
-
-
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmLogout] = useIonAlert();

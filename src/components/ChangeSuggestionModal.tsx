@@ -64,7 +64,7 @@ const ChangeSuggestionModal: React.FC<Props> = (props) => {
                             name="details"
                             autoGrow={true}
                             rows={4}
-                            autoCapitalize='sentences'
+                            autocapitalize='sentences'
                             onIonInput={e => setMessage(e.detail.value!)}
                             placeholder="Tell us about this Covid-related project. How might Refresh Connections help support it?  &#10;Include a link if you have one."
                         />
@@ -76,7 +76,7 @@ const ChangeSuggestionModal: React.FC<Props> = (props) => {
                     <IonItem>
                         <IonLabel position="stacked">Your name</IonLabel>
                         <IonInput value={name}
-                            autoCapitalize='words'
+                            autocapitalize='words'
                             onIonInput={e => setName(e.detail.value!)}
                         />
                     </IonItem>

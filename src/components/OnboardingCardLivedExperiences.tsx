@@ -18,20 +18,15 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const livedExperienceOptions: [string, string][] = [
-  ['poc', 'POC'],
-  ['spiritual', 'Spiritual'],
-  ['neurodivergent', 'Neurodivergent'],
-  ['sober', 'Sober'],
-];
-
-const livedExperiencePopoverText =
-  "We’re adding future filters. Filtering will unlock once enough members opt in to ensure meaningful results.";
+const livedExperienceOptions: [string, string][] = ONBOARDING_COPY.cards.livedExperiences.options;
+const livedExperiencePopoverText = ONBOARDING_COPY.cards.livedExperiences.popover;
 
 const OnboardingCardLivedExperiences: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.livedExperiences;
   const swiper = useSwiper();
   const currentProfile = useGetCurrentProfile().data;
   const [selected, setSelected] = useState<string[]>([]);
@@ -58,7 +53,6 @@ const OnboardingCardLivedExperiences: React.FC = () => {
   };
 
   const updateProfile = async () => {
-    if (selected.length === 0) return;
     const existingSelected = currentProfile?.lived_experiences ?? [];
     const existingShow = Boolean(currentProfile?.settings_show_lived_experiences);
     const nextSorted = [...selected].sort();
@@ -78,23 +72,12 @@ const OnboardingCardLivedExperiences: React.FC = () => {
   };
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="w-checkboxes">
         <IonCardTitle className="onboarding-title-row">
-          <span>Lived experiences</span>
-          <IonButton
-            fill="clear"
-            size="small"
-            className="onboarding-asterisk"
-            onClick={(event) => {
-              event.stopPropagation();
-              presentPopover({ event: event.nativeEvent as Event });
-            }}
-          >
-            *
-          </IonButton>
+          <span>{copy.title}</span>
         </IonCardTitle>
-        <IonText>Choose any that apply. These are used for filtering in picks.</IonText>
+        <IonText>{copy.body}</IonText>
         <IonText className="onboarding-future-filters">
           {livedExperiencePopoverText}
         </IonText>
@@ -112,12 +95,9 @@ const OnboardingCardLivedExperiences: React.FC = () => {
               </IonItem>
             ))}
           </IonList>
-          <IonNote className="onboarding-option-note">Scroll for all options!</IonNote>
-          <IonText className="onboarding-subtext">
-            You can choose to show these on your profile, or keep them just for filtering.
-          </IonText>
+          <IonNote className="onboarding-option-note">{copy.scrollNote}</IonNote>
           <IonItem className="onboarding-toggle-row">
-            <IonLabel>Show on profile</IonLabel>
+            <IonLabel>{copy.showOnProfile}</IonLabel>
             <IonToggle
               slot="end"
               checked={showOnProfile}
@@ -125,11 +105,13 @@ const OnboardingCardLivedExperiences: React.FC = () => {
             />
           </IonItem>
         </div>
-        <IonRow className="onboarding-slide-buttons">
-          <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-          <IonButton onClick={updateProfile} disabled={selected.length === 0}>Next</IonButton>
-        </IonRow>
       </IonCardContent>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

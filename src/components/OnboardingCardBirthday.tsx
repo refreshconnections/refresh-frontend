@@ -5,7 +5,7 @@ import {
 } from '@ionic/react';
 import React, { useEffect, useState } from 'react'
 
-import { updateCurrentUserProfileWStatus } from '../hooks/utilities';
+import { updateCurrentUserProfileWStatus, maxBirthdateForAdult } from '../hooks/utilities';
 
 
 import './CantAccessCard.css';
@@ -55,14 +55,6 @@ const OnboardingCardBasic: React.FC = () => {
   }
 
 
-  const eighteenYearsAtLeast = () => {
-    var date = new Date();
-    const year = date.getFullYear();
-    date.setFullYear(year - 18);
-    const stringDate: string = moment(date).format('YYYY-MM-DD')
-    return stringDate
-
-  }
 
   const getAge = (value: string) => {
 
@@ -98,7 +90,7 @@ const OnboardingCardBasic: React.FC = () => {
 
     if (value === '') setIsValid(false);
 
-    if (value <= eighteenYearsAtLeast()) {
+    if (value <= maxBirthdateForAdult()) {
       setIsValid(true)
     }
     else {
@@ -126,7 +118,7 @@ const OnboardingCardBasic: React.FC = () => {
               value={birthday}
               name="birthday"
               onIonInput={(event) => validate(event)}
-              max={eighteenYearsAtLeast()}
+              max={maxBirthdateForAdult()}
               onIonChange={e => setBirthday(e.detail.value!)}
               autocomplete="bday"
               type="date" />
@@ -138,7 +130,7 @@ const OnboardingCardBasic: React.FC = () => {
             {(isValid === false && birthday) ? <IonNote slot="error">You must be at least 18.</IonNote> : <></>}
 
             <IonModal keepContentsMounted={true}>
-              <IonDatetime id="datetime" preferWheel={true} max={eighteenYearsAtLeast()} presentation="date" value={birthday ?? "2000-01-01"}  onIonChange={e => setBirthday(e.detail.value)} showDefaultButtons={true}></IonDatetime>
+              <IonDatetime id="datetime" preferWheel={true} max={maxBirthdateForAdult()} presentation="date" value={birthday ?? "2000-01-01"}  onIonChange={e => setBirthday(e.detail.value)} showDefaultButtons={true}></IonDatetime>
             </IonModal>
             <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>

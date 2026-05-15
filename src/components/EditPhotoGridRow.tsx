@@ -162,7 +162,7 @@ const EditPhotoGridRow: React.FC<ContainerProps> = ({userid, dataPic, dataPicCap
 
     const deletePauseAlert = async () => {
         presentPauseAlert({
-            header: 'Deleting one of your first 3 photos will pause your profile until you are able to replace it.',
+            header: 'Deleting one of your first 3 photos will pause your Personal Profile until you are able to replace it.',
             subHeader: 'You could also choose to replace it now.',
             buttons: [
                 {

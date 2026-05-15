@@ -1,11 +1,13 @@
-import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonAlert, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
+import { IonContent, RefresherEventDetail, IonHeader, IonCard, IonCardContent, IonPage, IonTitle, IonToolbar, IonCardTitle, IonCardSubtitle, IonButton, IonText, IonFab, IonFabButton, IonIcon, IonRow, IonModal, IonButtons, IonItem, IonLabel, IonList, IonCheckbox, IonInput, IonRefresher, IonRefresherContent, IonFabList, useIonAlert, useIonModal, IonNote, IonCol, IonChip, IonAccordionGroup, IonAccordion, IonActionSheet, IonAvatar, IonSpinner, useIonRouter } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react'
 import { arrowDown, close } from 'ionicons/icons';
 
 import "./Page.css"
 import "./Community.css"
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 
 import { getAvatarDisplay, getRandomProfileList, updateCurrentUserProfile, updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, getProfileAnnouncementLikes, likeAnnouncement, unlikeAnnouncement, onImgError, createAnnouncement, addToHiddenPosts, addToHiddenAuthors, getAllAnnouncementsAtOnce, isCommunityPlus } from '../hooks/utilities';
+import { useSheetModal } from '../hooks/useSheetModal';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart as heartOutline } from '@fortawesome/pro-regular-svg-icons';
@@ -18,6 +20,7 @@ import { faMegaphone } from '@fortawesome/pro-solid-svg-icons/faMegaphone';
 import { faHeart as heartFull } from '@fortawesome/pro-solid-svg-icons/faHeart';
 import { faCircleEllipsis } from '@fortawesome/pro-solid-svg-icons/faCircleEllipsis';
 import { App } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 import { dismissNotification, useGetRecentNotifications } from "../hooks/api/profiles/recent-notifications";
 import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
@@ -25,6 +28,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 
 import CreatePostModal from '../components/CreatePostModal';
+import CommunityBlockMigrationModal from '../components/CommunityBlockMigrationModal';
 import PostDetails from './PostDetails';
 import ReportModal from '../components/ReportModal';
 import CommunityProfileModal from '../components/CommunityProfileModal';
@@ -39,7 +43,6 @@ const Community: React.FC = () => {
 
   const [pageUrl, setPageUrl] = useState<string>("");
   const [filterTags, setFilterTags] = useState<string[]>([]);
-  const tagsFilterChecked: string[] = filterTags;
 
   const [altShow, setAltShow] = useState<number | null>(null);
 
@@ -48,7 +51,7 @@ const Community: React.FC = () => {
 
   const [showPostOverride, setShowPostOverride] = useState<number[]>([]);
 
-  const [showStoreAlert, setShowStoreAlert] = useState(false);
+  const presentUpsellAlert = useUpsellAlert();
 
   const [error, setError] = useState<any>(null);
   const [loading, setLoading] = useState<any>(false);
@@ -69,6 +72,8 @@ const Community: React.FC = () => {
 
   const [more, setMore] = useState<number | null>(null);
 
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
+
   const modal = useRef<HTMLIonModalElement>(null);
 
   const queryClient = useQueryClient()
@@ -88,6 +93,17 @@ const Community: React.FC = () => {
       setDismissingAlertId(null)
     }
   }
+
+  useEffect(() => {
+    if (!me) return;
+    const hasBlocks = (me.blocked_connections?.length ?? 0) > 0;
+    const hasCommunityBlocks = (me.community_blocked?.length ?? 0) > 0;
+    if (!hasBlocks || hasCommunityBlocks) return;
+
+    Preferences.get({ key: 'community_block_migration_shown' }).then(({ value }) => {
+      if (!value) setShowMigrationModal(true);
+    });
+  }, [me]);
 
   function dismiss() {
     modal.current?.dismiss();
@@ -117,12 +133,12 @@ const Community: React.FC = () => {
 
     var postIndex = data?.results.findIndex(p => p.id == int);
 
-    console.log("*", postIndex)
-
-    postRefs.current[postIndex].scrollIntoView({
-      behavior: "auto",
-      block: "center"
-    })
+    if (postIndex >= 0 && postRefs.current[postIndex]) {
+      postRefs.current[postIndex].scrollIntoView({
+        behavior: "auto",
+        block: "center"
+      })
+    }
   }
 
 
@@ -230,26 +246,15 @@ const Community: React.FC = () => {
     }, 2000);
   }
 
-  //Adds the checkedbox to the array and check if you unchecked it
   const addTagsFilterCheckbox = (event: any) => {
     if (event.detail.checked) {
-      tagsFilterChecked.push(event.detail.value);
+      setFilterTags(prev => [...prev, event.detail.value]);
     } else {
-      let index = removeTagsFilterCheckedFromArray(event.detail.value);
-      tagsFilterChecked.splice(index, 1);
+      setFilterTags(prev => prev.filter((cat: string) => cat !== event.detail.value));
     }
   }
 
-  //Removes checkbox from array when you uncheck it
-  const removeTagsFilterCheckedFromArray = (checkbox: string) => {
-    return tagsFilterChecked.findIndex((category: string) => {
-      return category === checkbox;
-    })
-  }
-
   const saveFilters = async () => {
-    console.log("tags FC", tagsFilterChecked)
-    setFilterTags(tagsFilterChecked)
     setPageUrl("")
     dismiss();
     setTimeout(async () => {
@@ -298,7 +303,7 @@ const Community: React.FC = () => {
     setOffendingTitle(title)
   }
 
-  const [communityProfilePresent, communityProfileDismiss] = useIonModal(CommunityProfileModal, {
+  const [communityProfilePresent, communityProfileDismiss] = useSheetModal(CommunityProfileModal, {
     userId: communityProfileUserId,
     isAnonymous: communityProfileAnonymous,
     avatarUrl: communityProfileAvatar,
@@ -319,28 +324,28 @@ const Community: React.FC = () => {
 
   useEffect(() => {
     if (communityProfileUserId !== null) {
-      communityProfilePresent({
-        showBackdrop: false,
-        backdropDismiss: true,
-        initialBreakpoint: 0.8,
-        handleBehavior: 'none',
-        expandToScroll: false,
-        cssClass: 'community-profile-modal',
-      });
+      communityProfilePresent({ cssClass: 'community-profile-modal' });
     }
   }, [communityProfileUserId, communityProfilePresent]);
 
   return (
     <IonPage>
-      <IonContent>
-        
+      <CommunityBlockMigrationModal
+        isOpen={showMigrationModal}
+        onDismiss={() => {
+          setShowMigrationModal(false);
+          Preferences.set({ key: 'community_block_migration_shown', value: 'true' });
+        }}
+      />
+      <IonContent className="page-with-warm-cache-indicator">
+
         <IonRow className="page-title">
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show"/>
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show"/>
           <div ref={refreshmentsTopRef}></div>
         </IonRow>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
         </IonRefresher>
         {topRefreshmentsAlert ? (
           <IonRow className="refreshments-alert-row">
@@ -369,7 +374,6 @@ const Community: React.FC = () => {
             </IonCol>
           </IonRow>
         ) : null}
-        {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
         <IonRow className="filter-buttons">
           {/* <IonButton id="community-open-modal">
             <FontAwesomeIcon icon={faBarsFilter} />
@@ -395,31 +399,13 @@ const Community: React.FC = () => {
             <></>
             :
             <>
-              <IonButton color="tertiary" onClick={() => setShowStoreAlert(true)}>
+              <IonButton color="tertiary" onClick={() => presentUpsellAlert({
+                header: 'Increase your streak to create your own post!',
+                message: 'Or become a Refresh Pro!',
+                extraButtons: [{ text: 'What is my streak?', handler: () => router.push('/activity') }],
+              })}>
                 <FontAwesomeIcon icon={faMegaphone} />
               </IonButton>
-              <IonAlert
-                isOpen={showStoreAlert}
-                onDidDismiss={() => setShowStoreAlert(false)}
-                header="Increase your streak to create your own post!"
-                subHeader="Or become a Refresh Pro!"
-                buttons={[{
-                  text: "Not now",
-                  role: 'destructive'
-                },
-                {
-                  text: 'What is my streak?',
-                  handler: async () => {
-                      router.push("/activity")
-                  }
-                },
-                {
-                  text: 'Get Pro!',
-                  handler: async () => {
-                    router.push("/store")
-                  }
-                }]}
-              />
             </>}
         </IonRow>
         {data ?

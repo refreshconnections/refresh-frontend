@@ -3,7 +3,6 @@ import {
     IonContent,
     IonButton,
     IonIcon,
-    useIonModal,
     IonCard,
     IonRow,
     IonText,
@@ -11,14 +10,18 @@ import {
     IonAccordionGroup,
     IonAccordion,
     IonItem,
-    IonLabel
+    IonLabel,
+    useIonRouter,
 } from '@ionic/react';
 import Linkify from 'react-linkify';
+import { getInternalAppPath, openExternalUrl } from '../../hooks/utilities';
 
 
-import './ModerationNote.css'
+import './ModerationNote.css';
+import { useSheetModal } from '../../hooks/useSheetModal';
 import { faMemoCircleInfo } from '@fortawesome/pro-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import GuidelinesButton from '../GuidelinesButton';
 
 interface ModerationNoteModalProps {
     moderationNote: string | null;
@@ -31,6 +34,16 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
     moderationIconOnly,
     moderationNoteLonger,
 }) => {
+    const router = useIonRouter();
+    const openAppOrExternalUrl = (url: string) => {
+        const internalPath = getInternalAppPath(url);
+        if (internalPath) {
+            router.push(internalPath);
+            return;
+        }
+        openExternalUrl(url);
+    };
+
     const ModalContent: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
         <IonContent className="ion-padding">
             <IonRow>
@@ -43,11 +56,11 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                     </div>
                 </IonCol>
             </IonRow>
-            <p className="moderation-note-main"><Linkify>{moderationNote}</Linkify></p>
-            <p className="moderation-note-longer css-fix"><Linkify>{moderationNoteLonger}</Linkify></p>
-            <IonAccordionGroup className="moderation-accordion" expand="inset">
+            <p className="moderation-note-main"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNote}</Linkify></p>
+            <p className="moderation-note-longer css-fix"><Linkify componentDecorator={(href, text, key) => <a key={key} onClick={(e) => { e.preventDefault(); openAppOrExternalUrl(href); }} style={{ cursor: 'pointer' }}>{text}</a>}>{moderationNoteLonger}</Linkify></p>
+            <IonAccordionGroup className="moderation-accordion" expand="compact">
                 <IonAccordion value="how" >
-                    <IonItem slot="header" lines="none" button detail className="acc-header">
+                    <IonItem slot="header" lines="none" className="acc-header">
                         <IonLabel className="acc-label">How we moderate</IonLabel>
                     </IonItem>
                     <div slot="content" className="ion-padding moderation-disclaimer">
@@ -57,6 +70,7 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
                             that's inclusive, kind, and COVID Conscientious. Thanks for being part
                             of that effort. We're always open to thoughtful feedback.
                         </p>
+                        <GuidelinesButton label="Our guidelines" fill="outline" />
                     </div>
                 </IonAccordion>
             </IonAccordionGroup>
@@ -69,21 +83,14 @@ export const ModerationNote: React.FC<ModerationNoteModalProps> = ({
         dismissModal();
     };
 
-    const [present, dismissModal] = useIonModal(ModalContent, {
+    const [present, dismissModal] = useSheetModal(ModalContent, {
         onDismiss: handleDismiss,
     });
 
     if (!moderationNote) return null;
 
     const openModal = () => {
-        present({
-            showBackdrop: false,
-            backdropDismiss: true,
-            initialBreakpoint: 0.6,
-            handleBehavior: 'none',
-            expandToScroll: false,
-            cssClass: 'moderation-modal'
-        });
+        present({ initialBreakpoint: 0.6, cssClass: 'moderation-modal' });
     };
 
     return (

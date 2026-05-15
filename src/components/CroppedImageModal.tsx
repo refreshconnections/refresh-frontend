@@ -19,6 +19,9 @@ type Props = {
   onDismiss: () => void;
 };
 
+const PROFILE_UPLOAD_SIZE = 1080;
+const PROFILE_UPLOAD_QUALITY = 95;
+
 
 const CroppedImageModal: React.FC<Props> =  (props) => {
     const [crop, onCropChange] = React.useState({ x: 0, y: 0 })
@@ -42,10 +45,10 @@ const CroppedImageModal: React.FC<Props> =  (props) => {
   const resizeImage = (blob) => {
     Resizer.imageFileResizer(
       blob, 
-      450, // target width
-      450, // target height
+      PROFILE_UPLOAD_SIZE, // target width
+      PROFILE_UPLOAD_SIZE, // target height
       'JPEG', // output format
-      90, // quality (from 0 to 100)
+      PROFILE_UPLOAD_QUALITY, // quality (from 0 to 100)
       0, // rotation angle (default is 0)
       async (uri) => {
         // uri is the resized image as a base64-encoded string

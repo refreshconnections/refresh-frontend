@@ -37,7 +37,7 @@ const OngoingChats: React.FC<Props> = (props) => {
       </IonList>
       {hasNextPage ? (
         <IonRow className="ion-justify-content-center">
-          <IonButton size="small" fill="outline" onClick={onLoadMore} disabled={isFetchingNextPage}>
+          <IonButton size="small" fill="outline" color="navy" onClick={onLoadMore} disabled={isFetchingNextPage}>
             {isFetchingNextPage ? <IonSpinner name="dots" /> : "Load more"}
           </IonButton>
         </IonRow>

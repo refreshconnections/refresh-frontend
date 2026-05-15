@@ -10,6 +10,7 @@ import 'react-phone-number-input/style.css'
 
 
 import { checkVerificationCode, getCurrentUserProfile, logoutAll, onImgError, sendPhoneVerification, updateCurrentUserProfile, uploadPhoto } from '../hooks/utilities';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 import './CantAccessCard.css';
@@ -36,6 +37,7 @@ const OnboardingCardPhone: React.FC = () => {
 
   const [presentAlert] = useIonAlert();
   const [presentBadAlert] = useIonAlert();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
 
@@ -62,20 +64,25 @@ const OnboardingCardPhone: React.FC = () => {
   const updateProfile = async (e: any) => {
 
     if (phone !== null) {
-      const response = await updateCurrentUserProfile({ phone_number: phone })
+      await updateCurrentUserProfile({ phone_number: phone });
+      queryClient.invalidateQueries({ queryKey: ['current'] });
     }
 
     swiper.slideNext()
 
   }
 
-  const verify = async (v_code: string) => {
-
-    console.log("verify")
+  const verify = async (v_code: string): Promise<boolean> => {
     const response = await checkVerificationCode(phone, v_code)
-
-
-
+    if (response?.status === 200) {
+      return true
+    }
+    const message = response?.data?.detail ?? "That code didn't work. Please try again."
+    presentBadAlert({
+      message,
+      buttons: [{ text: 'OK', role: 'ok' }]
+    })
+    return false
   }
 
   const enterCodeAlert = async () => {
@@ -94,11 +101,11 @@ const OnboardingCardPhone: React.FC = () => {
           text: "Verify",
           role: 'ok',
           handler: async (data: any) => {
-            console.log('OK clicked: ', data);
-            await verify(data.code)
-            swiper.slideNext()
-            setData(await getCurrentUserProfile());
-            // await updateCurrentUserProfile({ location_point_long: null, location_point_lat: null })
+            const success = await verify(data.code)
+            if (success) {
+              swiper.slideNext()
+              setData(await getCurrentUserProfile());
+            }
           }
         }
       ],

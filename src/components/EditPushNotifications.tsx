@@ -48,7 +48,7 @@ const EditPushNotifications: React.FC<Props> = (props) => {
     }
 
     const setAllToTrue = async () => {
-        await updateCurrentUserPushNotificationSettings({ direct_messages: true, new_connections: true, new_likes: true, comments_on_threads: true, replies_to_comments: true, comments_on_posts: true })
+        await updateCurrentUserPushNotificationSettings({ direct_messages: true, new_connections: true, new_likes: true, comments_in_thread: true, replies_to_comments: true, comments_on_posts: true })
         queryClient.invalidateQueries({ queryKey: ['current', 'push_notification_settings'] })
         setGetAllNotifications(true)
     }

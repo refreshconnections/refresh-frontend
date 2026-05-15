@@ -6,9 +6,10 @@ const getSubmissionSummary = async () => {
   return response.data;
 };
 
-export const useGetSubmissionSummary = () => {
+export const useGetSubmissionSummary = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['submission-summary'],
     queryFn: getSubmissionSummary,
+    enabled: options?.enabled,
   });
 };

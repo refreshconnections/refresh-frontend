@@ -1,28 +1,63 @@
+@supports (height: 100dvh) {
+    .swiper.onboarding {
+        height: 100dvh;
+    }
+}
+
+@supports not (height: 100dvh) {
+    .swiper.onboarding {
+        height: 100vh;
+    }
+}
+
+.swiper.onboarding .swiper-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding:
+        clamp(24px, 10vh, 96px)
+        clamp(16px, 4vw, 32px)
+        calc(clamp(24px, 8vh, 64px) + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 ion-card.onboarding-slide {
     margin-top: 0;
     margin-inline: 0;
     box-shadow: none;
-    background-color: var(--ion-background-color);
+    background-color: var(--ion-color-white);
     display: flex;
-    align-items: center;
+    align-items: stretch;
     flex-direction: column;
-    max-width: 520px;
+    max-width: 720px;
     width: 100%;
     margin-left: auto;
     margin-right: auto;
+    min-height: min(72vh, 760px);
+    border-radius: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 ion-card.onboarding-slide,.extra-padding {
-    padding-top:50pt
+    padding-top: 0;
 }
 
 ion-card.onboarding-slide .onboarding-slide-buttons {
     display:flex;
     flex-direction:row;
-    align-items:flex-end;
-    height:15%;
-    justify-content:space-around;
-    width:100%
+    align-items:center;
+    justify-content:center;
+    flex-wrap: nowrap;
+    gap: 12px;
+    width:100%;
+    margin-top: auto;
+    padding: 0 clamp(24px, 5vw, 48px) clamp(24px, 6vw, 48px);
+    box-sizing: border-box;
 }
 
 .onboarding-title-row {
@@ -52,6 +87,19 @@ ion-card.onboarding-slide ion-item {
     --inner-border-width: 0;
 }
 
+ion-card.onboarding-slide ion-item:not(.no-bottom-line):not(.prof):not(.onboarding-toggle-row):not(.scrollable-list):not(.talkabout-select-item) {
+    border: 1px solid var(--ion-color-dark, #000000);
+    border-radius: 10px;
+}
+
+ion-card.onboarding-slide .scrollable-list ion-item,
+ion-card.onboarding-slide .onboarding-checkbox-list ion-item,
+ion-card.onboarding-slide .onboarding-option-card ion-item {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 8px;
+}
+
 ion-card.onboarding-slide ion-item.tb-padding {
     --inner-padding-bottom: 10pt;
     --inner-padding-top: 10pt;
@@ -74,6 +122,7 @@ ion-card.onboarding-slide .scrollable-list {
     background: var(--ion-color-white);
     --inner-border-width: 0;
     margin-bottom: 6px;
+    border: 1px solid var(--ion-color-dark, #000000);
     border-radius: 10px;
     padding: 10px;
 }
@@ -94,7 +143,7 @@ ion-card.onboarding-slide .onboarding-option-card {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
 }
 
@@ -116,6 +165,9 @@ ion-card.onboarding-slide .onboarding-option-card.compact .scrollable-list {
 ion-card.onboarding-slide .talkabout-selections {
     max-height: 320px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 ion-card.onboarding-slide .talkabout-select {
@@ -140,6 +192,25 @@ ion-card.onboarding-slide .talkabout-summary {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+ion-card.onboarding-slide .talkabout-answer-item {
+    --inner-padding-top: 8px;
+    --inner-padding-bottom: 8px;
+}
+
+ion-card.onboarding-slide .talkabout-answer-item ion-input {
+    --padding-top: 6px;
+    --padding-bottom: 6px;
+}
+
+.talkabout-topics-popover::part(content) {
+    width: min(560px, calc(100vw - 32px));
+    max-width: min(560px, calc(100vw - 32px));
+}
+
+.talkabout-topics-popover .talkabout-popover-list {
+    min-width: min(520px, calc(100vw - 48px));
 }
 
 @media only screen and (max-height: 700px) {
@@ -167,7 +238,19 @@ ion-card.onboarding-slide .onboarding-checkbox-list ion-item {
 }
 
 ion-card.onboarding-slide .onboarding-slide-buttons ion-button {
-    width:40%
+    flex: 1 1 0;
+    max-width: 240px;
+    min-width: 0;
+}
+
+ion-card.onboarding-slide .onboarding-slide-buttons.onboarding-slide-buttons--secondary {
+    margin-top: 12px;
+    padding-top: 0;
+}
+
+ion-card.onboarding-slide .onboarding-slide-buttons.onboarding-slide-buttons--secondary ion-button {
+    flex: 0 1 auto;
+    max-width: none;
 }
 
 ion-card.onboarding-slide ion-card-title {
@@ -177,8 +260,8 @@ ion-card.onboarding-slide ion-card-title {
 }
 
 ion-card.onboarding-slide ion-text {
-    padding-top: 20px;
-    padding-bottom: 20px
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 ion-card.onboarding-slide ion-text.onboarding-subtext {
@@ -199,18 +282,18 @@ ion-item.no-bottom-line {
 }
 
 ion-card.onboarding-slide ion-card-content {
-    height:70%;
+    flex: 1;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     display: flex;
-    padding: 40px;
+    gap: 16px;
+    padding: clamp(28px, 5vw, 40px) clamp(24px, 4vw, 36px) clamp(24px, 4vw, 36px);
     width: 100%;
     box-sizing: border-box;
 }
 
 ion-card.onboarding-slide ion-card-content.w-checkboxes {
-    height: 70%;
-    max-height: none;
+    flex: 1;
     flex-direction: column;
     justify-content: flex-start;
     display: flex;
@@ -220,6 +303,26 @@ ion-card.onboarding-slide ion-card-content.w-checkboxes {
     padding-left: 20px;
     padding-right: 20px;
     min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+ion-card.onboarding-slide ion-card-content.onboarding-covid-content {
+    padding-bottom: 16px;
+}
+
+ion-card.onboarding-slide .onboarding-covid-scroll-note {
+    display: block;
+    text-align: center;
+    margin-top: auto;
+}
+
+ion-card.onboarding-slide .onboarding-covid-list {
+    flex: 0 1 auto;
+    max-height: min(34vh, 320px);
+    min-height: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 ion-card.onboarding-slide .photo-caps ion-select {
@@ -229,16 +332,57 @@ ion-card.onboarding-slide .photo-caps ion-select {
 ion-card.onboarding-slide ion-grid.pics ion-row {
     display: flex;
     flex-wrap: nowrap;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 ion-card.onboarding-slide ion-grid.pics img {
-    max-width: 40%;
-    padding-right: 5px
+    width: min(92px, 100%);
+    max-width: 100%;
+    height: auto;
 }
 
 ion-button.onboarding-pic-upload {
     font-size: 15pt
+}
+
+.onboarding-photo-panel {
+    width: 100%;
+    --background: var(--ion-color-white);
+    background: var(--ion-color-white);
+}
+
+ion-card.onboarding-slide ion-item.prof.onboarding-photo-panel {
+    --background: var(--ion-color-white);
+    background: var(--ion-color-white);
+}
+
+.onboarding-photo-upload-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.onboarding-photo-upload-row--stacked {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.onboarding-pictures-grid {
+    width: 100%;
+}
+
+.onboarding-pictures-grid__col {
+    display: flex;
+}
+
+.onboarding-pictures-grid__col .photo-caps-onboarding,
+.onboarding-pictures-grid__col .photo-caps {
+    width: 100%;
 }
 
 ion-item.phone-number-onboarding .PhoneInputInput {
@@ -275,8 +419,21 @@ ion-card.onboarding-slide ion-row.with-button ion-item{
 }
 
 @media only screen and (max-width: 450px) {
+    .swiper.onboarding .swiper-slide {
+        justify-content: flex-start;
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    ion-card.onboarding-slide {
+        min-height: auto;
+    }
+
     .no-bottom-line img{
-      max-width: 65%;
+      max-width: 100%;
+      width: min(140px, 100%);
+      height: auto;
     }
 
     ion-card.onboarding-slide ion-text {
@@ -288,7 +445,7 @@ ion-card.onboarding-slide ion-row.with-button ion-item{
     }
 
     .no-bottom-line ion-grid {
-        max-width: 65%;
+        max-width: 100%;
     }
 
     .scrollable-list {
@@ -296,7 +453,7 @@ ion-card.onboarding-slide ion-row.with-button ion-item{
     }
 
     ion-card.onboarding-slide .onboarding-option-card .scrollable-list {
-        max-height: 220px;
+        max-height: min(18vh, 160px);
     }
 
     ion-card.onboarding-slide ion-card-title {
@@ -304,22 +461,58 @@ ion-card.onboarding-slide ion-row.with-button ion-item{
     }
 
     ion-card.onboarding-slide ion-card-content {
-        padding-top: 20px;
-        padding-left: 20pt;
-        padding-right: 20pt;
-        padding-bottom: 10pt;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    ion-card.onboarding-slide ion-card-content.w-checkboxes {
+        padding-top: 16px;
+        padding-bottom: 16px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    ion-card.onboarding-slide .onboarding-covid-list {
+        max-height: min(26vh, 220px);
+    }
+
+    .onboarding-photo-upload-row {
+        align-items: center;
+        gap: 8px;
+    }
+
+    ion-button.onboarding-pic-upload {
+        font-size: 0.85rem;
+        width: 100%;
+        max-width: 120px;
+        min-height: 36px;
+    }
+
+    .onboarding-pictures-grid {
+        width: 100%;
+    }
+
+    ion-card.onboarding-slide ion-grid.pics img {
+        width: min(72px, 100%);
     }
   }
 
 @media only screen and (max-height: 700px) {
-    ion-card.onboarding-slide {
-        padding-top: 30pt;
+    .swiper.onboarding .swiper-slide {
+        padding-top: 20px;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     }
 }
 
+/* When onboarding-slide cards are inside the v2 slide wrapper, the slide provides layout */
+.onboarding-v2__slide ion-card.onboarding-slide {
+  min-height: 0;
+}
+
 ion-row.notyet {
-    position: absolute;
-    bottom: 10px;
+    position: static;
     justify-content: center;
     width: 100%;
+    margin-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }

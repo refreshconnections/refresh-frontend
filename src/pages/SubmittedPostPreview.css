@@ -25,6 +25,7 @@ ion-toolbar.modal-title {
 .submitted-post-preview .section-heading h3 {
   font-size: calc(16px * var(--text-scale, 1));
   margin: 0 0 6px;
+  color: var(--ion-color-medium);
 }
 
 .submitted-post-preview .section-header {
@@ -47,7 +48,7 @@ ion-toolbar.modal-title {
 .submitted-post-preview .status-info-content {
   padding: 10px 12px;
   font-size: 0.9rem;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .submitted-post-preview .status-row {
@@ -65,9 +66,6 @@ ion-toolbar.modal-title {
   font-size: calc(22px * var(--text-scale, 1));
 }
 
-.submitted-post-preview .preview-card ion-card-content {
-  padding-top: 4px;
-}
 
 .submitted-post-preview .detail-block p {
   margin: 4px 0 0;
@@ -80,12 +78,14 @@ ion-toolbar.modal-title {
 
 .submitted-post-preview .preview-form ion-label {
   color: var(--ion-color-medium);
+  font-size: 0.8rem;
 }
 
 .submitted-post-preview .preview-value {
   display: block;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
   font-size: 1rem;
+  white-space: pre-wrap;
 }
 
 .submitted-post-preview .preview-content-item .preview-content {
@@ -136,12 +136,3 @@ ion-toolbar.modal-title {
   margin-top: 0;
 }
 
-.submitted-post-preview .hide-post-bar {
-  position: sticky;
-  bottom: 12px;
-  display: flex;
-  justify-content: center;
-  padding: 10px 0 16px;
-  background: linear-gradient(180deg, rgba(242, 243, 252, 0) 0%, rgba(242, 243, 252, 0.95) 60%);
-  z-index: 2;
-}

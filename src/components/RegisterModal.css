@@ -4,6 +4,12 @@ ion-toolbar.modal-title {
     text-size-adjust: none;
 }
 
+form.register-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 ion-item.terms {
     --padding-top: 20px;
     --padding-bottom: 10px;

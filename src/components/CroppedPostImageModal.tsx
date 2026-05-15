@@ -26,11 +26,16 @@ type Props = {
   onDismiss: (data: string | null) => void;
 };
 
+const POST_CROP_CONFIG = {
+  landscape: { aspect: 4 / 3, width: 1200, height: 900 },
+  portrait: { aspect: 3 / 4, width: 900, height: 1200 },
+  square: { aspect: 1, width: 1080, height: 1080 },
+} as const;
+
 
 const CroppedImageModal: React.FC<Props> = (props) => {
   const [crop, onCropChange] = React.useState({ x: 0, y: 0 })
   const [zoom, onZoomChange] = React.useState(1)
-  const [cropBoxSize, setCropBoxSize] = useState({ width: 200, height: 200 });
 
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
@@ -50,12 +55,13 @@ const CroppedImageModal: React.FC<Props> = (props) => {
 
   // Resize the cropped image
   const resizeImage = (blob) => {
+    const config = POST_CROP_CONFIG[size];
     Resizer.imageFileResizer(
       blob,
-      450, // target width
-      450, // target height
+      config.width, // target width
+      config.height, // target height
       'JPEG', // output format
-      90, // quality (from 0 to 100)
+      95, // quality (from 0 to 100)
       0, // rotation angle (default is 0)
       async (uri) => {
         // uri is the resized image as a base64-encoded string
@@ -85,17 +91,7 @@ const CroppedImageModal: React.FC<Props> = (props) => {
 };
 
 const getPhotoSize = () => {
-
-  if (size === "square") {
-    return 1
-  }
-  else if (size === "portrait") {
-    return 3 / 4
-  }
-  else {
-    return 4 / 3
-  }
-
+  return POST_CROP_CONFIG[size].aspect;
 }
 
 

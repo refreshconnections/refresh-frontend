@@ -5,20 +5,34 @@
 .self-profile-v2 ion-accordion ion-item{
   --background: var(--ion-color-white)
 }
-.self-profile-v2 ion-accordion {
-  margin-bottom: 16px;
+.self-profile-v2 ion-grid > .profile-accordion-group {
+  display: block;
+  margin: 0;
+}
+
+.self-profile-v2 .profile-accordion-group ion-accordion {
+  margin-bottom: 0;
   background: var(--ion-color-white);
-  border-radius: 10pt
+  border-radius: 0;
+  overflow: hidden;
 }
 
 .accordion-body {
-  margin-bottom: 8px;
+  margin-bottom: 0;
   padding-top: 0px
 }
 
 .preview-row {
   justify-content: center;
   margin-bottom: 8px;
+}
+
+.profile-preview-button {
+  width: 100%;
+}
+
+.profile-preview-button::part(native) {
+  white-space: normal;
 }
 
 .info-card ion-item {
@@ -34,7 +48,7 @@
   --background: transparent;
   --padding-start: 16px;
 
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--ion-color-step-100);
   border-radius: 0;
   margin: 0;
   display: flex;
@@ -98,13 +112,15 @@ ion-card-content .card-grid {
   --background: var(--ion-color-white);
   --padding-start: 0;
   --padding-end: 0;
+  --padding-start: 0;
+  --padding-end: 0;
   --inner-padding-start: 0;
   --inner-padding-end: 0;
 }
 
 .card-field.editing {
   align-items: stretch;
-  border: 1px solid rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--ion-color-black);
   border-radius: 12px;
 }
 
@@ -125,6 +141,7 @@ ion-card-content .card-grid {
 .field-header p {
   font-weight: 600;
   margin: 0;
+  font-size: 0.95rem;
   color: var(--ion-color-medium);
 }
 
@@ -273,6 +290,10 @@ ion-card-content .card-grid {
   margin-top: 4px;
 }
 
+.field-actions.editing-actions {
+  margin-top: 6px;
+}
+
 .multi-line {
   white-space: pre-line;
 }
@@ -303,8 +324,14 @@ ion-card-content .card-grid {
 
 .accordion-header {
   --background: var(--ion-color-white);
-  border-radius: 16px;
+  --border-radius: 0;
+  border-radius: 0;
+  overflow: hidden;
   pointer-events: none;
+}
+
+.accordion-header::part(native) {
+  border-radius: 0;
 }
 
 .accordion-header.open {
@@ -317,8 +344,8 @@ ion-card-content .card-grid {
 .accordion-header.open + .accordion-content {
   padding-top: 0;
   background: var(--ion-color-white);
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   margin-top: -1px;
 }
 
@@ -326,6 +353,63 @@ ion-card-content .card-grid {
   margin-top: -1px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:first-of-type .accordion-header {
+  --border-radius: 16px 16px 0 0;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:first-of-type ion-accordion {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:first-of-type .accordion-header::part(native) {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:last-of-type .accordion-header:not(.open) {
+  --border-radius: 0 0 16px 16px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:last-of-type ion-accordion {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:last-of-type .accordion-header:not(.open)::part(native) {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .profile-accordion-group:last-of-type .accordion-header.open + .accordion-content {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group ion-accordion {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group .accordion-header:not(.open) {
+  --border-radius: 0 0 16px 16px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.self-profile-v2 ion-grid > .personal-profile-final-group .accordion-header:not(.open)::part(native) {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 .accordion-header ion-label {
@@ -399,9 +483,24 @@ ion-card-content .card-grid {
 
 .choice-summary {
   list-style-type: disc;
-  padding-left: 20px;
+  padding-left: 36px;
   margin: 0;
   color: var(--ion-color-dark);
+}
+
+.self-profile-v2 ion-card-content.card-grid > .field-header {
+  padding-inline-start: 18px;
+}
+
+.community-profile-card ion-card-content.card-grid > .field-header {
+  padding-inline-start: 0;
+}
+
+:root.ion-palette-dark.ios,
+:root.ion-palette-dark.md {
+  .choice-summary {
+    color: var(--ion-color-step-800);
+  }
 }
 
 .choice-editor {
@@ -446,10 +545,32 @@ ion-card-content .card-grid {
   --inner-padding-end: 0;
 }
 
-.community-toggle-item ion-label {
+.community-toggle-item ion-label,
+.community-username-item ion-label {
   color: var(--ion-color-medium);
   font-weight: 600;
   font-size: 0.95rem;
+}
+
+.community-username-item ion-label p:first-child {
+  color: var(--ion-color-medium) !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.community-toggle-item ion-label p:first-child {
+  color: var(--ion-color-medium) !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.community-toggle-item ion-label p.community-subtitle {
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--ion-color-navy);
+  margin-top: 2px;
 }
 
 .community-age-item {
@@ -499,8 +620,135 @@ ion-card-content .card-grid {
   border-radius: 12px;
 }
 
+.community-bio-field {
+  margin: 0;
+}
+
+.community-bio-field .editing-section {
+  padding: 0;
+}
+
+.community-bio-field.editing .editing-section {
+  padding: 8px 12px;
+}
+
+.community-bio-field .editing-section h2 {
+  padding: 0;
+}
+
 .self-profile-v2 ion-card {
   box-shadow: none;
   margin: 0 0 0 8px;
   --background: var(--ion-color-white);
+}
+
+.self-profile-v2 .accordion-card {
+  --background: transparent;
+  margin-inline: 0;
+}
+
+.self-profile-v2 ion-card-content.card-grid.accordion-body {
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.community-bio-field:not(.editing) {
+  --background: transparent;
+}
+
+.photo-meta-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 96px;
+}
+
+.photo-meta-preview {
+  max-height: 96px;
+  overflow: hidden;
+}
+
+.photo-meta-preview.expanded {
+  max-height: none;
+}
+
+.photo-meta-caption,
+.photo-meta-alt {
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.photo-meta-preview:not(.expanded) .photo-meta-caption {
+  -webkit-line-clamp: 2;
+}
+
+.photo-meta-preview:not(.expanded) .photo-meta-alt {
+  -webkit-line-clamp: 4;
+}
+
+.photo-meta-preview.expanded .photo-meta-caption,
+.photo-meta-preview.expanded .photo-meta-alt {
+  display: block;
+}
+
+.photo-meta-caption {
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.photo-meta-alt {
+  color: var(--ion-color-medium-shade);
+  white-space: pre-line;
+}
+
+.photo-meta-toggle {
+  align-self: flex-start;
+  margin: 0;
+  min-height: 24px;
+  font-size: 0.8rem;
+}
+
+.photo-meta-toggle::part(native) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.photo-caption-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.photo-caption-presets ion-button {
+  margin: 0;
+}
+
+.photo-text-editor-field {
+  --background: var(--ion-color-white);
+  --padding-start: 0;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+  border: 1px solid var(--ion-color-step-150);
+  border-radius: 16px;
+}
+
+.photo-text-editor-field ion-textarea {
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+}
+
+.photo-text-editor-field ion-textarea::part(native) {
+  min-height: 144px;
+}
+
+.photo-text-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }

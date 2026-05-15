@@ -16,11 +16,12 @@ const getSubmittedEventsPage = async (page: number = 1) => {
   return response.data as SubmittedEventsResponse;
 };
 
-export function useGetSubmittedEvents() {
+export function useGetSubmittedEvents(options?: { enabled?: boolean }) {
   return useInfiniteQuery({
     queryKey: ['submitted-events'],
     queryFn: ({ pageParam = 1 }) => getSubmittedEventsPage(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage?.next ?? undefined,
+    enabled: options?.enabled,
   });
 }

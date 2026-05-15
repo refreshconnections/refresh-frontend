@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../hooks/api/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { annQueryKeys } from "../hooks/api/announcements-take-1/ann-query-keys";
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonCardContent, IonIcon, IonList, IonPopover } from '@ionic/react';
 import Cookies from 'js-cookie';
 import moment from "moment";
 
 import './CreatePostModal.css'
-import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, isCommunityPlus, isPro } from "../hooks/utilities";
+import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, increaseStreak, isCommunityPlus, isPro } from "../hooks/utilities";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import CroppedPostImageModal from "./CroppedPostImageModal";
@@ -15,8 +17,9 @@ import { faImage } from "@fortawesome/pro-solid-svg-icons/faImage";
 import { faTrash } from "@fortawesome/pro-solid-svg-icons/faTrash";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 import { useGetSiteSettings } from "../hooks/api/sitesettings";
-import { faCommentDots, faHeart, faLightbulb, faStar, faTimer } from "@fortawesome/pro-solid-svg-icons";
+import { faCirclePlus, faLightbulb, faTimer } from "@fortawesome/pro-solid-svg-icons";
 import { useGetGlobalAppCurrentProfile } from "../hooks/api/profiles/global-app-current-profile";
+import { useGetCurrentModeration } from "../hooks/api/profiles/current-moderation";
 import { useGetSubmissionSummary } from "../hooks/api/refreshments/submission-summary";
 import { useGetAnnouncementSuggestions } from "../hooks/api/refreshments/announcement-suggestions";
 import CitySelectorModal from "./CitySelectorModal";
@@ -24,7 +27,14 @@ import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
 import { informationCircle } from "ionicons/icons";
 import ContactDetailsPopover from "./ContactDetailsPopover";
 import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
+import PostSuggestionMini from "./PostSuggestionMini";
 
+const ATTENDEE_PRECAUTION_OPTIONS = [
+    { value: 'not_specified', label: 'Not specified' },
+    { value: 'precautions_only', label: 'Covid conscientious only' },
+    { value: 'precautions_preferred', label: 'Covid conscientious preferred' },
+    { value: 'open', label: 'Open to everyone' },
+];
 
 
 
@@ -68,8 +78,10 @@ function isMoreThanTwoWeeksOld(registrationDate: string): boolean {
 const CreatePostModal: React.FC<Props> = (props) => {
 
     const { preferred_name, username, initialCategory, onDismiss, onGoToSubmissions } = props;
+    const queryClient = useQueryClient();
     const navigateTo = (path: string) => {
         if (typeof window === 'undefined') return;
+        onDismiss();
         window.history.pushState({}, "", path);
         window.dispatchEvent(new PopStateEvent("popstate"));
     };
@@ -81,7 +93,35 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const currentStreak = useGetCurrentStreak().data;
 
     const { data: globalCurrentProfile, isLoading: globalIsLoading } = useGetGlobalAppCurrentProfile();
-    const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate);
+    const moderation = useGetCurrentModeration().data;
+    const isOldEnoughForPosts = isMoreThanTwoWeeksOld(globalCurrentProfile?.registrationDate)
+        || isPro(globalCurrentProfile?.subscription_level)
+        || isCommunityPlus(globalCurrentProfile?.subscription_level);
+    const moderatorDeactivated = Boolean(moderation?.moderator_deactivated);
+    const commentingPausedUntil = moderation?.commenting_paused_until;
+    const commentingPauseActive = Boolean(
+        commentingPausedUntil &&
+        moment(commentingPausedUntil).isValid() &&
+        moment(commentingPausedUntil).isAfter(moment())
+    );
+    const commentingPausedLabel = commentingPauseActive
+        ? moment(commentingPausedUntil).format('MMM D [at] h:mm A')
+        : null;
+    const moderationSubmissionBlocked = Boolean(
+        moderatorDeactivated ||
+        globalCurrentProfile?.deactivated_profile ||
+        commentingPauseActive ||
+        (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+    );
+    const moderationSubmissionMessage = moderatorDeactivated
+        ? 'Your account is currently suspended from posting.'
+        : globalCurrentProfile?.deactivated_profile
+            ? 'You need an active account to submit a post.'
+            : commentingPauseActive
+                ? `Your posting is temporarily paused until ${commentingPausedLabel}.`
+                : (moderation?.paused_on_creation && globalCurrentProfile?.paused_profile)
+                    ? 'Your account needs to be reviewed before you can submit a post.'
+                    : null;
     const submissionSummary = useGetSubmissionSummary().data;
     const totalSubmissions =
         (submissionSummary?.totals?.approved ?? 0)
@@ -120,6 +160,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [eventStart, setEventStart] = useState<string>("");
     const [eventEnd, setEventEnd] = useState<string>("");
     const [eventType, setEventType] = useState<string>("");
+    const [attendeePrecautionPreference, setAttendeePrecautionPreference] = useState<string | null>(null);
     const [eventWarning, setEventWarning] = useState<string[] | null>(null);
     const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
     const [recurrenceCount, setRecurrenceCount] = useState(1);
@@ -459,7 +500,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
 
 
-        if (requestSupportive && (bar == "mingle" || bar == "family")) {
+        if (requestSupportive && (bar == "mingle" || bar == "families")) {
             form_data.comment_instructions = "Supportive comments only please!"
         }
 
@@ -563,6 +604,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 include_profile: includeProfile ? 'true' : 'false',
                 anonymous: byline === "Anonymous" ? 'true' : 'false',
                 event_type: eventType || (local ? 'in_person_only' : 'virtual_only'),
+                attendee_precaution_preference: attendeePrecautionPreference || null,
                 post: announcementId,
                 external_link: link || null,
                 recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
@@ -591,6 +633,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
             e.preventDefault();
         }
 
+        const hasCompleteEventDetails = !!(eventType && eventStart && eventEnd);
+
         if (!skipWarning && bar === "events") {
             const missing: string[] = [];
             if (!eventType) missing.push("Event type");
@@ -602,7 +646,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
             }
         }
 
-        if (bar === "events") {
+        if (bar === "events" && hasCompleteEventDetails) {
             const startMoment = moment(eventStart);
             const endMoment = moment(eventEnd);
             if (!startMoment.isValid() || !endMoment.isValid()) {
@@ -623,26 +667,11 @@ const CreatePostModal: React.FC<Props> = (props) => {
             }
         }
 
-        if (bar === "events" && recurrenceType !== 'none') {
-            const subscriptionLevel = globalCurrentProfile?.subscription_level;
-            const maxRecurringEvents = isPro(subscriptionLevel)
-                ? 10
-                : isCommunityPlus(subscriptionLevel)
-                    ? 5
-                    : 1;
+        if (bar === "events" && hasCompleteEventDetails && recurrenceType !== 'none') {
             const trimmedCustomDates = recurrenceCustomDates
                 .map((date) => (date ?? '').trim())
                 .filter((date) => date);
             const recurrenceErrors: string[] = [];
-            if (maxRecurringEvents <= 1) {
-                recurrenceErrors.push("Recurring events are available for Community+ and Pro members.");
-            }
-            if (recurrenceType !== 'custom' && recurrenceCount > maxRecurringEvents) {
-                recurrenceErrors.push(`Recurring events are limited to ${maxRecurringEvents} total events.`);
-            }
-            if (recurrenceType === 'custom' && (trimmedCustomDates.length + 1) > maxRecurringEvents) {
-                recurrenceErrors.push(`Recurring events are limited to ${maxRecurringEvents} total events.`);
-            }
             if (recurrenceType === 'custom' && trimmedCustomDates.length === 0) {
                 recurrenceErrors.push("Add at least one additional date.");
             }
@@ -705,36 +734,38 @@ const CreatePostModal: React.FC<Props> = (props) => {
             setRecurrenceCount(1);
             setRecurrenceCustomDates([]);
             setRecurrenceDescriptions([]);
+            queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+            await increaseStreak();
             setLastAction('submitted');
             setShowAlert(true)
         }
         catch (error: any) {
-            console.log(error.response.data)
             const errorsList: string[] = []
-            if (error.response.data["title"]?.length > 0) {
-                error.response.data["title"].forEach((element: any) => {
-                    errorsList.push("Title: " + element["message"])
-                })
-            }
-            if (error.response.data["category"]?.length > 0) {
-                error.response.data["category"].forEach((element: any) => {
-                    errorsList.push("Category: " + element["message"])
-                })
-            }
-            if (error.response.data["content"]?.length > 0) {
-                error.response.data["content"].forEach((element: any) => {
-                    errorsList.push("Content: " + element["message"])
-                })
-            }
-            if (error.response.data["link"]?.length > 0) {
-                error.response.data["link"].forEach((element: any) => {
-                    errorsList.push("Link: " + element["message"])
-                })
-            }
-            else {
-                if (errorsList.length == 0) {
-                    errorsList.push("Something went wrong.")
+            if (error.response?.data) {
+                console.log(error.response.data)
+                if (error.response.data["title"]?.length > 0) {
+                    error.response.data["title"].forEach((element: any) => {
+                        errorsList.push("Title: " + element["message"])
+                    })
                 }
+                if (error.response.data["category"]?.length > 0) {
+                    error.response.data["category"].forEach((element: any) => {
+                        errorsList.push("Category: " + element["message"])
+                    })
+                }
+                if (error.response.data["content"]?.length > 0) {
+                    error.response.data["content"].forEach((element: any) => {
+                        errorsList.push("Content: " + element["message"])
+                    })
+                }
+                if (error.response.data["link"]?.length > 0) {
+                    error.response.data["link"].forEach((element: any) => {
+                        errorsList.push("Link: " + element["message"])
+                    })
+                }
+            }
+            if (errorsList.length == 0) {
+                errorsList.push("Something went wrong.")
             }
             setErrors(errorsList)
         }
@@ -964,8 +995,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 {siteSettings?.allow_free_users_to_submit_posts && (
                     <>
                         <IonCard className="ion-padding limited ion-text-center">
-                            <p>All users can submit 2 posts a month.</p>
-                            <IonText color="medium"><FontAwesomeIcon icon={faStar} /> No limits for Community+ and Pro users. All post submissions are still subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments post requirements</a>.</IonText>
+                            <p>All members can submit 2 posts each month.</p>
+                            <IonText color="medium">
+                                <FontAwesomeIcon icon={faCirclePlus} /> Community+ and Pro include unlimited post submissions. All submissions are subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments posting guidelines</a>.
+                            </IonText>
                         </IonCard>
                         {hasPreviousSubmissions && (
                             <IonRow className="ion-justify-content-center">
@@ -976,8 +1009,22 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         )}
                     </>
                 )}
-                {!isOldEnoughForPosts ? (
+                {siteSettings?.allow_post_submissions === false ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonText className="ion-text-center">
+                            <p>Submitting posts has been temporarily paused.</p>
+                        </IonText>
+                    </IonCard>
+                ) : !isOldEnoughForPosts ? (
                     <SubmissionAgeGateCard noun="post" onUpgrade={() => navigateTo("/store")} />
+                ) : moderationSubmissionBlocked ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonText className="ion-text-center">
+                            <p>{moderationSubmissionMessage}</p>
+                            <p>Check your Activity for moderation details and our guidelines.</p>
+                        </IonText>
+                        <IonButton onClick={() => navigateTo("/activity")}>View Activity</IonButton>
+                    </IonCard>
                 ) : (
                     <>
                         {(isCommunityPlus(globalCurrentProfile?.subscription_level) || (currentStreak?.streak_count >= 5) || (limits?.posts_submitted < 2)) ? (
@@ -994,7 +1041,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     placeholder="Required"
                                     onIonInput={e => setTitle(e.detail.value!)}
                                     type="text"
-                                    autoCapitalize='words'
+                                    autocapitalize='words'
                                 />
                             </IonItem>
                             <IonItem color="white" lines="none">
@@ -1020,23 +1067,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonRow className="post-suggestions-row">
                                         {suggestionItems.map((post: any) => (
                                             <IonCol key={post.id} size={suggestionColSize}>
-                                                <IonCard
-                                                    className="post-suggestion-mini"
+                                                <PostSuggestionMini
+                                                    post={post}
                                                     onClick={() => handleSuggestionClick(post.id)}
-                                                >
-                                                    <div className={`post-suggestion-banner category-${post.category || 'refreshments'}`} />
-                                                    <IonCardContent className="post-suggestion-body">
-                                                        <IonText className="post-suggestion-title">{post.title}</IonText>
-                                                        <IonRow className="post-suggestion-meta">
-                                                            <IonText className="post-suggestion-meta-item">
-                                                                <FontAwesomeIcon icon={faHeart} /> {post.like_count ?? 0}
-                                                            </IonText>
-                                                            <IonText className="post-suggestion-meta-item">
-                                                                <FontAwesomeIcon icon={faCommentDots} /> {post.comment_count ?? 0}
-                                                            </IonText>
-                                                        </IonRow>
-                                                    </IonCardContent>
-                                                </IonCard>
+                                                />
                                             </IonCol>
                                         ))}
                                     </IonRow>
@@ -1080,7 +1114,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         <IonInput value={locationLabel} onIonInput={e => setLocationLabel(e.detail.value!)}
                                             type="text"
                                             placeholder="What the post labels as the location"
-                                            autoCapitalize='words'
+                                            autocapitalize='words'
                                             name='locationlabel' />
                                     </IonItem>
                                 </>
@@ -1134,10 +1168,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     }}
                                 />
                             </IonItem>
-                            <IonItem color="white" lines="none">
-                                <IonLabel position="stacked">
-                                    Event end<span className="required-star">*</span>
-                                </IonLabel>
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">
+                                        Event end<span className="required-star">*</span>
+                                    </IonLabel>
                                 <IonInput
                                     type="datetime-local"
                                     step="900"
@@ -1155,6 +1189,22 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     }}
                                 />
                             </IonItem>
+                            {eventType && (
+                                <IonItem color="white" lines="none">
+                                    <IonLabel position="stacked">Who is this event for?</IonLabel>
+                                    <IonSelect
+                                        value={attendeePrecautionPreference ?? ""}
+                                        placeholder="Optional"
+                                        onIonChange={(e) => setAttendeePrecautionPreference(e.detail.value || null)}
+                                    >
+                                        {ATTENDEE_PRECAUTION_OPTIONS.map((option) => (
+                                            <IonSelectOption key={option.value} value={option.value}>
+                                                {option.label}
+                                            </IonSelectOption>
+                                        ))}
+                                    </IonSelect>
+                                </IonItem>
+                            )}
                             {dateErrors.length > 0 && (
                                 <IonItem color="white" lines="none">
                                     <IonText color="danger">{dateErrors[0]}</IonText>
@@ -1177,6 +1227,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             placeholder="Write your post here..."
                                             onIonInput={(e) => setContent(e.detail.value ?? "")}
                                             counter={true}
+                                            autocapitalize='sentences'
+                                            autoCorrect='on'
                                         />
                                     </IonItem>
                                 </IonCard>
@@ -1218,6 +1270,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 placeholder="Add suggested content warnings here."
                                                 onIonInput={e => setSensitiveDescription(e.detail.value!)}
                                                 rows={3}
+                                                autocapitalize='sentences'
+                                                autoCorrect='on'
                                             />
                                         </IonItem>
                                     }
@@ -1279,10 +1333,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 {bar === "events" && (
                                     <IonCard>
                                         <IonItem color="white" lines="none">
-                                            <IonLabel position="stacked">
-                                                Repeat
-                                                <FontAwesomeIcon style={{ marginLeft: "6px" }} color="var(--ion-color-medium)" icon={faStar} />
-                                            </IonLabel>
+                                                <IonLabel position="stacked">
+                                                    Repeat
+                                                <FontAwesomeIcon style={{ marginLeft: "6px" }} color="var(--ion-color-medium)" icon={faCirclePlus} />
+                                                </IonLabel>
                                             <IonSelect
                                                 value={recurrenceType}
                                                 onIonChange={(e) => handleRecurrenceChange(e.detail.value ?? "none")}
@@ -1471,6 +1525,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={content ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        autocapitalize='sentences'
+                                                                        autoCorrect='on'
                                                                         onIonChange={(event) => {
                                                                             setContent(event.detail.value ?? "");
                                                                         }}
@@ -1489,6 +1545,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={recurrenceDescriptions[descriptionIndex] ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        autocapitalize='sentences'
+                                                                        autoCorrect='on'
                                                                         onIonChange={(event) => {
                                                                             const nextDescriptions = [...recurrenceDescriptions];
                                                                             nextDescriptions[descriptionIndex] = event.detail.value ?? "";
@@ -1624,6 +1682,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                 nextDescriptions[index] = event.detail.value ?? "";
                                                                 setRecurrenceDescriptions(nextDescriptions);
                                                             }}
+                                                            autocapitalize='sentences'
+                                                            autoCorrect='on'
                                                         />
                                                     )}
                                                     {expandedExternalLinks[index] && (
@@ -1720,12 +1780,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         ) : null}
                                         {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
-                                                This link isn’t allowed. It may expose or track viewers or collect data in without a clear privacy policy.
+                                                This link isn’t allowed due to guidelines.
                                             </p>
                                         ) : null}
                                         {mentionsOneToOne ? (
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-medium" }}>
-                                                Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Picks and filters!
+                                                Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Discovery and filters!
                                             </p>
                                         ) : null}
                                     </IonRow>
@@ -1751,7 +1811,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         disabled={afterSendWait || imageLoading}
                                         onClick={handleSaveDraft}
                                     >
-                                        <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                                        <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
                                         Save draft
                                     </IonButton>
                                 )}

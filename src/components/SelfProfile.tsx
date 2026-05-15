@@ -27,7 +27,7 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { faFaceViewfinder, faX, faCheck, faEllipsis, faStar, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
+import { faCirclePlus, faFaceViewfinder, faX, faCheck, faEllipsis, faInfoCircle } from '@fortawesome/pro-solid-svg-icons';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -232,7 +232,7 @@ const SelfProfile: React.FC = () => {
     const [presentShowContactSupportAlert] = useIonAlert();
 
     const showOnProfileInfoText =
-        "These choices are used when other members filter their Picks. You can also choose whether or not to show them on your profile.";
+        "These choices are used when other members use their Discovery filters. You can choose to show or hide them on your profile.";
 
     const ShowOnProfilePopover = () => (
         <IonContent className="ion-padding no-scroll">{showOnProfileInfoText}</IonContent>
@@ -535,7 +535,7 @@ const SelfProfile: React.FC = () => {
                                     </IonItem>
 
                                     <IonItem>
-                                        <IonLabel><p>Refreshments username:</p> <h2>{currentUserProfile.username}</h2> </IonLabel>
+                                        <IonLabel><p>Refreshments handle:</p> <h2>{currentUserProfile.username}</h2> </IonLabel>
                                         <IonButton color="primary" onClick={() => usernamePresent()} slot="end">Edit</IonButton>
                                     </IonItem>
 
@@ -602,7 +602,7 @@ const SelfProfile: React.FC = () => {
                                                 )}
                                             </IonItem>
 
-                                            {['friendship', 'romance', 'virtual connection', 'virtual only', 'job', 'housing', 'families'].map((val) => (
+                                            {['friendship', 'romance', 'virtual connection', 'job', 'housing', 'families'].map((val) => (
                                                 <IonItem key={val}>
                                                     <IonCheckbox
                                                         slot="start"
@@ -611,7 +611,7 @@ const SelfProfile: React.FC = () => {
                                                         onIonChange={e => toggleArrayString('looking_for', e.detail.value, e.detail.checked)}
                                                         disabled={!editing['looking_for']}
                                                     />
-                                                    {val === 'virtual connection' ? 'Virtual Connection' : val === 'virtual only' ? 'Virtual Connection Only' : val.charAt(0).toUpperCase() + val.slice(1)}
+                                                    {val === 'virtual connection' ? 'Virtual Connection' : val.charAt(0).toUpperCase() + val.slice(1)}
                                                 </IonItem>
                                             ))}
                                         </IonList>
@@ -637,7 +637,7 @@ const SelfProfile: React.FC = () => {
                                                 onIonInput={onText('bio')}
                                                 placeholder="Update here"
                                                 maxlength={1000}
-                                                autoCapitalize="sentences"
+                                                autocapitalize="sentences"
                                                 autoGrow={true}
                                                 counter
                                             />
@@ -710,7 +710,7 @@ const SelfProfile: React.FC = () => {
                                                 onIonInput={onText('job')}
                                                 placeholder="Update here"
                                                 maxlength={80}
-                                                autoCapitalize="words"
+                                                autocapitalize="words"
                                                 clearInput={true}
                                                 counter
                                                 type="text"
@@ -738,7 +738,7 @@ const SelfProfile: React.FC = () => {
                                                 value={form.school}
                                                 onIonInput={onText('school')}
                                                 placeholder="Update here"
-                                                autoCapitalize="words"
+                                                autocapitalize="words"
                                                 maxlength={80}
                                                 clearInput={true}
                                                 counter
@@ -798,7 +798,7 @@ const SelfProfile: React.FC = () => {
                                                 value={form.hometown}
                                                 onIonInput={onText('hometown')}
                                                 placeholder="Update here"
-                                                autoCapitalize="words"
+                                                autocapitalize="words"
                                                 maxlength={80}
                                                 clearInput={true}
                                                 counter
@@ -828,7 +828,7 @@ const SelfProfile: React.FC = () => {
                                                 onIonInput={onText('politics')}
                                                 placeholder="Update here"
                                                 maxlength={80}
-                                                autoCapitalize="sentences"
+                                                autocapitalize="sentences"
                                                 clearInput={true}
                                                 type="text"
                                                 counter
@@ -853,7 +853,7 @@ const SelfProfile: React.FC = () => {
                                                 <IonRow>
                                                     <IonRow style={{ paddingLeft: '15pt' }}>
                                                         <IonText className="ion-text-wrap">
-                                                            <p> These choices are used when other members filter their Picks. You can choose whether or not to show them on your profile.</p>
+                                                            <p> These choices are used when other members filter Discovery. You can choose whether or not to show them on your profile.</p>
                                                         </IonText>
                                                         <IonItem lines="none">
                                                             <IonLabel color="black">
@@ -933,13 +933,13 @@ const SelfProfile: React.FC = () => {
                                                                     {[
                                                                         ['man', 'Man'],
                                                                         ['woman', 'Woman'],
-                                                                        ['nb', 'Nonbinary/gender noncomforming'],
+                                                                        ['nb', 'Nonbinary/gender nonconforming'],
                                                                         ['genderfluid', 'Gender Fluid'],
                                                                         ['cis', 'Cis'],
                                                                         ['trans', 'Trans'],
                                                                         ['intersex', 'Intersex'],
                                                                         ['mono', 'Monogamous'],
-                                                                        ['poly', 'Polyamorous'],
+                                                                        ['poly', 'Nonmonogamous'],
                                                                     ].map(([val, label]) => (
                                                                         <IonItem key={val} lines="none">
                                                                             <IonCheckbox
@@ -981,7 +981,7 @@ const SelfProfile: React.FC = () => {
                                                 onIonInput={onText('gender_and_sexuality_info')}
                                                 placeholder="Update me or leave me blank!"
                                                 maxlength={200}
-                                                autoCapitalize="sentences"
+                                                autocapitalize="sentences"
                                                 counter
                                                 autoGrow
                                             />
@@ -995,7 +995,7 @@ const SelfProfile: React.FC = () => {
                                     {currentUserProfile.subscription_level !== 'none' && (
                                         <>
                                             <IonItem lines="none">
-                                                <IonLabel><p>Banner: &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /></p></IonLabel>
+                                                <IonLabel><p>Banner: &nbsp;<FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /></p></IonLabel>
                                             </IonItem>
                                             <IonItem lines="none">
                                                 <IonLabel color="black"><p>Show banner on profile? {form.settings_profile_banner_bool ? 'Yes' : 'No'}</p></IonLabel>
@@ -1165,7 +1165,7 @@ const SelfProfile: React.FC = () => {
                                                 onIonInput={onText('covid_precaution_info')}
                                                 placeholder="Update here"
                                                 maxlength={100}
-                                                autoCapitalize="sentences"
+                                                autocapitalize="sentences"
                                                 autoGrow
                                             />
                                             <IonButton color="success" onClick={() => saveSingle('covid_precaution_info')} slot="end">
@@ -1186,7 +1186,7 @@ const SelfProfile: React.FC = () => {
                                 <IonCardContent className="no-padding-cc ion-padding" slot="content">
                                     <IonItem>
                                         <IonText className="ion-text-wrap">
-                                            <p> Choose as many as describe you. These choices are used when other members filter their Picks. You can choose whether or not to show them on your profile.</p>
+                                            <p> Choose as many as describe you. These choices are used when other members filter Discovery. You can choose whether or not to show them on your profile.</p>
                                         </IonText>
                                     </IonItem>
 
@@ -1289,7 +1289,7 @@ const SelfProfile: React.FC = () => {
                                                         onIonInput={onText(key as keyof FormState)}
                                                         placeholder="Update here"
                                                         maxlength={80}
-                                                        autoCapitalize="sentences"
+                                                        autocapitalize="sentences"
                                                         clearInput
                                                         counter
                                                         type="text"
@@ -1332,7 +1332,7 @@ const SelfProfile: React.FC = () => {
                                                         onIonInput={onText(key as keyof FormState)}
                                                         placeholder="Update here"
                                                         maxlength={80}
-                                                        autoCapitalize={autoCap as any}
+                                                        autocapitalize={autoCap as any}
                                                         clearInput
                                                         counter
                                                         type="text"
@@ -1373,7 +1373,7 @@ const SelfProfile: React.FC = () => {
                                                         onIonInput={onText(key as keyof FormState)}
                                                         placeholder="Update here"
                                                         maxlength={80}
-                                                        autoCapitalize={autoCap as any}
+                                                        autocapitalize={autoCap as any}
                                                         clearInput
                                                         counter
                                                         type="text"

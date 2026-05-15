@@ -10,15 +10,12 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonCol,
-  IonAlert,
   IonNote,
   IonSpinner,
   IonList,
   IonCard,
   IonCardContent,
-  IonItem,
   IonIcon,
-  useIonAlert,
   useIonModal,
   useIonRouter,
 } from '@ionic/react';
@@ -26,6 +23,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import "./Page.css"
 import "./Community.css"
 import "./Refreshments.css"
+import { useUpsellAlert } from '../hooks/useUpsellAlert';
 import { useGetPosts } from '../hooks/api/refreshments/posts';
 import EventsCalendar from '../components/EventsCalendar';
 import RefreshmentsPost from '../components/RefreshmentsPosts/RefreshmentsPost';
@@ -58,7 +56,16 @@ import { faLocationDot  } from '@fortawesome/pro-solid-svg-icons/faLocationDot';
 import { faLocationDotSlash  } from '@fortawesome/pro-solid-svg-icons/faLocationDotSlash';
 import { useHistory, useLocation } from 'react-router-dom';
 import { close } from 'ionicons/icons';
+import moment from 'moment';
+import { DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, useGetEvents, EventFilters } from '../hooks/api/events';
+import {
+  getShowEventsThisWeekRowPref,
+  SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT,
+} from '../hooks/capacitorPreferences/events-this-week-row';
+import RefreshmentsEventsThisWeekRow from '../components/RefreshmentsEventsThisWeekRow';
+import CommunityBlockMigrationModal from '../components/CommunityBlockMigrationModal';
 
+const COMMUNITY_ONBOARDING_IN_PROGRESS_KEY = 'community_onboarding_in_progress';
 
 const Refreshments: React.FC = () => {
 
@@ -73,16 +80,20 @@ const Refreshments: React.FC = () => {
   )
 
   const [calendarDateParam, setCalendarDateParam] = useState<string | null>(null);
+  const [calendarEventIdParam, setCalendarEventIdParam] = useState<number | null>(null);
   const [calendarAutoOpen, setCalendarAutoOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const dateParam = params.get('calendarDate');
+    const eventIdParam = params.get('calendarEventId');
     if (dateParam) {
       setCalendarDateParam(dateParam);
+      setCalendarEventIdParam(eventIdParam ? Number(eventIdParam) : null);
       setCalendarAutoOpen(true);
     } else {
       setCalendarDateParam(null);
+      setCalendarEventIdParam(null);
       setCalendarAutoOpen(false);
     }
   }, [location.search]);
@@ -91,6 +102,7 @@ const Refreshments: React.FC = () => {
     if (!calendarDateParam) return;
     const params = new URLSearchParams(location.search);
     params.delete('calendarDate');
+    params.delete('calendarEventId');
     history.replace({ pathname: location.pathname, search: params.toString() });
     setCalendarAutoOpen(false);
   };
@@ -101,23 +113,48 @@ const Refreshments: React.FC = () => {
   const [radius, setRadius] = useState<number | null>(null)
   const [sort, setSort] = useState<string>("recent")
   const [local, setLocal] = useState<boolean>(true)
-  const [littleLoading, setLittleLoading] = useState<boolean>(false);
+
+  const [showEventsThisWeekRow, setShowEventsThisWeekRow] = useState(true);
+  const [forceRefreshing, setForceRefreshing] = useState(false);
+  const [eventFilters, setEventFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
 
   const currentUserProfile = useGetCurrentProfile().data;
+
+  useEffect(() => {
+    const resumeCommunityOnboarding = async () => {
+      const stored = await Preferences.get({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY });
+      if (stored.value === 'true') {
+        router.push('/community-onboarding', 'root', 'replace');
+      }
+    };
+
+    resumeCommunityOnboarding();
+  }, [router]);
 
 
   const [search, setSearch] = useState<string>("")
 
   const [isToastOpen, setIsToastOpen] = useState<boolean>(false)
 
+  const localPostsOn = useMemo(() => (
+    local &&
+    currentUserProfile?.location_point_lat &&
+    currentUserProfile?.location_point_long
+  ), [local, currentUserProfile]);
 
-  const { data: posts, isLoading: postsLoading } = useGetPosts(bars, search, local, radius, sort)
+  const postsQuery = useGetPosts(bars, search, local, radius, sort)
+  const { data: posts, isLoading: postsLoading } = postsQuery
+  const { data: events = [] } = useGetEvents(eventFilters, {
+    local: localPostsOn,
+    radius,
+  });
 
   const [length, setLength] = useState(5)
 
   const [somePosts, setSomePosts] = useState(posts?.slice(0, 5))
 
-  const [showStoreAlert, setShowStoreAlert] = useState(false)
+  const presentUpsellAlert = useUpsellAlert();
   const [showFilterRow, setShowFilterRow] = useState(false)
 
   const statuses = useGetStatuses().data;
@@ -153,8 +190,8 @@ const Refreshments: React.FC = () => {
   );
 
   const isBeforeExpiration = useMemo(
-    () => refreshmentsStatus?.active && new Date() < new Date(refreshmentsStatus?.expirationDateTime),
-    [refreshmentsStatus?.expirationDateTime]
+    () => refreshmentsStatus?.active && !!refreshmentsStatus?.expirationDateTime && new Date() < new Date(refreshmentsStatus?.expirationDateTime),
+    [refreshmentsStatus?.active, refreshmentsStatus?.expirationDateTime]
   );
 
   const refreshmentsTop = useRef<null | HTMLDivElement>(null)
@@ -181,11 +218,18 @@ const Refreshments: React.FC = () => {
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 
-  const handleFilterDismiss = (bars: string, local: boolean, radius: number | null, sortSelected: string) => {
+  const handleFilterDismiss = (
+    bars: string,
+    local: boolean,
+    radius: number | null,
+    sortSelected: string,
+    nextEventFilters: EventFilters,
+  ) => {
     setBars(bars)
     setRadius(radius)
     setSort(sortSelected)
     setLocal(local)
+    setEventFilters(nextEventFilters)
     filterDismiss()
 
   }
@@ -196,7 +240,8 @@ const Refreshments: React.FC = () => {
     localProp: local,
     sortProp: sort,
     onNavigate: (path: string) => router.push(path),
-    onDismiss: (bars: string, local: boolean, radius: number | null, sortSelected: string) => handleFilterDismiss(bars, local, radius, sortSelected),
+    onDismiss: (bars: string, local: boolean, radius: number | null, sortSelected: string, nextEventFilters: EventFilters) =>
+      handleFilterDismiss(bars, local, radius, sortSelected, nextEventFilters),
   });
 
   const openRefreshmentsFiltersModal = () => {
@@ -204,17 +249,13 @@ const Refreshments: React.FC = () => {
   }
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
-    setLittleLoading(true)
-    setTimeout(async () => {
-      queryClient.invalidateQueries({
-        queryKey: ['filteredposts'], exact: false,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['events'],
-      });
-      event.detail.complete();
-      setLittleLoading(false)
-    }, 2000);
+    event.detail.complete();
+    setForceRefreshing(true);
+    queryClient.invalidateQueries({ queryKey: ['filteredposts'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.notifications });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setForceRefreshing(false);
   }
 
 
@@ -239,39 +280,120 @@ const Refreshments: React.FC = () => {
       const storedSort = await Preferences.get({ key: "sort" });
       if (storedSort.value) setSort(storedSort.value);
 
+      const [types, attendee, precautions] = await Promise.all([
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.eventTypes }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.attendeePrecautionPreferences }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.inPersonPrecautions }),
+      ]);
+      setEventFilters({
+        eventTypes: types.value ? types.value.split(',') : ['all'],
+        attendeePrecautionPreferences: attendee.value ? attendee.value.split(',') : ['all'],
+        inPersonPrecautions: precautions.value ? precautions.value.split(',') : ['all'],
+      });
     };
 
     loadFilters();
   }, []);
 
+  useEffect(() => {
+    if (!currentUserProfile) return;
 
+    const hasBlocks = (currentUserProfile.blocked_connections?.length ?? 0) > 0;
+    const hasCommunityBlocks = (currentUserProfile.community_blocked?.length ?? 0) > 0;
+    if (!hasBlocks || hasCommunityBlocks) return;
 
-  const localPostsOn = useMemo(() => (
-    local &&
-    currentUserProfile?.location_point_lat &&
-    currentUserProfile?.location_point_long
-  ), [local, currentUserProfile]);
+    Preferences.get({ key: 'community_block_migration_shown' }).then(({ value }) => {
+      if (!value) setShowMigrationModal(true);
+    });
+  }, [currentUserProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncPref = async () => {
+      const value = await getShowEventsThisWeekRowPref();
+      if (!cancelled) {
+        setShowEventsThisWeekRow(value);
+      }
+    };
+
+    const handleShowEventsThisWeekRowChanged = (event: Event) => {
+      setShowEventsThisWeekRow(Boolean((event as CustomEvent<boolean>).detail));
+    };
+
+    syncPref();
+    window.addEventListener(SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT, handleShowEventsThisWeekRowChanged);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SHOW_EVENTS_THIS_WEEK_ROW_CHANGED_EVENT, handleShowEventsThisWeekRowChanged);
+    };
+  }, []);
+
+  const isRefreshingPosts = Boolean(somePosts?.length && forceRefreshing);
+  const upcomingEventsThisWeek = useMemo(() => {
+    const now = moment();
+    const weekAhead = now.clone().add(7, 'days');
+
+    return events
+      .filter((event) => {
+        const start = moment(event.start_datetime);
+        const end = moment(event.end_datetime ?? event.start_datetime);
+        return start.isValid()
+          && end.isValid()
+          && end.isSameOrAfter(now)
+          && start.isSameOrBefore(weekAhead);
+      })
+      .sort((a, b) => moment(a.start_datetime).valueOf() - moment(b.start_datetime).valueOf())
+      .slice(0, 10);
+  }, [events]);
+  const hasEventsThisWeekRow = showEventsThisWeekRow && upcomingEventsThisWeek.length > 0;
+
+  const openEventInCalendar = (event: { id: number; start_datetime?: string | null }) => {
+    if (!event.start_datetime) return;
+    const date = moment(event.start_datetime);
+    if (!date.isValid()) return;
+
+    const params = new URLSearchParams(location.search);
+    params.set('calendarDate', date.format('YYYY-MM-DD'));
+    params.set('calendarEventId', String(event.id));
+    history.replace({ pathname: location.pathname, search: params.toString() });
+    setCalendarDateParam(date.format('YYYY-MM-DD'));
+    setCalendarEventIdParam(event.id);
+    setCalendarAutoOpen(true);
+  };
 
 
 
   return (
     <IonPage>
-      <IonContent>
+      <CommunityBlockMigrationModal
+        isOpen={showMigrationModal}
+        onDismiss={() => {
+          setShowMigrationModal(false);
+          Preferences.set({ key: 'community_block_migration_shown', value: 'true' });
+        }}
+      />
+      <IonContent className="page-with-warm-cache-indicator">
         <IonRow className="page-title" id="refreshments-top" style={{ marginBottom: "10pt" }}>
           <img src="../static/img/refreshments.png" alt="refreshments" className="dark-dont-show" />
           <img src="../static/img/refreshments-white.png" alt="refreshments" className="dark-show" />
         </IonRow>
         <div ref={refreshmentsTop}></div>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent></IonRefresherContent>
+          <IonRefresherContent refreshingSpinner="dots"></IonRefresherContent>
         </IonRefresher>
-        {littleLoading ? <IonRow className="ion-justify-content-center"><IonSpinner name="dots"></IonSpinner></IonRow> : <></>}
+        {isRefreshingPosts ? (
+          <IonRow className="ion-justify-content-center warm-cache-refresh-indicator" data-testid="warm-cache-refresh-indicator">
+            <IonSpinner name="dots"></IonSpinner>
+          </IonRow>
+        ) : null}
         <IonRow className="filter-buttons">
           <IonButton className="refreshments-control-button" onClick={() => setShowFilterRow(showFilterRow ? false : true)}>
             {showFilterRow ? <FontAwesomeIcon icon={faMagnifyingGlassMinus} /> : <FontAwesomeIcon icon={faMagnifyingGlass} />}
           </IonButton>
           <IonCol className="filter-column" onClick={openRefreshmentsFiltersModal}>
-            <IonRow class="ion-flex-column">
+            <IonRow className="ion-flex-column">
               {!bars || (bars == "all") ? (
                 <IonText className="refreshments-filter-title" color="gray">Showing all posts</IonText>
               ) : (
@@ -293,8 +415,13 @@ const Refreshments: React.FC = () => {
           <EventsCalendar
             renderTrigger={renderCalendarTrigger}
             initialDate={calendarDateParam ?? undefined}
+            initialEventId={calendarEventIdParam ?? undefined}
             openOnLoad={calendarAutoOpen}
             onAutoOpenHandled={handleCalendarAutoOpenHandled}
+            local={localPostsOn}
+            radius={radius}
+            eventFilters={eventFilters}
+            onEventFiltersChange={setEventFilters}
           />
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
             <IonButton className="refreshments-control-button" color="tertiary" onClick={() => createPostPresent()}>
@@ -304,31 +431,13 @@ const Refreshments: React.FC = () => {
               <></>
               :
               <>
-                <IonButton className="refreshments-control-button" color="gray" onClick={() => setShowStoreAlert(true)}>
+                <IonButton className="refreshments-control-button" color="gray" onClick={() => presentUpsellAlert({
+                  header: 'You need a 5 day streak to create your own post.',
+                  message: 'Or get Community+ or Refresh Pro to post now!',
+                  extraButtons: [{ text: 'What is my streak?', handler: () => router.push('/activity') }],
+                })}>
                   <FontAwesomeIcon icon={faMegaphone} />
                 </IonButton>
-                <IonAlert
-                  isOpen={showStoreAlert}
-                  onDidDismiss={() => setShowStoreAlert(false)}
-                  header="You need a 5 day streak to create your own post."
-                  subHeader="Or get Community+ or Refresh Pro to post now!"
-                  buttons={[{
-                    text: "Not now",
-                    role: 'destructive'
-                  },
-                  {
-                    text: 'What is my streak?',
-                    handler: async () => {
-                      window.location.pathname = "/activity"
-                    }
-                  },
-                  {
-                    text: 'Get Pro!',
-                    handler: async () => {
-                      window.location.pathname = "/store"
-                    }
-                  }]}
-                />
               </>}
         </IonRow>
         {topRefreshmentsAlert ? (
@@ -338,7 +447,29 @@ const Refreshments: React.FC = () => {
                 <IonCardContent>
                   <IonRow className="refreshments-alert-content">
                     <IonCol className="refreshments-alert-text" size="11">
-                      <IonText>{topRefreshmentsAlert.message}</IonText>
+                      {topRefreshmentsAlert.message?.startsWith('Your post') ? (
+                        <IonText>
+                          {topRefreshmentsAlert.message}{' '}
+                          <span
+                            style={{ textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', color: 'var(--ion-color-primary)' }}
+                            onClick={() => router.push('/community/submitted')}
+                          >
+                            See Submissions
+                          </span>
+                        </IonText>
+                      ) : topRefreshmentsAlert.message?.startsWith('Your event') ? (
+                        <IonText>
+                          {topRefreshmentsAlert.message}{' '}
+                          <span
+                            style={{ textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', color: 'var(--ion-color-primary)' }}
+                            onClick={() => router.push('/community/submitted?tab=events')}
+                          >
+                            See Submissions
+                          </span>
+                        </IonText>
+                      ) : (
+                        <IonText>{topRefreshmentsAlert.message}</IonText>
+                      )}
                     </IonCol>
                     <IonCol className="refreshments-alert-action" size="1">
                       <IonButton
@@ -360,8 +491,18 @@ const Refreshments: React.FC = () => {
         ) : null}
         {showFilterRow ?
           <RefreshmentsFilters search={search} setSearch={setSearch} /> : <></>}
+        {hasEventsThisWeekRow ? (
+          <RefreshmentsEventsThisWeekRow
+            events={upcomingEventsThisWeek}
+            onSelectEvent={openEventInCalendar}
+          />
+        ) : null}
         {(somePosts && !postsLoading && !globalIsLoading) ?
-          <IonList id="wl" lines="full" className="refreshments-list">
+          <IonList
+            id="wl"
+            lines="full"
+            className={`refreshments-list ${hasEventsThisWeekRow ? 'refreshments-list--after-events' : ''}`}
+          >
             {somePosts?.map((e: any) => (
               <li key={e}>
                 <RefreshmentsPost post_id={e} />
@@ -379,12 +520,15 @@ const Refreshments: React.FC = () => {
         : <></>
       } */}
         <IonInfiniteScroll
+          disabled={!(posts?.length > length)}
           onIonInfinite={(ev) => {
+            const target = ev.target;
             if (posts?.length > length) {
-              setLength(length + 2)
-              setTimeout(() => ev.target.complete(), 500);
+              setLength(length + 2);
+              setTimeout(() => target.complete(), 500);
+            } else {
+              target.complete();
             }
-            setTimeout(() => ev.target.complete(), 0);
           }}
         >
           <IonInfiniteScrollContent loadingSpinner="bubbles" style={{ minHeight: "14px" }}></IonInfiniteScrollContent>

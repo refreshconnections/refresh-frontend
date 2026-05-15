@@ -1,6 +1,8 @@
 import React, { createRef, useEffect, useRef, useState } from "react";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge, IonCard, IonCardTitle, IonToggle, IonRange } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonNote, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonLabel, IonInput, IonSegment, IonSegmentButton, IonCheckbox, IonGrid, IonAccordionGroup, IonAccordion, IonRadioGroup, IonRadio, IonText, useIonAlert, IonToast, IonBadge, IonCard, IonCardTitle, IonToggle, IonRange, IonSelect, IonSelectOption } from '@ionic/react';
 import { addSavedLocation, deleteSavedLocation, isCommunityPlus, isPro } from '../hooks/utilities';
+import { DEFAULT_EVENT_FILTERS, EVENT_FILTER_PREF_KEYS, EventFilters } from '../hooks/api/events';
+import EventFiltersSection from './EventFiltersSection';
 
 
 import './AdvancedFilterModal.css'
@@ -10,7 +12,7 @@ import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
 
 import { Preferences } from "@capacitor/preferences";
 import { useGetCurrentStreak } from "../hooks/api/profiles/current-streak";
-import { faLocationDot, faLocationPin, faStar, faTrash } from "@fortawesome/pro-solid-svg-icons";
+import { faCirclePlus, faLocationDot, faLocationPin, faTrash } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useGetSavedLocations } from "../hooks/api/profiles/saved-locations";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,7 +26,7 @@ type Props = {
   localProp: boolean,
   sortProp: string,
   onNavigate: (path: string) => void;
-  onDismiss: (bars: string, localPosts: boolean, radius: number | null, sortSelected: string) => void;
+  onDismiss: (bars: string, localPosts: boolean, radius: number | null, sortSelected: string, eventFilters: EventFilters) => void;
 };
 
 const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
@@ -43,12 +45,14 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const [sortSelected, setSortSelected] = useState<string>(sortProp);
+  const [eventFilters, setEventFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS);
 
   const [radius, setRadius] = useState<number>(radiusProp ?? 150);
   const [localPosts, setLocalPosts] = useState<boolean>(canSeeLocal);
 
 
   const [presentRadiusAlert] = useIonAlert();
+  const [presentClearFiltersAlert] = useIonAlert();
 
   const hasSetLocalPostsEverywhere = useRef(false);
 
@@ -92,6 +96,9 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
   const allValues = options.map((opt) => opt.value);
   const allValuesLocal = localOptions.map((opt) => opt.value);
+  const categoryLabelMap = new Map(
+    [...options, ...localOptions].map((option) => [option.value, option.label])
+  );
 
 
   const sortOptions = [
@@ -102,39 +109,90 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
   const allSortValues = sortOptions.map((opt) => opt.value);
 
+  const getPostCategoriesBadge = () => {
+    const availableCategoryValues = localPosts ? allValues.concat(allValuesLocal) : allValues;
+    const selectedCategoryValues = selectedValues.includes('all')
+      ? availableCategoryValues
+      : selectedValues.filter((value) => availableCategoryValues.includes(value));
+
+    if (
+      selectedValues.includes('all') ||
+      selectedCategoryValues.length === 0 ||
+      selectedCategoryValues.length === availableCategoryValues.length
+    ) {
+      return 'All';
+    }
+
+    if (selectedCategoryValues.length === 1) {
+      return categoryLabelMap.get(selectedCategoryValues[0]) ?? selectedCategoryValues[0];
+    }
+
+    return `${selectedCategoryValues.length} filters`;
+  };
+
+  const getEventPreferencesBadge = () => {
+    const eventTypeSpecific = eventFilters.eventTypes.filter((value) => value !== 'all');
+    const attendeeSpecific = eventFilters.attendeePrecautionPreferences.filter((value) => value !== 'all');
+    const precautionSpecific = eventFilters.inPersonPrecautions.filter((value) => value !== 'all');
+    const selectedEventFilterCount =
+      eventTypeSpecific.length + attendeeSpecific.length + precautionSpecific.length;
+
+    if (selectedEventFilterCount === 0) {
+      return 'All';
+    }
+
+    if (selectedEventFilterCount === 1) {
+      const singleValue =
+        eventTypeSpecific[0] ??
+        attendeeSpecific[0] ??
+        precautionSpecific[0];
+
+      if (singleValue === 'in_person_only') return 'In person only';
+      if (singleValue === 'in_person_with_virtual_option') return 'In person with virtual option';
+      if (singleValue === 'not_specified') return 'Not specified';
+      if (singleValue === 'precautions_only') return 'Covid conscientious only';
+      if (singleValue === 'precautions_preferred') return 'Covid conscientious preferred';
+      if (singleValue === 'open') return 'Open to everyone';
+      if (singleValue === 'masks_encouraged') return 'Masks encouraged';
+      if (singleValue === 'masks_required') return 'Masks required';
+      if (singleValue === 'tests_required') return 'Tests required';
+      if (singleValue === 'outdoors') return 'Outdoors';
+      if (singleValue === 'partially_outdoors') return 'Partially outdoors';
+      if (singleValue === 'air_purifiers') return 'Air purifiers';
+      return singleValue;
+    }
+
+    return `${selectedEventFilterCount} filters`;
+  };
+
 
   useEffect(() => {
-
-
-    let allValuesOptionalLocal = allValues
-
-    if (localPosts) {
-      allValuesOptionalLocal = allValues.concat(allValuesLocal)
+    if (barsProp === 'all') {
+      setSelectedValues(['all']);
+    } else {
+      setSelectedValues(barsProp.split(','));
     }
 
-
-
-    if (barsProp == 'all') {
-      setSelectedValues(allValuesOptionalLocal)
-    }
-    else {
-      setSelectedValues(barsProp.split(','))
-    }
-
-
+    const loadEventFilters = async () => {
+      const [types, attendee, precautions] = await Promise.all([
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.eventTypes }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.attendeePrecautionPreferences }),
+        Preferences.get({ key: EVENT_FILTER_PREF_KEYS.inPersonPrecautions }),
+      ]);
+      setEventFilters({
+        eventTypes: types.value ? types.value.split(',') : ['all'],
+        attendeePrecautionPreferences: attendee.value ? attendee.value.split(',') : ['all'],
+        inPersonPrecautions: precautions.value ? precautions.value.split(',') : ['all'],
+      });
+    };
+    loadEventFilters();
   }, [])
 
   useEffect(() => {
     if (!localProp && localPosts) {
-      const existingValues = barsProp === 'all' ? allValues : barsProp.split(',');
-
-      // Filter out values from allValuesLocal that already exist in existingValues
-      const uniqueLocalValues = allValuesLocal.filter(
-        val => !existingValues.includes(val)
-      );
-
-      // Merge without duplicates
-      setSelectedValues(existingValues.concat(uniqueLocalValues));
+      if (selectedValues.includes('all')) return;
+      const uniqueLocalValues = allValuesLocal.filter(val => !selectedValues.includes(val));
+      setSelectedValues(prev => prev.concat(uniqueLocalValues));
     }
   }, [localPosts]);
 
@@ -156,12 +214,32 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
 
 
-  const handleCheckboxChange = (value: string, checked: boolean) => {
-    setSelectedValues((prev) => {
-      if (checked) {
-        return prev.includes(value) ? prev : [...prev, value];
-      } else {
-        return prev.filter((item) => item !== value);
+  const handleCategoryChange = (event: CustomEvent) => {
+    let next: string[] = event.detail.value ?? [];
+    const prev = selectedValues;
+    const added = next.find(v => !prev.includes(v));
+
+    const allSpecific = localPosts ? allValues.concat(allValuesLocal) : allValues;
+    if (added === 'all') {
+      next = ['all'];
+    } else if (added) {
+      next = next.filter(v => v !== 'all');
+      if (allSpecific.every(v => next.includes(v))) {
+        next = ['all'];
+      } else if (!isCommunityPlus(currentUserProfile?.subscription_level) && next.length < allSpecific.length - 1) {
+        next = prev;
+      }
+    }
+    if (next.length === 0) next = ['all'];
+
+    setSelectedValues(next);
+    requestAnimationFrame(() => {
+      const popover = document.querySelector('ion-select-popover');
+      if (popover) {
+        const opts = (popover as any).options;
+        if (opts) {
+          (popover as any).options = opts.map((opt: any) => ({ ...opt, checked: next.includes(opt.value) }));
+        }
       }
     });
   };
@@ -178,40 +256,26 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
 
 
   const handleDone = async () => {
-
-    const selectedString = selectedValues.join(',');
-    console.log(selectedValues.length)
-
     if (radius) {
       await Preferences.set({ key: "radius", value: radius.toString() });
     }
-
-    if (localPosts) {
-      await Preferences.set({ key: "local", value: 'on' });
-    }
-    else {
-      await Preferences.set({ key: "local", value: 'off' });
-    }
-
-    let numberOfAll = options.length
-    if (localPosts) { numberOfAll = options.length + localOptions.length }
-
-
-    if (selectedValues.length >= numberOfAll) {
-      await Preferences.set({ key: "filters", value: 'all' });
-      onDismiss('all', localPosts, radius, sortSelected)
-
-    }
-    else {
-      await Preferences.set({ key: "filters", value: selectedString });
-      onDismiss(selectedString, localPosts, radius, sortSelected)
-    }
-
+    await Preferences.set({ key: "local", value: localPosts ? 'on' : 'off' });
     if (sortSelected) {
       await Preferences.set({ key: "sort", value: sortSelected });
     }
 
+    const activeValues = localPosts ? selectedValues : selectedValues.filter(v => !allValuesLocal.includes(v));
+    if (activeValues.includes('all') || activeValues.length === 0) {
+      await Preferences.set({ key: "filters", value: 'all' });
+      onDismiss('all', localPosts, radius, sortSelected, eventFilters);
+    } else {
+      await Preferences.set({ key: "filters", value: activeValues.join(',') });
+      onDismiss(activeValues.join(','), localPosts, radius, sortSelected, eventFilters);
+    }
 
+    await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.eventTypes, value: eventFilters.eventTypes.join(',') });
+    await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.attendeePrecautionPreferences, value: eventFilters.attendeePrecautionPreferences.join(',') });
+    await Preferences.set({ key: EVENT_FILTER_PREF_KEYS.inPersonPrecautions, value: eventFilters.inPersonPrecautions.join(',') });
   }
 
   const handleNavigate = async (path: string) => {
@@ -276,6 +340,44 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
   const [locationPresent, locationDismiss] = useIonModal(EditLocationModal, {
     onDismiss: handleLocationDismiss
   });
+
+  const resetRefreshmentsFilters = () => {
+    const hasLocation = Boolean(currentUserProfile?.location_point_lat && currentUserProfile?.location_point_long);
+    const maxRadius = isPro(currentUserProfile?.subscription_level)
+      ? 5001
+      : isCommunityPlus(currentUserProfile?.subscription_level)
+        ? 5000
+        : 150;
+
+    setSelectedValues(['all']);
+    setEventFilters(DEFAULT_EVENT_FILTERS);
+    setSortSelected('recent');
+    setRadius(maxRadius);
+
+    if (hasLocation) {
+      setLocalPosts(true);
+      setLocalPostsEverywhere(isPro(currentUserProfile?.subscription_level));
+    } else {
+      setLocalPosts(false);
+      setLocalPostsEverywhere(false);
+    }
+  };
+
+  const confirmClearFilters = () => {
+    presentClearFiltersAlert({
+      header: 'Clear Refreshments filters?',
+      message: 'This will reset post categories and event preferences, and maximize your local posts range.',
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Clear all',
+          handler: () => {
+            resetRefreshmentsFilters();
+          },
+        },
+      ],
+    });
+  };
 
   return (
     <IonPage >
@@ -414,10 +516,11 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
                     {sortOptions.map((option) => (
 
                         <IonRadio
+                          key={option.value}
                           slot="start"
                           value={option.value}
                           disabled={!isCommunityPlus(currentUserProfile?.subscription_level) && option.value !== sortOptions[0].value}
-                        >{option.label} {option.value !== sortOptions[0].value && <FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} />}
+                        >{option.label} {option.value !== sortOptions[0].value && <FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} />}
                         </IonRadio>
 
                     ))}
@@ -432,60 +535,48 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
         </IonAccordionGroup>
         <IonAccordionGroup>
           <IonAccordion value="first">
-            <IonItem slot="header"><IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Categories</span></IonLabel>
-              {barsProp == 'all' ? <IonBadge color={barsProp == "all" ? "primary" : "danger"}>Showing {barsProp == 'all' ? "all" : "some"} categories</IonBadge> : <></>}
-
+            <IonItem slot="header">
+              <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Post categories</span></IonLabel>
+              <IonBadge>{getPostCategoriesBadge()}</IonBadge>
             </IonItem>
             <IonGrid className="filter-grid" slot="content">
-
-
               <IonRow>
-
-                <IonList lines="none" class="categories-filters">
-                  {options.map((option) => (
-                    <IonItem key={option.value} className="dont-grey-disabled">
-                      <IonCheckbox
-                        labelPlacement="end"
-                        onIonChange={(e) => handleCheckboxChange(option.value, e.detail.checked)}
-                        disabled={selectedValues.includes(option.value) && !isCommunityPlus(currentUserProfile?.subscription_level) && ((localPosts && (selectedValues.length <= (allValues.length + allValuesLocal.length - 2))) || (!localPosts && (selectedValues.length <= (options.length - 2))))}
-                        checked={selectedValues.includes(option.value)}
-                      >
-                      {option.label}
-                      </IonCheckbox>
-
-                    </IonItem>
-                  ))}
-                  {localPosts &&
-                    localOptions.map((option) => (
-                      <IonItem key={option.value}>
-                        <IonCheckbox
-                          labelPlacement="end"
-                          onIonChange={(e) => handleCheckboxChange(option.value, e.detail.checked)}
-                          checked={selectedValues.includes(option.value)}
-                        >
-                       {option.label}</IonCheckbox>
-
-                      </IonItem>
+                <IonItem>
+                  <IonLabel position="stacked">Categories</IonLabel>
+                  <IonSelect
+                    value={selectedValues}
+                    multiple
+                    interface="popover"
+                    onIonChange={handleCategoryChange}
+                  >
+                    <IonSelectOption value="all">Any</IonSelectOption>
+                    {options.map(opt => (
+                      <IonSelectOption key={opt.value} value={opt.value}>{opt.label}</IonSelectOption>
                     ))}
-
-
-                </IonList>
-
-
-
-
-
+                    {localPosts && localOptions.map(opt => (
+                      <IonSelectOption key={opt.value} value={opt.value}>{opt.label}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
               </IonRow>
-              <IonRow className="ion-padding ion-justify-content-center">
-                <IonButton size="small" onClick={localPosts ? () => setSelectedValues(allValues.concat(allValuesLocal)) : () => setSelectedValues(allValues)}>Select all</IonButton>
-              </IonRow>
-              {(!isCommunityPlus(currentUserProfile?.subscription_level) && ((localPosts && (selectedValues.length <= (allValues.length + allValuesLocal.length - 2))) || (!localPosts && (selectedValues.length <= (options.length - 2))))) &&
+              {(!isCommunityPlus(currentUserProfile?.subscription_level)) &&
                 <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
                   <IonNote className="ion-text-center">
-                    Upgrade to a subscription level to filter by more categories.
+                    Filter by more categories with Community+ or Pro.
                   </IonNote>
                 </IonRow>
               }
+            </IonGrid>
+          </IonAccordion>
+        </IonAccordionGroup>
+        <IonAccordionGroup>
+          <IonAccordion value="first">
+            <IonItem slot="header">
+              <IonLabel className="ion-text-wrap"><span style={{ fontSize: "17px" }}>Event preferences</span></IonLabel>
+              <IonBadge>{getEventPreferencesBadge()}</IonBadge>
+            </IonItem>
+            <IonGrid className="filter-grid" slot="content">
+              <EventFiltersSection filters={eventFilters} onChange={setEventFilters} />
             </IonGrid>
           </IonAccordion>
         </IonAccordionGroup>
@@ -493,9 +584,15 @@ const RefreshmentsFiltersModal: React.FC<Props> = (props) => {
         {(!isCommunityPlus(currentUserProfile?.subscription_level)) &&
           <IonRow className="ion-padding ion-text-align-center ion-justify-content-center">
             <IonNote className="ion-text-center">
-              <FontAwesomeIcon color="var(--ion-color-medium)" icon={faStar} /> Upgrade to a subscription level for more sort options, filters, and additional locations and increased radius for local posts.
+              <FontAwesomeIcon color="var(--ion-color-medium)" icon={faCirclePlus} /> Get more sort options, filters, additional locations, and an increased radius for local posts with Community+ or Pro.
             </IonNote>
           </IonRow>}
+
+        <IonRow className="ion-justify-content-center ion-padding-top ion-padding-bottom">
+          <IonButton size="small" color="navy" onClick={confirmClearFilters}>
+            Clear all Refreshments filters
+          </IonButton>
+        </IonRow>
 
 
 

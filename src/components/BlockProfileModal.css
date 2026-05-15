@@ -1,0 +1,11 @@
+.block-profile-input-item {
+  --background: #ffffff;
+  --border-radius: 8px;
+  --padding-start: 12px;
+  border-radius: 8px;
+}
+
+.block-profile-checkbox-item {
+  --background: transparent;
+}
+

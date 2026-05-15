@@ -11,7 +11,7 @@ export function useChatSettings(id?: number) {
   };
 
   return useQuery({
-    queryKey: chatQueryKeys.settings(Number(id)),
+    queryKey: chatQueryKeys.settings(id),
     queryFn: getChatSettingsFn,
     retry: 1,
     enabled: !!localStorage.getItem('token')

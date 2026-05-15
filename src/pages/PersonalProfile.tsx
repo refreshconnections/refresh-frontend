@@ -10,18 +10,17 @@ import {
   useIonAlert,
   useIonModal,
 } from '@ionic/react';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCompleteOnboarding } from '../hooks/api/account/onboarding';
 
 import './Page.css';
+import './OnboardingV2.css';
 import './Onboarding.css';
 import '../components/OnboardingCard.css';
 
-import { Swiper, SwiperSlide, useSwiper } from 'swiper/react';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import 'swiper/css/effect-cards';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import { Navigation, Pagination, Scrollbar } from 'swiper';
 import OnboardingCardGenderIdentity from '../components/OnboardingCardGenderIdentity';
 import OnboardingCardDone from '../components/OnboardingCardDone';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
@@ -37,35 +36,53 @@ import { handleLogoutCommon, setFontSizePref, setTextZoom, setThemePref, updateC
 import StayPausedModal from '../components/StayPausedModal';
 import OnboardingCardPronouns from '../components/OnboardingCardPronouns';
 import OnboardingCardLivedExperiences from '../components/OnboardingCardLivedExperiences';
+import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardConnectFromRefreshments';
+import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { Preferences } from '@capacitor/preferences';
+import { ONBOARDING_COPY } from '../constants/onboarding';
+import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
 type PersonalProfileProps = {
   onDismiss?: () => void;
 };
 
+const PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY = 'personal_profile_onboarding_in_progress';
+const PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY = 'personal_profile_onboarding_slide';
+
 const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
+  const copy = ONBOARDING_COPY.personalProfile;
+  const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const [confirmLogout] = useIonAlert();
   const [stayPausedOpen, stayPausedDismiss] = useIonModal(StayPausedModal, {
     onDismiss: () => stayPausedDismiss(),
   });
+  const queryClient = useQueryClient();
+  const completeOnboarding = useCompleteOnboarding({
+    onSuccess: async () => {
+      await Preferences.set({ key: 'ONBOARDED', value: 'true' });
+    },
+  });
   const swiperRef = useRef<any>(null);
   const currentProfile = useGetCurrentProfile().data;
-  const showConnectToggle = !currentProfile?.created_profile;
-  const SLIDE_KEY = 'personal_profile_onboarding_slide';
+  const moderation = useGetCurrentModeration().data;
+  const { data: communityProfile } = useGetCommunityProfile();
+  const hasCommunityProfile = Boolean(communityProfile?.username);
 
-  const SwiperButtonPrev = ({ children }) => {
-    const swiper = useSwiper();
-    return (
-      <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-        {children}
-      </IonButton>
-    );
-  };
-  const SwiperButtonNext = ({ children }) => {
-    const swiper = useSwiper();
-    return <IonButton onClick={() => swiper.slideNext()}>{children}</IonButton>;
-  };
+  // Start false; flip to true (and stay true) once coords appear in cache.
+  // Using useState+useEffect rather than a snapshot avoids stale reads when
+  // this modal is pre-mounted by useIonModal before the user has shared location.
+  const [hasSharedLocationCoords, setHasSharedLocationCoords] = useState(false);
+  useEffect(() => {
+    if (currentProfile?.location_point_lat && currentProfile?.location_point_long) {
+      setHasSharedLocationCoords(true);
+    }
+  }, [currentProfile?.location_point_lat, currentProfile?.location_point_long]);
+  const [locationLabelDraft, setLocationLabelDraft] = useState('');
+  const [locationLabelDraftFromCoords, setLocationLabelDraftFromCoords] = useState(false);
+  const locationLabelDraftFromCoordsRef = useRef('');
+  const [hasCreatedProfileForConnectStep, setHasCreatedProfileForConnectStep] = useState(false);
 
   useEffect(() => {
     const setThemeandFont = async () => {
@@ -78,31 +95,61 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   }, []);
 
   useEffect(() => {
+    const profileLocationLabel = (currentProfile?.location || currentProfile?.coordinates_near || '').trim();
+    setLocationLabelDraft(profileLocationLabel);
+    setLocationLabelDraftFromCoords(wasDraft => wasDraft && profileLocationLabel === locationLabelDraftFromCoordsRef.current);
+  }, [
+    currentProfile?.location,
+    currentProfile?.coordinates_near,
+  ]);
+
+  useEffect(() => {
     const restoreSlide = async () => {
       if (currentProfile?.created_profile) {
-        await Preferences.remove({ key: SLIDE_KEY });
+        await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+        await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
         return;
       }
-      const stored = await Preferences.get({ key: SLIDE_KEY });
+      // Coords slide is now always present. If pre-existing coords exist, the
+      // old stored index was from a layout without that slide — clear it to avoid
+      // landing on the wrong slide.
+      if (hasSharedLocationCoords) {
+        const inProgress = await Preferences.get({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+        if (inProgress.value !== 'true') {
+          await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
+          return;
+        }
+      }
+      const stored = await Preferences.get({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
       const storedIndex = stored?.value ? Number(stored.value) : 0;
       if (swiperRef.current && Number.isFinite(storedIndex) && storedIndex > 0) {
         swiperRef.current.slideTo(storedIndex, 0);
       }
     };
     restoreSlide();
+  }, [currentProfile?.created_profile, hasSharedLocationCoords]);
+
+  useEffect(() => {
+    if (currentProfile?.created_profile) return;
+    Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
   }, [currentProfile?.created_profile]);
+
+  const clearResumeState = async () => {
+    await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY });
+    await Preferences.remove({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY });
+  };
 
   const confirmLogoutAlert = async () => {
     confirmLogout({
-      header: `Are you sure you want to return to login?`,
-      subHeader: 'You will be logged out.',
+      header: copy.logoutConfirm.header,
+      subHeader: copy.logoutConfirm.subHeader,
       buttons: [
         {
-          text: 'Nevermind',
+          text: copy.logoutConfirm.cancel,
           role: 'destructive',
         },
         {
-          text: 'Yes',
+          text: copy.logoutConfirm.confirm,
           handler: async () => {
             await handleLogoutCommon();
           },
@@ -112,6 +159,9 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   };
 
   const handleFinishLater = async () => {
+    if (currentProfile?.onboarded !== true) {
+      await completeOnboarding.mutateAsync();
+    }
     await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
     if (onDismiss) {
       onDismiss();
@@ -120,103 +170,175 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     window.location.pathname = '/community';
   };
 
+  const ensureProfileCreatedBeforeConnect = async () => {
+    if (!hasCommunityProfile || currentProfile?.created_profile || hasCreatedProfileForConnectStep) {
+      return;
+    }
+
+    await updateCurrentUserProfile({
+      created_profile: true,
+      paused_profile: moderation?.paused_on_creation ? true : false,
+      location_last_updated: null,
+      romance_gender_last_updated: null,
+      gender_last_updated: null,
+    });
+    setHasCreatedProfileForConnectStep(true);
+    await queryClient.invalidateQueries({ queryKey: ['current'] });
+  };
+
   return (
     <IonPage>
-      <IonContent className="ignore-keyboard ">
+      <IonContent
+        className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
+        style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
+      >
         <Swiper
-          modules={[Navigation, Pagination]}
-          pagination={{ type: 'progressbar' }}
           centeredSlides
           allowTouchMove={false}
-          className="onboarding"
+          className="onboarding-v2__swiper"
           onSwiper={(swiperInstance) => {
             swiperRef.current = swiperInstance;
           }}
           onSlideChange={async (swiperInstance) => {
             if (currentProfile?.created_profile) {
-              await Preferences.remove({ key: SLIDE_KEY });
+              await clearResumeState();
               return;
             }
-            await Preferences.set({ key: SLIDE_KEY, value: String(swiperInstance.activeIndex) });
+            await Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+            await Preferences.set({ key: PERSONAL_PROFILE_ONBOARDING_SLIDE_KEY, value: String(swiperInstance.activeIndex) });
           }}
         >
           <SwiperSlide>
-              <IonCard className="onboarding-slide" style={{ overflow: 'scroll', position: 'relative', height: '95vh' }}>
-                <IonCardContent style={{ padding: '20px' }}>
-              <IonCardTitle style={{ fontSize: '26px' }}>Create your personal profile</IonCardTitle>
-                <img
-                  src="../static/img/flower-mask.png"
-                  style={{ width: '50%', alignSelf: 'center', margin: '30pt' }}
-                />
-                <IonText style={{ textAlign: 'center' }}>
-                  <h2>Create your personal profile so other members can get to know you one-on-one.</h2>
-                </IonText>
-                <IonText style={{ textAlign: 'center' }}>
-                  <h2>You'll need a personal profile to send likes and private messages.</h2>
-                </IonText>
-              </IonCardContent>
-              <IonRow className="onboarding-slide-buttons">
-                <SwiperButtonNext>Let’s go</SwiperButtonNext>
-              </IonRow>
-            </IonCard>
+            <div className="onboarding-v2__slide">
+              <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
+                <IonCardContent>
+                  <IonCardTitle>{copy.intro.title}</IonCardTitle>
+                  <img
+                    src="../static/img/flower-mask.png"
+                    style={{ width: 'min(220px, 50%)', alignSelf: 'center', margin: '24px auto' }}
+                  />
+                  <IonText style={{ textAlign: 'center' }}>
+                    <h4>{copy.intro.bodyPrimary}</h4>
+                  </IonText>
+                </IonCardContent>
+                <div className="onboarding-v2__card-footer">
+                  <IonRow className="onboarding-v2__nav">
+                    <IonButton
+                      className="onboarding-v2__primary-action"
+                      onClick={() => swiperRef.current?.slideNext()}
+                    >
+                      {copy.intro.cta}
+                    </IonButton>
+                  </IonRow>
+                </div>
+              </IonCard>
+            </div>
           </SwiperSlide>
 
           <SwiperSlide>
-            <OnboardingCardName />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardName />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardPronouns />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardPronouns />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLocationCoords />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLocationCoords
+                preExistingCoords={hasSharedLocationCoords}
+                onCoordsSaved={(localLabel) => {
+                  setLocationLabelDraft(localLabel);
+                  locationLabelDraftFromCoordsRef.current = localLabel;
+                  setLocationLabelDraftFromCoords(true);
+                }}
+                onCoordsCleared={() => {
+                  setLocationLabelDraft('');
+                  locationLabelDraftFromCoordsRef.current = '';
+                  setLocationLabelDraftFromCoords(false);
+                }}
+              />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLocationLabel />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLocationLabel
+                initialLocation={locationLabelDraft}
+                initialLocationIsDraft={locationLabelDraftFromCoords}
+              />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLookingFor />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLookingFor />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardGenderIdentity />
-          </SwiperSlide>
-
-          <SwiperSlide>
-            <OnboardingCardLivedExperiences />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardGenderIdentity />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardCovid />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLivedExperiences />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardProfilePic />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardCovid />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardPictures />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardProfilePic />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardBio />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardPictures />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardLetsTalkAbout />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardBio />
+            </div>
           </SwiperSlide>
           <SwiperSlide>
-            <OnboardingCardDone showConnectToggle={showConnectToggle} />
+            <div className="onboarding-v2__slide">
+              <OnboardingCardLetsTalkAbout onBeforeNext={ensureProfileCreatedBeforeConnect} />
+            </div>
+          </SwiperSlide>
+          {hasCommunityProfile && (
+            <SwiperSlide>
+              {/* OnboardingCardConnectFromRefreshments renders its own onboarding-v2__slide wrapper */}
+              <OnboardingCardConnectFromRefreshments />
+            </SwiperSlide>
+          )}
+          <SwiperSlide>
+            <div className="onboarding-v2__slide">
+              <OnboardingCardDone />
+            </div>
           </SwiperSlide>
         </Swiper>
-        <IonButton
-          size="small"
-          fill="clear"
-          style={{
-            position: 'fixed',
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '90%',
-            zIndex: 5,
-          }}
-          onClick={handleFinishLater}
-        >
-          Finish later
-        </IonButton>
+        {!keyboardOpen && (
+          <IonButton
+            size="small"
+            fill="clear"
+            style={{
+              position: 'fixed',
+              bottom: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '90%',
+              zIndex: 5,
+            }}
+            onClick={handleFinishLater}
+          >
+            {ONBOARDING_COPY.common.finishLater}
+          </IonButton>
+        )}
       </IonContent>
     </IonPage>
   );

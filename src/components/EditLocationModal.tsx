@@ -171,7 +171,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
         header: isPlus ? "You can only change your location once a day" : "You can only change your location every 30 days.",
         message: lastSaved
           ? "You can restore your last location instead if you want. Or upgrade to Pro for unlimited location changes."
-          : "Upgrade to Pro for unlimited location changes.",
+          : "Get Pro for unlimited location changes.",
         buttons: buttons
       });
 
@@ -180,7 +180,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
 
     presentOptionsAlert({
       header: "How would you like to share your location?",
-      subHeader: isPro ? 'As a pro member, you can change your location as much as you want.' : isPlus ? 'As a + member, you can change your location once a day.' : 'You can only change your location every 30 days. Upgrade to a subscription to change your location more often.',
+      subHeader: isPro ? 'As a pro member, you can change your location as much as you want.' : isPlus ? 'As a + member, you can change your location once a day.' : 'You can only change your location every 30 days. Change your location more often with a subscription.',
       buttons: [
         {
           text: "Nevermind",
@@ -304,7 +304,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
       header: "So just confirming, you're near " + local + "?",
       buttons: [
         {
-          text: "Nope, I'll try again.",
+          text: "No",
           role: 'cancel',
           handler: () => {
             console.log('Cancel clicked');
@@ -473,9 +473,9 @@ const EditLocationModal: React.FC<Props> = (props) => {
           <IonCardContent>
             <IonCardTitle>Want to change your location?</IonCardTitle>
 
-            <IonText>The approximate location description you share on your profile is different from the coordinates Refresh uses to filter by distance.</IonText>
+            <IonText>The approximate location description you share on your Profile is different from the coordinates Refresh uses to filter by distance.</IonText>
 
-            <IonText><p>The location description shown on your profile:</p></IonText>
+            <IonText><p>The location description shown on your Profile:</p></IonText>
             <IonItem>
               <IonInput value={location}
                 name="location"
@@ -492,7 +492,7 @@ const EditLocationModal: React.FC<Props> = (props) => {
             {(currentUserProfile?.location_point_long !== null && currentUserProfile?.location_point_lat !== null) ?
 
               <IonRow className="with-button" style={{ paddingTop: "50pt" }}>
-                <IonText><p>The coordinates we use to filter your Picks by distance show that you are near:</p></IonText>
+                <IonText><p>The coordinates we use to filter Discovery by distance show that you are near:</p></IonText>
 
                 <IonItem style={{ width: "100%" }}>
                   <IonInput

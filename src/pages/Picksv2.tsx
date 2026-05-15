@@ -7,7 +7,8 @@ import { faCommentHeart } from '@fortawesome/pro-solid-svg-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetStatuses } from '../hooks/api/status';
-import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener } from '../hooks/utilities';
+import { updateOutgoingConnections, updateDismissedConnections, updateBlockedConnections, increaseStreak, isPersonalPlus, sendAnOpener, getReduceAnimations } from '../hooks/utilities';
+import { useBlockProfile } from '../hooks/useBlockProfile';
 import { Preferences } from '@capacitor/preferences';
 import { getWithExpiry, removeFromCapacitorLocalStorage, setWithExpiry } from '../hooks/capacitorPreferences/all';
 import ProfileCard from '../components/ProfileCard';
@@ -65,6 +66,7 @@ const Picksv2: React.FC = () => {
   const [nextLoading, setNextLoading] = useState(false);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [showMessagePop, setShowMessagePop] = useState(false);
+  const [reduceAnimations, setReduceAnimations] = useState(false);
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [sortedPicks, setSortedPicks] = useState<typeof picksData>(null);
@@ -72,10 +74,22 @@ const Picksv2: React.FC = () => {
   const [isHydratedFromCache, setIsHydratedFromCache] = useState(false);
   const [shouldScrollToTop, setShouldScrollToTop] = useState(false);
   const skipCachedLastShownRef = useRef(false);
+  const actionedPickIdsRef = useRef<Set<number>>(new Set());
 
   const picksTopRef = useRef<null | HTMLDivElement>(null);
 
   const profileDetails = sortedPicks?.[index] ?? null;
+
+  const filterDisplayablePicks = (picks: typeof picksData) => {
+    if (!picks) return picks;
+    const seen = new Set<number>();
+    return picks.filter((pick) => {
+      if (!pick || typeof pick.user !== 'number') return false;
+      if (actionedPickIdsRef.current.has(pick.user) || seen.has(pick.user)) return false;
+      seen.add(pick.user);
+      return true;
+    }) as typeof picksData;
+  };
 
   /* refs for scroll logic */
   const lastY = useRef(0);
@@ -87,6 +101,7 @@ const Picksv2: React.FC = () => {
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
   const [presentAlert] = useIonAlert();
   const [presentfirstFiltersAlert] = useIonAlert();
+  const blockProfile = useBlockProfile();
 
   const markFiltersTipSeen = async () => {
     await Preferences.set({ key: FILTERS_TIP_KEY, value: 'true' });
@@ -94,12 +109,19 @@ const Picksv2: React.FC = () => {
   };
 
   useEffect(() => {
+    getReduceAnimations().then(setReduceAnimations);
+    const handler = (e: Event) => setReduceAnimations((e as CustomEvent<boolean>).detail);
+    window.addEventListener('reduce_animations_changed', handler);
+    return () => window.removeEventListener('reduce_animations_changed', handler);
+  }, []);
+
+  useEffect(() => {
     const maybeShowFiltersTip = async () => {
       if (!filterData) return;
       const { value } = await Preferences.get({ key: FILTERS_TIP_KEY });
       if (value === 'true') return;
       const count = getActiveFilterCount(filterData);
-      if (count >= 2) {
+      if (count >= 1) {
         setShowFiltersDialog(false);
         return;
       }
@@ -116,6 +138,7 @@ const Picksv2: React.FC = () => {
     text: offendingName,
     id: offendingId,
     onDismiss: (data: string, role: string) => createReportDismiss(data, role),
+    onReportSubmitted: () => { if (offendingId !== null) handleNextItem(offendingId, 'dismiss'); },
   });
   const [presentPersonalProfile, dismissPersonalProfile] = useIonModal(PersonalProfile, {
     onDismiss: () => dismissPersonalProfile(),
@@ -177,7 +200,7 @@ const Picksv2: React.FC = () => {
 
       if (cancelled) return;
 
-      let merged: typeof picksData = picksData;
+      let merged: typeof picksData = filterDisplayablePicks(picksData);
       const shouldSkipCached = skipCachedLastShownRef.current;
       if (shouldSkipCached) {
         skipCachedLastShownRef.current = false;
@@ -188,10 +211,23 @@ const Picksv2: React.FC = () => {
           : null;
 
       if (!shouldSkipCached && lastShownUserId != null) {
-        const alreadyIncluded = picksData.some(p => p.user === lastShownUserId);
-        if (!alreadyIncluded) {
-          merged = [lastShownPick, ...picksData];
+        const alreadyIncluded = merged?.some(p => p.user === lastShownUserId);
+        if (!alreadyIncluded && !actionedPickIdsRef.current.has(lastShownUserId)) {
+          merged = [lastShownPick, ...(merged ?? [])];
         }
+      }
+
+      const currentPick = sortedPicks?.[index] ?? null;
+      const currentPickUserId =
+        currentPick && typeof currentPick.user === 'number'
+          ? currentPick.user
+          : null;
+      if (
+        currentPickUserId != null &&
+        !actionedPickIdsRef.current.has(currentPickUserId) &&
+        !merged?.some(p => p.user === currentPickUserId)
+      ) {
+        merged = [currentPick, ...(merged ?? [])];
       }
 
       const targetUser =
@@ -228,9 +264,16 @@ const Picksv2: React.FC = () => {
   /** ---------------- Preload next image ----------------- */
   useEffect(() => {
     const next = sortedPicks?.[index + 1];
-    if (next?.pic1_main) {
+    if (!next) return;
+    const photoKeys = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+    const order: string[] = Array.isArray(next.photo_order) && next.photo_order.length > 0
+      ? next.photo_order
+      : photoKeys;
+    const firstKey = order.find((k: string) => next[k]) ?? 'pic1_main';
+    const src = next[firstKey];
+    if (src) {
       const img = new Image();
-      img.src = next.pic1_main;
+      img.src = src;
     }
   }, [index, sortedPicks]);
 
@@ -258,7 +301,11 @@ const Picksv2: React.FC = () => {
 
     setFiltersVisible(false);
 
-    if (index < (picksData?.length ?? 0) - 1) {
+    if (typeof connection === 'number') {
+      actionedPickIdsRef.current.add(connection);
+    }
+
+    if (index < (sortedPicks?.length ?? 0) - 1) {
       await delay(300);
       setIndex(i => i + 1);
       setShouldScrollToTop(true);
@@ -266,8 +313,6 @@ const Picksv2: React.FC = () => {
       await doTheThing();
     } else {
       setNextLoading(true);
-      setSortedPicks([]);
-      setIndex(0);
       setShouldScrollToTop(true);
       jumpToTopViaAnchor();
 
@@ -277,7 +322,7 @@ const Picksv2: React.FC = () => {
       await doTheThing();
 
       const result = await picksRefetch();
-      const newData = result?.data ?? [];
+      const newData = filterDisplayablePicks(result?.data ?? []) ?? [];
       setShouldScrollToTop(true);
 
       if (newData.length > 0) {
@@ -295,7 +340,7 @@ const Picksv2: React.FC = () => {
         setShouldScrollToTop(true);
       }
 
-      const nearEnd = (sortedPicks && index >= (sortedPicks.length - 3));
+      const nearEnd = newData.length > 0 && newData.length <= 3;
       if (nearEnd && !picksFetching) {
         await queryClient.prefetchQuery({
           queryKey: userQueryKeys.picks_and_profiles,
@@ -353,7 +398,8 @@ const Picksv2: React.FC = () => {
         await removeFromCapacitorLocalStorage('picks_and_profiles_with_filters');
         await removeFromCapacitorLocalStorage('last_shown_pick_v2');
         const result = await picksRefetch();
-        const freshData = result?.data ?? [];
+        actionedPickIdsRef.current = new Set();
+        const freshData = filterDisplayablePicks(result?.data ?? []) ?? [];
         setSortedPicks(freshData);
         setIndex(freshData.length ? 0 : 0);
         setFiltersLoading(false);
@@ -393,7 +439,7 @@ const Picksv2: React.FC = () => {
     onSendWithMessage: async (msg: string) => {
       await sendAnOpener(profileDetails?.user, msg);
       await addOutgoingConnection(profileDetails?.user);
-      setShowMessagePop(true);
+      if (!reduceAnimations) setShowMessagePop(true);
       dismissLikeMessageModal();
     },
   });
@@ -481,16 +527,16 @@ const Picksv2: React.FC = () => {
       <IonPage>
         <IonContent>
           <IonRow className="page-title bigger">
-            <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+            <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
           </IonRow>
           <IonCard className="prelaunch">
             <IonCardTitle style={{ fontWeight: 'normal' }}>
-              You’ll need a personal profile before browsing Picks.
+              You’ll need a Personal Profile before browsing Discovery.
             </IonCardTitle>
             <IonCardContent>
-              <p style={{ marginTop: 0 }}>Finish setting up your profile to unlock Picks and start making one-on-one connections.</p>
+              <p style={{ marginTop: 0 }}>Finish setting up your Personal Profile to unlock Discovery and start making one-on-one connections.</p>
               <IonButton onClick={() => presentPersonalProfile()} expand="block" color="primary">
-                Create personal profile
+                Create Personal Profile
               </IonButton>
             </IonCardContent>
           </IonCard>
@@ -504,9 +550,9 @@ const Picksv2: React.FC = () => {
       <IonPage>
         <IonContent>
           <IonRow className="page-title bigger">
-            <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+            <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
           </IonRow>
-          <CantAccessCard tabName="Picks" />
+          <CantAccessCard tabName="Discovery" />
         </IonContent>
       </IonPage>
     );
@@ -540,7 +586,7 @@ const Picksv2: React.FC = () => {
                     Filter anytime.
                   </div>
                   <IonText>
-                    Filters are always available at the top or bottom of this page.
+                    Filters are always available by scrolling to the top or bottom of this page. 
                   </IonText>
                   <IonRow className="picks-filters-dialog-actions">
                     <IonButton
@@ -571,7 +617,7 @@ const Picksv2: React.FC = () => {
           </div>
         ) : picksError ? (
           <IonCard className="error">
-            <IonCardTitle>Couldn’t load picks</IonCardTitle>
+            <IonCardTitle>Couldn’t load Discovery</IonCardTitle>
             <IonCardContent>
               <IonButton onClick={() => picksRefetch()} color="primary">
                 Try again
@@ -581,7 +627,7 @@ const Picksv2: React.FC = () => {
         ) : noProfiles ? (
           <>
             <IonRow className="page-title bigger">
-              <img className="color-invertible" src="../static/img/picks.png" alt="picks" />
+              <img className="color-invertible" src="../static/img/discovery.png" alt="discovery" />
             </IonRow>
             <IonCard className="prelaunch">
               <IonCardTitle style={{ fontWeight: "normal" }}>
@@ -613,14 +659,14 @@ const Picksv2: React.FC = () => {
                   onClick={extraTimeWithRefetch}
                   disabled={buttonLoading}
                 >
-                  {buttonLoading ? "Refreshing..." : "Refresh your Picks"}
+                  {buttonLoading ? "Refreshing..." : "Discover new connections"}
                 </IonButton>
               </IonRow>
             </IonCard>
           </>
         ) : hasProfile ? (
           <>
-            <div className="profile-card-container" key={profileDetails?.user}>
+            <div className={`profile-card-container${reduceAnimations ? ' no-animation' : ''}`} key={profileDetails?.user}>
               <ProfileCard
                 cardData={profileDetails}
                 pro={isPersonalPlus(filterData.subscription_level)}
@@ -653,13 +699,7 @@ const Picksv2: React.FC = () => {
                 <IonFabButton color="warning" disabled={buttonLoading} onClick={() => addDismissedConnection(profileDetails.user)} data-label="Ignore for now">
                   <IonIcon icon={hourglassIcon}></IonIcon>
                 </IonFabButton>
-                <IonFabButton color="danger" disabled={buttonLoading} onClick={() => presentAlert({
-                  header: 'Are you sure you want to block this person?!',
-                  buttons: [
-                    { text: 'Nevermind', role: 'cancel' },
-                    { text: 'Yes!', role: 'confirm', handler: () => addBlockedConnection(profileDetails.user) },
-                  ]
-                })} data-label="Block">
+                <IonFabButton color="danger" disabled={buttonLoading} onClick={() => blockProfile(profileDetails.user, () => addBlockedConnection(profileDetails.user))} data-label="Block">
                   <IonIcon icon={squareIcon}></IonIcon>
                 </IonFabButton>
                 <IonFabButton color="dark" disabled={buttonLoading} onClick={() => handleReportOpen(profileDetails.name, profileDetails.user)} data-label="Report">
@@ -668,14 +708,14 @@ const Picksv2: React.FC = () => {
               </IonFabList>
             </IonFab>
 
-            <IconPop
+            {!reduceAnimations && <IconPop
               trigger={showMessagePop}
               position="center"
               emojis={['🧡']}
               icons={[faCommentHeart]}
               intensity="big"
               onComplete={() => setShowMessagePop(false)}
-            />
+            />}
           </>
         ) : (
           <div style={{ marginTop: "100pt" }}>

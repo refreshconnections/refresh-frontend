@@ -4,7 +4,6 @@ import {
   IonCardContent,
   IonCardTitle,
   IonCheckbox,
-  IonInput,
   IonItem,
   IonIcon,
   IonLabel,
@@ -19,24 +18,19 @@ import { useSwiper } from 'swiper/react';
 import { chevronDownOutline } from 'ionicons/icons';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
+import BoxedStackedInput from './BoxedStackedInput';
 
 import './OnboardingCard.css';
 
-const talkAboutOptions = [
-  { value: 'together_idea', label: 'Something we could do together' },
-  { value: 'hobby', label: 'Hobbies' },
-  { value: 'petpeeve', label: 'Pet peeves' },
-  { value: 'talent', label: 'Talents' },
-  { value: 'fixation_book', label: 'Favorite book' },
-  { value: 'fixation_tv', label: 'Favorite TV show' },
-  { value: 'fixation_movie', label: 'Favorite movie' },
-  { value: 'fixation_album', label: 'Favorite album' },
-  { value: 'fixation_musicalartist', label: 'Favorite musical artist' },
-  { value: 'fixation_game', label: 'Favorite game' },
-  { value: 'fixation_topic', label: 'Favorite interest/topic' },
-];
+const talkAboutOptions = ONBOARDING_COPY.cards.letsTalkAbout.options;
 
-const OnboardingCardLetsTalkAbout: React.FC = () => {
+type OnboardingCardLetsTalkAboutProps = {
+  onBeforeNext?: () => Promise<void>;
+};
+
+const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = ({ onBeforeNext }) => {
+  const copy = ONBOARDING_COPY.cards.letsTalkAbout;
   const swiper = useSwiper();
   const [selected, setSelected] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -125,53 +119,69 @@ const OnboardingCardLetsTalkAbout: React.FC = () => {
       return acc;
     }, {} as Record<string, string>);
     await updateCurrentUserProfile(payload);
+    if (onBeforeNext) {
+      await onBeforeNext();
+    }
     swiper.slideNext();
   };
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="talkabouts">
-        <IonCardTitle>Let’s talk about</IonCardTitle>
-        <IonText>Choose three prompts and fill them out so people have easy conversation starters.</IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <IonItem
           className="talkabout-select-item"
           button
           detail={false}
           onClick={(event) =>
-            presentTopicsPopover({ event: event.nativeEvent as Event })
+            presentTopicsPopover({
+              event: event.nativeEvent as Event,
+              cssClass: 'talkabout-topics-popover',
+            })
           }
         >
-          <IonLabel position="stacked">Choose three topics</IonLabel>
+          <IonLabel position="stacked">{copy.chooseTopics}</IonLabel>
           <IonText className="talkabout-summary">
-            {selectedSummary || 'Pick three'}
+            {selectedSummary || copy.pickThree}
           </IonText>
           <IonIcon slot="end" icon={chevronDownOutline} />
         </IonItem>
 
         <div className="talkabout-selections">
           {selectedOptions.map((option) => (
-            <IonItem key={option.value}>
-              <IonLabel position="stacked">{option.label}</IonLabel>
-              <IonInput
+            <div key={option.value} className="talkabout-answer-item">
+              <BoxedStackedInput
+                label={option.label}
                 value={values[option.value] ?? ''}
+                name={option.value}
+                placeholder="Fill this in"
                 onIonInput={(event) =>
                   setValues((prev) => ({ ...prev, [option.value]: event.detail.value ?? '' }))
                 }
-                maxlength={90}
-                autoCapitalize="sentences"
+                type="text"
+                autocapitalize="sentences"
+                autoCorrect="on"
               />
-            </IonItem>
+            </div>
           ))}
         </div>
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
-        </IonButton>
-        <IonButton onClick={updateProfile} disabled={!canContinue}>
-          Next
-        </IonButton>
-      </IonRow>
+      <div className="onboarding-v2__card-footer">
+        {!canContinue && !hasThreeSelections && (
+          <IonText color="medium" style={{ textAlign: 'center', display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>
+            Choose 3!
+          </IonText>
+        )}
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={!canContinue}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+      </div>
     </IonCard>
   );
 };

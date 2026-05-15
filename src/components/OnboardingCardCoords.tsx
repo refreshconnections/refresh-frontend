@@ -132,14 +132,14 @@ const OnboardingCardCoords: React.FC = () => {
       header: "So just confirming, you're near " + local + "?",
       buttons: [
         {
-          text: "Nope, I'll try again.",
+          text: "No",
           role: 'cancel',
           handler: () => {
             console.log('Cancel clicked');
           }
         },
         {
-          text: 'Yep',
+          text: 'Yes',
           handler: async () => {
             const response = await updateCurrentUserProfile({ location_point_long: long, location_point_lat: lat })
 
@@ -241,7 +241,7 @@ const OnboardingCardCoords: React.FC = () => {
         <IonCardContent>
           <IonCardTitle>Where do you live?</IonCardTitle>
 
-          <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your profile to potential connections nearby.
+          <IonText>We won't reveal your specific location to anyone, but Refresh needs to know where you are to show your Profile to potential connections nearby.
           </IonText>
 
 

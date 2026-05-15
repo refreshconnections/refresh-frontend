@@ -5,11 +5,7 @@
 .moderation-modal .modal-wrapper {
   height: 80vh;
   max-height: 80vh;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  background: #f7f7fc; /* or your app's card/modal background */
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1); /* gives floating sheet feel */
-  overflow: hidden;
+  background: #f7f7fc;
 }
 
 .moderation-description {
@@ -30,11 +26,15 @@
 .moderation-accordion {
   margin: 8px 0 12px;
   background: transparent;
+  box-shadow: none !important;
+  border: none !important;
 }
 .moderation-accordion ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --background: transparent;
+  --box-shadow: none;
+  --border-width: 0;
   font-weight: 600;
   color: var(--ion-color-primary);
 }
@@ -46,11 +46,16 @@
   padding: 0
 }
 
-/* tighter row + arrow right next to words */
+/* tighter row + arrow at end of row */
 .moderation-accordion .acc-header-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   --background: transparent;
+}
+
+.moderation-accordion .ion-accordion-toggle-icon {
+  margin-inline-start: auto;
+  order: 1;
 }
 
 ion-modal.moderation-modal .moderation-accordion {

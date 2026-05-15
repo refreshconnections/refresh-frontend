@@ -3,19 +3,11 @@ import {
   IonCard,
   IonCardContent,
   IonCardTitle,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
   IonRow,
-  IonSelect,
-  IonSelectOption,
   IonText,
-  IonToggle,
   useIonAlert,
 } from '@ionic/react';
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 
@@ -32,25 +24,18 @@ import { useSwiper } from 'swiper/react';
 import { Preferences } from '@capacitor/preferences';
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
-import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
 
 
-type OnboardingCardDoneProps = {
-  showConnectToggle?: boolean;
-};
-
-const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectToggle = true }) => {
+const OnboardingCardDone: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.done;
 
   const swiper = useSwiper();
   const [appLoading, setAppLoading] = useState(false);
   const queryClient = useQueryClient()
-  const currentProfile = useGetCurrentProfile().data;
-  const [connectFromRefreshments, setConnectFromRefreshments] = useState<boolean>(!!currentProfile?.settings_community_profile);
-
-
 
   const moderation = useGetCurrentModeration().data;
 
@@ -66,11 +51,11 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
 
     if (moderation?.paused_on_creation) {
       presentPausedOnCreationAlert({
-        subHeader: "As part of our effort to keep Refresh safe and conscientious, we're reviewing your account before you can connect with others. We appreciate your patience.",
-        message: 'In the meantime, you can continue to add to your profile by going to the Me tab > Profile.',
+        subHeader: copy.pausedReview.subHeader,
+        message: copy.pausedReview.message,
         buttons: [
           {
-            text: 'Ok',
+            text: copy.pausedReview.confirm,
             role: 'cancel',
             handler: async ()=>{
               await updateProfile()
@@ -86,17 +71,6 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
       
   }
 
-
-  useEffect(() => {
-    setConnectFromRefreshments(!!currentProfile?.settings_community_profile);
-  }, [currentProfile?.settings_community_profile]);
-
-  const handleConnectToggle = async (checked: boolean) => {
-    setConnectFromRefreshments(checked);
-    await updateCurrentUserProfile({ settings_community_profile: checked });
-    queryClient.invalidateQueries({ queryKey: ['current'] });
-  };
-
   const updateProfile = async () => {
 
       setAppLoading(true)
@@ -105,6 +79,8 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
         key: 'ONBOARDED',
         value: 'true',
       });
+      await Preferences.remove({ key: 'personal_profile_onboarding_in_progress' });
+      await Preferences.remove({ key: 'personal_profile_onboarding_slide' });
 
       const response = await updateCurrentUserProfile({
         created_profile: true,
@@ -125,35 +101,22 @@ const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ showConnectTogg
 
 
   return (
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>That's it!</IonCardTitle>
-        <IonText>Head to the "Me" tab at any time to update or add to your profile!</IonText>
-        {showConnectToggle && (
-          <IonItem>
-            <IonLabel>
-              <p className="connect-refreshments-title">Connect from Refreshments</p>
-              <IonText color="medium">
-                Turn this on to let people discover your personal profile from your community posts and comments.
-              </IonText>
-            </IonLabel>
-            <IonToggle
-              slot="end"
-              checked={connectFromRefreshments}
-              onIonChange={e => handleConnectToggle(e.detail.checked)}
-            ></IonToggle>
-          </IonItem>
-        )}
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
       </IonCardContent>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton disabled={appLoading} color="gray" onClick={()=>swiper.slidePrev()}>Back</IonButton>
-        <IonButton disabled={appLoading} onClick={handleGetStarted}>Let's Refresh!</IonButton>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" disabled={appLoading} onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" disabled={appLoading} onClick={handleGetStarted}>{copy.refreshCta}</IonButton>
         </IonRow>
-      {appLoading ?
-        <IonRow className="ion-justify-content-center">
-            <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif" style={{paddingTop: "20pt", width: "40%"}}></img>
-                </IonRow>
-      : <></>}   
+        {appLoading && (
+          <IonRow className="ion-justify-content-center">
+            <img alt="Refresh Connections logo spinning" src="../static/img/arrowload.gif" style={{paddingTop: "20pt", width: "40%"}} />
+          </IonRow>
+        )}
+      </div>
     </IonCard>
   )
 };

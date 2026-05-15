@@ -28,6 +28,10 @@
 	<string>12.0</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Refresh needs write access to your calendar to save events.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Refresh needs access to your calendar to save events.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take pictures and share them with others.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

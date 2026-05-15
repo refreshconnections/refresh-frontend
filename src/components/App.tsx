@@ -1,4 +1,6 @@
 
+// DEPRECATED — do not touch this file. AppV2.tsx is the active app shell.
+
 import {
   IonAlert,
   IonApp,
@@ -158,8 +160,8 @@ function OneSignalInit(): void {
 }
 
 if (isMobile()) {
-  console.log("Is mobile!")
-  OneSignalInit();
+  // console.log("Is mobile!")
+  // OneSignalInit();
 }
 
 const App: React.FC = () => {
@@ -575,9 +577,6 @@ const App: React.FC = () => {
             <Route path="/chats">
               <Chats />
             </Route>
-            <Route path="/communityold">
-              <Community />
-            </Route>
             <Route exact path="/community">
               <Refreshments />
             </Route>
@@ -638,7 +637,7 @@ const App: React.FC = () => {
           <IonTabBar slot="bottom">
             <IonTabButton tab="picks" href="/picks">
               <IonIcon icon={flowerIcon} />
-              <IonLabel>Picks</IonLabel>
+              <IonLabel>Discovery</IonLabel>
             </IonTabButton>
             <IonTabButton tab="chat" href="/chats">
               {chatBadgeCount > 0 ?

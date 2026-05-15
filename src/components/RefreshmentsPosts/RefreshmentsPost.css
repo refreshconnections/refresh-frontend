@@ -10,6 +10,7 @@ ion-card-content p.post-content-more-lines {
     -webkit-line-clamp: 8;
     line-clamp: 8;
     -webkit-box-orient: vertical;
+    font-size: calc(10pt * var(--text-scale, 1));
 }
 
 ion-card-content p.post-content {
@@ -19,6 +20,7 @@ ion-card-content p.post-content {
     -webkit-line-clamp: 8;
     line-clamp: 8;
     -webkit-box-orient: vertical;
+    font-size: calc(10pt * var(--text-scale, 1));
 }
 
 ion-card.refreshments-card-in-list {
@@ -43,7 +45,7 @@ ion-card.refreshments-card-in-list ion-row.hidden {
 }
 
 ion-card.refreshments-card-in-list ion-card-title{
-    font-size: calc(15pt * var(--text-scale, 1));
+    font-size: calc(13pt * var(--text-scale, 1));
     font-weight: normal
     
 }
@@ -72,7 +74,7 @@ ion-card.refreshments-card-in-list ion-card-content{
     padding-bottom: 10pt;
     padding-inline-start: 0;
     padding-inline-end: 0;
-    font-size: calc(14pt * var(--text-scale, 1));
+    font-size: calc(12pt * var(--text-scale, 1));
     line-height: 1.4;
 }
 
@@ -86,6 +88,13 @@ ion-row.post-likes {
 
 ion-row.post-likes ion-row {
     align-items: center;
+    flex-wrap: nowrap;
+}
+
+ion-row.post-likes ion-text {
+    font-size: calc(14px * var(--text-scale, 1));
+    line-height: 1;
+    align-self: center;
 }
 
 ion-row.post-likes ion-button {

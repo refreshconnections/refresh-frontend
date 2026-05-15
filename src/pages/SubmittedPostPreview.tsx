@@ -24,7 +24,9 @@ import {
   IonSelect,
   IonSelectOption,
   useIonRouter,
-  IonPopover,
+  useIonPopover,
+  useIonModal,
+  useIonAlert,
 } from '@ionic/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
@@ -36,9 +38,12 @@ import { postQueryKeys } from '../hooks/api/refreshments';
 import { annQueryKeys } from '../hooks/api/announcements-take-1/ann-query-keys';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
 import { informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPostPreview.css';
+import { ModerationCopy } from '../enums/moderation';
+import GuidelinesButton from '../components/GuidelinesButton';
+import CitySelectorModal from '../components/CitySelectorModal';
 
 type SubmittedPost = {
   id: number;
@@ -72,6 +77,7 @@ type SubmittedPost = {
   moderator_edit_or_rejection_reason?: string;
   markdown?: boolean;
   hide_status_author?: string;
+  interested_count?: number | null;
 };
 
 type RouteParams = {
@@ -83,7 +89,7 @@ const statusLabelMap: Record<string, string> = {
   pending: 'Pending moderator review',
   approved: 'Approved',
   needs_edit: 'Needs your edit',
-  rejected: 'Rejected',
+  rejected: 'Not Approved',
 };
 
 const statusColorMap: Record<string, string> = {
@@ -117,6 +123,12 @@ const getLastEditedDate = (post: SubmittedPost | undefined) => {
   return candidate ? new Date(candidate) : null;
 };
 
+const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <IonContent className="ion-padding">
+    {ModerationCopy.MODERATION_INFO_POPOVER}
+  </IonContent>
+);
+
 const SubmittedPostPreview: React.FC = () => {
   const { id } = useParams<RouteParams>();
   const location = useLocation<{ post?: SubmittedPost }>();
@@ -129,6 +141,7 @@ const SubmittedPostPreview: React.FC = () => {
   const [draftCategory, setDraftCategory] = useState<string>('');
   const [draftLocalOnly, setDraftLocalOnly] = useState(false);
   const [draftLocation, setDraftLocation] = useState('');
+  const [draftLocationLabel, setDraftLocationLabel] = useState('');
   const [draftLat, setDraftLat] = useState<string>('');
   const [draftLong, setDraftLong] = useState<string>('');
   const [draftIncludeProfile, setDraftIncludeProfile] = useState(false);
@@ -138,11 +151,35 @@ const SubmittedPostPreview: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [hideUpdating, setHideUpdating] = useState(false);
   const [presentToast] = useIonToast();
+  const [presentAlert] = useIonAlert();
   const router = useIonRouter();
   const queryClient = useQueryClient();
   const { data: currentProfile } = useGetCurrentProfile();
   const userHandle = (currentProfile?.username ?? '').trim();
-  const [showStatusInfo, setShowStatusInfo] = useState(false);
+  const [presentStatusPopover, dismissStatusPopover] = useIonPopover(StatusInfoPopover, {
+    onDismiss: () => dismissStatusPopover(),
+  });
+
+  type City = { name: string; lat: number; lng: number };
+  const citySelectorOpeningRef = React.useRef(false);
+  const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
+    onDismiss: (selectedCity?: City) => {
+      if (selectedCity) {
+        setDraftLocation(selectedCity.name);
+        setDraftLocationLabel(selectedCity.name);
+        setDraftLat(selectedCity.lat.toString());
+        setDraftLong(selectedCity.lng.toString());
+      }
+      dismissCitySelector();
+    },
+  });
+  const openCitySelector = () => {
+    if (citySelectorOpeningRef.current) return;
+    citySelectorOpeningRef.current = true;
+    presentCitySelector({
+      onDidDismiss: () => { citySelectorOpeningRef.current = false; },
+    });
+  };
 
   const {
     data,
@@ -256,6 +293,7 @@ const SubmittedPostPreview: React.FC = () => {
     setDraftCategory(post?.category ?? 'refreshments');
     setDraftLocalOnly(!!post?.local_only);
     setDraftLocation(post?.location ?? '');
+    setDraftLocationLabel(post?.location ?? '');
     setDraftLat(post?.location_point_lat?.toString() ?? '');
     setDraftLong(post?.location_point_long?.toString() ?? '');
     setDraftIncludeProfile(!!post?.include_profile);
@@ -279,7 +317,7 @@ const SubmittedPostPreview: React.FC = () => {
 
   const handleResubmit = async () => {
     if (!post?.id || !draftContent.trim()) {
-      presentToast({ message: 'Please add your edited content.', duration: 2500, color: 'medium' });
+      presentToast({ message: 'Please add your edited content.', duration: 2500, cssClass: 'status-toast' });
       return;
     }
     setSaving(true);
@@ -304,9 +342,10 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Resubmitted for review.', duration: 2500, color: 'success' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Resubmitted for review.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not resubmit. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -328,7 +367,7 @@ const SubmittedPostPreview: React.FC = () => {
         sensitive_description: draftSensitiveDescription || null,
         link: draftLink || null,
         local_only: draftLocalOnly ? "true" : "false",
-        location: draftLocation || null,
+        location: draftLocalOnly ? (draftLocationLabel || draftLocation || null) : null,
         location_point_lat: draftLat || null,
         location_point_long: draftLong || null,
         coverPhoto_alt: post?.coverPhoto_alt ?? null,
@@ -338,9 +377,9 @@ const SubmittedPostPreview: React.FC = () => {
         setPost(response.data);
       }
       setEditing(false);
-      presentToast({ message: 'Draft saved.', duration: 2500, color: 'success' });
+      presentToast({ message: 'Draft saved.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not save draft. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not save draft. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
@@ -348,7 +387,7 @@ const SubmittedPostPreview: React.FC = () => {
 
   const handleSubmitDraft = async () => {
     if (!post?.id || !draftContent.trim()) {
-      presentToast({ message: 'Please add your content before submitting.', duration: 2500, color: 'medium' });
+      presentToast({ message: 'Please add your content before submitting.', duration: 2500, cssClass: 'status-toast' });
       return;
     }
     setSaving(true);
@@ -363,7 +402,7 @@ const SubmittedPostPreview: React.FC = () => {
         sensitive_description: draftSensitiveDescription || null,
         link: draftLink || null,
         local_only: draftLocalOnly ? "true" : "false",
-        location: draftLocation || null,
+        location: draftLocalOnly ? (draftLocationLabel || draftLocation || null) : null,
         location_point_lat: draftLat || null,
         location_point_long: draftLong || null,
         coverPhoto_alt: post?.coverPhoto_alt ?? null,
@@ -377,18 +416,17 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Submitted for review.', duration: 2500, color: 'success' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Submitted for review.', duration: 2500, cssClass: 'status-toast' });
     } catch (error) {
-      presentToast({ message: 'Could not submit draft. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not submit draft. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleApproveEdit = async () => {
-    if (!post?.id) {
-      return;
-    }
+  const doApproveEdit = async () => {
+    if (!post?.id) return;
     setSaving(true);
     try {
       await apiClient.post(`/api/announcements/submitted/${post.id}/approve_edit/`);
@@ -396,13 +434,52 @@ const SubmittedPostPreview: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: postQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontents() });
       queryClient.invalidateQueries({ queryKey: postQueryKeys.postcontent(post.id) });
-      presentToast({ message: 'Approved the edit.', duration: 2500, color: 'success' });
+      queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+      presentToast({ message: 'Post approved!', duration: 2500, cssClass: 'status-toast' });
       router.push(`/community/${post.id}`);
     } catch (error) {
-      presentToast({ message: 'Could not approve. Try again.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not approve. Try again.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleApproveEdit = () => {
+    presentAlert({
+      header: 'Approve this edit?',
+      message: 'Your post will be approved and you can see it immediately in the Refreshments tab.',
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Approve', handler: () => doApproveEdit() },
+      ],
+    });
+  };
+
+  const handleRejectEdit = async () => {
+    if (!post?.id) return;
+    presentAlert({
+      header: 'Reject this edit?',
+      message: "This won't be posted. If you'd rather edit in your own words, choose Edit and resubmit. You could also submit a new post. Thanks!",
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Reject',
+          handler: async () => {
+            setSaving(true);
+            try {
+              await apiClient.post(`/api/announcements/submitted/${post.id}/reject_edit/`);
+              queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted });
+              presentToast({ message: 'Edit rejected.', duration: 2500, cssClass: 'status-toast' });
+              router.push('/community/submitted');
+            } catch (error) {
+              presentToast({ message: 'Could not reject. Try again.', duration: 2500, cssClass: 'status-toast' });
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    });
   };
 
   const handleHideToggle = async () => {
@@ -423,10 +500,10 @@ const SubmittedPostPreview: React.FC = () => {
       presentToast({
         message: hidden ? 'Post will show in your list view again.' : 'Post will be hidden from your submissions list.',
         duration: 2000,
-        color: 'success',
+        cssClass: 'status-toast',
       });
     } catch (error) {
-      presentToast({ message: 'Could not update visibility.', duration: 2500, color: 'danger' });
+      presentToast({ message: 'Could not update visibility.', duration: 2500, cssClass: 'status-toast' });
     } finally {
       setHideUpdating(false);
     }
@@ -454,21 +531,12 @@ const SubmittedPostPreview: React.FC = () => {
                   fill="clear"
                   size="small"
                   className="info-button"
-                  onClick={() => setShowStatusInfo(true)}
+                  onClick={(e) => presentStatusPopover({ event: e.nativeEvent })}
                 >
                   <IonIcon icon={informationCircleOutline} />
                 </IonButton>
               )}
             </IonRow>
-            <IonPopover
-              isOpen={showStatusInfo}
-              onDidDismiss={() => setShowStatusInfo(false)}
-              className="status-info-popover"
-            >
-              <div className="status-info-content">
-                Moderation can take up to 3 business days, but is often faster!
-              </div>
-            </IonPopover>
             <IonRow className="status-row">
               <IonBadge color={statusColor}>{statusLabel}</IonBadge>
               {submittedAt && (
@@ -480,7 +548,7 @@ const SubmittedPostPreview: React.FC = () => {
                 <p>You have {daysLeft} {daysLeftLabel} left to review and resubmit.</p>
               </IonText>
             )}
-            {status === 'rejected' && (
+            {status === 'rejected' && post?.hide_status_author !== 'user' && (
               <IonText color="medium">
                 <p>
                   This will disappear from your list view in {daysLeft} {daysLeftLabel}.
@@ -496,6 +564,11 @@ const SubmittedPostPreview: React.FC = () => {
 
         <IonCard className="preview-card section-card">
           <IonCardContent className="preview-form">
+            <IonRow className="section-header">
+            <IonText color="dark" className="section-heading">
+                <h3>Your Submission</h3>
+              </IonText>
+            </IonRow>
             <IonItem color="white" lines="none">
               <IonLabel position="stacked">Title*</IonLabel>
               {allowInlineEdit ? (
@@ -504,7 +577,7 @@ const SubmittedPostPreview: React.FC = () => {
                   placeholder="Required"
                   onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
                   type="text"
-                  autoCapitalize="words"
+                  autocapitalize="words"
                 />
               ) : (
                 <IonText className="preview-value">{post?.title || '-'}</IonText>
@@ -597,6 +670,8 @@ const SubmittedPostPreview: React.FC = () => {
                   <IonTextarea
                     value={draftContent}
                     autoGrow
+                    autocapitalize='sentences'
+                    autoCorrect='on'
                     maxlength={2000}
                     style={{ minHeight: '120px' }}
                     placeholder="Write your post here..."
@@ -619,7 +694,7 @@ const SubmittedPostPreview: React.FC = () => {
         {allowInlineEdit && isDraft && (
           <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
             <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
-              <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+              <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
               Save draft
             </IonButton>
             <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>
@@ -641,9 +716,12 @@ const SubmittedPostPreview: React.FC = () => {
               <IonText color="dark" className="section-heading">
                 <h3>Moderator explanation</h3>
               </IonText>
-              <IonText color="medium">
+              <IonText color="navy">
                 <p>{moderatorExplanation}</p>
               </IonText>
+              <IonRow className="ion-justify-content-center">
+                <GuidelinesButton label="Guidelines" fill="outline" color="primary" includeMechanics />
+              </IonRow>
             </IonCardContent>
           </IonCard>
         )}
@@ -651,16 +729,26 @@ const SubmittedPostPreview: React.FC = () => {
         {visible && hasRequestedEdit && (
           <IonCard className="requested-edit section-card">
             <IonCardContent>
-              <IonText color="dark">
-                <h3>Requested edit</h3>
+              <IonText color="dark" className="section-heading">
+                <h3>Requested content edit</h3>
               </IonText>
               {renderContent(requestedEdit ?? '')}
               <IonText color="medium">
-                <p>Approve to use this exact edit, or make changes in your own words and resubmit.</p>
+                <br/>
+                <p>Approve to use this exact edit and get it posted now, or make changes in your own words and resubmit.</p>
               </IonText>
               {canEdit && !editing && (
                 <IonRow class="ion-justify-content-center" style={{ marginTop: '8px' }}>
-                  <IonButton size="small" onClick={() => {
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    color="danger"
+                    onClick={handleRejectEdit}
+                    disabled={saving}
+                  >
+                    Reject edit
+                  </IonButton>
+                  <IonButton size="small" fill="outline" onClick={() => {
                     applyDraftDefaults();
                     setDraftContent(requestedEdit ?? submittedContent);
                     setEditing(true);
@@ -669,7 +757,6 @@ const SubmittedPostPreview: React.FC = () => {
                   </IonButton>
                   <IonButton
                     size="small"
-                    fill="outline"
                     onClick={handleApproveEdit}
                     disabled={saving}
                   >
@@ -732,7 +819,7 @@ const SubmittedPostPreview: React.FC = () => {
                     placeholder="Required"
                     onIonInput={(e) => setDraftTitle(e.detail.value ?? '')}
                     type="text"
-                    autoCapitalize="words"
+                    autocapitalize="words"
                   />
                 </IonItem>
                 <IonItem color="white" lines="none">
@@ -753,42 +840,25 @@ const SubmittedPostPreview: React.FC = () => {
                     checked={draftLocalOnly}
                     onIonChange={(e) => setDraftLocalOnly(e.detail.checked)}
                     labelPlacement="end"
-                    justify="space-between"
+                    justify="start"
                   >
                     Local Post
                   </IonCheckbox>
                 </IonItem>
                 {draftLocalOnly && (
-                  <>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Location label</IonLabel>
-                      <IonInput
-                        value={draftLocation}
-                        placeholder="City, region, or label"
-                        onIonInput={(e) => setDraftLocation(e.detail.value ?? '')}
-                        type="text"
-                        autoCapitalize="words"
-                      />
-                    </IonItem>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Latitude</IonLabel>
-                      <IonInput
-                        value={draftLat}
-                        placeholder="Optional"
-                        onIonInput={(e) => setDraftLat(e.detail.value ?? '')}
-                        type="text"
-                      />
-                    </IonItem>
-                    <IonItem color="white" lines="none">
-                      <IonLabel position="stacked">Longitude</IonLabel>
-                      <IonInput
-                        value={draftLong}
-                        placeholder="Optional"
-                        onIonInput={(e) => setDraftLong(e.detail.value ?? '')}
-                        type="text"
-                      />
-                    </IonItem>
-                  </>
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Nearby City</IonLabel>
+                    <IonInput
+                      value={draftLocationLabel || draftLocation}
+                      placeholder="Click to select"
+                      readonly
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openCitySelector();
+                      }}
+                    />
+                  </IonItem>
                 )}
               </IonCard>
 
@@ -874,7 +944,7 @@ const SubmittedPostPreview: React.FC = () => {
                 {isDraft ? (
                   <>
                     <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
-                      <FontAwesomeIcon icon={faStar} style={{ marginRight: '8px' }} />
+                      <FontAwesomeIcon icon={faCirclePlus} style={{ marginRight: '8px' }} />
                       Save draft
                     </IonButton>
                     <IonButton onClick={handleSubmitDraft} disabled={saving || !hasEdits}>
@@ -898,22 +968,6 @@ const SubmittedPostPreview: React.FC = () => {
           </div>
         )}
 
-        {visible && !editing && status !== 'approved' && (
-          <div className="hide-post-bar">
-            <IonButton
-              size="small"
-              fill="outline"
-              color="medium"
-              disabled={hideUpdating}
-              onClick={handleHideToggle}
-            >
-              {post?.hide_status_author === 'user'
-                ? 'Unhide post from list view'
-                : 'Hide post from list view'}
-            </IonButton>
-          </div>
-        )}
-
         {visible && post?.coverPhoto && (
           <IonRow class="ion-justify-content-center">
             <img src={post.coverPhoto} alt="post cover" style={{ maxWidth: '100%', borderRadius: '12px' }} />
@@ -930,6 +984,22 @@ const SubmittedPostPreview: React.FC = () => {
           <IonText color="medium">
             <p><strong>Comment instructions:</strong> {post.comment_instructions}</p>
           </IonText>
+        )}
+
+        {visible && !editing && status !== 'approved' && (
+          <IonRow className="ion-justify-content-center ion-padding-top ion-padding-bottom">
+            <IonButton
+              size="small"
+              fill="outline"
+              color="medium"
+              disabled={hideUpdating}
+              onClick={handleHideToggle}
+            >
+              {post?.hide_status_author === 'user'
+                ? 'Unhide post from list view'
+                : 'Hide post from list view'}
+            </IonButton>
+          </IonRow>
         )}
       </IonContent>
     </IonPage>

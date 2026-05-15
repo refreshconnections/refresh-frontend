@@ -1,0 +1,10 @@
+.sheet-modal .modal-wrapper {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.sheet-modal::part(handle) {
+  display: none;
+}

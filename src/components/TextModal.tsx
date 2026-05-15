@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonItem, IonRow, IonButtons, IonList, IonFooter, IonIcon, IonTextarea, IonCol, IonItemSliding, IonItemOptions, IonItemOption, useIonModal, IonAvatar, IonSpinner, IonLabel, IonToast, IonText, IonInfiniteScroll, IonInfiniteScrollContent, IonGrid, IonAlert, useIonAlert, IonNote, IonCard, IonCardContent, useIonPopover, useIonRouter } from '@ionic/react';
-import { getCurrentUserProfile, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
+import { getCurrentUserProfile, getPhotoAltKey, getPrimaryPhoto, getPrimaryPhotoKey, getWebsocketUrl, heartMessage, increaseStreak, isMobile, markAllInChatAsRead, newMessagePush, onAttachmentImgError, onImgError, removeMessage, unheartMessage, uploadFileForMessage, uploadFileForMessageNew } from "../hooks/utilities";
 import { chevronBackOutline, trash as trashIcon } from 'ionicons/icons';
 
 import "./TextModal.css";
@@ -37,6 +37,7 @@ import { useChatSettings } from "../hooks/api/chats/chat-settings";
 import AttachmentsInfoModal from "./AttachmentsInfoModal";
 import moment from "moment";
 import { useGetCurrentProfile } from "../hooks/api/profiles/current-profile";
+import { useProfileDetails } from "../hooks/api/profiles/details";
 import { useGetLimits } from "../hooks/api/profiles/current-limits";
 
 import { useGetUnreadCount } from '../hooks/api/chats/unread-count';
@@ -65,7 +66,7 @@ type Props = {
     pro: boolean;
     settingsAlt: boolean;
     from_name: string;
-    onDismiss: () => void;
+    onDismiss: (options?: { refreshChatList?: boolean }) => void;
 };
 
 interface Recording {
@@ -174,7 +175,7 @@ const isAudioExpired = (userSubscription, uploadDate: Date) => {
 
 const isAudioFile = (file: string) => {
 
-    if (file.endsWith("webmcodecsopus") || file.endsWith("aac") || file.includes("webmcodecsopus?Expires") || file.includes("aac?Expires")) {
+    if (file.endsWith("webmcodecsopus") || file.endsWith("aac") || file.endsWith("webm") || file.endsWith("mp4") || file.includes("webmcodecsopus?Expires") || file.includes("aac?Expires") || file.includes("webm?Expires") || file.includes("mp4?Expires")) {
         return true
     }
     else {
@@ -200,6 +201,8 @@ const MessageAttachment: React.FC<AttachmentProps> = (props) => {
     const { id } = props;
     const file = useMessageFile(id)
     const currentUser = useGetCurrentProfile().data
+
+    if (!currentUser) return <div style={{ padding: "5pt", display: "flex", justifyContent: "center", minHeight: "85pt", alignItems: "center" }}><IonSpinner name="bubbles" /></div>;
 
     return (
         <div style={{
@@ -240,7 +243,9 @@ const recentlySent = (postedDate) => {
 
 
 const TextModal: React.FC<Props> = (props) => {
-    const { textModalData, unreadCount, pro, settingsAlt, from_name, profileDetails, onDismiss } = props;
+    const { textModalData, unreadCount, pro, settingsAlt, from_name, profileDetails: profileDetailsProp, onDismiss } = props;
+    const fetchedProfile = useProfileDetails(parseInt(textModalData?.other_user_id), !profileDetailsProp).data;
+    const profileDetails = profileDetailsProp ?? fetchedProfile;
 
     const queryClient = useQueryClient()
 
@@ -282,9 +287,7 @@ const TextModal: React.FC<Props> = (props) => {
     }, [uiConnected]);
 
     const retrievedMessages = useMessagesInf(textModalData?.other_user_id)
-
-    const loadingMessagesQuery = useMessagesInf(textModalData?.other_user_id)
-    const loadingMessages = loadingMessagesQuery.isPending && loadingMessagesQuery.fetchStatus === "fetching";
+    const loadingMessages = retrievedMessages.isPending && retrievedMessages.fetchStatus === "fetching";
 
 
     const othersChatSettings = useChatSettings(textModalData?.other_user_id)
@@ -317,6 +320,8 @@ const TextModal: React.FC<Props> = (props) => {
         onDidDismiss: () => dismissPopover(),
     });
 
+    const didChangeChatWhileOpenRef = useRef(false);
+
 
 
     const textContentRef = useRef<HTMLIonContentElement>(null);
@@ -330,6 +335,8 @@ const TextModal: React.FC<Props> = (props) => {
     const [currMessageHeart, setCurrMessageHeart] = useState<number | null>(null);
 
     const messagesEndRef = useRef<null | HTMLDivElement>(null)
+    const scrollAfterSendRef = useRef(false)
+    const sendingRef = useRef(false)
 
     const [justHearted, setJustHearted] = useState<number[]>([]);
 
@@ -357,13 +364,15 @@ const TextModal: React.FC<Props> = (props) => {
 
 
 
+    const closeTextModal = (options?: { refreshChatList?: boolean }) => {
+        onDismiss(options ?? { refreshChatList: didChangeChatWhileOpenRef.current });
+    }
+
     const goBackOut = async () => {
-        onDismiss()
+        closeTextModal()
     }
 
     const scrollToBottom = () => {
-        console.log("Scrolling to the bottom.")
-
         messagesEndRef.current?.scrollIntoView({
             behavior: "auto",
             block: "end"
@@ -371,15 +380,16 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const addMessageToFrontOfTheArray = (newMessage: any) => {
+        scrollAfterSendRef.current = true;
         setMessages(messages => ({
             ...messages,
             pages:
                 [
                     {
-                        ...messages.pages[0],  // Spread the first user object
-                        data: [newMessage, ...messages.pages[0].data]  // Add new hobby
+                        ...messages.pages[0],
+                        data: [newMessage, ...messages.pages[0].data]
                     },
-                    ...messages.pages?.slice(1) ?? []  // Keep the other users unchanged
+                    ...messages.pages?.slice(1) ?? []
                 ]
         }));
     };
@@ -396,12 +406,8 @@ const TextModal: React.FC<Props> = (props) => {
 
         if (unreadCount > 0 || overallUnread > 0) {
             readUnreadTheFirstTime()
-            queryClient.invalidateQueries({
-                queryKey: ['unread'],
-            })
-            queryClient.invalidateQueries({
-                queryKey: ['chats', 'details', textModalData?.id],
-            })
+            queryClient.invalidateQueries({ queryKey: ['unread'] })
+            queryClient.invalidateQueries({ queryKey: ['chats', 'details', textModalData?.id] })
         }
 
         // scrollToBottom();
@@ -425,13 +431,16 @@ const TextModal: React.FC<Props> = (props) => {
             if (msg.msg_type === 8) {
                 console.log("the message was sent thank goodness")
                 resetMessages();
-                newMessagePush(
-                    [textModalData?.other_user_id.toString()],
-                    `${from_name ?? 'Someone'} sent you a message`,
-                    'View it in the app!',
-                    'message'
-                );
+                if (msg.sender?.toString() !== currentUserProfile?.user?.toString()) {
+                    didChangeChatWhileOpenRef.current = true;
+                }
                 if (msg.sender === textModalData?.other_user_id) {
+                    newMessagePush(
+                        [textModalData?.other_user_id.toString()],
+                        `${from_name ?? 'Someone'} sent you a message`,
+                        'View it in the app!',
+                        'message'
+                    );
                     send({
                         msg_type: 6,
                         user_pk: textModalData.other_user_id,
@@ -439,10 +448,22 @@ const TextModal: React.FC<Props> = (props) => {
                     });
                 }
             }
+            if (msg.msg_type === 9) {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chats', 'paginated'] });
+                queryClient.invalidateQueries({ queryKey: ['unread'] });
+                if (msg.sender === textModalData?.other_user_id) {
+                    // Message from the person we're actively reading — mark as read,
+                    // then re-invalidate unread so the badge reflects the reduced count.
+                    markAllInChatAsRead(textModalData.other_user_id)
+                        .then(() => queryClient.invalidateQueries({ queryKey: ['unread'] }))
+                        .catch(() => {});
+                }
+            }
         });
 
         return unsubscribe; // ✅ DO NOT wrap it in another function
-    }, [textModalData?.other_user_id, addListener, send]);
+    }, [textModalData?.other_user_id, currentUserProfile?.user, addListener, send]);
 
 
 
@@ -478,33 +499,10 @@ const TextModal: React.FC<Props> = (props) => {
 
 
     useEffect(() => {
-
-
-
-        scrollToBottom()
-
-
-        console.log("messages?.count", messages?.pages[0].data.length)
-
-        if (messagesEndRef.current) {
-            // Scroll after a small delay to ensure the DOM has settled
-            setTimeout(() => {
-                messagesEndRef.current!.scrollIntoView({ behavior: 'smooth' });
-            }, 0);
+        if (scrollAfterSendRef.current) {
+            scrollAfterSendRef.current = false;
+            scrollToBottom();
         }
-
-
-        // if (messages && messages?.pages.length == 1) {
-        //     const timeout = setTimeout(() => {
-        //         console.log("done with timeout, scrolling to bottom")
-        //         scrollToBottom()
-        //     }, 500);
-        //     return () => {
-        //         // clears timeout before running the new effect
-        //         clearTimeout(timeout);
-        //     };
-        // }
-
     }, [messages])
 
 
@@ -612,6 +610,7 @@ const TextModal: React.FC<Props> = (props) => {
 
         setMessageInput("");
         addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
 
 
         send(messageData);
@@ -673,7 +672,6 @@ const TextModal: React.FC<Props> = (props) => {
 
     const sendOutgoingTextMessageWithFileAudio = async (user_pk: string, file: any) => {
         setWaitBeforeSendingMore(true);
-
         try {
             const filedata = new FormData();
             filedata.append("file", file);
@@ -713,11 +711,14 @@ const TextModal: React.FC<Props> = (props) => {
             };
 
             setImage(null);
+            setBlob(null);
+            setImageName(null);
             setRecording({ recording: false, playing: false, audio: null });
             setAudioRef(null);
-            addMessageToFrontOfTheArray(displayMessage);
+        addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
 
-            send(messageData);
+        send(messageData);
 
         } catch (error) {
             console.error("Unexpected error sending file message:", error);
@@ -754,9 +755,12 @@ const TextModal: React.FC<Props> = (props) => {
         };
 
         setImage(null);
+        setBlob(null);
+        setImageName(null);
         setRecording({ recording: false, playing: false, audio: null });
         setAudioRef(null);
         addMessageToFrontOfTheArray(displayMessage);
+        didChangeChatWhileOpenRef.current = true;
         send(messageData);
     };
 
@@ -877,31 +881,24 @@ const TextModal: React.FC<Props> = (props) => {
     }
 
     const sendHandler = async () => {
-
-        if (blob) { 
+        if (sendingRef.current) return;
+        sendingRef.current = true;
+        try {
             if (blob) {
-                await sendOutgoingTextMessageWithFileImage(
-                    textModalData?.other_user_id,
-                    blob as File
-                );
+                await sendOutgoingTextMessageWithFileImage(textModalData?.other_user_id, blob as File);
+            } else if (audioRef?.src) {
+                await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src);
+            } else if (messageInput) {
+                await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
             }
-        }
-        if (audioRef?.src) {
-            await sendOutgoingTextMessageWithFileAudio(textModalData?.other_user_id, audioRef?.src)
-        }
-        if (messageInput) {
-            await sendOutgoingTextMessage(messageInput, textModalData?.other_user_id);
-        }
 
-
-        // Streak increase
-        if (currentUserProfile?.settings_streak_tracker) {
-            await increaseStreak()
-            queryClient.invalidateQueries({ queryKey: ['streak'] })
+            if (currentUserProfile?.settings_streak_tracker) {
+                await increaseStreak();
+                queryClient.invalidateQueries({ queryKey: ['streak'] });
+            }
+        } finally {
+            sendingRef.current = false;
         }
-
-        // scrollToBottom()
-
     }
 
 
@@ -916,26 +913,18 @@ const TextModal: React.FC<Props> = (props) => {
 
     const removeUnheartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-
-            let index = removeHeartFromArray(id);
-            justHearted.splice(index, 1);
-
-            setJustHearted([...justHearted])
+            setJustHearted(removeIdFromArray(justHearted, id))
             await unheartMessage(id)
         }
     }
 
-    //Removes checkbox from array when you uncheck it
-    const removeHeartFromArray = (id: number) => {
-        return justHearted.findIndex((index) => {
-            return index === id;
-        })
-
+    const removeIdFromArray = (source: number[], id: number) => {
+        return source.filter((itemId) => itemId !== id);
     }
 
-    const removeHeartedMessageHeart = async (id: number, index: number) => {
+    const removeHeartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-            setCurrMessageHeart(index)
+            setCurrMessageHeart(id)
 
             const newArray = [...justUnhearted, id]
             setJustUnhearted(newArray)
@@ -946,11 +935,7 @@ const TextModal: React.FC<Props> = (props) => {
 
     const giveHeartedMessageHeart = async (id: number) => {
         if (id !== -1) {
-
-            let index = removeHeartFromArray(id);
-            justUnhearted.splice(index, 1);
-
-            setJustUnhearted([...justUnhearted])
+            setJustUnhearted(removeIdFromArray(justUnhearted, id))
             await heartMessage(id)
         }
 
@@ -1111,7 +1096,7 @@ const TextModal: React.FC<Props> = (props) => {
                     <IonTitle className="ion-text-center" id={"profile-modal"} onClick={() => { openModal() }}>
                         <div className="text-header ">
                             <IonAvatar>
-                                <img alt={profileDetails?.pic1_alt || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : profileDetails?.pic1_main ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
+                                <img alt={profileDetails?.[getPhotoAltKey(getPrimaryPhotoKey(profileDetails))] || 'profile picture'} src={profileDetails?.deactivated_profile ? "../static/img/null.png" : getPrimaryPhoto(profileDetails) ?? "../static/img/null.png"} onError={(e) => onImgError(e)} />
                             </IonAvatar>
                             {profileDetails?.name} &nbsp;
                             <FontAwesomeIcon className="medium-gray" icon={faAngleRight} />
@@ -1120,7 +1105,7 @@ const TextModal: React.FC<Props> = (props) => {
 
                 </IonToolbar>
             </IonHeader>
-            <IonContent ref={textContentRef} >
+            <IonContent ref={textContentRef} className="text-modal-content">
                 {loadingMessages ? <IonRow className="ion-justify-content-center ion-padding"><IonSpinner name="bubbles"></IonSpinner></IonRow> : <></>}
                 {/* <IonInfiniteScroll
                     position="top"
@@ -1139,27 +1124,32 @@ const TextModal: React.FC<Props> = (props) => {
 
 
                 <IonList className="messages" id="wl " lines="full" style={{ maxHeight: "95%", overflow: "scroll" }}>
+                    <div ref={messagesEndRef} style={{ float: 'left', clear: 'both' }} />
                     <PhotoProvider bannerVisible={false} >
                         {showEarlySupportNotice && (
                             <li style={{ listStyle: 'none' }}>
                                 <IonCard color="white" className="ion-padding">
                                     <IonCardContent>
                                         <IonText color="navy">
-                                            <p>As we’ve grown, these messages are no longer routinely monitored and are only used for specific ongoing Help requests.</p>
+                                            <h2>Same team, different support process!</h2>
+                                            <br/>
+                                            <p>All new support requests should now be submitted through the Help feature. Messages sent to Freshy are no longer routinely monitored and will only be used when needed for an active Help request.</p>
+                                            <br />
+                                            <p>As we've grown, we've moved to a more structured support system to make sure requests are handled clearly and consistently.</p>
                                             <br />
                                             <p>
-                                                For feedback or support, please use the Help feature in the Me tab or reach out to{' '}
+                                                For feedback or support, please use the Help feature in the Me tab or contact &nbsp;
                                                 <a href="mailto:help@refreshconnections.com">help@refreshconnections.com</a>.
                                             </p>
                                             <br />
-                                            <p>Thanks for joining us early!</p>
+                                            <p>Thanks for being part of Refresh early on. We appreciate you sticking with us!</p>
                                         </IonText>
                                         <IonRow className="ion-justify-content-center">
                                             <IonButton
                                                 size="small"
                                                 fill="outline"
                                                 onClick={() => {
-                                                    onDismiss();
+                                                    closeTextModal({ refreshChatList: false });
                                                     setTimeout(() => {
                                                         if (typeof window !== 'undefined') {
                                                             window.history.pushState({}, "", "/help");
@@ -1191,8 +1181,7 @@ const TextModal: React.FC<Props> = (props) => {
                                             </div>
                                             :
                                             <IonItemSliding key={item.id}>
-                                                <div ref={(page === 0 && index === 0) ? messagesEndRef : null} ></div>
-                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== index ? () => setCurrMessageHeart(index) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
+                                                <IonItem lines="none" onClick={item?.out === false && currMessageHeart !== item?.id ? () => setCurrMessageHeart(item?.id) : item?.out === false && !item?.heart ? async () => await giveUnheartedMessageAHeart(item?.id) : item?.out === false && item?.heart ? async () => await giveHeartedMessageHeart(item?.id) : () => setCurrMessageHeart(null)} className={(item?.out === false) ? "incoming" : item?.sender_username == "you" ? "outgoing-sending" : "outgoing"}>
                                                     {item?.text ?
                                                         <IonLabel className="ion-text-wrap the-actual-message">
 
@@ -1238,14 +1227,14 @@ const TextModal: React.FC<Props> = (props) => {
                                                 {
                                                     item?.heart == false && item?.out === false && justHearted.includes(item?.id) ?
                                                         <FontAwesomeIcon className="in-heart-red" title="message heart" icon={faHeart} onClick={async () => await removeUnheartedMessageHeart(item?.id)} />
-                                                        : item?.heart == false && currMessageHeart == index && item?.out === false ?
+                                                        : item?.heart == false && currMessageHeart == item?.id && item?.out === false ?
                                                             <FontAwesomeIcon className="in-heart" icon={faHeartOutline} title="message heart" onClick={async () => await giveUnheartedMessageAHeart(item?.id)} />
                                                             :
-                                                            item?.out === false && currMessageHeart == index && item?.heart == true && justUnhearted.includes(item?.id) ?
+                                                            item?.out === false && currMessageHeart == item?.id && item?.heart == true && justUnhearted.includes(item?.id) ?
                                                                 <FontAwesomeIcon className="in-heart" icon={faHeartOutline} title="message heart" onClick={async () => await giveHeartedMessageHeart(item?.id)} />
                                                                 :
-                                                                item?.out === false && item?.heart == true && !(justUnhearted.includes(item?.id)) ?
-                                                                    <FontAwesomeIcon className="in-heart-red" icon={faHeart} title="message heart" onClick={async () => await removeHeartedMessageHeart(item?.id, index)} />
+                                                            item?.out === false && item?.heart == true && !(justUnhearted.includes(item?.id)) ?
+                                                                    <FontAwesomeIcon className="in-heart-red" icon={faHeart} title="message heart" onClick={async () => await removeHeartedMessageHeart(item?.id)} />
                                                                     :
                                                                     item?.out === true && item?.heart == true ?
                                                                         <FontAwesomeIcon className="out-heart-red" icon={faHeart} title="message heart" />
@@ -1383,7 +1372,7 @@ const TextModal: React.FC<Props> = (props) => {
                                         </div>
 
                                     </PhotoProvider>
-                                    <IonButton size="small" onClick={() => setImage(null)}>
+                                    <IonButton size="small" onClick={() => { setImage(null); setBlob(null); }}>
                                         <IonIcon slot="icon-only" icon={trashIcon} />
                                     </IonButton>
                                 </IonCol>
@@ -1393,10 +1382,7 @@ const TextModal: React.FC<Props> = (props) => {
                                     <IonTextarea value={messageInput}
                                         name="message_input"
                                         onIonInput={e => {
-                                            const newValue = e.detail.value ?? '';
-                                            if (newValue !== messageInput) {
-                                                setMessageInput(newValue);
-                                            }
+                                            setMessageInput(e.detail.value ?? '');
                                         }}
                                         placeholder={(!canText && !canTextisWaiting) ? "Not receiving." : "Message"}
                                         autocapitalize="sentences"

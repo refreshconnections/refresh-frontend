@@ -7,6 +7,8 @@ import { chevronBackOutline } from 'ionicons/icons';
 import axios from 'axios';
 
 import { addToHiddenDialogs, increaseStreak, newMessagePush, removeFromHiddenDialogs, sendAnOpener, updateBlockedConnections, updateDismissedConnections, updateMutualConnection, updateOutgoingConnections, updateUnmatchedConnections } from '../hooks/utilities';
+import { Preferences } from '@capacitor/preferences';
+import { useBlockProfile } from '../hooks/useBlockProfile';
 
 import './ProfileModal.css'
 import ReportModal from './ReportModal';
@@ -38,6 +40,7 @@ const ProfileModal: React.FC<Props> = (props) => {
     const { cardData, profiletype, pro, settingsAlt, yourName, onDismiss, onActionDismiss = () => {} } = props;
 
     const [presentAlert] = useIonAlert();
+    const blockProfile = useBlockProfile();
 
     const [showMessageWithLikeModal, setShowMessageWithLikeModal] = useState(false);
     const [showMessagePop, setShowMessagePop] = useState(false);
@@ -85,45 +88,8 @@ const ProfileModal: React.FC<Props> = (props) => {
     //     })
     // }
 
-    const blockingAlert = async (connection: number) => {
-        const alert = await presentAlert({
-          header: 'Are you sure you want to block this person?!',
-          subHeader:
-            'This cannot be undone. Both of you will lose access to any messages you have exchanged with one another.',
-          inputs: [
-            {
-              name: 'confirmation',
-              type: 'text',
-              placeholder: 'Type "block" to confirm',
-            },
-          ],
-          buttons: [
-            {
-              text: 'Nevermind',
-              role: 'cancel',
-            },
-            {
-              text: 'Yes!',
-              role: 'confirm',
-              handler: async (alertData) => {
-                if (alertData?.confirmation?.toLowerCase() === 'block') {
-                  await addBlockedConnection(connection);
-                } else {
-                  // Optional: Show a warning or re-open the alert
-                //   alert.dismiss();
-                  console.log("no block")
-                  setTimeout(() => {
-                    presentAlert({
-                      header: 'Incorrect Confirmation',
-                      message: 'You must type "block" exactly to proceed. You can try blocking this user again.',
-                      buttons: ['OK'],
-                    });
-                  }, 300);
-                }
-              },
-            },
-          ],
-        });
+    const blockingAlert = (connection: number) => {
+        blockProfile(connection, () => addBlockedConnection(connection));
       };
       
 
@@ -201,9 +167,13 @@ const ProfileModal: React.FC<Props> = (props) => {
     // }
 
     const addToHiddenChats = async (connection: number) => {
-        console.log("adding to hidden chats, then moving on")
+        const isFirstHidden = (currentUserProfile?.hidden_dialogs?.length ?? 0) === 0;
         const response = await addToHiddenDialogs(connection)
         queryClient.invalidateQueries({ queryKey: ['current'] })
+        if (isFirstHidden) {
+            await Preferences.set({ key: 'chat_organizer_show_hidden', value: 'true' });
+            window.dispatchEvent(new CustomEvent('chat_organizer_show_hidden_changed', { detail: true }));
+        }
         onActionDismiss('ActionTaken');
         onDismiss()
 
@@ -229,6 +199,7 @@ const ProfileModal: React.FC<Props> = (props) => {
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals'] })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
+        queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] })
         onDismiss()
 
         return response
@@ -252,6 +223,7 @@ const ProfileModal: React.FC<Props> = (props) => {
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.all })
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.paginated })
         queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog'] })
+        queryClient.invalidateQueries({ queryKey: ['mutuals-no-dialog-paginated-v3'] })
         onDismiss()
         return response
     }

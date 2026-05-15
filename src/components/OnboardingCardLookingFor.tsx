@@ -20,11 +20,13 @@ import 'swiper/css/navigation';
 import moment from 'moment';
 import { useSwiper } from 'swiper/react';
 import SwiperButtonNext from './SwiperButtonNext';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 // import StayPausedModal from './StayPausedModal';
 
 
 
 const OnboardingCardLookingFor: React.FC = () => {
+  const copy = ONBOARDING_COPY.cards.lookingFor;
 
   const swiper = useSwiper();
   const [lookingFor, setLookingFor] = useState<string[]>([]);
@@ -78,55 +80,29 @@ const OnboardingCardLookingFor: React.FC = () => {
 
 
   return (
-    <>
-    <IonCard className="onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
       <IonCardContent className="w-checkboxes">
-        <IonCardTitle>What kind of connections are you looking to make?</IonCardTitle>
-        <IonText>These will be shown on your profile. You can change these at any time. </IonText>
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText>{copy.body}</IonText>
         <div className="onboarding-option-card compact">
           <IonList className="scrollable-list onboarding-checkbox-list" lines="none">
-            <IonItem>
-              <IonCheckbox slot="start" value="friendship" checked={lookingFor.includes("friendship")} onIonChange={e => addLookingForCheckbox(e)} />
-              Friendships
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="romance" checked={lookingFor.includes("romance")} onIonChange={e => addLookingForCheckbox(e)} />
-              Romance
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="virtual connection" checked={lookingFor.includes("virtual connection")} onIonChange={e => addLookingForCheckbox(e)} />
-              Virtual Connection
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="virtual only" checked={lookingFor.includes("virtual only")} onIonChange={e => addLookingForCheckbox(e)} />
-              Virtual Connection Only
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="job" checked={lookingFor.includes("job")} onIonChange={e => addLookingForCheckbox(e)} />
-              Job
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="housing" checked={lookingFor.includes("housing")} onIonChange={e => addLookingForCheckbox(e)} />
-              Housing / roommate
-            </IonItem>
-            <IonItem>
-              <IonCheckbox slot="start" value="families" checked={lookingFor.includes("families")} onIonChange={e => addLookingForCheckbox(e)} />
-              Families
-           </IonItem>
+            {copy.options.map((option) => (
+              <IonItem key={option.value}>
+                <IonCheckbox slot="start" value={option.value} checked={lookingFor.includes(option.value)} onIonChange={e => addLookingForCheckbox(e)} />
+                {option.label}
+             </IonItem>
+            ))}
           </IonList>
         </div>
       </IonCardContent>
-      <IonNote style={{textAlign: "center"}}>Scroll for all options!</IonNote>
-      <IonRow className="onboarding-slide-buttons">
-        <IonButton color="gray" onClick={() => swiper.slidePrev()}>Back</IonButton>
-        <IonButton onClick={updateProfile} disabled={lookingFor.length == 0 ? true : false}>Next</IonButton>
-      </IonRow>
+      <IonNote style={{textAlign: "center"}}>{copy.scrollNote}</IonNote>
+      <div className="onboarding-v2__card-footer">
+        <IonRow className="onboarding-v2__nav">
+          <IonButton fill="outline" onClick={() => swiper.slidePrev()}>{ONBOARDING_COPY.common.back}</IonButton>
+          <IonButton className="onboarding-v2__primary-action" onClick={updateProfile} disabled={lookingFor.length === 0}>{ONBOARDING_COPY.common.next}</IonButton>
+        </IonRow>
+      </div>
     </IonCard>
-    {/* <IonRow class="notyet">
-    <IonButton fill="clear" onClick={() => stayPausedOpen()}>I don't want to create a profile yet.</IonButton>
-  </IonRow> */}
-  </>
-  
   )
 };
 export default OnboardingCardLookingFor;

@@ -2,6 +2,7 @@ import {
   IonButton,
   IonCard,
   IonCardContent,
+  IonCardSubtitle,
   IonCardTitle,
   IonNote,
   IonRow,
@@ -13,15 +14,52 @@ import React, { useEffect, useState } from 'react';
 import { useSwiper } from 'swiper/react';
 import { Geolocation } from '@capacitor/geolocation';
 import { NativeGeocoder } from '@capgo/nativegeocoder';
+import { useQueryClient } from '@tanstack/react-query';
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { getCurrentPositionSmart } from '../hooks/geolocationUtilities';
+import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
 import CitySelectorModal from './CitySelectorModal';
+import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const OnboardingCardLocationCoords: React.FC = () => {
+type Props = {
+  flow?: 'personal' | 'community';
+  preExistingCoords?: boolean;
+  hasPersonalProfile?: boolean;
+  onCoordsSaved?: (localLabel: string) => void;
+  onCoordsCleared?: () => void;
+};
+
+const buildLocationLabel = (address?: Record<string, any>, fallback?: string) => {
+  const parts = [
+    fallback,
+    address?.administrativeArea,
+    address?.countryName || address?.countryCode,
+  ].filter((part, index, arr) => {
+    if (!part) return false;
+    return arr.indexOf(part) === index;
+  });
+
+  if (parts.length > 0) {
+    return parts.join(', ');
+  }
+
+  return fallback ?? '';
+};
+
+const OnboardingCardLocationCoords: React.FC<Props> = ({ flow = 'personal', preExistingCoords = false, hasPersonalProfile = false, onCoordsSaved, onCoordsCleared }) => {
+  const copy =
+    flow === 'community'
+      ? ONBOARDING_COPY.cards.locationCoords.community
+      : ONBOARDING_COPY.cards.locationCoords.personal;
+  const body =
+    flow === 'community' && hasPersonalProfile
+      ? ONBOARDING_COPY.cards.locationCoords.community.bodyWithPersonalProfile
+      : copy.body;
   const swiper = useSwiper();
+  const queryClient = useQueryClient();
   const currentProfile = useGetCurrentProfile().data;
   const [presentAlert] = useIonAlert();
   const [presentConfirm] = useIonAlert();
@@ -38,7 +76,7 @@ const OnboardingCardLocationCoords: React.FC = () => {
   const [presentCitySelector, dismissCitySelector] = useIonModal(CitySelectorModal, {
     onDismiss: async (selectedCity?: City) => {
       if (selectedCity) {
-        await confirmLocationAlert(selectedCity.lat, selectedCity.lng, selectedCity.name, true);
+        await confirmLocationAlert(selectedCity.lat, selectedCity.lng, selectedCity.name);
       }
       dismissCitySelector();
     },
@@ -48,49 +86,49 @@ const OnboardingCardLocationCoords: React.FC = () => {
     presentCitySelector();
   };
 
-  const confirmLocationAlert = async (
-    lat: number,
-    long: number,
-    cityLabel?: string,
-    advanceOnConfirm?: boolean
-  ) => {
-    const reverseOptions = { latitude: lat, longitude: long };
+  const confirmLocationAlert = async (lat: number, long: number, cityLabel?: string) => {
+    const reverseOptions = { latitude: parseFloat(String(lat)), longitude: parseFloat(String(long)) };
     const address = await NativeGeocoder.reverseGeocode(reverseOptions);
-    const local =
+    const firstAddress = address?.addresses?.[0];
+    const fallbackLabel =
       cityLabel ||
-      address?.addresses?.[0]?.locality ||
+      firstAddress?.locality ||
       `${lat.toFixed(3)}, ${long.toFixed(3)}`;
+    const local = cityLabel || buildLocationLabel(firstAddress, fallbackLabel) || fallbackLabel;
 
     presentConfirm({
-      header: `So just confirming, you're near ${local}?`,
+      header: `${copy.confirmPrefix}${local}${copy.confirmSuffix}`,
       buttons: [
-        { text: "Nope, I'll try again.", role: 'cancel' },
+        { text: copy.confirmCancel, role: 'cancel' },
         {
-          text: 'Yep',
+          text: copy.confirmConfirm,
           handler: async () => {
             await updateCurrentUserProfile({
               location_point_long: long,
               location_point_lat: lat,
               coordinates_near: local,
             });
+            await queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
             setCoordsSet(true);
-            if (advanceOnConfirm) {
-              swiper.slideNext();
-            }
+            onCoordsSaved?.(local);
+            swiper.slideNext();
           },
         },
       ],
     });
   };
 
+  const showDeniedAlert = () =>
+    presentAlert({
+      header: copy.deniedHeader,
+      subHeader: copy.deniedSubHeader,
+      buttons: ['OK'],
+    });
+
   const shareLocation = async () => {
     const permissionsStatus = await Geolocation.checkPermissions();
-    if (permissionsStatus.location === 'denied') {
-      await presentAlert({
-        header: "Location access isn't enabled.",
-        message: 'You can enable location access, choose your city, or continue without sharing.',
-        buttons: ['OK'],
-      });
+    if (permissionsStatus.location === 'denied' && permissionsStatus.coarseLocation !== 'granted') {
+      await showDeniedAlert();
       return;
     }
 
@@ -103,8 +141,8 @@ const OnboardingCardLocationCoords: React.FC = () => {
 
       if (!coordinates) {
         await presentAlert({
-          header: "We couldn't get your GPS coordinates.",
-          message: 'Try again, choose your city, or continue without sharing.',
+          header: copy.gpsErrorHeader,
+          message: copy.gpsErrorMessage,
           buttons: ['OK'],
         });
         return;
@@ -113,31 +151,42 @@ const OnboardingCardLocationCoords: React.FC = () => {
       await confirmLocationAlert(
         coordinates.coords.latitude,
         coordinates.coords.longitude,
-        undefined,
-        true
+        undefined
       );
-    } catch (err) {
-      await presentAlert({
-        header: "We couldn't get your GPS coordinates.",
-        message: 'Try again, choose your city, or continue without sharing.',
-        buttons: ['OK'],
-      });
+    } catch (err: any) {
+      const msg: string = err?.message ?? '';
+      if (msg.toLowerCase().includes('permission')) {
+        await showDeniedAlert();
+      } else {
+        await presentAlert({
+          header: copy.gpsErrorHeader,
+          message: copy.gpsErrorMessage,
+          buttons: ['OK'],
+        });
+      }
     }
   };
 
   const declineCoordinates = async () => {
-    setCoordsSet(false);
     await presentAlert({
-      header: "Distance filters won’t work without coordinates",
-      message: "You can still use Refresh, but you won’t be able to filter your picks by distance.",
+      header: copy.declineHeader,
+      message: copy.declineMessage,
       buttons: [
         {
-          text: 'Go back',
+          text: copy.declineCancel,
           role: 'cancel',
         },
         {
-          text: 'OK',
-          handler: () => {
+          text: copy.declineConfirm,
+          handler: async () => {
+            setCoordsSet(false);
+            await updateCurrentUserProfile({
+              location_point_lat: null,
+              location_point_long: null,
+              coordinates_near: null,
+            });
+            await queryClient.invalidateQueries({ queryKey: userQueryKeys.current });
+            onCoordsCleared?.();
             swiper.slideNext();
           },
         },
@@ -145,34 +194,90 @@ const OnboardingCardLocationCoords: React.FC = () => {
     });
   };
 
+  const [showUpdateButtons, setShowUpdateButtons] = useState(false);
+
+  if (preExistingCoords) {
+    const coordinatesNear = (currentProfile?.coordinates_near ?? '').trim();
+    const coordinatesLabel = currentProfile?.location_point_lat && currentProfile?.location_point_long
+      ? `${currentProfile.location_point_lat}, ${currentProfile.location_point_long}`
+      : '';
+    const existingLabel = coordinatesNear || coordinatesLabel;
+    return (
+      <IonCard className="onboarding-slide">
+        <IonCardContent>
+          <IonCardTitle>{copy.title}</IonCardTitle>
+          <IonText style={{ whiteSpace: 'pre-line', display: 'block', marginBottom: '12px' }}>
+            {flow === 'personal'
+              ? 'Your location helps Refresh Connections show you people nearby and helps others understand where you\'re looking to connect.\n\nThis location will be used for filtering on both your Personal and Refreshments Profiles.'
+              : 'Your location helps Refresh Connections show you posts and events nearby.\n\nThis location will be used for filtering on both your Personal and Refreshments Profiles.'}
+          </IonText>
+          {!showUpdateButtons ? (
+            <>
+              <IonText style={{ whiteSpace: 'pre-line', display: 'block', }}>
+                {`You can update your location now or press next to keep using`}
+              </IonText>
+              <IonText style={{ fontSize: '1.25rem', display: 'block', fontWeight: 600, textAlign: 'center' }}>
+                {existingLabel}
+              </IonText>
+              <IonButton size="small" fill="outline" style={{ alignSelf: 'center' }} onClick={() => setShowUpdateButtons(true)}>
+                Update my location
+              </IonButton>
+            </>
+          ) : (
+            <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
+              <IonButton expand="block" onClick={shareLocation}>
+                Update via device location
+              </IonButton>
+              <IonButton expand="block" fill="outline" onClick={openCitySelector}>
+                Update by choosing my city
+              </IonButton>
+            </IonRow>
+          )}
+          {coordsSet && (
+            <IonNote style={{ textAlign: 'center' }}>
+              {copy.coordsSaved}
+            </IonNote>
+          )}
+        </IonCardContent>
+        <IonRow className="onboarding-slide-buttons">
+          <IonButton color="gray" onClick={() => swiper.slidePrev()}>
+            {ONBOARDING_COPY.common.back}
+          </IonButton>
+          <IonButton onClick={() => swiper.slideNext()}>
+            {ONBOARDING_COPY.common.next}
+          </IonButton>
+        </IonRow>
+      </IonCard>
+    );
+  }
+
   return (
     <IonCard className="onboarding-slide">
       <IonCardContent>
-        <IonCardTitle>Where do you live?</IonCardTitle>
-        <IonText>
-          Refresh uses your coordinates to show nearby matches. Your profile shows a location label,
-          and you control how specific it is.
+        <IonCardTitle>{copy.title}</IonCardTitle>
+        <IonText style={{ whiteSpace: 'pre-line' }}>
+          {body}
         </IonText>
         <IonRow className="onboarding-slide-buttons" style={{ flexDirection: 'column', gap: '12px' }}>
           <IonButton expand="block" onClick={shareLocation}>
-            Use my location
+            {copy.useLocation}
           </IonButton>
           <IonButton expand="block" fill="outline" onClick={openCitySelector}>
-            Choose my city
+            {copy.chooseCity}
           </IonButton>
         </IonRow>
         {coordsSet && (
           <IonNote style={{ textAlign: 'center' }}>
-            Coordinates saved. You can edit your location label on the next step.
+            {copy.coordsSaved}
           </IonNote>
         )}
       </IonCardContent>
       <IonRow className="onboarding-slide-buttons">
         <IonButton color="gray" onClick={() => swiper.slidePrev()}>
-          Back
+          {ONBOARDING_COPY.common.back}
         </IonButton>
         <IonButton onClick={declineCoordinates}>
-          Don’t share my location
+          {copy.dontShare}
         </IonButton>
       </IonRow>
     </IonCard>
