@@ -462,6 +462,12 @@ const SubmittedPosts: React.FC = () => {
                     </IonNote>
                   )}
                 </IonRow>
+                {selectedEvent?.moderator_rejection_reason && (
+                  <IonItem color="white" lines="none">
+                    <IonLabel position="stacked">Moderator explanation</IonLabel>
+                    <IonText className="preview-value">{selectedEvent.moderator_rejection_reason}</IonText>
+                  </IonItem>
+                )}
               </IonCardContent>
             </IonCard>
             <IonCard color="white" className="preview-card section-card">

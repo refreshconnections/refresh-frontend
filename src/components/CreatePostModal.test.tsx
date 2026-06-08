@@ -313,6 +313,22 @@ describe('CreatePostModal', () => {
     expect(screen.getByText('age-gate-post')).toBeInTheDocument();
   });
 
+  it('routes to refreshments onboarding when opened without a username', async () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      username: '',
+    };
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    const { onDismiss } = renderModal({ username: '' });
+
+    await waitFor(() => {
+      expect(onDismiss).toHaveBeenCalled();
+    });
+    expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/community-onboarding');
+    expect(dispatchSpy).toHaveBeenCalled();
+  });
+
   it('blocks post submission when moderation suspends posting and routes to activity', () => {
     mockModeration = {
       paused_on_creation: false,
@@ -473,6 +489,12 @@ describe('CreatePostModal', () => {
   it('submits the linked event payload when an event post has complete event details', async () => {
     const { container } = renderModal();
 
+    await setIonCheckbox(getItemControl(container, 'Local Post', 'ion-checkbox'), true);
+    const citySelectorConfig = mockModalConfigs[0];
+    await act(async () => {
+      citySelectorConfig.onDismiss({ name: 'Brooklyn', lat: 40.6782, lng: -73.9442 });
+    });
+
     await fillBasicPostFields(container, 'events');
     await setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'in_person_only');
     await setIonInput(getItemControl(container, 'Event start', 'ion-input'), '2099-07-20T18:00');
@@ -490,9 +512,44 @@ describe('CreatePostModal', () => {
         end_datetime: '2099-07-20T19:00',
         event_type: 'in_person_only',
         attendee_precaution_preference: 'precautions_preferred',
+        location: 'Brooklyn',
+        location_point_lat: 40.6782,
+        location_point_long: -73.9442,
         post: 42,
       }));
     });
+  });
+
+  it('warns when an event post is in-person but has no location', async () => {
+    const { container } = renderModal();
+
+    await fillBasicPostFields(container, 'events');
+    await setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'in_person_only');
+    await setIonInput(getItemControl(container, 'Event start', 'ion-input'), '2099-07-20T18:00');
+    await setIonInput(getItemControl(container, 'Event end', 'ion-input'), '2099-07-20T19:00');
+    await setIonCheckbox(getItemControl(container, 'I understand.', 'ion-checkbox'), true);
+
+    fireEvent.click(screen.getByText('Submit Post'));
+
+    expect(await screen.findByText('Incomplete event details')).toBeInTheDocument();
+    expect(screen.getByText(/Event location/)).toBeInTheDocument();
+    expect(mockCreateAnnouncement).not.toHaveBeenCalled();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('sets the event post end date two hours after a changed start date until the end date is edited', async () => {
+    const { container } = renderModal();
+
+    await fillBasicPostFields(container, 'events');
+    await setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'virtual_only');
+    await setIonInput(getItemControl(container, 'Event start', 'ion-input'), '2099-07-20T18:00');
+
+    expect(getItemControl(container, 'Event end', 'ion-input')).toHaveAttribute('value', '2099-07-20T20:00');
+
+    await setIonInput(getItemControl(container, 'Event end', 'ion-input'), '2099-07-20T21:30');
+    await setIonInput(getItemControl(container, 'Event start', 'ion-input'), '2099-07-21T18:00');
+
+    expect(getItemControl(container, 'Event end', 'ion-input')).toHaveAttribute('value', '2099-07-20T21:30');
   });
 
   it('shows inline date validation errors for invalid event timing', async () => {
@@ -526,6 +583,25 @@ describe('CreatePostModal', () => {
     expect(getItemControl(container, 'Category*', 'ion-select')).toHaveAttribute('value', 'science');
   });
 
+  it('keeps recommendations available and explains why housing is disabled until Local Post is selected', async () => {
+    const { container } = renderModal();
+
+    const categoryOptions = Array.from(container.querySelectorAll('ion-select-option'));
+    const recommendationOption = categoryOptions.find((option) => option.getAttribute('value') === 'recommendations');
+    const housingOption = categoryOptions.find((option) => option.getAttribute('value') === 'housing');
+
+    expect(recommendationOption).toHaveTextContent('Recommendations');
+    expect(recommendationOption).not.toHaveAttribute('disabled');
+    expect(housingOption).toHaveTextContent('Housing - must be a Local Post');
+    expect(housingOption).toHaveAttribute('disabled');
+
+    await setIonCheckbox(getItemControl(container, 'Local Post', 'ion-checkbox'), true);
+
+    const enabledHousingOption = Array.from(container.querySelectorAll('ion-select-option')).find((option) => option.getAttribute('value') === 'housing');
+    expect(enabledHousingOption).toHaveTextContent('Housing');
+    expect(enabledHousingOption).toHaveAttribute('disabled', 'false');
+  });
+
   it('shows the housing rule warning and keeps submit disabled for anonymous housing posts', async () => {
     const { container } = renderModal();
 
@@ -538,6 +614,21 @@ describe('CreatePostModal', () => {
       await screen.findByText('For Housing posts, Byline cannot be "Anonymous" and "Show Profile" must be enabled.')
     ).toBeInTheDocument();
     expect(screen.getByText('Submit Post')).toBeDisabled();
+  });
+
+  it('shows housing post guidance when housing is selected', async () => {
+    const { container } = renderModal();
+
+    await setIonCheckbox(getItemControl(container, 'Local Post', 'ion-checkbox'), true);
+    await fillBasicPostFields(container, 'housing');
+
+    expect(screen.getByText('Housing post expectations')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Provide enough information for people to determine whether they may be a good fit/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText('What to include and leave out')).toBeInTheDocument();
+    expect(screen.getByText('Approximate budget or rent range')).toBeInTheDocument();
+    expect(screen.getByText(/does not support temporary or short-term housing posts/i)).toBeInTheDocument();
   });
 
   it('shows the inline contact warning and disables submit when PII is present', async () => {
@@ -555,7 +646,44 @@ describe('CreatePostModal', () => {
     expect(screen.getByText('Submit Post')).toBeDisabled();
   });
 
-  it('blocks link shorteners in the optional link field', async () => {
+  it.each([
+    'This sounds fun, dm me on Signal or friend me on Discord.',
+    'This sounds fun, reach out to me on Signal.',
+    'This sounds fun, I am @maskedfriend there.',
+  ])('warns but allows posts that ask members to move to another messaging app: %s', async (postContent) => {
+    const { container } = renderModal();
+
+    await fillBasicPostFields(container, 'mingle');
+    await setIonInput(getItemControl(container, 'Post Content*', 'ion-textarea'), postContent);
+    await setIonCheckbox(getItemControl(container, 'I understand.', 'ion-checkbox'), true);
+
+    expect(
+      await screen.findByText(
+        /It looks like you might be asking to move off-platform in this public post/i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText('What is Connect from Refreshments?')).toBeInTheDocument();
+    expect(screen.getByText('How should I word this?')).toBeInTheDocument();
+    expect(screen.getByText(/lets members discover your Personal Profile and send you Likes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Me tab > Settings/i)).toBeInTheDocument();
+    expect(screen.getByText(/share off-platform contact details after you've gotten to know each other/i)).toBeInTheDocument();
+
+    fireEvent.submit(container.querySelector('form')!);
+    expect(await screen.findByText('Share off-platform details later')).toBeInTheDocument();
+    expect(mockCreateAnnouncement).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockCreateAnnouncement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: postContent,
+        })
+      );
+    });
+  });
+
+  it('warns but allows link shorteners in the optional link field', async () => {
     const { container } = renderModal();
 
     await fillBasicPostFields(container, 'mingle');
@@ -564,10 +692,22 @@ describe('CreatePostModal', () => {
 
     expect(
       await screen.findByText(
-        "Link shorteners aren't allowed. Please use the full link so members can see where they're clicking."
+        'Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.'
       )
     ).toBeInTheDocument();
-    expect(screen.getByText('Submit Post')).toBeDisabled();
+    fireEvent.submit(container.querySelector('form')!);
+    expect(await screen.findByText('Use the full URL?')).toBeInTheDocument();
+    expect(mockCreateAnnouncement).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockCreateAnnouncement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          link: 'https://bit.ly/mask-swap',
+        })
+      );
+    });
   });
 
   it('blocks Google Docs links in post content', async () => {

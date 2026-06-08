@@ -59,8 +59,9 @@ const ContactForm: React.FC = () => {
     };
 
     const isAutoFilled = reason === "profile" && (profileUpdateType === "name" || profileUpdateType === "age" || profileUpdateType === "location");
-    const showCalendarBugFaq = reason === "bug" && /\bcal|event/i.test(`${subject ?? ""} ${message ?? ""}`);
-    const showHiddenChatBugFaq = reason === "bug" && /hidden/i.test(`${subject ?? ""} ${message ?? ""}`);
+    const showQuickFaqs = reason === "bug" || reason === "other";
+    const showCalendarBugFaq = showQuickFaqs && /\bcal|event/i.test(`${subject ?? ""} ${message ?? ""}`);
+    const showHiddenChatBugFaq = showQuickFaqs && /hidden/i.test(`${subject ?? ""} ${message ?? ""}`);
 
     const sendHelpMail = async () => {
         setAfterSendWait(true);

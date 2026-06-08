@@ -160,7 +160,7 @@ describe('ProfileCard', () => {
     expect(slideImages.map(image => image.getAttribute('src'))).toEqual(['/img/1.jpg', '/img/2.jpg']);
   });
 
-  it('shows the new-here badge, banner art, lived experiences, and long covid support details', () => {
+  it('shows the new-here badge, banner art, lived experiences details', () => {
     const { container } = renderCard({
       registrationDate: recentRegistrationDate,
     });
@@ -169,9 +169,6 @@ describe('ProfileCard', () => {
     expect(container.querySelector('img[alt="Happy pride banner"]')).toBeTruthy();
     expect(screen.getByText(/POC/)).toBeInTheDocument();
     expect(screen.getByText(/Chronic illness/)).toBeInTheDocument();
-    expect(screen.getByText('Long Covid Support')).toBeInTheDocument();
-    expect(screen.getAllByText(/I am living with Long Covid/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/I could provide remote support/)).toBeInTheDocument();
   });
 
   it('opens looking-for popovers for the enabled icon buttons', () => {

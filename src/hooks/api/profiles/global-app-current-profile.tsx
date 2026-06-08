@@ -12,7 +12,11 @@ export function useGetGlobalAppCurrentProfile(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: userQueryKeys.global_current,
     queryFn: getGlobalAppCurrentProfileFn,
-    retry: 3,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status && status < 500) return false;
+      return failureCount < 3;
+    },
     enabled: !!localStorage.getItem('token') && (options?.enabled ?? true),
   });
 }

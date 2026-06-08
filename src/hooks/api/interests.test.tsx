@@ -107,6 +107,39 @@ describe('interest hooks warm cache', () => {
     }, { timeout: 5000 });
   });
 
+  it('ignores warm interested events cache entries that are not event-shaped', async () => {
+    const network = deferred<{ data: any }>();
+    getWithExpiry.mockResolvedValue({
+      count: 1,
+      next: null,
+      previous: null,
+      results: [{ id: 36, username: 'amandagreen', profile_image: '/media/debug/profiles/4/pic1_main.jpg' }],
+    });
+    apiGet.mockReturnValue(network.promise);
+
+    const { result } = renderHook(() => useGetInterestedEvents(1), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(true);
+      expect(result.current.data).toBeUndefined();
+    }, { timeout: 5000 });
+
+    network.resolve({
+      data: {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [{ id: 12, name: 'Fresh event', start_datetime: '2026-04-02T18:00:00.000Z' }],
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.data?.results).toEqual([{ id: 12, name: 'Fresh event', start_datetime: '2026-04-02T18:00:00.000Z' }]);
+    }, { timeout: 5000 });
+  });
+
   it('adds interested event details to the interested events cache', async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(interestQueryKeys.eventsPage(1), {

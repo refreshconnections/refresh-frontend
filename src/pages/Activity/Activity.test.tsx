@@ -265,6 +265,16 @@ describe('Activity page', () => {
       expect(mockPresentModal).toHaveBeenCalledTimes(1);
     });
 
+    it('routes to refreshments onboarding before create post when the user has no username', () => {
+      mockCurrentProfile.mockReturnValue({ data: { ...baseProfile, username: '' } } as any);
+      goToSegment('Refreshments');
+
+      fireEvent.click(screen.getAllByText('Create a post')[0]);
+
+      expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding');
+      expect(mockPresentModal).not.toHaveBeenCalled();
+    });
+
     it('shows a pending count callout when submissions await review', () => {
       mockSubmissionSummary.mockReturnValue({
         data: { totals: { approved: 0, pending: 2, needs_edit: 0, rejected: 0 } },

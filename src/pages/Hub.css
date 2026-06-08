@@ -141,7 +141,7 @@ ion-row.surrounding-room {
 .hub-tip-card-header-title {
   font-size: calc(18px * var(--text-scale, 1));
   font-weight: 800;
-  color: black;
+  color: var(--ion-color-black);
 }
 
 .hub-tip-card-body {

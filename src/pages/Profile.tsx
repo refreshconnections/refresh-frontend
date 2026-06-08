@@ -108,8 +108,8 @@ const Profile: React.FC = () => {
 
   const cantReactivate = async () => {
     cantUnpauseAlert({
-      header: 'Your account has been temporarily suspended pending moderator review.',
-      message: moderation?.moderator_deactivated_note ? moderation?.moderator_deactivated_note + ' Please reach out to help@refreshconnections.com if you have any questions.' : "This was the result of a community report and/or moderation for the safety of our community. Please reach out to help@refreshconnections.com if you have any questions. Please reach out to help@refreshconnections.com if you have any questions.",
+      header: 'Your account has been deactivated for moderation.',
+      message: moderation?.moderator_deactivated_note ? moderation?.moderator_deactivated_note + ' Please reach out to help@refreshconnections.com.' : "This was the result of a community report and/or moderation for the safety of our community. Please reach out to help@refreshconnections.com.",
       buttons: [
         {
           text: 'Ok.',
@@ -250,7 +250,7 @@ const Profile: React.FC = () => {
               <IonRow className="unpause-profile">
                 {moderation?.moderator_deactivated? 
                 <>
-                <IonNote>Your account has been temporarily suspended by a moderator.</IonNote>
+                <IonNote>Your account has been suspended for moderatoration.</IonNote>
                 <IonButton color="warning" onClick={async () => reactivateProfileHandler()}>What does this mean?</IonButton>
                 </>
                 :

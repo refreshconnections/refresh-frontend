@@ -16,6 +16,7 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 import BoxedStackedInput from './BoxedStackedInput';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 import './OnboardingCard.css';
 
@@ -92,7 +93,9 @@ const OnboardingCardPronouns: React.FC = () => {
             value={custom}
             name="custom_pronouns"
             placeholder={copy.customPlaceholder}
-            onIonInput={(event) => setCustom(event.detail.value ?? '')}
+            maxlength={PROFILE_FIELD_LIMITS.pronouns}
+            counter
+            onIonInput={(event) => setCustom((event.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.pronouns))}
           />
         )}
       </IonCardContent>

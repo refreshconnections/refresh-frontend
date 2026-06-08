@@ -20,6 +20,7 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 import BoxedStackedInput from './BoxedStackedInput';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 import './OnboardingCard.css';
 
@@ -156,8 +157,10 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
                 value={values[option.value] ?? ''}
                 name={option.value}
                 placeholder="Fill this in"
+                maxlength={PROFILE_FIELD_LIMITS.shortAnswer}
+                counter
                 onIonInput={(event) =>
-                  setValues((prev) => ({ ...prev, [option.value]: event.detail.value ?? '' }))
+                  setValues((prev) => ({ ...prev, [option.value]: (event.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.shortAnswer) }))
                 }
                 type="text"
                 autocapitalize="sentences"

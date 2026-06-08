@@ -54,6 +54,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Resizer from 'react-image-file-resizer';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { decode } from 'base64-arraybuffer';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 type SimpleFormState = {
   pronouns: string;
@@ -135,6 +136,37 @@ const initialForm: SimpleFormState = {
 
 const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
 
+const profileTextFieldLimits: Partial<Record<keyof SimpleFormState, number>> = {
+  pronouns: PROFILE_FIELD_LIMITS.pronouns,
+  bio: PROFILE_FIELD_LIMITS.bio,
+  location: PROFILE_FIELD_LIMITS.location,
+  job: PROFILE_FIELD_LIMITS.job,
+  politics: PROFILE_FIELD_LIMITS.politics,
+  school: PROFILE_FIELD_LIMITS.school,
+  covid_precaution_info: PROFILE_FIELD_LIMITS.covidPrecautionInfo,
+  together_idea: PROFILE_FIELD_LIMITS.shortAnswer,
+  freetime: PROFILE_FIELD_LIMITS.shortAnswer,
+  hobby: PROFILE_FIELD_LIMITS.shortAnswer,
+  petpeeve: PROFILE_FIELD_LIMITS.shortAnswer,
+  talent: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_book: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_movie: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_tv: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_topic: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_musicalartist: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_game: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_album: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_sport_watch: PROFILE_FIELD_LIMITS.shortAnswer,
+  fave_sport_play: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_book: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_movie: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_tv: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_topic: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_musicalartist: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_game: PROFILE_FIELD_LIMITS.shortAnswer,
+  fixation_album: PROFILE_FIELD_LIMITS.shortAnswer,
+};
+
 type FieldLabels = Record<keyof SimpleFormState, { label: string; description: string }>;
 type EditingState = Record<keyof SimpleFormState, boolean>;
 
@@ -167,6 +199,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
 }) => {
   const value = form[fieldKey];
   const [editorValue, setEditorValue] = useState((value as string) ?? '');
+  const maxLength = profileTextFieldLimits[fieldKey];
 
   useEffect(() => {
     if (!editing[fieldKey]) return;
@@ -175,7 +208,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   }, [editing[fieldKey]]);
 
   return (
-    <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`}>
+    <IonItem className={`card-field ${editing[fieldKey] ? 'editing' : ''}`} lines="none">
       <div className="editing-section">
         <div className="field-header">
           <p>{fieldLabels[fieldKey].label}</p>
@@ -198,7 +231,9 @@ const EditableField: React.FC<EditableFieldProps> = ({
           multiline ? (
             <IonTextarea
               value={editorValue}
-              onIonInput={e => setEditorValue(e.detail.value ?? '')}
+              maxlength={maxLength}
+              counter={Boolean(maxLength)}
+              onIonInput={e => setEditorValue((e.detail.value ?? '').slice(0, maxLength))}
               placeholder={`Update your ${fieldLabels[fieldKey].label}`}
               autoGrow
               rows={4}
@@ -206,7 +241,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
               autoCorrect='on'
             />
           ) : (
-            <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
+            <IonInput value={editorValue} maxlength={maxLength} onIonInput={e => setEditorValue((e.detail.value ?? '').slice(0, maxLength))} placeholder={`Update your ${fieldLabels[fieldKey].label}`} debounce={250} />
           )
         ) : (
           <h2 className={`multi-line ${multiline ? 'multi-line' : ''}`}>{(value as string) || <span>-</span>}</h2>
@@ -244,6 +279,7 @@ const EditablePronouns: React.FC<EditablePronounsProps> = ({
 }) => {
   const value = form.pronouns;
   const [editorValue, setEditorValue] = useState(value ?? '');
+  const maxLength = PROFILE_FIELD_LIMITS.pronouns;
   const [editorChoice, setEditorChoice] = useState<string>(
     pronounOptions.includes(value ?? '') ? value : 'custom',
   );
@@ -292,7 +328,7 @@ const EditablePronouns: React.FC<EditablePronounsProps> = ({
             </IonSelect>
 
             {editorChoice === 'custom' && (
-              <IonInput value={editorValue} onIonInput={e => setEditorValue(e.detail.value ?? '')} placeholder="Enter your pronouns" debounce={250} />
+              <IonInput value={editorValue} maxlength={maxLength} counter onIonInput={e => setEditorValue((e.detail.value ?? '').slice(0, maxLength))} placeholder="Enter your pronouns" debounce={250} />
             )}
           </>
         ) : (
@@ -613,7 +649,8 @@ const SelfProfileV2: React.FC = () => {
   };
 
   const saveField = async (key: keyof SimpleFormState, value?: string) => {
-    const nextValue = value ?? (form[key] as string);
+    const maxLength = profileTextFieldLimits[key];
+    const nextValue = (value ?? (form[key] as string)).slice(0, maxLength);
     await updateCurrentUserProfile({ [key]: nextValue });
     setForm(prev => ({ ...prev, [key]: nextValue }));
     setOriginalForm(prev => ({ ...prev, [key]: nextValue }));
@@ -731,7 +768,6 @@ const SelfProfileV2: React.FC = () => {
 
   const livedExperienceOptions: [string, string][] = [
     ['poc', 'POC'],
-    ['spiritual', 'Spiritual'],
     ['neurodivergent', 'Neurodivergent'],
     ['sober', 'Sober'],
   ];
@@ -923,7 +959,7 @@ const SelfProfileV2: React.FC = () => {
     if (!photoTextEditor) return;
     const { photoKey, mode } = photoTextEditor;
     const fieldName = `${photoKey}_${mode === 'caption' ? 'caption' : 'alt'}`;
-    const maxLength = mode === 'caption' ? 32 : 300;
+    const maxLength = mode === 'caption' ? PROFILE_FIELD_LIMITS.photoCaption : PROFILE_FIELD_LIMITS.photoAlt;
     await updateCurrentUserProfile({ [fieldName]: photoTextValue.slice(0, maxLength) });
     refreshProfile();
     closePhotoTextEditor();
@@ -1061,10 +1097,10 @@ const SelfProfileV2: React.FC = () => {
                 <IonTextarea
                   value={photoTextValue}
                   autoGrow
-                  maxlength={32}
+                  maxlength={PROFILE_FIELD_LIMITS.photoCaption}
                   counter
                   placeholder="Add a custom caption"
-                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 32))}
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.photoCaption))}
                 />
               </IonItem>
             </>
@@ -1077,10 +1113,10 @@ const SelfProfileV2: React.FC = () => {
                 <IonTextarea
                   value={photoTextValue}
                   autoGrow
-                  maxlength={300}
+                  maxlength={PROFILE_FIELD_LIMITS.photoAlt}
                   counter
                   placeholder="Add alt text"
-                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, 300))}
+                  onIonInput={e => setPhotoTextValue((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.photoAlt))}
                 />
               </IonItem>
             </>

@@ -14,11 +14,13 @@ type BoxedStackedInputProps = {
   value: string;
   name: string;
   placeholder?: string;
-  type?: 'text' | 'email' | 'password' | 'datetime-local';
+  type?: 'text' | 'email' | 'password' | 'datetime-local' | 'url';
   autocapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: 'on' | 'off';
   readonly?: boolean;
   disabled?: boolean;
+  maxlength?: number;
+  counter?: boolean;
   step?: string;
   onClick?: React.MouseEventHandler<HTMLIonInputElement>;
   onIonFocus?: () => void;
@@ -36,13 +38,15 @@ const BoxedStackedInput: React.FC<BoxedStackedInputProps> = ({
   autoCorrect='on',
   readonly = false,
   disabled = false,
+  maxlength,
+  counter,
   step,
   onClick,
   onIonFocus,
   onIonInput,
   onIonChange,
 }) => (
-  <IonItem className="boxed-stacked-input">
+  <IonItem className="boxed-stacked-input" lines="none">
     <IonLabel position="stacked">{label}</IonLabel>
     <IonInput
       value={value}
@@ -53,6 +57,8 @@ const BoxedStackedInput: React.FC<BoxedStackedInputProps> = ({
       autoCorrect={autoCorrect}
       readonly={readonly}
       disabled={disabled}
+      maxlength={maxlength}
+      counter={counter}
       step={step}
       onClick={onClick}
       onIonFocus={onIonFocus}

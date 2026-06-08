@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../hooks/api/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { annQueryKeys } from "../hooks/api/announcements-take-1/ann-query-keys";
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonCardContent, IonIcon, IonList, IonPopover } from '@ionic/react';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonLabel, IonInput, IonButton, IonItem, IonButtons, IonNote, IonAlert, IonPage, IonTextarea, IonSelect, IonSelectOption, useIonModal, IonCol, IonGrid, IonRow, IonText, IonCheckbox, IonCard, IonCardContent, IonIcon, IonList, IonPopover, IonAccordion, IonAccordionGroup } from '@ionic/react';
 import Cookies from 'js-cookie';
 import moment from "moment";
 
@@ -28,6 +28,8 @@ import { informationCircle } from "ionicons/icons";
 import ContactDetailsPopover from "./ContactDetailsPopover";
 import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
 import PostSuggestionMini from "./PostSuggestionMini";
+import { ANNOUNCEMENT_IMAGE_CONSTRAINTS } from "../constants/submissionImages";
+import { ANNOUNCEMENT_FIELD_LIMITS, EVENT_FIELD_LIMITS } from "../constants/fieldLimits";
 
 const ATTENDEE_PRECAUTION_OPTIONS = [
     { value: 'not_specified', label: 'Not specified' },
@@ -40,7 +42,7 @@ const ATTENDEE_PRECAUTION_OPTIONS = [
 
 type Props = {
     preferred_name: string,
-    username: string,
+    username?: string | null,
     initialCategory?: string,
     onDismiss: () => void;
     onGoToSubmissions?: () => void;
@@ -159,9 +161,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const [long, setLong] = useState<number | null>(null);
     const [eventStart, setEventStart] = useState<string>("");
     const [eventEnd, setEventEnd] = useState<string>("");
+    const [eventEndTouched, setEventEndTouched] = useState(false);
     const [eventType, setEventType] = useState<string>("");
     const [attendeePrecautionPreference, setAttendeePrecautionPreference] = useState<string | null>(null);
     const [eventWarning, setEventWarning] = useState<string[] | null>(null);
+    const [showLinkShortenerWarning, setShowLinkShortenerWarning] = useState(false);
+    const [showOffPlatformWarning, setShowOffPlatformWarning] = useState(false);
     const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
     const [recurrenceCount, setRecurrenceCount] = useState(1);
     const [recurrenceCustomDates, setRecurrenceCustomDates] = useState<string[]>([]);
@@ -440,7 +445,18 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const openingRef = useRef(false);
     const recurrenceTypeRef = useRef(recurrenceType);
 
-    const userHandle = (username ?? "").trim();
+    const userHandle = (username || globalCurrentProfile?.username || "").trim();
+
+    useEffect(() => {
+        if (globalIsLoading || userHandle) return;
+        navigateTo('/community-onboarding');
+    }, [globalIsLoading, userHandle]);
+
+    useEffect(() => {
+        if (userHandle && !byline) {
+            setByline(userHandle);
+        }
+    }, [byline, userHandle]);
 
 
 
@@ -519,20 +535,25 @@ const CreatePostModal: React.FC<Props> = (props) => {
             type: `image/${photo.format}`,
         });
 
-        Resizer.imageFileResizer(
-            photoblob,
-            1500,
-            1500,
-            "JPEG",
-            100,
-            0,
-            (uri) => {
-                setImage(uri)
-            },
-            "base64",
-            800,
-            800
-        );
+        const resize = ANNOUNCEMENT_IMAGE_CONSTRAINTS.sourceResize;
+        if (resize) {
+            Resizer.imageFileResizer(
+                photoblob,
+                resize.width,
+                resize.height,
+                resize.format,
+                resize.quality,
+                resize.rotation,
+                (uri) => {
+                    setImage(uri)
+                },
+                resize.outputType,
+                resize.minWidth,
+                resize.minHeight
+            );
+        } else {
+            setImage(photoblob);
+        }
 
         setPicDB(pic_db)
         setImageName("main.png")
@@ -558,6 +579,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
         image: image,
         picDb: picDb,
         imageName: imageName,
+        imageConstraints: ANNOUNCEMENT_IMAGE_CONSTRAINTS,
         onDismiss: (data: string | null) => handleCropDismiss(data)
     });
 
@@ -628,22 +650,35 @@ const CreatePostModal: React.FC<Props> = (props) => {
         }
     };
 
-    async function handlePostSubmit(e?: any, skipWarning = false) {
+    async function handlePostSubmit(e?: any, skipWarning = false, skipLinkShortenerWarning = false, skipOffPlatformWarning = false) {
         if (e) {
             e.preventDefault();
         }
 
-        const hasCompleteEventDetails = !!(eventType && eventStart && eventEnd);
+        const eventLocationValue = (locationLabel || location || '').trim();
+        const inPersonEvent = !!eventType && eventType !== 'virtual_only';
+        const hasCompleteEventDetails = !!(eventType && eventStart && eventEnd && (!inPersonEvent || eventLocationValue));
 
         if (!skipWarning && bar === "events") {
             const missing: string[] = [];
             if (!eventType) missing.push("Event type");
             if (!eventStart) missing.push("Event start");
             if (!eventEnd) missing.push("Event end");
+            if (inPersonEvent && !eventLocationValue) missing.push("Event location");
             if (missing.length) {
                 setEventWarning(missing);
                 return;
             }
+        }
+
+        if (!skipLinkShortenerWarning && (hasShortenedLinkInContent || hasShortenedLinkInLinkField)) {
+            setShowLinkShortenerWarning(true);
+            return;
+        }
+
+        if (!skipOffPlatformWarning && mentionsOffPlatformContact) {
+            setShowOffPlatformWarning(true);
+            return;
         }
 
         if (bar === "events" && hasCompleteEventDetails) {
@@ -724,11 +759,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                 uploadData.append("coverPhoto", imageDataToUpload);
                 await announcementUploadPhoto(uploadData, ann_response.data['announcement_id'])
             }
-            if (bar === "events" && eventStart && eventEnd && eventType) {
+            if (bar === "events" && hasCompleteEventDetails) {
                 await createEventFromPost(ann_response.data['announcement_id']);
             }
             setEventStart("");
             setEventEnd("");
+            setEventEndTouched(false);
             setEventType("");
             setRecurrenceType("none");
             setRecurrenceCount(1);
@@ -824,7 +860,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
         () => containsGoogleDocLink(linkFieldText),
         [linkFieldText]
     );
-    const hasBlockedLinks = hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
+    const hasBlockedLinks = hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
     const mentionsPaymentHandle: boolean = useMemo(() => {
         if (!combinedPostText) return false;
         return /(venmo|paypal|cashapp)/i.test(combinedPostText);
@@ -832,6 +868,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const mentionsOneToOne: boolean = useMemo(() => {
         if (!combinedPostText) return false;
         return /(looking to connect|message me|let['’]s connect|to meet)/i.test(combinedPostText);
+    }, [combinedPostText]);
+    const mentionsOffPlatformContact: boolean = useMemo(() => {
+        if (!combinedPostText) return false;
+        const platforms = '(signal|insta|instagram|ig|whatsapp|telegram|discord|facebook|messenger|twitter|\\bx\\b)';
+        return new RegExp(`\\b(dm|message|text|contact|reach(?:\\s+out)?|find|follow|add|friend)\\s+(?:out\\s+)?(?:to\\s+)?(me|us)?\\s*(on|at|via)?\\s*${platforms}\\b`, 'i').test(combinedPostText)
+            || new RegExp(`\\b(my|our)\\s+${platforms}\\s+(is|handle is|username is)\\b`, 'i').test(combinedPostText)
+            || /(?:^|\s)@[a-z0-9._-]{2,}/i.test(combinedPostText);
     }, [combinedPostText]);
 
 
@@ -1039,6 +1082,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     value={title}
                                     name="title"
                                     placeholder="Required"
+                                    maxlength={ANNOUNCEMENT_FIELD_LIMITS.title}
+                                    counter
                                     onIonInput={e => setTitle(e.detail.value!)}
                                     type="text"
                                     autocapitalize='words'
@@ -1101,6 +1146,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         <IonInput
                                             value={location}
                                             placeholder="Click to select"
+                                            maxlength={ANNOUNCEMENT_FIELD_LIMITS.location}
                                             readonly
                                             onClick={(e) => {
                                                 e.preventDefault();
@@ -1115,7 +1161,9 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             type="text"
                                             placeholder="What the post labels as the location"
                                             autocapitalize='words'
-                                            name='locationlabel' />
+                                            name='locationlabel'
+                                            maxlength={ANNOUNCEMENT_FIELD_LIMITS.location}
+                                            counter />
                                     </IonItem>
                                 </>
                             )}
@@ -1134,11 +1182,60 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     <IonSelectOption value="science">STEAM</IonSelectOption>
                                     <IonSelectOption value="pop">Pop</IonSelectOption>
                                     <IonSelectOption value="events">Event</IonSelectOption>
-                                    <IonSelectOption value="housing" disabled={!local}>Housing</IonSelectOption>
-                                    <IonSelectOption value="recommendations" disabled={!local}>Local Recommendations</IonSelectOption>
+                                    <IonSelectOption value="recommendations">Recommendations</IonSelectOption>
+                                    <IonSelectOption value="housing" disabled={!local}>
+                                        {local ? "Housing" : "Housing - must be a Local Post"}
+                                    </IonSelectOption>
                                 </IonSelect>
                             </IonItem>
                         </IonCard>
+
+                        {bar === "housing" && (
+                            <IonCard className="housing-post-guidance">
+                                <IonCardContent>
+                                    <IonText color="dark">
+                                        <strong>Housing post expectations</strong>
+                                        <p>
+                                            Provide enough information for people to determine whether they may be a good fit. For everyone's safety, share more specific details privately through Connect from Refreshments after connecting.
+                                        </p>
+                                    </IonText>
+                                    <IonAccordionGroup>
+                                        <IonAccordion value="housing-details">
+                                            <IonItem slot="header" lines="none">
+                                                <IonLabel>What to include and leave out</IonLabel>
+                                            </IonItem>
+                                            <div slot="content" className="housing-post-guidance-details">
+                                                <IonText color="dark">
+                                                    <strong>Include:</strong>
+                                                </IonText>
+                                                <ul>
+                                                    <li>General location (neighborhood or area)</li>
+                                                    <li>Approximate budget or rent range</li>
+                                                    <li>Timeline or expected lease length</li>
+                                                    <li>General COVID precautions</li>
+                                                    <li>Relevant household expectations and values, needs, pets, or dealbreakers</li>
+                                                </ul>
+                                                <IonText color="dark">
+                                                    <strong>Don't include:</strong>
+                                                </IonText>
+                                                <ul>
+                                                    <li>Exact address, cross streets, apartment numbers, or other identifying location details</li>
+                                                    <li>Exact rent amounts</li>
+                                                    <li>Detailed schedules or routines, like specific workdays, class schedules, or travel plans</li>
+                                                    <li>Sensitive personal information about yourself or others</li>
+                                                    <li>Derogatory labels or exclusionary language describing who is not welcome. Please describe who you hope to live with instead.</li>
+                                                </ul>
+                                                <IonText color="medium">
+                                                    <p>
+                                                        Please note: Due to our guidelines around getting to know people before meeting up, Refresh is intended for longer-term housing connections and does not support temporary or short-term housing posts or requests to crash.
+                                                    </p>
+                                                </IonText>
+                                            </div>
+                                        </IonAccordion>
+                                    </IonAccordionGroup>
+                                </IonCardContent>
+                            </IonCard>
+                        )}
 
                         {bar === "events" && (
                             <IonCard>
@@ -1160,10 +1257,19 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     type="datetime-local"
                                     step="900"
                                     value={eventStart}
-                                    onIonInput={(e) => setEventStart(normalizeDatetime(e.detail.value ?? ""))}
+                                    onIonInput={(e) => {
+                                        const normalized = normalizeDatetime(e.detail.value ?? "");
+                                        setEventStart(normalized);
+                                        if (normalized && !eventEndTouched) {
+                                            setEventEnd(moment(normalized).add(2, 'hours').format('YYYY-MM-DDTHH:mm'));
+                                        }
+                                    }}
                                     onIonFocus={() => {
                                         if (!eventStart) {
                                             setEventStart(defaultStartDatetime);
+                                            if (!eventEndTouched) {
+                                                setEventEnd(moment(defaultStartDatetime).add(2, 'hours').format('YYYY-MM-DDTHH:mm'));
+                                            }
                                         }
                                     }}
                                 />
@@ -1176,14 +1282,17 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     type="datetime-local"
                                     step="900"
                                     value={eventEnd}
-                                    onIonInput={(e) => setEventEnd(normalizeDatetime(e.detail.value ?? ""))}
+                                    onIonInput={(e) => {
+                                        setEventEndTouched(true);
+                                        setEventEnd(normalizeDatetime(e.detail.value ?? ""));
+                                    }}
                                     onIonFocus={() => {
                                         if (eventEnd) return;
                                         if (eventStart) {
-                                            const next = moment(eventStart).add(1, 'hour').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
+                                            const next = moment(eventStart).add(2, 'hours').minute(0).second(0).format('YYYY-MM-DDTHH:mm');
                                             setEventEnd(next);
                                         } else {
-                                            const next = moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+                                            const next = moment(defaultStartDatetime).add(2, 'hours').format('YYYY-MM-DDTHH:mm');
                                             setEventEnd(next);
                                         }
                                     }}
@@ -1222,7 +1331,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         <IonTextarea
                                             value={content}
                                             autoGrow
-                                            maxlength={2000}
+                                            maxlength={ANNOUNCEMENT_FIELD_LIMITS.content}
                                             style={{ minHeight: "120px" }}
                                             placeholder="Write your post here..."
                                             onIonInput={(e) => setContent(e.detail.value ?? "")}
@@ -1235,7 +1344,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
                                 {/* Options */}
                                 <IonCard >
-                                    <IonItem color="white" lines="full">
+                                    <IonItem color="white" lines="none">
                                         <IonCheckbox
                                             className="createpostcheckbox"
                                             checked={includeProfile}
@@ -1268,6 +1377,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 value={sensitiveDescription}
                                                 name="sensitive description"
                                                 placeholder="Add suggested content warnings here."
+                                                maxlength={ANNOUNCEMENT_FIELD_LIMITS.sensitiveDescription}
+                                                counter
                                                 onIonInput={e => setSensitiveDescription(e.detail.value!)}
                                                 rows={3}
                                                 autocapitalize='sentences'
@@ -1292,12 +1403,14 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
                                 {/* Link and Photo */}
                                 <IonCard>
-                                    <IonItem color="white" lines="full">
+                                    <IonItem color="white" lines="none">
                                         <IonLabel position="stacked">Link (optional)</IonLabel>
                                         <IonInput
                                             value={link}
                                             name="link"
                                             placeholder="Add a related link (optional)"
+                                            maxlength={ANNOUNCEMENT_FIELD_LIMITS.link}
+                                            counter
                                             onIonInput={e => setLink(e.detail.value!)}
                                         />
                                     </IonItem>
@@ -1325,6 +1438,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                 value={coverPhotoAlt}
                                                 name="coverphotoalt"
                                                 placeholder="Add a description to your image"
+                                                maxlength={ANNOUNCEMENT_FIELD_LIMITS.coverPhotoAlt}
+                                                counter
                                                 onIonInput={e => setCoverPhotoAlt(e.detail.value!)}
                                             />
                                         </IonItem>}
@@ -1525,6 +1640,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={content ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        maxlength={ANNOUNCEMENT_FIELD_LIMITS.content}
+                                                                        counter
                                                                         autocapitalize='sentences'
                                                                         autoCorrect='on'
                                                                         onIonChange={(event) => {
@@ -1545,6 +1662,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                         value={recurrenceDescriptions[descriptionIndex] ?? ""}
                                                                         placeholder="Defaults to the main description unless you change it"
                                                                         autoGrow
+                                                                        maxlength={ANNOUNCEMENT_FIELD_LIMITS.content}
+                                                                        counter
                                                                         autocapitalize='sentences'
                                                                         autoCorrect='on'
                                                                         onIonChange={(event) => {
@@ -1570,6 +1689,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                                     <IonInput
                                                                         value={recurrenceExternalLinks[descriptionIndex] ?? link ?? ""}
                                                                         placeholder="Add a link for this date (optional)"
+                                                                        maxlength={EVENT_FIELD_LIMITS.externalLink}
+                                                                        counter
                                                                         onIonChange={(event) => {
                                                                             const nextLinks = [...recurrenceExternalLinks];
                                                                             nextLinks[descriptionIndex] = event.detail.value ?? "";
@@ -1677,6 +1798,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                             value={recurrenceDescriptions[index] ?? ""}
                                                             placeholder="Defaults to the main description unless you change it"
                                                             autoGrow
+                                                            maxlength={ANNOUNCEMENT_FIELD_LIMITS.content}
+                                                            counter
                                                             onIonChange={(event) => {
                                                                 const nextDescriptions = [...recurrenceDescriptions];
                                                                 nextDescriptions[index] = event.detail.value ?? "";
@@ -1690,6 +1813,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                                         <IonInput
                                                             value={recurrenceExternalLinks[index] ?? link ?? ""}
                                                             placeholder="Add a link for this date (optional)"
+                                                            maxlength={EVENT_FIELD_LIMITS.externalLink}
+                                                            counter
                                                             onIonChange={(event) => {
                                                                 const nextLinks = [...recurrenceExternalLinks];
                                                                 nextLinks[index] = event.detail.value ?? "";
@@ -1755,7 +1880,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                     </IonCheckbox>
                                 </IonItem>
 
-                                {(issues.length > 0 || hasPii || mentionsPaymentHandle || hasBlockedLinks || mentionsOneToOne) && (
+                                {(issues.length > 0 || hasPii || mentionsPaymentHandle || hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasBlockedLinks || mentionsOneToOne || mentionsOffPlatformContact) && (
                                     <IonRow className="ion-padding ion-text-center">
                                         <IonText color="danger">
                                             {issues.map((msg, i) => (
@@ -1775,7 +1900,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                         )}
                                         {hasShortenedLinkInContent || hasShortenedLinkInLinkField ? (
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
-                                                Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.
+                                                Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.
                                             </p>
                                         ) : null}
                                         {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
@@ -1787,6 +1912,31 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             <p className="ion-text-center" style={{ color: "var(--ion-color-medium" }}>
                                                 Reminder: The Refreshments Bar is for open discussion. If you're looking for 1:1 connections, use Discovery and filters!
                                             </p>
+                                        ) : null}
+                                        {mentionsOffPlatformContact ? (
+                                            <div className="post-safety-guidance">
+                                                <p className="ion-text-center" style={{ color: "var(--ion-color-medium" }}>
+                                                    It looks like you might be asking to move off-platform in this public post. Our community safety guidelines encourage getting to know one another on platform first. Please ask to connect using Connect from Refreshments.
+                                                </p>
+                                                <IonAccordionGroup>
+                                                    <IonAccordion value="connect-from-refreshments">
+                                                        <IonItem slot="header" lines="none">
+                                                            <IonLabel className="ion-text-wrap">What is Connect from Refreshments?</IonLabel>
+                                                        </IonItem>
+                                                        <div className="ion-padding post-safety-guidance-description" slot="content">
+                                                            Connect from Refreshments is a setting that lets members discover your Personal Profile and send you Likes from the community side of the app, including the Refreshments Bar and Calendar. It allows you to move to a 1:1 conversation, where you can then share off-platform contact details after you've gotten to know each other. You can turn it on or off in your Me tab &gt; Settings.
+                                                        </div>
+                                                    </IonAccordion>
+                                                    <IonAccordion value="word-this">
+                                                        <IonItem slot="header" lines="none">
+                                                            <IonLabel className="ion-text-wrap">How should I word this?</IonLabel>
+                                                        </IonItem>
+                                                        <div className="ion-padding post-safety-guidance-description" slot="content">
+                                                            For conversations that others may benefit from, invite people to reply in the comments. To move to a private 1:1 chat or share personal details, including off-platform contact information, let people know your Connect from Refreshments is on.
+                                                        </div>
+                                                    </IonAccordion>
+                                                </IonAccordionGroup>
+                                            </div>
                                         ) : null}
                                     </IonRow>
                                 )}
@@ -1841,6 +1991,44 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                 }
                             }
                         ]}
+                        />
+                        <IonAlert
+                            isOpen={showLinkShortenerWarning}
+                            header="Use the full URL?"
+                            message="Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking."
+                            buttons={[
+                                {
+                                    text: 'Edit link',
+                                    role: 'cancel',
+                                    handler: () => setShowLinkShortenerWarning(false)
+                                },
+                                {
+                                    text: 'Submit anyway',
+                                    handler: () => {
+                                        setShowLinkShortenerWarning(false);
+                                        handlePostSubmit(undefined, true, true, false);
+                                    }
+                                }
+                            ]}
+                        />
+                        <IonAlert
+                            isOpen={showOffPlatformWarning}
+                            header="Share off-platform details later"
+                            message="It looks like you might be asking to move off-platform in this post. To meet Refresh Connections community safety guidelines, we ask you please share off-platform contact details privately instead. Please edit your post if needed (or go ahead and submit if this doesn't apply)."
+                            buttons={[
+                                {
+                                    text: 'Edit post',
+                                    role: 'cancel',
+                                    handler: () => setShowOffPlatformWarning(false)
+                                },
+                                {
+                                    text: 'Submit anyway',
+                                    handler: () => {
+                                        setShowOffPlatformWarning(false);
+                                        handlePostSubmit(undefined, true, true, true);
+                                    }
+                                }
+                            ]}
                         />
                                 <IonAlert
                                     isOpen={showRecurringUpgrade}

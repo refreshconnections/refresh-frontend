@@ -113,6 +113,15 @@ const Activity: React.FC = () => {
         onDismiss: (data: string, role: string) => createPostDismiss(data, role),
     });
 
+    const handleCreatePost = () => {
+        if (currentUserProfile === undefined) return;
+        if (!currentUserProfile?.username?.trim()) {
+            router.push('/community-onboarding');
+            return;
+        }
+        createPostPresent();
+    };
+
     return (
         <IonPage>
             <IonContent className="activity">
@@ -168,7 +177,7 @@ const Activity: React.FC = () => {
                         toggleComment={toggleComment}
                         presentAlert={presentAlert}
                         router={router}
-                        createPostPresent={createPostPresent}
+                        createPostPresent={handleCreatePost}
                     />
                 )}
 

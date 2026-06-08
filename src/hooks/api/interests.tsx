@@ -37,6 +37,15 @@ const getEventInterestId = (target: EventInterestTarget) => (
   typeof target === 'number' ? target : target.id
 );
 
+const isEventPage = (data: PaginatedResponse<RefreshEvent> | undefined): data is PaginatedResponse<RefreshEvent> => {
+  if (!data || !Array.isArray(data.results)) return false;
+  return data.results.every((event) => (
+    typeof event?.id === 'number' &&
+    typeof event?.name === 'string' &&
+    typeof event?.start_datetime === 'string'
+  ));
+};
+
 export function useGetInterestedPosts(page = 1) {
   const query = useQuery({
     queryKey: interestQueryKeys.postsPage(page),
@@ -74,16 +83,18 @@ export function useGetInterestedEvents(page = 1) {
   });
 
   const { cachedData } = useWarmCachedValue(
-    `warm_interested_events_page_${page}_v1`,
+    `warm_interested_events_page_${page}_v2`,
     query.data,
     1000 * 60 * 10,
     !!localStorage.getItem('token'),
   );
 
+  const validCachedData = isEventPage(cachedData) ? cachedData : undefined;
+
   return {
     ...query,
-    data: query.data ?? cachedData,
-    isLoading: query.isLoading && !cachedData,
+    data: query.data ?? validCachedData,
+    isLoading: query.isLoading && !validCachedData,
   };
 }
 

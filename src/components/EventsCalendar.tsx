@@ -255,8 +255,9 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
       return;
     }
 
-    if (!eventsForSelectedDate.some((event) => event.id === selectedEventId)) {
-      setSelectedEventId(eventsForSelectedDate[0].id);
+    const selectedEventStillVisible = eventsForSelectedDate.some((event) => event.id === selectedEventId);
+    if (!selectedEventStillVisible) {
+      setSelectedEventId(null);
     }
   }, [eventsForSelectedDate, selectedEventId]);
 

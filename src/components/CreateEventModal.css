@@ -55,6 +55,61 @@
   padding-top: 0;
 }
 
+.create-event-flow-choices {
+  margin: 12px;
+}
+
+.create-event-flow-choices ion-item {
+  margin: 8px 0;
+}
+
+.create-event-flow-choice-primary strong {
+  font-size: 1.15rem;
+}
+
+.create-event-flow-title-with-icon {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.create-event-flow-or {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 10px 0 6px;
+}
+
+.create-event-flow-choice-quick {
+  --min-height: 56px;
+  font-size: 0.92rem;
+}
+
+.create-event-section.create-event-quick-share {
+  padding-top: 44px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.create-event-quick-share > ion-text {
+  display: block;
+  padding: 0 8px;
+}
+
+.create-event-quick-share ion-text[color="medium"] {
+  color: var(--ion-color-medium-shade);
+}
+
+.create-event-quick-share ion-input,
+.create-event-quick-share ion-textarea {
+  --placeholder-color: var(--ion-color-medium-shade);
+}
+
+.create-event-quick-share-aside {
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
 .event-timezone-note {
   display: block;
   padding: 8px 18px 2px;
@@ -224,6 +279,12 @@
   border: 1px solid var(--ion-color-step-150, #e3e1f6);
   border-radius: 12px;
   padding: 8px;
+}
+
+.recurrence-description-editor ion-textarea,
+.recurrence-link-editor ion-input {
+  --border-width: 0;
+  --highlight-height: 0;
 }
 
 .recurrence-field-header {

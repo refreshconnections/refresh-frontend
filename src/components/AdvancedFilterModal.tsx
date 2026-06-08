@@ -254,7 +254,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   );
   const livedExperienceOptions = [
     { value: "poc", label: "POC" },
-    { value: "spiritual", label: "Spiritual" },
     { value: "neurodivergent", label: "Neurodivergent" },
     { value: "sober", label: "Sober" },
   ];
@@ -262,7 +261,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
   const allowAllLivedExperienceFilters = !siteSettings;
   const allowedLivedExperienceValues = new Set<string>([
     ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_poc ? ["poc"] : []),
-    ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_spiritual ? ["spiritual"] : []),
     ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_neurodivergent ? ["neurodivergent"] : []),
     ...(allowAllLivedExperienceFilters || siteSettings?.allow_filter_lived_experiences_sober ? ["sober"] : []),
   ]);
@@ -391,12 +389,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
           label: 'families',
           type: 'radio',
           value: 'families',
-        },
-        {
-          label: 'Long Covid support',
-          type: 'radio',
-          value: 'Long Covid support',
-        },
+        }
       ],
     })
   }
@@ -1243,61 +1236,6 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
             </IonGrid>
           </IonAccordion>
         </IonAccordionGroup >
-
-
-        {lookingForSS == "Long Covid support" ?
-          <IonAccordionGroup value="first">
-            <IonAccordion value="first">
-              <IonItem slot="header"><IonLabel className="ion-text-wrap">Long Covid Support</IonLabel><IonBadge color="primary">{lcCount} filters</IonBadge></IonItem>
-              <IonItem >
-
-
-              </IonItem>
-
-              <IonGrid className="filter-grid" slot="content">
-                <IonRow className="lr-pad">
-                  <IonText className="ion-text-wrap">
-                    I am looking for someone who is <i>any</i> of the following:
-                  </IonText>
-                </IonRow>
-                <IonRow>
-
-
-                  <IonCol>
-                    <IonList>
-                      <IonCheckbox slot="start" value="I have LC" checked={currentProfileData.filter_lc.includes("I have LC") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                      living with Long Covid
-                      <IonItem>
-                        <IonCheckbox slot="start" value="LC caretaker" checked={currentProfileData.filter_lc.includes("LC caretaker") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        caring for someone with Long Covid
-                      </IonItem>
-                      <IonItem>
-                        <IonCheckbox slot="start" value="I could help remote" checked={currentProfileData.filter_lc.includes("I could help remote") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        needing remote support
-                      </IonItem>
-                      <IonItem>
-                        <IonCheckbox slot="start" value="I could help local" checked={currentProfileData.filter_lc.includes("I could help local") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        needing local support
-                      </IonItem>
-                      <IonItem>
-                        <IonCheckbox slot="start" value="I need help remote" checked={currentProfileData.filter_lc.includes("I need help remote") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        offering remote support
-                      </IonItem>
-                      <IonItem>
-                        <IonCheckbox slot="start" value="I need help local" checked={currentProfileData.filter_lc.includes("I need help local") ? true : false} onIonChange={e => addLCFilterCheckbox(e)} />
-                        offering local support
-                      </IonItem>
-                    </IonList>
-
-                  </IonCol>
-
-
-
-                </IonRow>
-              </IonGrid>
-            </IonAccordion>
-          </IonAccordionGroup >
-          : <></>}
 
         {shouldShowLivedExperiencesAccordion && (
           <IonAccordionGroup>

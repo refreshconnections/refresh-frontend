@@ -312,6 +312,26 @@ describe('Refreshments page', () => {
     });
   });
 
+  it('routes to refreshments onboarding instead of opening create-post when the user has no username', async () => {
+    mockGlobalProfile.mockReturnValue({
+      data: { subscription_level: 'none', name: 'Alex', username: '' },
+      isLoading: false,
+    } as any);
+    mockSiteSettings.mockReturnValue({
+      data: { allow_free_users_to_submit_posts: true },
+    } as any);
+    const { container } = renderRefreshments();
+
+    const postButtons = Array.from(
+      container.querySelectorAll('.refreshments-control-button')
+    ) as HTMLElement[];
+
+    fireEvent.click(postButtons[postButtons.length - 1]);
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding');
+    expect(mockPresentModal).not.toHaveBeenCalled();
+  });
+
   it('keeps the dot refresh indicator hidden while fresh posts are loading over warmed data', async () => {
     mockPosts.mockReturnValue({
       data: [11, 12, 13, 14, 15, 16],

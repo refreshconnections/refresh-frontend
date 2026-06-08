@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 
 import './CantAccessCard.css';
@@ -59,9 +60,9 @@ const OnboardingCardBio: React.FC = () => {
         <IonItem>
           <IonTextarea value={bio}
             name="bio"
-            onIonInput={e => setBio(e.detail.value!)}
+            onIonInput={e => setBio((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.bio))}
             placeholder=""
-            maxlength={400}
+            maxlength={PROFILE_FIELD_LIMITS.bio}
             counter
             autoGrow={true}
             autocapitalize='sentences'
