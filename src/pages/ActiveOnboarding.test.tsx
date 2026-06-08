@@ -435,6 +435,7 @@ describe('active onboarding pages', () => {
     mockPreferencesGet.mockResolvedValue({ value: null });
     mockPreferencesSet.mockResolvedValue(undefined);
     mockPreferencesRemove.mockResolvedValue(undefined);
+    window.history.pushState({}, '', '/');
     mockUpdateCurrentUserProfile.mockResolvedValue({ status: 204 });
     mockUpdateCurrentUserProfileWStatus.mockResolvedValue({ status: 204 });
     mockUpdateUsername.mockResolvedValue({ status: 204 });
@@ -1024,6 +1025,23 @@ describe('active onboarding pages', () => {
       expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_in_progress' });
       expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_slide' });
       expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
+    });
+  });
+
+  it('returns to create post after finishing refreshments onboarding from create-post intent', async () => {
+    window.history.pushState({}, '', '/community-onboarding?next=create-post');
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      username: 'alex',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.finish));
+
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith('/community?createPost=1', 'root', 'replace');
     });
   });
 

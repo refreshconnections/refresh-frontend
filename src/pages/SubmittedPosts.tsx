@@ -231,8 +231,9 @@ const SubmittedPosts: React.FC = () => {
   const handleEventClick = (event: any) => {
     const status = (event?.status ?? 'pending').toLowerCase();
     if (status === 'approved' && event?.start_datetime) {
-      const dateKey = new Date(event.start_datetime).toISOString().slice(0, 10);
-      history.push(`/community?calendarDate=${dateKey}`);
+      const date = moment(event.start_datetime);
+      if (!date.isValid()) return;
+      history.push(`/community?calendarDate=${date.format('YYYY-MM-DD')}&calendarEventId=${event.id}`);
       return;
     }
     setSelectedEvent(event);

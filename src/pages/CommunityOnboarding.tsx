@@ -82,6 +82,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [username, setUsername] = useState('');
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameBusy, setUsernameBusy] = useState(false);
+  const [usernameSavedThisSession, setUsernameSavedThisSession] = useState(false);
 
   const [communityBio, setCommunityBio] = useState('');
   const [showLocation, setShowLocation] = useState(false);
@@ -235,6 +236,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setUsernameBusy(true);
     const response = await updateUsername({ username });
     if (response?.status === 204) {
+      setUsernameSavedThisSession(true);
       await queryClient.invalidateQueries({ queryKey: ['current'] });
       await queryClient.invalidateQueries({ queryKey: ['global-current'] });
       slideNext();
@@ -331,7 +333,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   };
 
   const handleFinish = async () => {
-    if (!currentProfile?.username) {
+    if (!(currentProfile?.username || usernameSavedThisSession)) {
       setUsernameError(copy.username.requiredToFinish);
       slideTo(0, 0);
       return;
@@ -345,7 +347,12 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     });
 
     await clearResumeState();
-    router.push('/community', 'root', 'replace');
+    const params = new URLSearchParams(window.location.search);
+    router.push(
+      params.get('next') === 'create-post' ? '/community?createPost=1' : '/community',
+      'root',
+      'replace'
+    );
   };
 
   const handleCreatePersonalProfile = async () => {

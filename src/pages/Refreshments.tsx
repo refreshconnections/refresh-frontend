@@ -220,12 +220,24 @@ const Refreshments: React.FC = () => {
 
   const handleCreatePost = () => {
     if (globalIsLoading) return;
-    if (!globalCurrentProfile?.username?.trim()) {
-      router.push('/community-onboarding');
-      return;
-    }
     createPostPresent();
   };
+
+  const createPostAutoOpenHandled = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('createPost') !== '1') {
+      createPostAutoOpenHandled.current = false;
+      return;
+    }
+    if (createPostAutoOpenHandled.current || globalIsLoading || !globalCurrentProfile?.username?.trim()) return;
+
+    createPostAutoOpenHandled.current = true;
+    params.delete('createPost');
+    history.replace({ pathname: location.pathname, search: params.toString() });
+    createPostPresent();
+  }, [createPostPresent, globalCurrentProfile?.username, globalIsLoading, history, location.pathname, location.search]);
 
   const handleFilterDismiss = (
     bars: string,

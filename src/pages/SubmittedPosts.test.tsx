@@ -180,7 +180,7 @@ describe('SubmittedPosts', () => {
     expect(await screen.findByText('Pending event')).toBeInTheDocument();
     expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Approved event'));
-    expect(mockPush).toHaveBeenCalledWith('/community?calendarDate=2099-07-21');
+    expect(mockPush).toHaveBeenCalledWith('/community?calendarDate=2099-07-21&calendarEventId=22');
 
     fireEvent.click(screen.getByText('Pending event'));
     expect(await screen.findByText('Event details')).toBeInTheDocument();

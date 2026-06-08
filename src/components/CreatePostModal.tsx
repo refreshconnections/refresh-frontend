@@ -446,11 +446,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
     const recurrenceTypeRef = useRef(recurrenceType);
 
     const userHandle = (username || globalCurrentProfile?.username || "").trim();
-
-    useEffect(() => {
-        if (globalIsLoading || userHandle) return;
-        navigateTo('/community-onboarding');
-    }, [globalIsLoading, userHandle]);
+    const needsCommunityProfile = !globalIsLoading && !userHandle;
 
     useEffect(() => {
         if (userHandle && !byline) {
@@ -1067,6 +1063,22 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             <p>Check your Activity for moderation details and our guidelines.</p>
                         </IonText>
                         <IonButton onClick={() => navigateTo("/activity")}>View Activity</IonButton>
+                    </IonCard>
+                ) : needsCommunityProfile ? (
+                    <IonCard color="white" className="ion-padding ion-text-center">
+                        <IonCardContent>
+                            <IonText>
+                                <h2>Create your Refreshments Profile</h2>
+                                <p>You need a Refreshments Profile before you can submit a post.</p>
+                            </IonText>
+                            <IonButton
+                                expand="block"
+                                className="ion-margin-top"
+                                onClick={() => navigateTo('/community-onboarding?next=create-post')}
+                            >
+                                Create Refreshments Profile
+                            </IonButton>
+                        </IonCardContent>
                     </IonCard>
                 ) : (
                     <>

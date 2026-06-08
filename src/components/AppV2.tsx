@@ -765,7 +765,7 @@ const AppV2: React.FC = () => {
       window.location.pathname,
       globalCurrentProfile,
       emailStatus,
-      Boolean(communityProfile)
+      Boolean(communityProfile?.username)
     );
   const needsAgeVerificationGate =
     loggedin &&

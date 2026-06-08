@@ -95,6 +95,21 @@ describe('shouldShowOnboardingForProfile', () => {
     ).toBe(false);
   });
 
+  it('still shows onboarding when the community profile response has no username', () => {
+    expect(
+      shouldShowPrimaryOnboardingScreen(
+        '/community',
+        {
+          created_profile: false,
+          onboarded: true,
+          birth_date: '2000-01-01',
+        },
+        { phone: '+15555555555' },
+        false
+      )
+    ).toBe(true);
+  });
+
   it('still shows the ready-to-start onboarding screen when onboarded is explicitly false, even if a community profile exists', () => {
     expect(
       shouldShowPrimaryOnboardingScreen(

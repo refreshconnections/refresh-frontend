@@ -115,10 +115,6 @@ const Activity: React.FC = () => {
 
     const handleCreatePost = () => {
         if (currentUserProfile === undefined) return;
-        if (!currentUserProfile?.username?.trim()) {
-            router.push('/community-onboarding');
-            return;
-        }
         createPostPresent();
     };
 

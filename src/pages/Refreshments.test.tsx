@@ -15,6 +15,7 @@ const {
   mockPresentModal,
   mockDismissModal,
   presentUpsellAlert,
+  mockLocationSearch,
 } = vi.hoisted(() => ({
   dismissNotification: vi.fn(),
   preferencesGet: vi.fn(),
@@ -26,6 +27,7 @@ const {
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
   presentUpsellAlert: vi.fn(),
+  mockLocationSearch: { value: '?calendarDate=2026-04-10' },
 }));
 
 let mockEvents: any[] = [];
@@ -180,7 +182,7 @@ vi.mock('react-router-dom', () => ({
   }),
   useLocation: () => ({
     pathname: '/refreshments',
-    search: '?calendarDate=2026-04-10',
+    search: mockLocationSearch.value,
   }),
 }));
 
@@ -236,6 +238,7 @@ beforeEach(() => {
   preferencesGet.mockResolvedValue({ value: null });
   preferencesSet.mockResolvedValue(undefined);
   preferencesRemove.mockResolvedValue(undefined);
+  mockLocationSearch.value = '?calendarDate=2026-04-10';
 
   mockPosts.mockReturnValue({
     data: [11, 12, 13, 14, 15, 16],
@@ -312,7 +315,7 @@ describe('Refreshments page', () => {
     });
   });
 
-  it('routes to refreshments onboarding instead of opening create-post when the user has no username', async () => {
+  it('opens create-post when the user has no username so the modal can gate profile creation', async () => {
     mockGlobalProfile.mockReturnValue({
       data: { subscription_level: 'none', name: 'Alex', username: '' },
       isLoading: false,
@@ -328,8 +331,19 @@ describe('Refreshments page', () => {
 
     fireEvent.click(postButtons[postButtons.length - 1]);
 
-    expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding');
-    expect(mockPresentModal).not.toHaveBeenCalled();
+    expect(mockPresentModal).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalledWith('/community-onboarding?next=create-post');
+  });
+
+  it('opens create-post automatically after returning from refreshments onboarding', async () => {
+    mockLocationSearch.value = '?createPost=1';
+
+    renderRefreshments();
+
+    await waitFor(() => {
+      expect(mockPresentModal).toHaveBeenCalledTimes(1);
+    });
+    expect(historyReplace).toHaveBeenCalledWith({ pathname: '/refreshments', search: '' });
   });
 
   it('keeps the dot refresh indicator hidden while fresh posts are loading over warmed data', async () => {

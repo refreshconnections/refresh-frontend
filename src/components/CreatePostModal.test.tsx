@@ -313,7 +313,7 @@ describe('CreatePostModal', () => {
     expect(screen.getByText('age-gate-post')).toBeInTheDocument();
   });
 
-  it('routes to refreshments onboarding when opened without a username', async () => {
+  it('shows a refreshments profile gate and opens onboarding when the CTA is clicked', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       username: '',
@@ -322,10 +322,16 @@ describe('CreatePostModal', () => {
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
     const { onDismiss } = renderModal({ username: '' });
 
+    expect(screen.getByText('Create your Refreshments Profile')).toBeInTheDocument();
+    expect(screen.getByText('You need a Refreshments Profile before you can submit a post.')).toBeInTheDocument();
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Create Refreshments Profile'));
+
     await waitFor(() => {
       expect(onDismiss).toHaveBeenCalled();
     });
-    expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/community-onboarding');
+    expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/community-onboarding?next=create-post');
     expect(dispatchSpy).toHaveBeenCalled();
   });
 
