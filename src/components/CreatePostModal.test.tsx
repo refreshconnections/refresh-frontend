@@ -113,7 +113,7 @@ vi.mock('../hooks/utilities', () => ({
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
   createAnnouncement: (...args: any[]) => mockCreateAnnouncement(...args),
   increaseStreak: vi.fn(),
-  isCommunityPlus: vi.fn((level?: string) => level === 'community_plus'),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
   openExternalUrl: (...args: any[]) => mockOpenExternalUrl(...args),
 }));
@@ -388,7 +388,7 @@ describe('CreatePostModal', () => {
   it('saves a draft for Community+ users', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -666,7 +666,7 @@ describe('CreatePostModal', () => {
   it.each([
     'This sounds fun, dm me on Signal or friend me on Discord.',
     'This sounds fun, reach out to me on Signal.',
-    'This sounds fun, I am @maskedfriend there.',
+    'This sounds fun, find me at @maskedfriend.',
   ])('warns but allows posts that ask members to move to another messaging app: %s', async (postContent) => {
     const { container } = renderModal();
 
@@ -846,7 +846,7 @@ describe('CreatePostModal', () => {
   it('shows a draft save error when saving a draft fails', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     mockCreateAnnouncement.mockRejectedValueOnce(new Error('draft failed'));
     const { container } = renderModal();
@@ -861,7 +861,7 @@ describe('CreatePostModal', () => {
   it('shows a recurring same-day end-time error for invalid custom event dates', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -935,7 +935,7 @@ describe('CreatePostModal', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       registrationDate: daysAgoIso(7),
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
 
     renderModal();

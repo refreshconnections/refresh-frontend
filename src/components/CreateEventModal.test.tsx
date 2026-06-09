@@ -97,7 +97,7 @@ vi.mock('../hooks/utilities', () => ({
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
   eventUploadPhoto: (...args: any[]) => mockEventUploadPhoto(...args),
   increaseStreak: vi.fn(),
-  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus' || level === 'community_plus'),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
 }));
 
@@ -446,7 +446,7 @@ describe('CreateEventModal', () => {
   it('shows a recurring-date validation error for custom repeats with no extra dates', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -588,7 +588,7 @@ describe('CreateEventModal', () => {
   it('shows generated recurring dates and converts an edited generated date into a custom recurrence', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -641,7 +641,7 @@ describe('CreateEventModal', () => {
   it('shows a recurring same-day end-time error for invalid custom dates', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -789,7 +789,7 @@ describe('CreateEventModal', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       registrationDate: daysAgoIso(7),
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
 
     renderModal();

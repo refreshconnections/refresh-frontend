@@ -21,6 +21,7 @@ __pycache__/
 dist/
 build/
 .tmp/
+coverage/
 
 # OS files
 .DS_Store

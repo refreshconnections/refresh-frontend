@@ -870,7 +870,8 @@ const CreatePostModal: React.FC<Props> = (props) => {
         const platforms = '(signal|insta|instagram|ig|whatsapp|telegram|discord|facebook|messenger|twitter|\\bx\\b)';
         return new RegExp(`\\b(dm|message|text|contact|reach(?:\\s+out)?|find|follow|add|friend)\\s+(?:out\\s+)?(?:to\\s+)?(me|us)?\\s*(on|at|via)?\\s*${platforms}\\b`, 'i').test(combinedPostText)
             || new RegExp(`\\b(my|our)\\s+${platforms}\\s+(is|handle is|username is)\\b`, 'i').test(combinedPostText)
-            || /(?:^|\s)@[a-z0-9._-]{2,}/i.test(combinedPostText);
+            || new RegExp(`\\b(on|at|via)\\s+@[a-z0-9._-]{2,}`, 'i').test(combinedPostText)
+            || new RegExp(`${platforms}:\\s*@?[a-z0-9._-]{2,}`, 'i').test(combinedPostText);
     }, [combinedPostText]);
 
 
@@ -1900,23 +1901,23 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             ))}
                                         </IonText>
                                         {hasPii && (
-                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger)" }}>
                                                 Posts cannot contain private personal contact information. Please remove details like phone numbers or emails before submitting.
                                                 <ContactDetailsPopover />
                                             </p>
                                         )}
                                         {mentionsPaymentHandle && (
-                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger)" }}>
                                                 Reminder: Requests for payment are only allowed for COVID conscientious events or verified charities on official platforms that provide receipts (personal Venmos, CashApp, etc. cannot be approved).
                                             </p>
                                         )}
                                         {hasShortenedLinkInContent || hasShortenedLinkInLinkField ? (
-                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger)" }}>
                                                 Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.
                                             </p>
                                         ) : null}
                                         {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
-                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger" }}>
+                                            <p className="ion-text-center" style={{ color: "var(--ion-color-danger)" }}>
                                                 This link isn’t allowed due to guidelines.
                                             </p>
                                         ) : null}

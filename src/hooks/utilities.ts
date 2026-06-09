@@ -2610,7 +2610,7 @@ export function isPersonalPlus(level) {
 }
 
 export function isCommunityPlus(level) {
-    if (level === "pro" || level == "communityplus")
+    if (level === "pro" || level === "communityplus")
         return true
     else {
         return false
