@@ -12,6 +12,7 @@ const {
   mockPresentModal,
   mockDismissModal,
   mockModalConfigs,
+  mockOpenExternalUrl,
 } = vi.hoisted(() => ({
   mockCreateAnnouncement: vi.fn(),
   mockAnnouncementUploadPhoto: vi.fn(),
@@ -20,6 +21,7 @@ const {
   mockPresentModal: vi.fn(),
   mockDismissModal: vi.fn(),
   mockModalConfigs: [] as any[],
+  mockOpenExternalUrl: vi.fn(),
 }));
 
 let mockGlobalProfile: any = {
@@ -113,6 +115,7 @@ vi.mock('../hooks/utilities', () => ({
   increaseStreak: vi.fn(),
   isCommunityPlus: vi.fn((level?: string) => level === 'community_plus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
+  openExternalUrl: (...args: any[]) => mockOpenExternalUrl(...args),
 }));
 
 vi.mock('../hooks/api/profiles/current-limits', () => ({
@@ -311,6 +314,14 @@ describe('CreatePostModal', () => {
     renderModal();
 
     expect(screen.getByText('age-gate-post')).toBeInTheDocument();
+  });
+
+  it('opens Refreshments posting guidelines in the app browser', () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Refreshments posting guidelines' }));
+
+    expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://www.refreshconnections.com/faqs#post');
   });
 
   it('shows a refreshments profile gate and opens onboarding when the CTA is clicked', async () => {

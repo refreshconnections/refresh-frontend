@@ -14,6 +14,9 @@ export function useCompleteOnboarding(opts?: { onSuccess?: () => void }) {
       return res.data;
     },
     onSuccess: () => {
+      queryClient.setQueryData(['global-current'], (current: any) => (
+        current ? { ...current, onboarded: true } : current
+      ));
       queryClient.invalidateQueries({ queryKey: ['global-current'] });
       opts?.onSuccess?.();
     },

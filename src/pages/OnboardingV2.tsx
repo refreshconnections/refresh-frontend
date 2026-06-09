@@ -12,7 +12,8 @@ import {
   IonSpinner,
   IonText,
   useIonAlert,
-  useIonModal
+  useIonModal,
+  useIonRouter
 } from '@ionic/react';
 import { IonDatetime, IonDatetimeButton, IonModal } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
@@ -578,6 +579,7 @@ const ReadySlide: React.FC<ReadySlideProps> = ({
 
 const OnboardingV2: React.FC = () => {
   const queryClient = useQueryClient();
+  const router = useIonRouter();
   const { keyboardHeight, keyboardOpen } = useOnboardingKeyboardState();
   const { data: globalCurrentProfile } = useGetGlobalAppCurrentProfile();
   const { data: emailStatus, isLoading: emailStatusLoading } = useEmailStatus();
@@ -698,7 +700,7 @@ const OnboardingV2: React.FC = () => {
   ) => {
     event?.preventDefault();
     await completeOnboardingAndProceed(() => {
-      window.location.href = destination;
+      router.push(destination, 'root', 'replace');
     });
   };
 

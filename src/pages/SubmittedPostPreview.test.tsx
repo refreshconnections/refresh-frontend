@@ -38,6 +38,10 @@ vi.mock('../hooks/api/api-client', () => ({
   },
 }));
 
+vi.mock('../hooks/utilities', () => ({
+  openExternalUrl: vi.fn(),
+}));
+
 vi.mock('../components/GuidelinesButton', () => ({
   default: () => <div>guidelines-button</div>,
 }));
@@ -70,6 +74,7 @@ describe('SubmittedPostPreview', () => {
           content: 'Body copy',
           byline: 'Alex',
           approval_status: 'pending',
+          moderator_edit_or_rejection_reason: 'Please add context.\nhttps://example.com/rules',
           uploadDateTime: '2099-07-18T00:00:00.000Z',
           interested_count: 9,
         },
@@ -83,5 +88,10 @@ describe('SubmittedPostPreview', () => {
     expect(await screen.findByText('Your Submission')).toBeInTheDocument();
     expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     expect(screen.queryByText('9')).not.toBeInTheDocument();
+    const explanation = document.querySelector('.moderator-explanation-body') as HTMLElement;
+    expect(explanation).toHaveTextContent('Please add context. https://example.com/rules');
+    expect(explanation.textContent).toContain('\n');
+    expect(screen.getByRole('button', { name: 'https://example.com/rules' })).toBeInTheDocument();
+    expect(screen.getByText('guidelines-button')).toBeInTheDocument();
   });
 });

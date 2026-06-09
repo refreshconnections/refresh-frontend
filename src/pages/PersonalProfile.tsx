@@ -9,6 +9,7 @@ import {
   IonText,
   useIonAlert,
   useIonModal,
+  useIonRouter,
 } from '@ionic/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -59,6 +60,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     onDismiss: () => stayPausedDismiss(),
   });
   const queryClient = useQueryClient();
+  const router = useIonRouter();
   const completeOnboarding = useCompleteOnboarding({
     onSuccess: async () => {
       await Preferences.set({ key: 'ONBOARDED', value: 'true' });
@@ -163,11 +165,13 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
       await completeOnboarding.mutateAsync();
     }
     await updateCurrentUserProfile({ paused_profile: true, settings_community_profile: false });
+    await queryClient.invalidateQueries({ queryKey: ['current'] });
+    await queryClient.invalidateQueries({ queryKey: ['global-current'] });
     if (onDismiss) {
       onDismiss();
       return;
     }
-    window.location.pathname = '/community';
+    router.push('/community', 'root', 'replace');
   };
 
   const ensureProfileCreatedBeforeConnect = async () => {

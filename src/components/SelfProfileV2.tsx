@@ -60,9 +60,12 @@ type SimpleFormState = {
   pronouns: string;
   bio: string;
   location: string;
+  height: string;
   job: string;
   politics: string;
   school: string;
+  kids_info: string;
+  hometown: string;
   covid_precaution_info: string;
   looking_for: string[];
   covid_precautions: number[];
@@ -99,9 +102,12 @@ const initialForm: SimpleFormState = {
   pronouns: '',
   bio: '',
   location: '',
+  height: '',
   job: '',
   politics: '',
   school: '',
+  kids_info: '',
+  hometown: '',
   covid_precaution_info: '',
   looking_for: [],
   covid_precautions: [],
@@ -140,9 +146,12 @@ const profileTextFieldLimits: Partial<Record<keyof SimpleFormState, number>> = {
   pronouns: PROFILE_FIELD_LIMITS.pronouns,
   bio: PROFILE_FIELD_LIMITS.bio,
   location: PROFILE_FIELD_LIMITS.location,
+  height: 6,
   job: PROFILE_FIELD_LIMITS.job,
   politics: PROFILE_FIELD_LIMITS.politics,
   school: PROFILE_FIELD_LIMITS.school,
+  kids_info: PROFILE_FIELD_LIMITS.shortAnswer,
+  hometown: PROFILE_FIELD_LIMITS.location,
   covid_precaution_info: PROFILE_FIELD_LIMITS.covidPrecautionInfo,
   together_idea: PROFILE_FIELD_LIMITS.shortAnswer,
   freetime: PROFILE_FIELD_LIMITS.shortAnswer,
@@ -185,6 +194,8 @@ type EditableFieldProps = {
 type EditablePronounsProps = Omit<EditableFieldProps, 'fieldKey' | 'multiline'> & {
   pronounOptions: readonly string[];
 };
+
+type EditableCustomFieldProps = Omit<EditableFieldProps, 'fieldKey' | 'multiline'>;
 
 const EditableField: React.FC<EditableFieldProps> = ({
   fieldKey,
@@ -258,6 +269,163 @@ const EditableField: React.FC<EditableFieldProps> = ({
               Cancel
             </IonButton>
             <IonButton className="save-button" size="small" color="success" onClick={() => saveField(fieldKey, editorValue)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
+const heightFeetOptions = ['3', '4', '5', '6', '7'];
+const heightInchOptions = Array.from({ length: 12 }, (_, index) => String(index));
+const kidsInfoOptions = [
+  "I'm a parent",
+  "I'm a parent and am open to having more children",
+  "I'm open to having children",
+  'I definitely want children',
+  "I don't want children",
+];
+
+const parseHeight = (height: string) => {
+  const match = height.match(/^(\d)'(\d{1,2})$/);
+  return {
+    feet: match?.[1] ?? '',
+    inches: match?.[2] ?? '',
+  };
+};
+
+const EditableHeight: React.FC<EditableCustomFieldProps> = ({
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+}) => {
+  const value = form.height;
+  const [feet, setFeet] = useState(parseHeight(value).feet);
+  const [inches, setInches] = useState(parseHeight(value).inches);
+
+  useEffect(() => {
+    if (!editing.height) return;
+    const parsed = parseHeight(form.height);
+    setFeet(parsed.feet);
+    setInches(parsed.inches);
+  }, [editing.height, form.height]);
+
+  const nextHeight = feet ? `${feet}'${inches || '0'}` : '';
+
+  return (
+    <IonItem className={`card-field ${editing.height ? 'editing' : ''}`} lines="none">
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels.height.label}</p>
+          {!editing.height && (
+            <div className="field-actions">
+              <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('height') ? 'blank-edit' : ''}`} onClick={() => startEdit('height')}>
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing.height ? (
+          <IonRow className="profile-height-editor">
+            <IonCol size="6">
+              <IonSelect label="Feet" labelPlacement="stacked" value={feet} placeholder="Feet" onIonChange={e => setFeet(e.detail.value ?? '')}>
+                {heightFeetOptions.map(option => (
+                  <IonSelectOption key={option} value={option}>{option}</IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonCol>
+            <IonCol size="6">
+              <IonSelect label="Inches" labelPlacement="stacked" value={inches} placeholder="Inches" onIonChange={e => setInches(e.detail.value ?? '')}>
+                {heightInchOptions.map(option => (
+                  <IonSelectOption key={option} value={option}>{option}</IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonCol>
+          </IonRow>
+        ) : (
+          <h2 className="multi-line">{value || '-'}</h2>
+        )}
+
+        {editing.height && (
+          <div className="field-actions editing-actions">
+            {!!nextHeight && (
+              <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => { setFeet(''); setInches(''); }} type="button">
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('height')} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField('height', nextHeight)}>
+              Save
+            </IonButton>
+          </div>
+        )}
+      </div>
+    </IonItem>
+  );
+};
+
+const EditableKidsInfo: React.FC<EditableCustomFieldProps> = ({
+  form,
+  editing,
+  fieldLabels,
+  isFieldEmpty,
+  startEdit,
+  cancelEdit,
+  saveField,
+}) => {
+  const value = form.kids_info;
+  const [editorValue, setEditorValue] = useState(value ?? '');
+
+  useEffect(() => {
+    if (!editing.kids_info) return;
+    setEditorValue(form.kids_info ?? '');
+  }, [editing.kids_info, form.kids_info]);
+
+  return (
+    <IonItem className={`card-field ${editing.kids_info ? 'editing' : ''}`} lines="none">
+      <div className="editing-section">
+        <div className="field-header">
+          <p>{fieldLabels.kids_info.label}</p>
+          {!editing.kids_info && (
+            <div className="field-actions">
+              <IonButton size="small" fill="outline" color="primary" className={`edit-button ${isFieldEmpty('kids_info') ? 'blank-edit' : ''}`} onClick={() => startEdit('kids_info')}>
+                Edit
+              </IonButton>
+            </div>
+          )}
+        </div>
+
+        {editing.kids_info ? (
+          <IonSelect value={editorValue} placeholder="Select" onIonChange={e => setEditorValue(e.detail.value ?? '')}>
+            {kidsInfoOptions.map(option => (
+              <IonSelectOption key={option} value={option}>{option}</IonSelectOption>
+            ))}
+            <IonSelectOption value="">Leave this blank</IonSelectOption>
+          </IonSelect>
+        ) : (
+          <h2 className="multi-line">{value || '-'}</h2>
+        )}
+
+        {editing.kids_info && (
+          <div className="field-actions editing-actions">
+            {!!editorValue && (
+              <IonButton className="clear-button" size="small" fill="clear" color="danger" onClick={() => setEditorValue('')} type="button">
+                Clear
+              </IonButton>
+            )}
+            <IonButton className="cancel-button" size="small" fill="clear" color="medium" onClick={() => cancelEdit('kids_info')} type="button">
+              Cancel
+            </IonButton>
+            <IonButton className="save-button" size="small" color="success" onClick={() => saveField('kids_info', editorValue)}>
               Save
             </IonButton>
           </div>
@@ -385,9 +553,12 @@ const SelfProfileV2: React.FC = () => {
     pronouns: false,
     bio: false,
     location: false,
+    height: false,
     job: false,
     politics: false,
     school: false,
+    kids_info: false,
+    hometown: false,
     covid_precaution_info: false,
     looking_for: false,
     covid_precautions: false,
@@ -446,9 +617,12 @@ const SelfProfileV2: React.FC = () => {
       pronouns: currentUserProfile.pronouns ?? '',
       bio: currentUserProfile.bio ?? '',
       location: currentUserProfile.location ?? '',
+      height: currentUserProfile.height ?? '',
       job: currentUserProfile.job ?? '',
       politics: currentUserProfile.politics ?? '',
       school: currentUserProfile.school ?? '',
+      kids_info: currentUserProfile.kids_info ?? '',
+      hometown: currentUserProfile.hometown ?? '',
       covid_precaution_info: currentUserProfile.covid_precaution_info ?? '',
       looking_for: currentUserProfile.looking_for ?? [],
       covid_precautions: currentUserProfile.covid_precautions ?? [],
@@ -502,9 +676,12 @@ const SelfProfileV2: React.FC = () => {
       pronouns: false,
       bio: false,
       location: false,
+      height: false,
       job: false,
       politics: false,
       school: false,
+      kids_info: false,
+      hometown: false,
       covid_precaution_info: false,
       looking_for: false,
       covid_precautions: false,
@@ -701,7 +878,7 @@ const SelfProfileV2: React.FC = () => {
     setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_lived_experiences: checked }));
   };
 
-  const summaryKeys = ['pronouns', 'job', 'politics', 'school'] as const;
+  const summaryKeys = ['pronouns', 'height', 'job', 'politics', 'school', 'kids_info', 'hometown'] as const;
   const aboutKeys = ['bio'] as const;
 
   const covidGroups: Record<string, [number, string][]> = {
@@ -849,9 +1026,12 @@ const SelfProfileV2: React.FC = () => {
   const fieldLabels: FieldLabels = {
     location: { label: 'Location', description: 'Where you spend most of your time.' },
     pronouns: { label: 'Pronouns', description: 'How others can refer to you.' },
+    height: { label: 'Height', description: 'Your height.' },
     job: { label: 'Job', description: 'Current profession or focus.' },
     politics: { label: 'Politics', description: 'Share how you lean on issues.' },
     school: { label: 'School', description: 'Education you are currently attending or attended.' },
+    kids_info: { label: 'Kids info', description: 'Share whether parenting or children are part of what you want.' },
+    hometown: { label: 'Hometown', description: 'Where you are from.' },
     bio: { label: 'Bio', description: 'A quick snapshot for people meeting you.' },
     covid_precaution_info: { label: 'Covid behaviors', description: 'Let people know how you approach safety.' },
     looking_for: { label: 'Looking for', description: 'What types of connections you are open to.' },
@@ -1189,6 +1369,10 @@ const SelfProfileV2: React.FC = () => {
               {summaryKeys.map(key => (
                 key === 'pronouns'
                   ? <EditablePronouns key="pronouns" {...editableFieldProps} pronounOptions={pronounOptions} />
+                  : key === 'height'
+                    ? <EditableHeight key="height" {...editableFieldProps} />
+                  : key === 'kids_info'
+                    ? <EditableKidsInfo key="kids_info" {...editableFieldProps} />
                   : <EditableField key={key} {...editableFieldProps} fieldKey={key} />
               ))}
 

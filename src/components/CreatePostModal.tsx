@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
 import moment from "moment";
 
 import './CreatePostModal.css'
-import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, increaseStreak, isCommunityPlus, isPro } from "../hooks/utilities";
+import { announcementUploadPhoto, containsGoogleDocLink, containsLinkShortener, containsPii, createAnnouncement, increaseStreak, isCommunityPlus, isPro, openExternalUrl } from "../hooks/utilities";
 import { Camera, CameraResultType } from "@capacitor/camera";
 import { decode } from "base64-arraybuffer";
 import CroppedPostImageModal from "./CroppedPostImageModal";
@@ -1036,7 +1036,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                         <IonCard className="ion-padding limited ion-text-center">
                             <p>All members can submit 2 posts each month.</p>
                             <IonText color="medium">
-                                <FontAwesomeIcon icon={faCirclePlus} /> Community+ and Pro include unlimited post submissions. All submissions are subject to our <a href="https://www.refreshconnections.com/faqs#post">Refreshments posting guidelines</a>.
+                                <FontAwesomeIcon icon={faCirclePlus} /> Community+ and Pro include unlimited post submissions. All submissions are subject to our <a href="https://www.refreshconnections.com/faqs#post" onClick={(event) => { event.preventDefault(); openExternalUrl('https://www.refreshconnections.com/faqs#post'); }}>Refreshments posting guidelines</a>.
                             </IonText>
                         </IonCard>
                         {hasPreviousSubmissions && (

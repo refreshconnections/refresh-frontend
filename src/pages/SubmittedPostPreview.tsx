@@ -44,6 +44,7 @@ import './SubmittedPostPreview.css';
 import { ModerationCopy } from '../enums/moderation';
 import GuidelinesButton from '../components/GuidelinesButton';
 import CitySelectorModal from '../components/CitySelectorModal';
+import { openExternalUrl } from '../hooks/utilities';
 
 type SubmittedPost = {
   id: number;
@@ -128,6 +129,25 @@ const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =
     {ModerationCopy.MODERATION_INFO_POPOVER}
   </IonContent>
 );
+
+const renderModeratorExplanation = (text: string) => {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlPattern).map((part, index) => {
+    if (!/^https?:\/\//.test(part)) {
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+    }
+    return (
+      <button
+        key={`link-${index}`}
+        type="button"
+        className="moderator-explanation-link"
+        onClick={() => openExternalUrl(part)}
+      >
+        {part}
+      </button>
+    );
+  });
+};
 
 const SubmittedPostPreview: React.FC = () => {
   const { id } = useParams<RouteParams>();
@@ -716,9 +736,9 @@ const SubmittedPostPreview: React.FC = () => {
               <IonText color="dark" className="section-heading">
                 <h3>Moderator explanation</h3>
               </IonText>
-              <IonText color="navy">
-                <p>{moderatorExplanation}</p>
-              </IonText>
+              <p className="moderator-explanation-body">
+                {renderModeratorExplanation(moderatorExplanation)}
+              </p>
               <IonRow className="ion-justify-content-center">
                 <GuidelinesButton label="Guidelines" fill="outline" color="primary" includeMechanics />
               </IonRow>

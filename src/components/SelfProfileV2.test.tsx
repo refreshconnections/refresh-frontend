@@ -103,15 +103,25 @@ vi.mock('base64-arraybuffer', () => ({
 
 import SelfProfileV2 from './SelfProfileV2';
 
+const requireElement = (element: Element | null, label: string) => {
+  if (!element) {
+    throw new Error(`Expected to find ${label}`);
+  }
+  return element;
+};
+
 const baseProfile = {
   name: 'Alex',
   age: 34,
   location: 'Brooklyn, NY',
+  height: "5'8",
   pronouns: 'they/them',
   bio: 'Masked and ready to meet people.',
   job: 'Designer',
   politics: 'Left',
   school: 'State University',
+  kids_info: "I don't want children",
+  hometown: 'Queens',
   covid_precaution_info: 'Still masking indoors.',
   looking_for: ['friendship'],
   covid_precautions: [1, 10],
@@ -192,6 +202,97 @@ describe('SelfProfileV2', () => {
         onDismiss: expect.any(Function),
       })
     );
+  });
+
+  it('shows all profile-card basics fields in the active basics editor', () => {
+    renderSelfProfile();
+
+    expect(screen.getByText('Height')).toBeInTheDocument();
+    expect(screen.getByText("5'8")).toBeInTheDocument();
+    expect(screen.getByText('Kids info')).toBeInTheDocument();
+    expect(screen.getByText("I don't want children")).toBeInTheDocument();
+    expect(screen.getByText('Hometown')).toBeInTheDocument();
+    expect(screen.getByText('Queens')).toBeInTheDocument();
+  });
+
+  it('saves hometown from the basics section', async () => {
+    const { container } = renderSelfProfile();
+
+    const hometownItem = requireElement(Array.from(container.querySelectorAll('ion-item')).find(
+      item => item.textContent?.includes('Hometown')
+    ) ?? null, 'hometown item');
+
+    fireEvent.click(requireElement(hometownItem.querySelector('ion-button'), 'hometown edit button'));
+
+    fireEvent(
+      requireElement(hometownItem.querySelector('ion-input'), 'hometown input'),
+      new CustomEvent('ionInput', { detail: { value: 'Atlanta' }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(requireElement(hometownItem.querySelector('.save-button'), 'hometown save button'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        hometown: 'Atlanta',
+      });
+    });
+  });
+
+  it('saves height from feet and inches selects in the basics section', async () => {
+    const { container } = renderSelfProfile();
+
+    const heightItem = requireElement(Array.from(container.querySelectorAll('ion-item')).find(
+      item => item.textContent?.includes('Height')
+    ) ?? null, 'height item');
+
+    fireEvent.click(requireElement(heightItem.querySelector('ion-button'), 'height edit button'));
+
+    const [feetSelect, inchesSelect] = Array.from(heightItem.querySelectorAll('ion-select'));
+    fireEvent(
+      requireElement(feetSelect ?? null, 'feet select'),
+      new CustomEvent('ionChange', { detail: { value: '6' }, bubbles: true })
+    );
+    fireEvent(
+      requireElement(inchesSelect ?? null, 'inches select'),
+      new CustomEvent('ionChange', { detail: { value: '1' }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(requireElement(heightItem.querySelector('.save-button'), 'height save button'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        height: "6'1",
+      });
+    });
+  });
+
+  it('saves kids info from the select in the basics section', async () => {
+    const { container } = renderSelfProfile();
+
+    const kidsItem = requireElement(Array.from(container.querySelectorAll('ion-item')).find(
+      item => item.textContent?.includes('Kids info')
+    ) ?? null, 'kids info item');
+
+    fireEvent.click(requireElement(kidsItem.querySelector('ion-button'), 'kids info edit button'));
+
+    fireEvent(
+      requireElement(kidsItem.querySelector('ion-select'), 'kids info select'),
+      new CustomEvent('ionChange', { detail: { value: "I'm open to having children" }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(requireElement(kidsItem.querySelector('.save-button'), 'kids info save button'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        kids_info: "I'm open to having children",
+      });
+    });
   });
 
   it('includes a freshly updated field when preview is opened immediately afterward', async () => {

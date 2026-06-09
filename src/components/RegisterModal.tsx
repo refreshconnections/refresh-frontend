@@ -224,11 +224,8 @@ const RegisterModal: React.FC = () => {
                         <IonCheckbox slot="start" onIonChange={e => setAgreedToTerms(e.detail.checked)}></IonCheckbox>
                         <IonText>I have read and agree to the Refresh Connections <a href="https://refreshconnections.com/terms">Terms and Conditions</a> and <a href="https://refreshconnections.com/privacy">Privacy Policy</a>.</IonText>
                     </IonItem>
-                    <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!agreedToTerms || nameErrors !== null || disableButton}>
-                        Sign up
-                    </IonButton>
                     {(nameErrors !== null) ?
-                        <IonNote >{nameErrors}</IonNote>
+                        <IonNote color="danger">{nameErrors}</IonNote>
                         : <></>
                     }
                     {errors && errors.length > 0 ? <IonNote color="danger">Errors: </IonNote> : null}
@@ -243,6 +240,9 @@ const RegisterModal: React.FC = () => {
                             </div>
                         ))
                     )}
+                    <IonButton className="ion-margin-top" type="submit" expand="block" disabled={!agreedToTerms || nameErrors !== null || disableButton}>
+                        Sign up
+                    </IonButton>
                 </form>
                 </>}
             </IonContent>

@@ -530,6 +530,7 @@ describe('active onboarding pages', () => {
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.explore.cta));
     await waitFor(() => {
       expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(2);
+      expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
     });
     expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
 
@@ -1337,6 +1338,10 @@ describe('active onboarding pages', () => {
 
     renderInApp(<PersonalProfile onDismiss={onDismiss} />);
 
+    await act(async () => {
+      await mockSwiperOnSlideChange({ activeIndex: 5 });
+    });
+
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]);
 
     await waitFor(() => {
@@ -1347,6 +1352,12 @@ describe('active onboarding pages', () => {
       });
       expect(onDismiss).toHaveBeenCalled();
     });
+    expect(mockPreferencesSet).toHaveBeenCalledWith({
+      key: 'personal_profile_onboarding_slide',
+      value: '5',
+    });
+    expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_in_progress' });
+    expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
   });
 
   it('shows normal location-sharing UI in personal onboarding when Refreshments was declined first', () => {
