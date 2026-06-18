@@ -19,6 +19,13 @@ ion-content.create-post ion-grid.pics img {
     padding-right: 5px
 }
 
+ion-content.create-post .image-preview-item img {
+    width: 100%;
+    max-height: min(30vh, 240px);
+    border-radius: 12px;
+    object-fit: contain;
+}
+
 ion-content.create-post ion-button.onboarding-pic-upload {
     font-size: 15pt
 }
@@ -77,4 +84,30 @@ ion-row.moderator-submit {
   font-size: 0.875rem;
   color: var(--ion-color-medium);
   white-space: normal; 
+}
+
+.post-safety-guidance {
+    width: 100%;
+}
+
+.post-safety-guidance ion-accordion-group {
+    margin-top: 10px;
+    background: var(--ion-color-white);
+    border: 1px dotted var(--ion-color-medium);
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: left;
+}
+
+.post-safety-guidance ion-accordion {
+    background: var(--ion-color-white);
+}
+
+.post-safety-guidance ion-accordion ion-item {
+    --background: var(--ion-color-white);
+}
+
+.post-safety-guidance-description {
+    font-size: 0.875rem;
+    line-height: 1.35;
 }

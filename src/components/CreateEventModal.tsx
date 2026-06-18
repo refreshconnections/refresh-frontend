@@ -32,7 +32,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
 import { faTrash } from '@fortawesome/pro-solid-svg-icons/faTrash';
+import { faCalendarCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCalendarCirclePlus';
 import { useGetGlobalAppCurrentProfile } from '../hooks/api/profiles/global-app-current-profile';
+import { useGetLimits } from '../hooks/api/profiles/current-limits';
 import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderation';
 import SubmissionAgeGateCard from './SubmissionAgeGateCard';
 import CreatePostModal from './CreatePostModal';
@@ -41,6 +43,8 @@ import { informationCircleOutline } from 'ionicons/icons';
 import BoxedStackedInput from './BoxedStackedInput';
 import BoxedStackedSelect from './BoxedStackedSelect';
 import BoxedStackedTextarea from './BoxedStackedTextarea';
+import { EVENT_IMAGE_CONSTRAINTS } from '../constants/submissionImages';
+import { EVENT_FIELD_LIMITS } from '../constants/fieldLimits';
 
 import { useGetSiteSettings } from '../hooks/api/sitesettings';
 import './CreateEventModal.css';
@@ -97,10 +101,112 @@ type City = {
   lng: number;
 };
 
+type EventSubmissionFlow = 'quick' | 'details';
+
 type CreateEventModalProps = {
-  onDismiss: (data?: { submitted?: boolean }) => void;
+  onDismiss: (data?: { submitted?: boolean; closeCalendar?: boolean }) => void | Promise<unknown>;
   selectedDate?: Date;
 };
+
+type EventFlowChooserProps = {
+  onSelect: (flow: EventSubmissionFlow) => void;
+};
+
+const EventFlowChooser: React.FC<EventFlowChooserProps> = ({ onSelect }) => (
+  <div className="create-event-flow-choices">
+    <IonItem className="create-event-flow-choice-primary" button detail lines="none" onClick={() => onSelect('details')}>
+      <IonLabel className="ion-text-wrap">
+        <strong className="create-event-flow-title-with-icon">
+          <FontAwesomeIcon icon={faCalendarCirclePlus} />
+          <span>Fill out the event</span>
+        </strong>
+        <p>Best for organizers and those who know the details.</p>
+      </IonLabel>
+    </IonItem>
+    <div className="create-event-flow-or">or</div>
+    <IonItem className="create-event-flow-choice-quick" button detail lines="none" onClick={() => onSelect('quick')}>
+      <IonLabel className="ion-text-wrap">
+        <strong>Quick share</strong>
+        <p>Just share a public link to a Covid Conscientious event you found and we'll fill in the rest!</p>
+      </IonLabel>
+    </IonItem>
+  </div>
+);
+
+type QuickEventShareFormProps = {
+  link: string;
+  notes: string;
+  error: string | null;
+  onLinkChange: (value: string) => void;
+  onNotesChange: (value: string) => void;
+};
+
+const getEventLinkErrorMessage = (err: any) => {
+  const data = err?.response?.data;
+  if (!data) return 'Unable to send this right now.';
+  if (typeof data === 'string') return data;
+  if (typeof data.detail === 'string') return data.detail;
+
+  const firstFieldError = Object.values(data).find((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    return typeof value === 'string' && value.trim();
+  });
+
+  if (Array.isArray(firstFieldError)) {
+    return String(firstFieldError[0]);
+  }
+  if (typeof firstFieldError === 'string') {
+    return firstFieldError;
+  }
+  return 'Unable to send this right now.';
+};
+
+const QuickEventShareForm: React.FC<QuickEventShareFormProps> = ({
+  link,
+  notes,
+  error,
+  onLinkChange,
+  onNotesChange,
+}) => (
+  <div className="create-event-section create-event-quick-share">
+    <IonText color="dark">
+      <strong>Don't know all the details but found a cool Covid Conscientious event you think might be a good fit for the calendar?</strong>
+    </IonText>
+    <IonText color="medium">
+      <p>
+        Send the public event or flyer link and we'll try to fill in the rest. If added to the calendar, it will be posted anonymously and won't be connected to your profile.
+      </p>
+      
+    </IonText>
+    <BoxedStackedTextarea
+      label="Public event link"
+      value={link}
+      placeholder="Add your link here"
+      rows={2}
+      autoGrow
+      onIonInput={(event) => onLinkChange(event.detail.value ?? '')}
+    />
+    <BoxedStackedTextarea
+      label="Notes (optional)"
+      value={notes}
+      placeholder="Anything else we should know?"
+      rows={3}
+      maxlength={500}
+      counter
+      onIonInput={(event) => onNotesChange(event.detail.value ?? '')}
+    />
+    <IonText color="navy" className="create-event-quick-share-aside">
+      <p>
+        Quick Share helps us share more Covid Conscientious events. If you have the details on hand or you are an organizer of the event we'd love for you to use the full event form whenever possible!
+      </p>
+    </IonText>
+    {error ? (
+      <IonText color="danger">
+        <p>{error}</p>
+      </IonText>
+    ) : null}
+  </div>
+);
 
 function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
   if (!registrationDate) return false;
@@ -113,6 +219,12 @@ function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selectedDate }) => {
   const router = useIonRouter();
+  const navigateTo = async (path: string) => {
+    if (typeof window === 'undefined') return;
+    await onDismiss?.({ closeCalendar: true });
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -122,6 +234,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [eventType, setEventType] = useState('');
   const [showPostTip, setShowPostTip] = useState(false);
   const { data: globalProfile } = useGetGlobalAppCurrentProfile();
+  const limits = useGetLimits().data;
   const siteSettings = useGetSiteSettings().data;
   const moderation = useGetCurrentModeration().data;
   const isOldEnoughForEvents = isMoreThanTwoWeeksOld(globalProfile?.registrationDate)
@@ -173,10 +286,18 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
   const [imageData, setImageData] = useState<string | null>(null);
   const [rawImage, setRawImage] = useState<string | null>(null);
   const [imageAlt, setImageAlt] = useState('');
+  const [submissionFlow, setSubmissionFlow] = useState<EventSubmissionFlow | null>(null);
+  const [quickLink, setQuickLink] = useState('');
+  const [quickNotes, setQuickNotes] = useState('');
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [quickError, setQuickError] = useState<string | null>(null);
+  const [showQuickSuccessAlert, setShowQuickSuccessAlert] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showDefaultDateConfirm, setShowDefaultDateConfirm] = useState(false);
+  const [showLinkShortenerWarning, setShowLinkShortenerWarning] = useState(false);
+  const [showQuickLinkShortenerWarning, setShowQuickLinkShortenerWarning] = useState(false);
   const [showRecurringUpgrade, setShowRecurringUpgrade] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly' | 'daily' | 'custom'>('none');
   const [recurrenceCount, setRecurrenceCount] = useState(1);
@@ -199,6 +320,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     picDb: '',
     imageName: 'event.png',
     vertical: false,
+    imageConstraints: EVENT_IMAGE_CONSTRAINTS,
     onDismiss: (cropped: string | null) => {
       if (cropped) setImageData(cropped);
       setRawImage(null);
@@ -268,7 +390,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     return base.format('YYYY-MM-DDTHH:mm');
   }, [selectedDate]);
   const defaultEndDatetime = useMemo(
-    () => moment(defaultStartDatetime).add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    () => moment(defaultStartDatetime).add(2, 'hours').format('YYYY-MM-DDTHH:mm'),
     [defaultStartDatetime]
   );
   const [startDatetime, setStartDatetime] = useState(defaultStartDatetime);
@@ -485,18 +607,21 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     () => containsGoogleDocLink(eventLinkText),
     [eventLinkText]
   );
-  const hasBlockedLinks =
-    hasShortenedLinkInContent || hasShortenedLinkInLinkField || hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
+  const hasBlockedLinks = hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField;
   const hasPreSubmitIssues = hasPii || hasBlockedLinks;
   const accountAgeError = isOldEnoughForEvents ? null : 'Events can be submitted once your account is at least two weeks old.';
 
-  const handleSubmit = async (skipDefaultDateConfirm = false) => {
+  const handleSubmit = async (skipDefaultDateConfirm = false, skipLinkShortenerWarning = false) => {
     if (!isOldEnoughForEvents) {
       setError('Events can be submitted once your account is at least two weeks old.');
       return;
     }
     if (!name.trim() || !description.trim() || !eventType || !startDatetime || !endDatetime) {
       setError('Name, description, type, start, and end are required.');
+      return;
+    }
+    if (eventType !== 'virtual_only' && !(locationLabel || location).trim()) {
+      setError('In-person events need a location.');
       return;
     }
     const startMoment = moment(startDatetime);
@@ -521,8 +646,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
       setError('Events cannot contain private personal contact information. Please remove phone numbers or emails.');
       return;
     }
-    if (hasShortenedLinkInContent || hasShortenedLinkInLinkField) {
-      setError("Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.");
+    if (!skipLinkShortenerWarning && (hasShortenedLinkInContent || hasShortenedLinkInLinkField)) {
+      setShowLinkShortenerWarning(true);
       return;
     }
     if (hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField) {
@@ -621,6 +746,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         attendee_precaution_preference: attendeePrecautionPreference || null,
         external_link: externalLink || null,
         external_registration_required: externalRegistrationRequired ? 'true' : 'false',
+        image_alt: imageAlt,
         recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
         recurrence_count: recurrenceType !== 'custom' ? recurrenceCount : null,
         recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates.map(toUTCStr) : null,
@@ -656,8 +782,59 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     onDismiss?.();
   };
 
+  const handleQuickSubmit = async (skipLinkShortenerWarning = false) => {
+    const trimmedLink = quickLink.trim();
+    const trimmedNotes = quickNotes.trim();
+    if (!trimmedLink) {
+      setQuickError('Add a public event link.');
+      return;
+    }
+    if (!skipLinkShortenerWarning && containsLinkShortener(trimmedLink)) {
+      setShowQuickLinkShortenerWarning(true);
+      return;
+    }
+
+    setQuickSubmitting(true);
+    setQuickError(null);
+
+    try {
+      console.log('Submitting quick event link', {
+        hasLink: Boolean(trimmedLink),
+        linkLength: trimmedLink.length,
+        hasNotes: Boolean(trimmedNotes),
+        notesLength: trimmedNotes.length,
+      });
+      const response = await apiClient.post('/api/event/link_submission/', {
+        link: trimmedLink,
+        notes: trimmedNotes,
+      });
+      console.log('Quick event link submitted successfully', {
+        status: response.status,
+        data: response.data,
+      });
+      setQuickLink('');
+      setQuickNotes('');
+      setShowQuickSuccessAlert(true);
+    } catch (err) {
+      console.error('Unable to submit event link', {
+        status: (err as any)?.response?.status,
+        data: (err as any)?.response?.data,
+        message: (err as any)?.message,
+        error: err,
+      });
+      setQuickError(getEventLinkErrorMessage(err));
+    } finally {
+      setQuickSubmitting(false);
+    }
+  };
+
   const handleSuccessAlertDismiss = () => {
     setShowSuccessAlert(false);
+    onDismiss?.({ submitted: true });
+  };
+
+  const handleQuickSuccessAlertDismiss = () => {
+    setShowQuickSuccessAlert(false);
     onDismiss?.({ submitted: true });
   };
 
@@ -702,6 +879,20 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
 
   const canUseRecurring = maxRecurringEvents > 1;
   const maxCustomDates = Math.max(maxRecurringEvents - 1, 0);
+  const hasUnlimitedEventSubmissions = isPro(subscriptionLevel) || isCommunityPlus(subscriptionLevel);
+  const eventsSubmitted = limits?.events_submitted ?? 0;
+  const canSubmitEventThisMonth = hasUnlimitedEventSubmissions || eventsSubmitted < 5;
+  const canUseQuickShare = siteSettings?.allow_event_link_only_submissions;
+  const activeSubmissionFlow = canUseQuickShare ? submissionFlow : 'details';
+  const showFlowChooser = canUseQuickShare && !submissionFlow;
+  const showQuickShareForm = activeSubmissionFlow === 'quick';
+  const showDetailsForm = activeSubmissionFlow === 'details';
+
+  useEffect(() => {
+    if (!canUseQuickShare && submissionFlow === 'quick') {
+      setSubmissionFlow(null);
+    }
+  }, [canUseQuickShare, submissionFlow]);
 
   const handleRecurrenceChange = (value: string) => {
     if (!canUseRecurring && value !== 'none') {
@@ -772,6 +963,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
     <>
       <IonHeader>
         <IonToolbar className="modal-title">
+          {activeSubmissionFlow ? (
+            <IonButtons slot="start">
+              <IonButton onClick={() => setSubmissionFlow(null)}>Back</IonButton>
+            </IonButtons>
+          ) : null}
           <IonTitle>Add an event</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleCancel}>Cancel</IonButton>
@@ -786,7 +982,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonText>
           </IonCard>
         ) : !isOldEnoughForEvents ? (
-          <SubmissionAgeGateCard noun="event" onUpgrade={() => { onDismiss?.(); router.push('/store'); }} />
+          <SubmissionAgeGateCard noun="event" onUpgrade={() => navigateTo("/store")} />
         ) : moderationSubmissionBlocked ? (
           <IonCard className="ion-padding ion-text-center">
             <IonText>
@@ -795,9 +991,31 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonText>
             <IonButton onClick={() => router.push('/activity')}>View Activity</IonButton>
           </IonCard>
+        ) : !canSubmitEventThisMonth ? (
+          <IonCard className="ion-padding ion-text-center">
+            <IonText>
+              <p>You've already submitted 5 events this month.</p>
+              <p>Get Community+ or Refresh Pro to submit more events now.</p>
+            </IonText>
+            <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
+          </IonCard>
         ) : (
           <>
         <IonList>
+          {showFlowChooser ? (
+            <EventFlowChooser onSelect={setSubmissionFlow} />
+          ) : null}
+          {showQuickShareForm ? (
+            <QuickEventShareForm
+              link={quickLink}
+              notes={quickNotes}
+              error={quickError}
+              onLinkChange={setQuickLink}
+              onNotesChange={setQuickNotes}
+            />
+          ) : null}
+          {showDetailsForm ? (
+            <>
           <div className="create-event-section">
             <BoxedStackedInput
               label={
@@ -807,6 +1025,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               }
               value={name}
               name="event_name"
+              maxlength={EVENT_FIELD_LIMITS.name}
               onIonInput={(event) => setName(event.detail.value ?? '')}
             />
             <BoxedStackedTextarea
@@ -817,6 +1036,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               }
               value={description}
               autoGrow
+              maxlength={EVENT_FIELD_LIMITS.description}
+              counter
               onIonInput={(event) => setDescription(event.detail.value ?? '')}
             />
           </div>
@@ -835,8 +1056,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                 const normalized = normalizeDatetime(event.detail.value ?? '');
                 setStartDateTouched(true);
                 setStartDatetime(normalized);
-                if (normalized && !endDatetime) {
-                  setEndDatetime(moment(normalized).add(1, 'hour').format('YYYY-MM-DDTHH:mm'));
+                if (normalized && !endDateTouched) {
+                  setEndDatetime(moment(normalized).add(2, 'hours').format('YYYY-MM-DDTHH:mm'));
                 }
               }}
             />
@@ -926,6 +1147,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                   value={location}
                   name="nearby_city"
                   placeholder="Click to select"
+                  maxlength={EVENT_FIELD_LIMITS.location}
                   readonly
                   onClick={(e) => {
                     e.preventDefault();
@@ -950,6 +1172,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                   placeholder="What the event labels as the location"
                   autocapitalize="words"
                   name="locationlabel"
+                  maxlength={EVENT_FIELD_LIMITS.location}
+                  counter
                 />
               </>
             )}
@@ -1017,6 +1241,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                 label="Sensitive description"
                 value={sensitiveDescription}
                 rows={2}
+                maxlength={EVENT_FIELD_LIMITS.sensitiveDescription}
+                counter
                 onIonChange={(event) => setSensitiveDescription(event.detail.value ?? '')}
               />
             ) : null}
@@ -1030,10 +1256,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonItem>
           </div>
           <div className="create-event-section">
-            <BoxedStackedInput
+            <BoxedStackedTextarea
               label="External link"
               value={externalLink}
-              name="external_link"
+              rows={2}
+              autoGrow
+              maxlength={EVENT_FIELD_LIMITS.externalLink}
               onIonInput={(event) => setExternalLink(event.detail.value ?? '')}
             />
             <IonItem color="white" lines="none">
@@ -1055,7 +1283,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={EVENT_IMAGE_CONSTRAINTS.accept}
                 onChange={handleImageChange}
                 hidden
               />
@@ -1282,6 +1510,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                             value={description ?? ''}
                             placeholder="Defaults to the main description unless you change it"
                             autoGrow
+                            maxlength={EVENT_FIELD_LIMITS.description}
+                            counter
                             onIonChange={(event) => {
                               setDescription(event.detail.value ?? '');
                             }}
@@ -1310,6 +1540,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                             value={recurrenceDescriptions[descriptionIndex] ?? ''}
                             placeholder="Defaults to the main description unless you change it"
                             autoGrow
+                            maxlength={EVENT_FIELD_LIMITS.description}
+                            counter
                             onIonChange={(event) => {
                               const nextDescriptions = [...recurrenceDescriptions];
                               nextDescriptions[descriptionIndex] = event.detail.value ?? '';
@@ -1324,6 +1556,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                           <IonInput
                             value={recurrenceExternalLinks[descriptionIndex] ?? externalLink}
                             placeholder="Add a link for this date (optional)"
+                            maxlength={EVENT_FIELD_LIMITS.externalLink}
+                            counter
                             onIonChange={(event) => {
                               const nextLinks = [...recurrenceExternalLinks];
                               nextLinks[descriptionIndex] = event.detail.value ?? '';
@@ -1424,6 +1658,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                         value={recurrenceDescriptions[index] ?? ''}
                         placeholder="Defaults to the main description unless you change it"
                         autoGrow
+                        maxlength={EVENT_FIELD_LIMITS.description}
+                        counter
                         onIonChange={(event) => {
                           const nextDescriptions = [...recurrenceDescriptions];
                           nextDescriptions[index] = event.detail.value ?? '';
@@ -1435,6 +1671,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                       <IonInput
                         value={recurrenceExternalLinks[index] ?? externalLink}
                         placeholder="Add a link for this date (optional)"
+                        maxlength={EVENT_FIELD_LIMITS.externalLink}
+                        counter
                         onIonChange={(event) => {
                           const nextLinks = [...recurrenceExternalLinks];
                           nextLinks[index] = event.detail.value ?? '';
@@ -1497,7 +1735,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
                 text: 'Submit anyway',
                 handler: async () => {
                   setShowDefaultDateConfirm(false);
-                  await handleSubmit(true);
+                  await handleSubmit(true, true);
                 },
               },
             ]}
@@ -1515,8 +1753,57 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             ]}
             onDidDismiss={() => setShowRecurringUpgrade(false)}
           />
+          <IonAlert
+            isOpen={showLinkShortenerWarning}
+            header="Use the full URL?"
+            message="Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking."
+            buttons={[
+              {
+                text: 'Edit link',
+                role: 'cancel',
+                handler: () => setShowLinkShortenerWarning(false),
+              },
+              {
+                text: 'Submit anyway',
+                handler: () => {
+                  setShowLinkShortenerWarning(false);
+                  handleSubmit(true, true);
+                },
+              },
+            ]}
+            onDidDismiss={() => setShowLinkShortenerWarning(false)}
+          />
+            </>
+          ) : null}
         </IonList>
-        {(dateError || recurrenceError || showGlobalError || hasPreSubmitIssues || accountAgeError) && (
+        <IonAlert
+          isOpen={showQuickSuccessAlert}
+          header="Your link has been sent!"
+          subHeader="We'll review it and fill in the details if it is a fit for the calendar."
+          buttons={['OK']}
+          onDidDismiss={handleQuickSuccessAlertDismiss}
+        />
+        <IonAlert
+          isOpen={showQuickLinkShortenerWarning}
+          header="Use the full URL?"
+          message="Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking."
+          buttons={[
+            {
+              text: 'Edit link',
+              role: 'cancel',
+              handler: () => setShowQuickLinkShortenerWarning(false),
+            },
+            {
+              text: 'Submit anyway',
+              handler: () => {
+                setShowQuickLinkShortenerWarning(false);
+                handleQuickSubmit(true);
+              },
+            },
+          ]}
+          onDidDismiss={() => setShowQuickLinkShortenerWarning(false)}
+        />
+        {showDetailsForm && (dateError || recurrenceError || showGlobalError || hasPreSubmitIssues || accountAgeError || hasShortenedLinkInContent || hasShortenedLinkInLinkField) && (
           <div className="create-event-validations">
             {accountAgeError && (
               <IonText color="danger">{accountAgeError}</IonText>
@@ -1537,7 +1824,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             )}
             {hasShortenedLinkInContent || hasShortenedLinkInLinkField ? (
               <IonText color="danger">
-                Link shorteners aren't allowed. Please use the full link so members can see where they're clicking.
+                Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.
               </IonText>
             ) : null}
             {hasGoogleDocLinkInContent || hasGoogleDocLinkInLinkField ? (
@@ -1547,16 +1834,24 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             ) : null}
           </div>
         )}
-        <IonRow className="create-event-actions">
-          <IonButton
-            className="create-event-submit"
-            expand="block"
-            onClick={() => handleSubmit()}
-            disabled={submitting || hasPreSubmitIssues || !isOldEnoughForEvents}
-          >
-            {submitting ? 'Submitting...' : 'Submit event'}
-          </IonButton>
-        </IonRow>
+        {activeSubmissionFlow ? (
+          <IonRow className="create-event-actions">
+            <IonButton
+              className="create-event-submit"
+              expand="block"
+              onClick={() => (activeSubmissionFlow === 'quick' ? handleQuickSubmit() : handleSubmit())}
+              disabled={
+                activeSubmissionFlow === 'quick'
+                  ? quickSubmitting
+                  : submitting || hasPreSubmitIssues || !isOldEnoughForEvents
+              }
+            >
+              {activeSubmissionFlow === 'quick'
+                ? (quickSubmitting ? 'Sending...' : 'Send link')
+                : (submitting ? 'Submitting...' : 'Submit event')}
+            </IonButton>
+          </IonRow>
+        ) : null}
           </>
         )}
       </IonContent>

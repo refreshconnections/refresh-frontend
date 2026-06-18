@@ -4,6 +4,7 @@ import {
 } from '@ionic/react';
 import React, { useEffect, useState } from 'react'
 import BoxedStackedInput from './BoxedStackedInput';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
@@ -171,7 +172,9 @@ const OnboardingCardCovid: React.FC = () => {
           label={copy.noteLabel}
           value={covidNote ?? ''}
           name="covid_note"
-          onIonInput={(e) => setCovidNote(e.detail.value ?? '')}
+          maxlength={PROFILE_FIELD_LIMITS.covidPrecautionInfo}
+          counter
+          onIonInput={(e) => setCovidNote((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.covidPrecautionInfo))}
           placeholder={copy.notePlaceholder}
           type="text"
           autocapitalize="sentences"

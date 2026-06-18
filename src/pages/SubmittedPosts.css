@@ -126,11 +126,37 @@ ion-toolbar.modal-title {
   margin-top: 4px;
 }
 
+.submitted-posts .submitted-event-timezone-note {
+  display: block;
+  margin-top: 4px;
+}
+
 .submitted-posts .status-row {
   margin-top: 8px;
   margin-bottom: 12px;
   align-items: center;
   gap: 8px;
+}
+
+.submitted-posts .moderator-explanation-block {
+  margin-top: 12px;
+}
+
+.submitted-posts .moderator-explanation-block p {
+  margin: 4px 0 0;
+  color: var(--ion-text-color);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+}
+
+.submitted-posts .moderator-explanation-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: var(--ion-color-primary);
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
 }
 
 .submitted-posts .detail-block p {

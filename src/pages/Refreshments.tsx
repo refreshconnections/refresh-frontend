@@ -218,6 +218,27 @@ const Refreshments: React.FC = () => {
     onDismiss: (data: string, role: string) => createPostDismiss(data, role),
   });
 
+  const handleCreatePost = () => {
+    if (globalIsLoading) return;
+    createPostPresent();
+  };
+
+  const createPostAutoOpenHandled = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('createPost') !== '1') {
+      createPostAutoOpenHandled.current = false;
+      return;
+    }
+    if (createPostAutoOpenHandled.current || globalIsLoading || !globalCurrentProfile?.username?.trim()) return;
+
+    createPostAutoOpenHandled.current = true;
+    params.delete('createPost');
+    history.replace({ pathname: location.pathname, search: params.toString() });
+    createPostPresent();
+  }, [createPostPresent, globalCurrentProfile?.username, globalIsLoading, history, location.pathname, location.search]);
+
   const handleFilterDismiss = (
     bars: string,
     local: boolean,
@@ -424,7 +445,7 @@ const Refreshments: React.FC = () => {
             onEventFiltersChange={setEventFilters}
           />
           {settingsCurrentProfile?.settings_create_posts && (isCommunityPlus(globalCurrentProfile?.subscription_level) || siteSettings?.allow_free_users_to_submit_posts || currentStreak?.streak_count >= 5) ?
-            <IonButton className="refreshments-control-button" color="tertiary" onClick={() => createPostPresent()}>
+            <IonButton className="refreshments-control-button" color="tertiary" onClick={handleCreatePost}>
               <FontAwesomeIcon icon={faMegaphone} />
             </IonButton>
             : isCommunityPlus(globalCurrentProfile?.subscription_level) && !settingsCurrentProfile?.settings_create_posts ?

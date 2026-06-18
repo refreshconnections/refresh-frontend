@@ -18,6 +18,7 @@ import 'swiper/css/effect-cards';
 import 'swiper/css/navigation';
 import { useSwiper } from 'swiper/react';
 import { ONBOARDING_COPY } from '../constants/onboarding';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 
 
@@ -88,7 +89,9 @@ const OnboardingCardZipcode: React.FC = () => {
             value={nickname ?? ''}
             name="nickname"
             placeholder={data.name}
-            onIonInput={e => setNickname(e.detail.value!)}
+            maxlength={PROFILE_FIELD_LIMITS.nickname}
+            counter
+            onIonInput={e => setNickname((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.nickname))}
             type="text"
             autocapitalize="words"
           />

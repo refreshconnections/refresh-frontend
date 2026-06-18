@@ -44,6 +44,8 @@ import './SubmittedPostPreview.css';
 import { ModerationCopy } from '../enums/moderation';
 import GuidelinesButton from '../components/GuidelinesButton';
 import CitySelectorModal from '../components/CitySelectorModal';
+import { openExternalUrl } from '../hooks/utilities';
+import HousingPostGuidance from '../components/HousingPostGuidance';
 
 type SubmittedPost = {
   id: number;
@@ -58,6 +60,7 @@ type SubmittedPost = {
   comment_instructions?: string;
   byline?: string;
   category?: string;
+  bar?: string;
   location?: string;
   local_only?: boolean;
   location_point_lat?: number | string;
@@ -128,6 +131,25 @@ const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =
     {ModerationCopy.MODERATION_INFO_POPOVER}
   </IonContent>
 );
+
+const renderModeratorExplanation = (text: string) => {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlPattern).map((part, index) => {
+    if (!/^https?:\/\//.test(part)) {
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+    }
+    return (
+      <button
+        key={`link-${index}`}
+        type="button"
+        className="moderator-explanation-link"
+        onClick={() => openExternalUrl(part)}
+      >
+        {part}
+      </button>
+    );
+  });
+};
 
 const SubmittedPostPreview: React.FC = () => {
   const { id } = useParams<RouteParams>();
@@ -279,6 +301,7 @@ const SubmittedPostPreview: React.FC = () => {
   const hasRequestedEdit = !!requestedEdit;
   const canEdit = (status === 'needs_edit' || status === 'draft') && visible;
   const isDraft = status === 'draft';
+  const isHousingNeedsEdit = visible && status === 'needs_edit' && (post?.category ?? post?.bar) === 'housing';
   const rejectedReason = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason;
   const bylineOptions = Array.from(new Set([
     ...(userHandle ? [userHandle] : []),
@@ -691,6 +714,8 @@ const SubmittedPostPreview: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
+        {isHousingNeedsEdit && <HousingPostGuidance />}
+
         {allowInlineEdit && isDraft && (
           <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>
             <IonButton onClick={handleSaveDraft} disabled={saving || !hasEdits}>
@@ -716,9 +741,9 @@ const SubmittedPostPreview: React.FC = () => {
               <IonText color="dark" className="section-heading">
                 <h3>Moderator explanation</h3>
               </IonText>
-              <IonText color="navy">
-                <p>{moderatorExplanation}</p>
-              </IonText>
+              <p className="moderator-explanation-body">
+                {renderModeratorExplanation(moderatorExplanation)}
+              </p>
               <IonRow className="ion-justify-content-center">
                 <GuidelinesButton label="Guidelines" fill="outline" color="primary" includeMechanics />
               </IonRow>

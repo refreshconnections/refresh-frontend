@@ -2610,7 +2610,7 @@ export function isPersonalPlus(level) {
 }
 
 export function isCommunityPlus(level) {
-    if (level === "pro" || level == "communityplus")
+    if (level === "pro" || level === "communityplus")
         return true
     else {
         return false
@@ -2892,7 +2892,8 @@ export function getPrimaryPhoto(profile: any): string | null {
 // Version 4: Oct 15 2025
 // Version 5: Dec 4 2025
 // Version 6: May 2026
-export const CURRENT_APP_VERSION: number = 6;
+// Version 7: Jun 11 2026
+export const CURRENT_APP_VERSION: number = 7;
 
 export function maxBirthdateForAdult(): string {
     const date = new Date();

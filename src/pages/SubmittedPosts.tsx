@@ -13,6 +13,8 @@ import {
   IonButton,
   IonNote,
   IonPage,
+  IonRefresher,
+  IonRefresherContent,
   IonRow,
   IonSegment,
   IonSegmentButton,
@@ -23,18 +25,22 @@ import {
   IonToggle,
   IonIcon,
   useIonPopover,
+  RefresherEventDetail,
 } from '@ionic/react';
 import React, { useMemo, useState } from 'react';
 import moment from 'moment';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import { useClearRefreshmentsAlertsOnMount } from '../hooks/api/profiles/recent-notifications';
 import { useGetSubmittedAnnouncements } from '../hooks/api/refreshments/submitted-anns';
 import { useGetSubmittedEvents } from '../hooks/api/submitted-events';
+import { annQueryKeys } from '../hooks/api/announcements-take-1/ann-query-keys';
 import { useHistory } from 'react-router-dom';
 import { eyeOffOutline, informationCircleOutline } from 'ionicons/icons';
 import './SubmittedPosts.css';
 import { ModerationCopy } from '../enums/moderation';
-import { openExternalUrl } from '../hooks/utilities';
+import { localTzAbbr, openExternalUrl } from '../hooks/utilities';
+import GuidelinesButton from '../components/GuidelinesButton';
 
 const statusLabelMap: Record<string, string> = {
   draft: 'Unsubmitted draft',
@@ -129,9 +135,29 @@ const StatusInfoPopover: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) =
   </IonContent>
 );
 
+const renderModeratorExplanation = (text: string) => {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlPattern).map((part, index) => {
+    if (!/^https?:\/\//.test(part)) {
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+    }
+    return (
+      <button
+        key={`link-${index}`}
+        type="button"
+        className="moderator-explanation-link"
+        onClick={() => openExternalUrl(part)}
+      >
+        {part}
+      </button>
+    );
+  });
+};
+
 const SubmittedPosts: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const now = useMemo(() => new Date(), []);
   const [showHidden, setShowHidden] = useState(false);
   useClearRefreshmentsAlertsOnMount();
@@ -231,14 +257,26 @@ const SubmittedPosts: React.FC = () => {
   const handleEventClick = (event: any) => {
     const status = (event?.status ?? 'pending').toLowerCase();
     if (status === 'approved' && event?.start_datetime) {
-      const dateKey = new Date(event.start_datetime).toISOString().slice(0, 10);
-      history.push(`/community?calendarDate=${dateKey}`);
+      const date = moment(event.start_datetime);
+      if (!date.isValid()) return;
+      history.push(`/community?calendarDate=${date.format('YYYY-MM-DD')}&calendarEventId=${event.id}`);
       return;
     }
     setSelectedEvent(event);
     setEventDetailOpen(true);
   };
 
+  const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
+    try {
+      if (activeSegment === 'events') {
+        await queryClient.invalidateQueries({ queryKey: ['submitted-events'] });
+      } else {
+        await queryClient.invalidateQueries({ queryKey: annQueryKeys.submitted, exact: false });
+      }
+    } finally {
+      event.detail.complete();
+    }
+  };
 
   return (
     <IonPage>
@@ -250,7 +288,10 @@ const SubmittedPosts: React.FC = () => {
           <IonTitle>My submissions</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding submitted-posts">
+      <IonContent className="ion-padding submitted-posts" forceOverscroll>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent refreshingSpinner="dots" />
+        </IonRefresher>
         <IonRow className="segments">
           <IonSegment value={activeSegment} mode="ios">
             <IonSegmentButton value="posts" onClick={() => setActiveSegment('posts')}>
@@ -464,6 +505,21 @@ const SubmittedPosts: React.FC = () => {
                 </IonRow>
               </IonCardContent>
             </IonCard>
+            {selectedEvent?.moderator_rejection_reason && (
+              <IonCard color="white" className="moderator-explanation-block section-card">
+                <IonCardContent>
+                  <IonText color="dark" className="section-heading">
+                    <h3>Moderator explanation</h3>
+                  </IonText>
+                  <p className="moderator-explanation-body">
+                    {renderModeratorExplanation(selectedEvent.moderator_rejection_reason)}
+                  </p>
+                  <IonRow className="ion-justify-content-center">
+                    <GuidelinesButton label="Guidelines" fill="outline" color="primary" includeMechanics />
+                  </IonRow>
+                </IonCardContent>
+              </IonCard>
+            )}
             <IonCard color="white" className="preview-card section-card">
               <IonCardContent className="preview-form">
                 <IonItem color="white" lines="none">
@@ -474,6 +530,9 @@ const SubmittedPosts: React.FC = () => {
                   <IonItem color="white" lines="none">
                     <IonLabel position="stacked">Date*</IonLabel>
                     <IonText className="preview-value">{formatEventDateTime(selectedEvent)}</IonText>
+                    <IonNote className="submitted-event-timezone-note">
+                      {`Shown in your time zone${localTzAbbr(selectedEvent?.start_datetime) ? ` (${localTzAbbr(selectedEvent?.start_datetime)})` : ''}.`}
+                    </IonNote>
                   </IonItem>
                 )}
                 {selectedEvent?.local_only && (

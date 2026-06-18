@@ -12,13 +12,23 @@ describe('shouldShowOnboardingForProfile', () => {
     expect(hasCompletedCoreOnboarding({ birth_date: '2000-01-01' }, { phone: '+15555555555' })).toBe(true);
   });
 
-  it('requires onboarding for a first-login profile with created_profile false even when onboarded is missing', () => {
+  it('requires onboarding for a first-login profile with created_profile false when onboarded is missing', () => {
     expect(
       shouldShowOnboardingForProfile({
         created_profile: false,
         birth_date: '2000-01-01',
       }, { phone: '+15555555555' })
     ).toBe(true);
+  });
+
+  it('does not require onboarding after core onboarding is completed, even before profile setup', () => {
+    expect(
+      shouldShowOnboardingForProfile({
+        created_profile: false,
+        onboarded: true,
+        birth_date: '2000-01-01',
+      }, { phone: '+15555555555' })
+    ).toBe(false);
   });
 
   it('requires onboarding when onboarded is explicitly false', () => {
@@ -91,6 +101,21 @@ describe('shouldShowOnboardingForProfile', () => {
         },
         { phone: '+15555555555' },
         true
+      )
+    ).toBe(false);
+  });
+
+  it('allows exploring community after onboarding even when no community profile exists yet', () => {
+    expect(
+      shouldShowPrimaryOnboardingScreen(
+        '/community',
+        {
+          created_profile: false,
+          onboarded: true,
+          birth_date: '2000-01-01',
+        },
+        { phone: '+15555555555' },
+        false
       )
     ).toBe(false);
   });

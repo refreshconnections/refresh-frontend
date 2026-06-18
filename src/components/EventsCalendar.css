@@ -354,6 +354,22 @@
   padding: 8px;
 }
 
+.calendar-event-photo-view-caption {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  z-index: 1;
+  color: var(--ion-color-white);
+  text-align: center;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
 ion-toolbar.events-calendar-toolbar {
   padding-top: 50px !important;
   -webkit-text-size-adjust: none;

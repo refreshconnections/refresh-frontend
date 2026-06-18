@@ -21,6 +21,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocketContext } from "./WebsocketContext";
 import { userQueryKeys } from "../hooks/api/profiles/user-query-keys";
 
+const BANNED_LOGIN_FALLBACK_REASON = "Bans happen for Terms of Service violations.";
+const BANNED_LOGIN_HELP_TEXT = "If you believe there has been a mistake, please reach out at help@refreshconnections.com.";
+const INACTIVE_LOGIN_MESSAGE = "This email is not associated with an active account. Please contact support at help@refreshconnections.com.";
 
 const ENV = process.env.NODE_ENV
 const BASE_URL2 = process.env.BASE_URL
@@ -48,6 +51,8 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false)
 
   const [showDeleted, setShowDeleted] = useState<boolean>(false)
+  const [deletedAccountHeader, setDeletedAccountHeader] = useState<string>("No account")
+  const [deletedAccountMessage, setDeletedAccountMessage] = useState<string>(INACTIVE_LOGIN_MESSAGE)
   const [showEmailNotValidated, setShowEmailNotValidated] = useState<boolean>(false)
 
   const [maintenanceMode, setMaintenanceMode] = useState<boolean>(false)
@@ -136,6 +141,15 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
           setShowEmailNotValidated(true)
         }
         else if (error.response.status == 410) {
+          if (error.response?.data?.reason) {
+            const reason = error.response.data.reason || BANNED_LOGIN_FALLBACK_REASON;
+            const help = error.response.data.help || BANNED_LOGIN_HELP_TEXT;
+            setDeletedAccountHeader("This account has been banned.");
+            setDeletedAccountMessage(`${reason} ${help}`);
+          } else {
+            setDeletedAccountHeader("No account");
+            setDeletedAccountMessage(INACTIVE_LOGIN_MESSAGE);
+          }
           setShowDeleted(true)
         }
         else {
@@ -162,6 +176,14 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
     })
         
 }
+
+  function handleDeletedAlertDismiss() {
+    if (deletedAccountHeader === "This account has been banned.") {
+      setEmail("");
+      setPassword("");
+    }
+    setShowDeleted(false);
+  }
 
 
   if (maintenanceMode) {
@@ -229,13 +251,11 @@ const Login: React.FunctionComponent<LoginInterface> = ({ setLoggedin }) => {
           />
         <IonAlert
             isOpen={showDeleted}
-            header="No account"
-            message="This email is not associated with an active account. Please contact support at help@refreshconnections.com."
+            header={deletedAccountHeader}
+            message={deletedAccountMessage}
             buttons={[{
               text: 'Ok',
-              handler: () => {
-                setShowDeleted(false)
-              }
+              handler: handleDeletedAlertDismiss
             }]}
           />
         <IonAlert

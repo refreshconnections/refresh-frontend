@@ -155,9 +155,6 @@ const HubInterestedEventsModal = ({
         {pastEvents.length ? (
           <section className="hub-modal-section">
             <h2 className="hub-modal-section-title">Recent Past</h2>
-            <IonNote color="medium" className="hub-modal-section-note">
-              Past events are limited by your current subscription.
-            </IonNote>
             <div className="hub-modal-events-grid">
               {pastEvents.map((event) => renderEventCard(event))}
             </div>
@@ -248,31 +245,14 @@ const Hub = () => {
 
   const upcomingInterestedEvents = useMemo(() => {
     const now = moment();
-    const twoWeeksOut = moment(now).add(14, 'days').endOf('day');
 
-    const nextTwoWeeks = displayedInterestedEvents
+    return displayedInterestedEvents
       .filter((event) => {
         const start = moment(event.start_datetime);
-        return start.isValid() && start.isSameOrAfter(now) && start.isSameOrBefore(twoWeeksOut);
+        const end = event.end_datetime ? moment(event.end_datetime) : start;
+        return start.isValid() && end.isValid() && end.isSameOrAfter(now);
       })
       .sort((a, b) => moment(a.start_datetime).valueOf() - moment(b.start_datetime).valueOf());
-
-    const todayAndTomorrow = nextTwoWeeks.filter((event) => {
-      const start = moment(event.start_datetime);
-      return start.isSame(now, 'day') || start.isSame(moment(now).add(1, 'day'), 'day');
-    });
-
-    if (todayAndTomorrow.length > 5) {
-      return todayAndTomorrow;
-    }
-
-    const remainingSlots = 5 - todayAndTomorrow.length;
-    const laterEvents = nextTwoWeeks.filter((event) => {
-      const start = moment(event.start_datetime);
-      return !start.isSame(now, 'day') && !start.isSame(moment(now).add(1, 'day'), 'day');
-    });
-
-    return [...todayAndTomorrow, ...laterEvents.slice(0, remainingSlots)];
   }, [displayedInterestedEvents]);
 
   const visibleUpcomingInterestedEvents = useMemo(
@@ -289,7 +269,8 @@ const Hub = () => {
     return displayedInterestedEvents
       .filter((event) => {
         const start = moment(event.start_datetime);
-        return start.isValid() && start.isBefore(now) && start.isSameOrAfter(earliestPast);
+        const end = event.end_datetime ? moment(event.end_datetime) : start;
+        return start.isValid() && end.isValid() && end.isBefore(now) && start.isSameOrAfter(earliestPast);
       })
       .sort((a, b) => moment(b.start_datetime).valueOf() - moment(a.start_datetime).valueOf());
   }, [displayedInterestedEvents, profile?.subscription_level]);

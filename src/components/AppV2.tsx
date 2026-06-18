@@ -324,7 +324,7 @@ const AppV2: React.FC = () => {
   const { chatBadgeCount, setChatBadgeCount } = useContext(ChatBadgeContext);
 
   const queryClient = useQueryClient()
-  const { data: globalCurrentProfile, isLoading: globalIsLoading, isError: globalIsError } = useGetGlobalAppCurrentProfile();
+  const { data: globalCurrentProfile, isLoading: globalIsLoading, isError: globalIsError, error: globalError } = useGetGlobalAppCurrentProfile();
   const { data: settingsCurrentProfile, isLoading: settingsIsLoading } = useGetSettingsCurrentProfile();
   const { data: communityProfile, isLoading: communityProfileLoading } = useGetCommunityProfile(undefined, loggedin);
 
@@ -757,13 +757,15 @@ const AppV2: React.FC = () => {
 
   const stillCheckingInfo =
     loading || !authReady || globalIsLoading || settingsIsLoading || communityProfileLoading || eligibilityStatusLoading || (loggedin && emailStatusLoading);
+  const globalErrorStatus = (globalError as any)?.response?.status;
+  const globalAccountIssue = globalIsError && [401, 403, 404].includes(globalErrorStatus);
   const shouldShowOnboarding =
     loggedin &&
     shouldShowPrimaryOnboardingScreen(
       window.location.pathname,
       globalCurrentProfile,
       emailStatus,
-      Boolean(communityProfile)
+      Boolean(communityProfile?.username)
     );
   const needsAgeVerificationGate =
     loggedin &&
@@ -868,7 +870,7 @@ const AppV2: React.FC = () => {
   useYotiCallbackListener(handleYotiCallbackPayload);
 
   const simulateYotiResult = useCallback(
-    async (state: AgeCheckState) => {
+    async (state: AgeCheckState, method?: 'digital_id') => {
       const fakeStatusMap: Partial<Record<AgeCheckState, 'passed' | 'failed' | 'inconclusive'>> = {
         success: 'passed',
         failed: 'failed',
@@ -877,7 +879,7 @@ const AppV2: React.FC = () => {
       const fakeStatus = fakeStatusMap[state];
       if (fakeModeEnabled && fakeStatus) {
         try {
-          const res = await simulateFakeYotiResultForUser(fakeStatus);
+          const res = await simulateFakeYotiResultForUser(fakeStatus, method);
           if (res.status === 'passed') {
             applyAgeCheckState('success');
             return;
@@ -954,7 +956,29 @@ const AppV2: React.FC = () => {
     );
   }
 
-  if (!globalCurrentProfile || globalIsError) {
+  if (globalIsError && !globalAccountIssue) {
+    return (
+      <IonApp>
+        <IonPage>
+          <IonContent fullscreen className="startup-timeout-screen">
+            <div className="startup-timeout-screen__inner">
+              <IonCard className="startup-timeout-screen__card">
+                <IonCardContent>
+                  <h1>Connection issue</h1>
+                  <p>There's a problem loading your account right now. Please try again in a moment.</p>
+                  <IonButton expand="block" onClick={retryStartup}>
+                    Try again
+                  </IonButton>
+                </IonCardContent>
+              </IonCard>
+            </div>
+          </IonContent>
+        </IonPage>
+      </IonApp>
+    );
+  }
+
+  if (!globalCurrentProfile || globalAccountIssue) {
     return (
       <IonApp>
         <IonPage>
@@ -987,7 +1011,9 @@ const AppV2: React.FC = () => {
   if (shouldShowOnboarding) {
     return (
       <IonApp>
-        <OnboardingV2 />
+        <IonReactRouter>
+          <OnboardingV2 />
+        </IonReactRouter>
       </IonApp>
     );
   }
@@ -1013,6 +1039,7 @@ const AppV2: React.FC = () => {
               onRefreshResult={refreshYotiResult}
               fakeModeEnabled={fakeModeEnabled}
               onSimulatePass={() => simulateYotiResult('success')}
+              onSimulateDigitalIdPass={() => simulateYotiResult('success', 'digital_id')}
               onSimulateFail={() => simulateYotiResult('failed')}
               onSimulateInconclusive={() => simulateYotiResult('canceled')}
             />

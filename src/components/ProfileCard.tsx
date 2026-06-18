@@ -123,7 +123,6 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
 
     const livedExperienceLabels: Record<string, string> = {
         poc: 'POC',
-        spiritual: 'Spiritual',
         neurodivergent: 'Neurodivergent',
         disability: 'Disability',
         chronic_illness: 'Chronic illness',
@@ -412,61 +411,7 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                 </IonCardContent>
                             </IonAccordion>
                         </IonAccordionGroup>
-                        {cardData.settings_show_long_covid ? (
-                            <IonAccordionGroup className="profile-card" value="longcovid">
-                                <IonAccordion value="longcovid">
-                                    <IonItem slot="header" lines="none">
-                                        <IonLabel>Long Covid Support</IonLabel>
-                                    </IonItem>
-                                    <IonCardContent slot="content">
-                                        <IonList lines="none">
-                                            {cardData.long_covid_choices.includes("I have LC") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I am living with Long Covid</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                            {cardData.long_covid_choices.includes("LC caretaker") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I care for someone with Long Covid</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                            {cardData.long_covid_choices.includes("I could help local") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I could provide local support</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                            {cardData.long_covid_choices.includes("I could help remote") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I could provide remote support</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                            {cardData.long_covid_choices.includes("I need help local") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I could use local support</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                            {cardData.long_covid_choices.includes("I need help remote") ? (
-                                                <IonItem lines="none">
-                                                    <IonLabel className="ion-text-wrap">
-                                                        <h2>&bull; I could use remote support</h2>
-                                                    </IonLabel>
-                                                </IonItem>
-                                            ) : null}
-                                        </IonList>
-                                    </IonCardContent>
-                                </IonAccordion>
-                            </IonAccordionGroup>
-                        ) : null}
+
                         <Swiper
                             modules={[Navigation, Pagination]}
                             pagination={{ clickable: true }}

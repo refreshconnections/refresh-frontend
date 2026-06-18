@@ -190,4 +190,55 @@ describe('Hub page', () => {
       expect.objectContaining({ title: 'Megathreads' })
     );
   });
+
+  it('shows interested events more than two weeks out', () => {
+    mockInterestedEvents.mockReturnValue({
+      data: {
+        next: null,
+        previous: null,
+        count: 1,
+        results: [
+          {
+            id: 36,
+            name: 'Late June Virtual Meetup',
+            start_datetime: '2026-06-18T15:00:00Z',
+            end_datetime: '2026-06-18T16:00:00Z',
+          },
+        ],
+      },
+      isLoading: false,
+      isFetching: false,
+    } as any);
+    vi.setSystemTime(new Date('2026-06-01T12:00:00Z'));
+
+    renderHub();
+
+    expect(screen.getByText('Late June Virtual Meetup')).toBeInTheDocument();
+  });
+
+  it('keeps ongoing interested events in upcoming instead of recent past', () => {
+    mockInterestedEvents.mockReturnValue({
+      data: {
+        next: null,
+        previous: null,
+        count: 1,
+        results: [
+          {
+            id: 37,
+            name: 'Ongoing June Series',
+            start_datetime: '2026-05-30T15:00:00Z',
+            end_datetime: '2026-06-18T16:00:00Z',
+          },
+        ],
+      },
+      isLoading: false,
+      isFetching: false,
+    } as any);
+    vi.setSystemTime(new Date('2026-06-01T12:00:00Z'));
+
+    renderHub();
+
+    expect(screen.getByText('Ongoing June Series')).toBeInTheDocument();
+    expect(screen.queryByText('Use the Star')).not.toBeInTheDocument();
+  });
 });

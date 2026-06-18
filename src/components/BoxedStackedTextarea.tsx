@@ -14,6 +14,8 @@ type BoxedStackedTextareaProps = {
   value: string;
   placeholder?: string;
   rows?: number;
+  maxlength?: number;
+  counter?: boolean;
   autoGrow?: boolean;
   onIonInput?: (event: TextareaCustomEvent<TextareaChangeEventDetail>) => void;
   onIonChange?: (event: TextareaCustomEvent<TextareaChangeEventDetail>) => void;
@@ -24,16 +26,20 @@ const BoxedStackedTextarea: React.FC<BoxedStackedTextareaProps> = ({
   value,
   placeholder,
   rows,
+  maxlength,
+  counter,
   autoGrow = false,
   onIonInput,
   onIonChange,
 }) => (
-  <IonItem className="boxed-stacked-input boxed-stacked-input--textarea">
+  <IonItem className="boxed-stacked-input boxed-stacked-input--textarea" lines="none">
     <IonLabel position="stacked">{label}</IonLabel>
     <IonTextarea
       value={value}
       placeholder={placeholder}
       rows={rows}
+      maxlength={maxlength}
+      counter={counter}
       autocapitalize='sentences'
       autoGrow={autoGrow}
       onIonInput={onIonInput}

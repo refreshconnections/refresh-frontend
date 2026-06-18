@@ -6,6 +6,7 @@ import {
   IonRow,
   IonText,
   useIonAlert,
+  useIonRouter,
 } from '@ionic/react';
 import React, { useState } from 'react'
 
@@ -36,6 +37,7 @@ const OnboardingCardDone: React.FC = () => {
   const swiper = useSwiper();
   const [appLoading, setAppLoading] = useState(false);
   const queryClient = useQueryClient()
+  const router = useIonRouter();
 
   const moderation = useGetCurrentModeration().data;
 
@@ -89,12 +91,16 @@ const OnboardingCardDone: React.FC = () => {
         romance_gender_last_updated: null,
         gender_last_updated: null,
       })
+      queryClient.setQueryData(['global-current'], (current: any) => (
+        current ? { ...current, created_profile: true, onboarded: true } : current
+      ));
       queryClient.invalidateQueries({ queryKey: ['current'] })
+      queryClient.invalidateQueries({ queryKey: ['global-current'] })
       
       await delay(1000)
       setAppLoading(false)
 
-      window.location.pathname = "/community"
+      router.push('/community', 'root', 'replace');
 
 
   }

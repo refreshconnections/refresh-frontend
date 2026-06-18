@@ -10,7 +10,6 @@ import {
 } from '@ionic/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHandWave } from '@fortawesome/pro-solid-svg-icons/faHandWave';
-import { faSubtitles } from '@fortawesome/pro-solid-svg-icons/faSubtitles';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import Linkify from 'react-linkify';
 import type { RefreshEvent } from '../hooks/api/events';
@@ -93,8 +92,11 @@ const RefreshmentsEventDetails: React.FC<RefreshmentsEventDetailsProps> = ({
     ? null
     : event.attendee_precaution_preference;
   const [imageErrored, setImageErrored] = useState(false);
-  const [altShow, setAltShow] = useState(false);
-  const showAltButton = settingsAlt && !!event.image_alt && !imageErrored;
+  const imageViewerCaption = settingsAlt && event.image_alt ? (
+    <div className="calendar-event-photo-view-caption">
+      {event.image_alt}
+    </div>
+  ) : null;
 
   return (
     <div className="calendar-event-card-details">
@@ -140,20 +142,12 @@ const RefreshmentsEventDetails: React.FC<RefreshmentsEventDetailsProps> = ({
         </IonText>
       ) : null}
       {event.image && !imageErrored ? (
-        <div style={{ position: 'relative' }}>
-          {showAltButton && (
-            <IonButton
-              className="alt-coverPhoto-button"
-              fill="clear"
-              size="small"
-              style={{ position: 'absolute', top: 16, right: 4, zIndex: 10 }}
-              onClick={() => setAltShow((v) => !v)}
-            >
-              <FontAwesomeIcon icon={faSubtitles} />
-            </IonButton>
-          )}
-          <PhotoProvider bannerVisible={false}>
-            <PhotoView src={event.image}>
+        <div>
+          <PhotoProvider
+            bannerVisible={false}
+            overlayRender={({ overlay }) => overlay}
+          >
+            <PhotoView src={event.image} overlay={imageViewerCaption}>
               <img
                 src={event.image}
                 alt={event.image_alt || event.name || 'Event image'}
@@ -162,11 +156,6 @@ const RefreshmentsEventDetails: React.FC<RefreshmentsEventDetailsProps> = ({
               />
             </PhotoView>
           </PhotoProvider>
-          {altShow && event.image_alt && (
-            <IonRow className="show-alt-coverPhoto">
-              <IonText>{event.image_alt}</IonText>
-            </IonRow>
-          )}
         </div>
       ) : null}
       {!anonymous && event.username && avatarDisplay ? (

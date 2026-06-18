@@ -1,5 +1,5 @@
 import React from 'react';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IonApp } from '@ionic/react';
@@ -43,6 +43,7 @@ let mockEventsLoading = false;
 let mockProfile: any = {
   subscription_level: 'communityplus',
   settings_community_profile: true,
+  settings_alt_text: true,
 };
 let mockEvents: any[] = [
   {
@@ -62,6 +63,7 @@ let mockEvents: any[] = [
     external_link: 'https://example.com/event',
     post: 91,
     image: 'https://example.com/pic.jpg',
+    image_alt: 'People sitting by a portable air filter.\nMasks are visible on the table.',
     local_only: true,
     profile_image: 'https://example.com/avatar.jpg',
     anonymous: false,
@@ -162,7 +164,12 @@ vi.mock('./EventReportModal', () => ({ default: () => <div>event-report-modal</d
 vi.mock('./EventFiltersModal', () => ({ default: () => <div>event-filters-modal</div> }));
 vi.mock('react-photo-view', () => ({
   PhotoProvider: ({ children }: any) => <>{children}</>,
-  PhotoView: ({ children }: any) => <>{children}</>,
+  PhotoView: ({ children, overlay }: any) => (
+    <>
+      {children}
+      {overlay ? <div data-testid="photo-view-overlay">{overlay}</div> : null}
+    </>
+  ),
 }));
 
 import EventsCalendar from './EventsCalendar';
@@ -184,6 +191,8 @@ describe('EventsCalendar', () => {
   });
 
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-03-01T12:00:00Z'));
     vi.clearAllMocks();
     mockModalConfigs.length = 0;
     mockPopoverConfigs.length = 0;
@@ -191,6 +200,7 @@ describe('EventsCalendar', () => {
     mockProfile = {
       subscription_level: 'communityplus',
       settings_community_profile: true,
+      settings_alt_text: true,
       user: 9,
     };
     mockEvents = [
@@ -211,6 +221,7 @@ describe('EventsCalendar', () => {
         external_link: 'https://example.com/event',
         post: 91,
         image: 'https://example.com/pic.jpg',
+        image_alt: 'People sitting by a portable air filter.\nMasks are visible on the table.',
         local_only: true,
         profile_image: 'https://example.com/avatar.jpg',
         anonymous: false,
@@ -224,16 +235,79 @@ describe('EventsCalendar', () => {
     mockGetHideInterestedCountOnMySubmissionsPref.mockResolvedValue(false);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('opens the calendar, loads saved filters, and renders selected event details', async () => {
     renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', onAutoOpenHandled: vi.fn() });
 
     expect(await screen.findByText('Community events')).toBeInTheDocument();
     expect(mockPreferencesGet).toHaveBeenCalledWith({ key: 'events_calendar_view_mode' });
     expect(screen.getAllByText('Clean air picnic').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByText('Clean air picnic')[0]);
     expect(screen.getByText('Bring filters and snacks.')).toBeInTheDocument();
     expect(screen.getByText('Masks required')).toBeInTheDocument();
     expect(screen.getByText('Covid conscientious only')).toBeInTheDocument();
     expect(screen.getByText('External registration required.')).toBeInTheDocument();
+    expect(document.querySelector('.calendar-event-image')).toHaveAttribute(
+      'alt',
+      'People sitting by a portable air filter.\nMasks are visible on the table.'
+    );
+    expect(screen.getByTestId('photo-view-overlay')).toHaveTextContent('People sitting by a portable air filter. Masks are visible on the table.');
+  });
+
+  it('keeps event cards collapsed by default when a day has multiple events', async () => {
+    mockEvents = [
+      {
+        ...mockEvents[0],
+        id: 11,
+        name: 'Clean air picnic',
+        description: 'Bring filters and snacks.',
+      },
+      {
+        ...mockEvents[0],
+        id: 22,
+        name: 'Fresh air walk',
+        start_datetime: '2026-03-29T20:00:00.000Z',
+        end_datetime: '2026-03-29T21:00:00.000Z',
+        description: 'Sunset walk together.',
+      },
+    ];
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', onAutoOpenHandled: vi.fn() });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.getByText('Clean air picnic')).toBeInTheDocument();
+    expect(screen.getByText('Fresh air walk')).toBeInTheDocument();
+    expect(screen.queryByText('Bring filters and snacks.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sunset walk together.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Fresh air walk'));
+
+    expect(screen.getByText('Sunset walk together.')).toBeInTheDocument();
+    expect(screen.queryByText('Bring filters and snacks.')).not.toBeInTheDocument();
+  });
+
+  it('keeps event cards collapsed by default when a day has one event', async () => {
+    mockEvents = [
+      {
+        ...mockEvents[0],
+        id: 11,
+        name: 'Clean air picnic',
+        description: 'Bring filters and snacks.',
+      },
+    ];
+
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29', onAutoOpenHandled: vi.fn() });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    expect(screen.getByText('Clean air picnic')).toBeInTheDocument();
+    expect(screen.queryByText('Bring filters and snacks.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Clean air picnic'));
+
+    expect(screen.getByText('Bring filters and snacks.')).toBeInTheDocument();
   });
 
   it('loads the saved week view mode from Capacitor preferences', async () => {
@@ -356,6 +430,7 @@ describe('EventsCalendar', () => {
     const { container } = renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
 
     expect(await screen.findByText('Community events')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByText('Clean air picnic')[0]);
     fireEvent.click(screen.getByText(/shared by alex/i));
     expect(mockSheetPresent).toHaveBeenCalledWith({ cssClass: 'community-profile-modal' });
 
@@ -411,6 +486,37 @@ describe('EventsCalendar', () => {
       await createEventConfig.onDismiss({ submitted: true });
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['events'] });
+  });
+
+  it('returns the create-event modal dismiss promise so navigation waits for close', async () => {
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Add an event'));
+
+    const createEventConfig = mockModalConfigs[1];
+    const dismissResult = Promise.resolve(true);
+    mockDismissModal.mockReturnValueOnce(dismissResult);
+    const result = createEventConfig.onDismiss();
+
+    expect(result).toBe(dismissResult);
+    await result;
+  });
+
+  it('closes the calendar modal when create-event navigation asks to leave', async () => {
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Add an event'));
+
+    const createEventConfig = mockModalConfigs[1];
+    await act(async () => {
+      await createEventConfig.onDismiss({ closeCalendar: true });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Community events')).not.toBeInTheDocument();
+    });
   });
 
   it('supports week navigation and hides the byline row for anonymous events', async () => {

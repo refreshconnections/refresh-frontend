@@ -116,6 +116,11 @@ ion-card-content .card-grid {
   --padding-end: 0;
   --inner-padding-start: 0;
   --inner-padding-end: 0;
+  --border-width: 0;
+}
+
+.card-field::part(native) {
+  border-bottom: 0;
 }
 
 .card-field.editing {
@@ -292,6 +297,32 @@ ion-card-content .card-grid {
 
 .field-actions.editing-actions {
   margin-top: 6px;
+}
+
+.profile-height-editor {
+  width: 100%;
+  align-items: center;
+}
+
+.profile-height-editor ion-col {
+  min-width: 0;
+}
+
+.profile-height-editor ion-select {
+  width: 100%;
+  min-height: 54px;
+  --padding-start: 0;
+  --padding-end: 34px;
+}
+
+.profile-height-editor ion-select::part(container) {
+  width: 100%;
+}
+
+.profile-height-editor ion-select::part(icon) {
+  width: 24px;
+  min-width: 24px;
+  margin-inline-start: 10px;
 }
 
 .multi-line {

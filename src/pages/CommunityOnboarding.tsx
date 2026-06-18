@@ -33,6 +33,7 @@ import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { useGetCommunityProfile } from '../hooks/api/profiles/community-profile';
 import { apiClient } from '../hooks/api/api-client';
 import { getPrimaryOrderedPhoto, updateCurrentUserProfile, updateUsername, uploadCommunityProfilePhoto, onImgError } from '../hooks/utilities';
+import { COMMUNITY_PROFILE_FIELD_LIMITS, PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 import CroppedImageModal from '../components/CroppedImageModal';
 import OnboardingCardLocationCoords from '../components/OnboardingCardLocationCoords';
 import OnboardingCardConnectFromRefreshments from '../components/OnboardingCardConnectFromRefreshments';
@@ -81,6 +82,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const [username, setUsername] = useState('');
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameBusy, setUsernameBusy] = useState(false);
+  const [usernameSavedThisSession, setUsernameSavedThisSession] = useState(false);
 
   const [communityBio, setCommunityBio] = useState('');
   const [showLocation, setShowLocation] = useState(false);
@@ -234,6 +236,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     setUsernameBusy(true);
     const response = await updateUsername({ username });
     if (response?.status === 204) {
+      setUsernameSavedThisSession(true);
       await queryClient.invalidateQueries({ queryKey: ['current'] });
       await queryClient.invalidateQueries({ queryKey: ['global-current'] });
       slideNext();
@@ -330,7 +333,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   };
 
   const handleFinish = async () => {
-    if (!currentProfile?.username) {
+    if (!(currentProfile?.username || usernameSavedThisSession)) {
       setUsernameError(copy.username.requiredToFinish);
       slideTo(0, 0);
       return;
@@ -344,7 +347,12 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     });
 
     await clearResumeState();
-    router.push('/community', 'root', 'replace');
+    const params = new URLSearchParams(window.location.search);
+    router.push(
+      params.get('next') === 'create-post' ? '/community?createPost=1' : '/community',
+      'root',
+      'replace'
+    );
   };
 
   const handleCreatePersonalProfile = async () => {
@@ -461,9 +469,9 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                       <IonInput
                         value={username}
                         placeholder={currentProfile?.username ?? copy.username.placeholderFallback}
-                        onIonInput={(e) => setUsername(e.detail.value!)}
-                        maxlength={30}
+                        maxlength={PROFILE_FIELD_LIMITS.username}
                         counter
+                        onIonInput={(e) => setUsername((e.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.username))}
                         disabled={!canChangeUsername()}
                       />
                     </IonItem>
@@ -628,8 +636,9 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                               value={communityLocationLabel}
                               placeholder={ONBOARDING_COPY.cards.locationLabel.placeholder}
                               autocapitalize="words"
-                              maxlength={40}
-                              onIonInput={(event) => setCommunityLocationLabel(event.detail.value ?? '')}
+                              maxlength={PROFILE_FIELD_LIMITS.location}
+                              counter
+                              onIonInput={(event) => setCommunityLocationLabel((event.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.location))}
                             />
                           </IonItem>
                         </>
@@ -641,8 +650,9 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                         value={communityLocationLabel}
                         placeholder={ONBOARDING_COPY.cards.locationLabel.placeholder}
                         autocapitalize="words"
-                        maxlength={40}
-                        onIonInput={(event) => setCommunityLocationLabel(event.detail.value ?? '')}
+                        maxlength={PROFILE_FIELD_LIMITS.location}
+                        counter
+                        onIonInput={(event) => setCommunityLocationLabel((event.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.location))}
                       />
                     </IonItem>
                   )}
@@ -685,7 +695,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                     <IonTextarea
                       value={communityBio}
                       autoGrow
-                      maxlength={180}
+                      maxlength={COMMUNITY_PROFILE_FIELD_LIMITS.bio}
                       counter
                       autocapitalize='sentences'
                       autoCorrect='on'

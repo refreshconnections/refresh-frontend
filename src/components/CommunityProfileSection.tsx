@@ -31,6 +31,7 @@ import { getPrimaryOrderedPhoto, normalizeLocalMediaUrl, onImgError, updateCurre
 import CroppedImageModal from './CroppedImageModal';
 import EditUsernameModal from './EditUsernameModal';
 import { userQueryKeys } from '../hooks/api/profiles/user-query-keys';
+import { COMMUNITY_PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 import './CommunityProfileSection.css';
 
 type CommunityProfileSectionProps = {
@@ -310,7 +311,7 @@ const CommunityProfileSection: React.FC<CommunityProfileSectionProps> = ({ useAc
                     value={communityBio}
                     autoGrow
                     rows={4}
-                    maxlength={180}
+                    maxlength={COMMUNITY_PROFILE_FIELD_LIMITS.bio}
                     counter
                     placeholder="Update your Refreshments bio"
                     onIonInput={(e) => setCommunityBio((e.detail.value ?? '').replace(/[\r\n]+/g, ' '))}

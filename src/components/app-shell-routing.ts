@@ -8,6 +8,7 @@ export const hasCompletedCoreOnboarding = (profile: any, emailStatus?: { phone?:
 export const shouldShowOnboardingForProfile = (profile: any, emailStatus?: { phone?: string | null } | null) => {
   if (!profile) return false;
   if (!hasCompletedCoreOnboarding(profile, emailStatus)) return true;
+  if (profile.onboarded === true) return false;
   return profile.created_profile === false || profile.onboarded === false;
 };
 

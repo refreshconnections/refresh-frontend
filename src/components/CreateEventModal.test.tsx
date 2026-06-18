@@ -33,6 +33,12 @@ let mockGlobalProfile: any = {
 let mockModeration: any = {
   paused_on_creation: false,
 };
+let mockLimits: any = {
+  events_submitted: 0,
+};
+let mockSiteSettings: any = {
+  allow_event_link_only_submissions: false,
+};
 
 const daysAgoIso = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
@@ -91,7 +97,7 @@ vi.mock('../hooks/utilities', () => ({
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
   eventUploadPhoto: (...args: any[]) => mockEventUploadPhoto(...args),
   increaseStreak: vi.fn(),
-  isCommunityPlus: vi.fn((level?: string) => level === 'community_plus'),
+  isCommunityPlus: vi.fn((level?: string) => level === 'communityplus'),
   isPro: vi.fn((level?: string) => level === 'pro'),
 }));
 
@@ -101,6 +107,14 @@ vi.mock('../hooks/api/profiles/global-app-current-profile', () => ({
 
 vi.mock('../hooks/api/profiles/current-moderation', () => ({
   useGetCurrentModeration: () => ({ data: mockModeration }),
+}));
+
+vi.mock('../hooks/api/profiles/current-limits', () => ({
+  useGetLimits: () => ({ data: mockLimits }),
+}));
+
+vi.mock('../hooks/api/sitesettings', () => ({
+  useGetSiteSettings: () => ({ data: mockSiteSettings }),
 }));
 
 vi.mock('@fortawesome/react-fontawesome', () => ({
@@ -226,21 +240,67 @@ describe('CreateEventModal', () => {
       subscription_level: 'free',
     };
     mockModeration = { paused_on_creation: false };
+    mockLimits = { events_submitted: 0 };
+    mockSiteSettings = { allow_event_link_only_submissions: false };
     mockApiPost.mockResolvedValue({ data: { event_id: 77 } });
     mockEventUploadPhoto.mockResolvedValue(undefined);
   });
 
-  it('shows the age gate for new accounts and routes to the store on upgrade', () => {
+  it('shows the age gate for new accounts and routes to the store on upgrade', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       registrationDate: daysAgoIso(7),
     };
 
-    renderModal();
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    const popstateSpy = vi.fn();
+    window.addEventListener('popstate', popstateSpy);
+    const { onDismiss } = renderModal();
 
     expect(screen.getByText('age-gate-event')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Upgrade'));
-    expect(mockPush).toHaveBeenCalledWith('/store');
+    expect(onDismiss).toHaveBeenCalledWith({ closeCalendar: true });
+    await waitFor(() => {
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/store');
+      expect(popstateSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/store');
+    window.removeEventListener('popstate', popstateSpy);
+    pushStateSpy.mockRestore();
+  });
+
+  it('blocks free and personal plus users after five event submissions this month', async () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      subscription_level: 'personalplus',
+    };
+    mockLimits = { events_submitted: 5 };
+
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    const { onDismiss } = renderModal();
+
+    expect(screen.getByText("You've already submitted 5 events this month.")).toBeInTheDocument();
+    expect(screen.getByText('Get Community+ or Refresh Pro to submit more events now.')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Upgrade'));
+    expect(onDismiss).toHaveBeenCalledWith({ closeCalendar: true });
+    await waitFor(() => {
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/store');
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/store');
+    pushStateSpy.mockRestore();
+  });
+
+  it('allows pro users after five event submissions this month', () => {
+    mockGlobalProfile = {
+      ...mockGlobalProfile,
+      subscription_level: 'pro',
+    };
+    mockLimits = { events_submitted: 5 };
+
+    renderModal();
+
+    expect(screen.queryByText("You've already submitted 5 events this month.")).not.toBeInTheDocument();
+    expect(screen.getByText('Submit event')).toBeInTheDocument();
   });
 
   it('blocks event submission when moderation pauses posting and routes to activity', () => {
@@ -265,11 +325,61 @@ describe('CreateEventModal', () => {
     expect(onDismiss).toHaveBeenCalledWith();
   });
 
+  it('shows only the event flow choices before a flow is selected when quick share is enabled', () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    const { container } = renderModal();
+
+    expect(screen.getByText('Quick share')).toBeInTheDocument();
+    expect(screen.getByText('Fill out the event')).toBeInTheDocument();
+    expect(screen.queryByText('Event name')).not.toBeInTheDocument();
+    expect(screen.queryByText('Submit event')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Quick share'));
+
+    expect(screen.getByText("Don't know all the details but found a cool Covid Conscientious event you think might be a good fit for the calendar?")).toBeInTheDocument();
+    expect(getItemControl(container, 'Public event link', 'ion-textarea')).toBeInTheDocument();
+    expect(screen.getByText('Send link')).toBeInTheDocument();
+  });
+
+  it('shows the full event form after choosing fill out the event', () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    renderModal();
+
+    fireEvent.click(screen.getByText('Fill out the event'));
+
+    expect(screen.getByText('Event name')).toBeInTheDocument();
+    expect(screen.getByText('Submit event')).toBeInTheDocument();
+  });
+
+  it('returns to the event flow choices from a selected flow', () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    renderModal();
+
+    fireEvent.click(screen.getByText('Fill out the event'));
+    expect(screen.getByText('Event name')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Back'));
+
+    expect(screen.getByText('Quick share')).toBeInTheDocument();
+    expect(screen.getByText('Fill out the event')).toBeInTheDocument();
+    expect(screen.queryByText('Event name')).not.toBeInTheDocument();
+  });
+
+  it('hides the flow switch when link-only submissions are disabled', () => {
+    mockSiteSettings = { allow_event_link_only_submissions: false };
+
+    renderModal();
+
+    expect(screen.queryByText('Quick share')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fill out the event')).not.toBeInTheDocument();
+    expect(screen.getByText('Submit event')).toBeInTheDocument();
+  });
+
   it('prepopulates start and end dates from the selected calendar date', () => {
     const { container } = renderModal({ selectedDate: new Date('2099-07-20T12:00:00') });
 
     expect(getItemControl(container, 'Start', 'ion-input')).toHaveAttribute('value', '2099-07-20T20:00');
-    expect(getItemControl(container, 'End', 'ion-input')).toHaveAttribute('value', '2099-07-20T21:00');
+    expect(getItemControl(container, 'End', 'ion-input')).toHaveAttribute('value', '2099-07-20T22:00');
   });
 
   it('confirms before submitting when the default event dates are unchanged', async () => {
@@ -305,6 +415,31 @@ describe('CreateEventModal', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
+  it('sets the end date two hours after a changed start date until the end date is edited', () => {
+    const { container } = renderModal();
+
+    setIonInput(getItemControl(container, 'Start', 'ion-input'), '2099-07-20T18:00', 'ionChange');
+
+    expect(getItemControl(container, 'End', 'ion-input')).toHaveAttribute('value', '2099-07-20T20:00');
+
+    setIonInput(getItemControl(container, 'End', 'ion-input'), '2099-07-20T21:30', 'ionChange');
+    setIonInput(getItemControl(container, 'Start', 'ion-input'), '2099-07-21T18:00', 'ionChange');
+
+    expect(getItemControl(container, 'End', 'ion-input')).toHaveAttribute('value', '2099-07-20T21:30');
+  });
+
+  it('requires a location for in-person events', async () => {
+    const { container } = renderModal();
+
+    fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
+    setIonSelect(getItemControl(container, 'Event type', 'ion-select'), 'in_person_only');
+
+    fireEvent.click(screen.getByText('Submit event'));
+
+    expect(await screen.findByText('In-person events need a location.')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
   it('blocks named posts until host and feed-highlight questions are answered', async () => {
     const { container } = renderModal();
 
@@ -329,7 +464,7 @@ describe('CreateEventModal', () => {
   it('shows a recurring-date validation error for custom repeats with no extra dates', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -359,19 +494,29 @@ describe('CreateEventModal', () => {
     expect(screen.getByText('Submit event')).toBeDisabled();
   });
 
-  it('blocks link shorteners in the external link field', async () => {
+  it('warns but allows link shorteners in the external link field', async () => {
     const { container } = renderModal();
 
     fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
     setAnonymousPosting(container);
-    setIonInput(getItemControl(container, 'External link', 'ion-input'), 'https://bit.ly/masked-meetup');
+    setIonInput(getItemControl(container, 'External link', 'ion-textarea'), 'https://bit.ly/masked-meetup');
 
     expect(
       await screen.findByText(
-        "Link shorteners aren't allowed. Please use the full link so members can see where they're clicking."
+        'Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.'
       )
     ).toBeInTheDocument();
-    expect(screen.getByText('Submit event')).toBeDisabled();
+    fireEvent.click(screen.getByText('Submit event'));
+    expect(await screen.findByText('Use the full URL?')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith('/api/event/', expect.objectContaining({
+        external_link: 'https://bit.ly/masked-meetup',
+      }));
+    });
   });
 
   it('blocks Google Docs links in event descriptions', async () => {
@@ -461,7 +606,7 @@ describe('CreateEventModal', () => {
   it('shows generated recurring dates and converts an edited generated date into a custom recurrence', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -514,7 +659,7 @@ describe('CreateEventModal', () => {
   it('shows a recurring same-day end-time error for invalid custom dates', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
     const { container } = renderModal();
 
@@ -613,13 +758,16 @@ describe('CreateEventModal', () => {
       fireEvent.change(fileInput, { target: { files: [photo] } });
       await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
+      expect(screen.getByAltText('Event preview')).toHaveAttribute('src', fileReaderResult);
 
       fireEvent.click(container.querySelector('ion-button[color="danger"]') as HTMLElement);
       expect(screen.queryByText('Photo attached')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('Event preview')).not.toBeInTheDocument();
 
       fireEvent.change(fileInput, { target: { files: [photo] } });
       await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
+      expect(screen.getByAltText('Event preview')).toHaveAttribute('src', fileReaderResult);
 
       fireEvent.click(screen.getByText('Submit event'));
 
@@ -662,11 +810,86 @@ describe('CreateEventModal', () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       registrationDate: daysAgoIso(7),
-      subscription_level: 'community_plus',
+      subscription_level: 'communityplus',
     };
 
     renderModal();
 
     expect(screen.queryByText('age-gate-event')).not.toBeInTheDocument();
+  });
+  it('requires a public event link in the quick share flow', async () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    const { container } = renderModal();
+
+    fireEvent.click(screen.getByText('Quick share'));
+
+    fireEvent.click(screen.getByText('Send link'));
+
+    expect(await screen.findByText('Add a public event link.')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('submits the public event link anonymously for review in the quick share flow', async () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    const { container, onDismiss } = renderModal();
+
+    fireEvent.click(screen.getByText('Quick share'));
+
+    setIonInput(getItemControl(container, 'Public event link', 'ion-textarea'), 'https://example.com/event');
+    setIonInput(getItemControl(container, 'Notes (optional)', 'ion-textarea'), 'Outdoor and masked.');
+    fireEvent.click(screen.getByText('Send link'));
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith('/api/event/link_submission/', {
+        link: 'https://example.com/event',
+        notes: 'Outdoor and masked.',
+      });
+    });
+    expect(await screen.findByText('Your link has been sent!')).toBeInTheDocument();
+    expect(screen.getByText("We'll review it and fill in the details if it is a fit for the calendar.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('OK'));
+    expect(onDismiss).toHaveBeenCalledWith({ submitted: true });
+  });
+
+  it('warns but allows link shorteners in the quick share flow', async () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    const { container } = renderModal();
+
+    fireEvent.click(screen.getByText('Quick share'));
+
+    setIonInput(getItemControl(container, 'Public event link', 'ion-textarea'), 'https://bit.ly/public-event');
+    fireEvent.click(screen.getByText('Send link'));
+
+    expect(await screen.findByText('Use the full URL?')).toBeInTheDocument();
+    expect(screen.getByText('Submitting the whole URL instead of a link shortener is preferred so members know what they are clicking.')).toBeInTheDocument();
+    expect(mockApiPost).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith('/api/event/link_submission/', {
+        link: 'https://bit.ly/public-event',
+        notes: '',
+      });
+    });
+  });
+
+  it('shows the server error in the quick share flow', async () => {
+    mockSiteSettings = { allow_event_link_only_submissions: true };
+    mockApiPost.mockRejectedValueOnce({
+      response: {
+        data: {
+          link: ['Enter a valid URL.'],
+        },
+      },
+    });
+    const { container } = renderModal();
+
+    fireEvent.click(screen.getByText('Quick share'));
+    setIonInput(getItemControl(container, 'Public event link', 'ion-textarea'), 'not a link');
+    fireEvent.click(screen.getByText('Send link'));
+
+    expect(await screen.findByText('Enter a valid URL.')).toBeInTheDocument();
   });
 });

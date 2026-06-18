@@ -6,3 +6,116 @@
 .profile-photos-cropper .reactEasyCrop_Container img{
     max-width: none;
 }
+
+.submission-image-crop-card {
+    height: min(58vh, 460px);
+    min-height: 340px;
+    position: relative;
+}
+
+.submission-image-cropper {
+    align-items: center;
+    background: var(--ion-color-dark);
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    touch-action: none;
+    width: 100%;
+}
+
+.submission-image-cropper-image {
+    display: block;
+    object-fit: contain;
+    position: absolute;
+    user-select: none;
+}
+
+.submission-crop-rect {
+    border: 2px solid var(--ion-color-primary);
+    box-sizing: border-box;
+    box-shadow: 0 0 0 9999px color-mix(in srgb, var(--ion-color-dark) 45%, transparent);
+    cursor: move;
+    position: absolute;
+    touch-action: none;
+}
+
+.submission-crop-handle {
+    background: var(--ion-color-primary);
+    border: 2px solid var(--ion-color-primary-contrast);
+    box-sizing: border-box;
+    border-radius: 50%;
+    height: 28px;
+    position: absolute;
+    touch-action: none;
+    width: 28px;
+    z-index: 1;
+}
+
+.submission-crop-handle::before {
+    content: "";
+    inset: -12px;
+    position: absolute;
+}
+
+.submission-crop-handle-left,
+.submission-crop-handle-right {
+    cursor: ew-resize;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.submission-crop-handle-left {
+    left: -14px;
+}
+
+.submission-crop-handle-right {
+    right: -14px;
+}
+
+.submission-crop-handle-top,
+.submission-crop-handle-bottom {
+    cursor: ns-resize;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.submission-crop-handle-top {
+    top: -14px;
+}
+
+.submission-crop-handle-bottom {
+    bottom: -14px;
+}
+
+.submission-crop-handle-top-left,
+.submission-crop-handle-top-right,
+.submission-crop-handle-bottom-left,
+.submission-crop-handle-bottom-right {
+    border-radius: 50%;
+}
+
+.submission-crop-handle-top-left {
+    cursor: nwse-resize;
+    left: -14px;
+    top: -14px;
+}
+
+.submission-crop-handle-top-right {
+    cursor: nesw-resize;
+    right: -14px;
+    top: -14px;
+}
+
+.submission-crop-handle-bottom-left {
+    bottom: -14px;
+    cursor: nesw-resize;
+    left: -14px;
+}
+
+.submission-crop-handle-bottom-right {
+    bottom: -14px;
+    cursor: nwse-resize;
+    right: -14px;
+}

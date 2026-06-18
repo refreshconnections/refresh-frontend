@@ -12,6 +12,7 @@ import { updateCurrentUserProfile } from '../hooks/utilities';
 import { useGetCurrentProfile } from '../hooks/api/profiles/current-profile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 import BoxedStackedInput from './BoxedStackedInput';
+import { PROFILE_FIELD_LIMITS } from '../constants/fieldLimits';
 
 import './OnboardingCard.css';
 
@@ -101,7 +102,9 @@ const OnboardingCardLocationLabel: React.FC<Props> = ({ initialLocation, initial
           placeholder={copy.placeholder}
           autocapitalize="words"
           type="text"
-          onIonInput={(event) => setLocation(event.detail.value ?? '')}
+          maxlength={PROFILE_FIELD_LIMITS.location}
+          counter
+          onIonInput={(event) => setLocation((event.detail.value ?? '').slice(0, PROFILE_FIELD_LIMITS.location))}
         />
       </IonCardContent>
       <div className="onboarding-v2__card-footer">

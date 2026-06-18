@@ -84,6 +84,7 @@ vi.mock('../hooks/api/submitted-events', () => ({
               start_datetime: '2099-07-20T18:00:00.000Z',
               end_datetime: '2099-07-20T19:00:00.000Z',
               description: 'Pending moderation',
+              moderator_rejection_reason: 'Please include a public event link.\nhttps://example.com/event',
               location: 'Brooklyn',
               uploadDateTime: '2099-07-18T00:00:00.000Z',
             },
@@ -121,17 +122,22 @@ vi.mock('../enums/moderation', () => ({
   },
 }));
 
+vi.mock('../components/GuidelinesButton', () => ({
+  default: () => <button type="button">Guidelines</button>,
+}));
+
 import SubmittedPosts from './SubmittedPosts';
 
 const renderPage = () => {
   const queryClient = new QueryClient();
-  return render(
+  const view = render(
     <IonApp>
       <QueryClientProvider client={queryClient}>
         <SubmittedPosts />
       </QueryClientProvider>
     </IonApp>
   );
+  return { ...view, queryClient };
 };
 
 describe('SubmittedPosts', () => {
@@ -180,14 +186,64 @@ describe('SubmittedPosts', () => {
     expect(await screen.findByText('Pending event')).toBeInTheDocument();
     expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Approved event'));
-    expect(mockPush).toHaveBeenCalledWith('/community?calendarDate=2099-07-21');
+    expect(mockPush).toHaveBeenCalledWith('/community?calendarDate=2099-07-21&calendarEventId=22');
 
     fireEvent.click(screen.getByText('Pending event'));
     expect(await screen.findByText('Event details')).toBeInTheDocument();
     expect(screen.queryByText('Interested count')).not.toBeInTheDocument();
     expect(screen.queryByText('7')).not.toBeInTheDocument();
+    expect(screen.getByText('Moderator explanation')).toBeInTheDocument();
+    const explanation = document.querySelector('.moderator-explanation-body') as HTMLElement;
+    expect(explanation).toHaveTextContent('Please include a public event link. https://example.com/event');
+    expect(explanation.textContent).toContain('\n');
+    expect(screen.getByRole('button', { name: 'https://example.com/event' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guidelines' })).toBeInTheDocument();
+    expect(screen.getByText(/Shown in your time zone/)).toBeInTheDocument();
     fireEvent.click(document.querySelector('.info-button') as HTMLElement);
     expect(screen.getByText('Moderation can take up to 3 business days.')).toBeInTheDocument();
+  });
+
+  it('pull-to-refresh invalidates post submissions while posts are selected', async () => {
+    const { container, queryClient } = renderPage();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const complete = vi.fn();
+
+    fireEvent(
+      container.querySelector('ion-refresher') as HTMLElement,
+      new CustomEvent('ionRefresh', {
+        detail: { complete },
+      })
+    );
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['ann', 'submitted'],
+        exact: false,
+      });
+    });
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
+  it('pull-to-refresh invalidates submitted events while events are selected', async () => {
+    const { container, queryClient } = renderPage();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    fireEvent.click(screen.getByText('Events'));
+
+    const complete = vi.fn();
+    fireEvent(
+      container.querySelector('ion-refresher') as HTMLElement,
+      new CustomEvent('ionRefresh', {
+        detail: { complete },
+      })
+    );
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['submitted-events'],
+      });
+    });
+    expect(complete).toHaveBeenCalledTimes(1);
   });
 
   it('filters out expired and stale submissions, while keeping editable drafts with the correct label', async () => {

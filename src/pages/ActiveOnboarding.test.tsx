@@ -435,6 +435,7 @@ describe('active onboarding pages', () => {
     mockPreferencesGet.mockResolvedValue({ value: null });
     mockPreferencesSet.mockResolvedValue(undefined);
     mockPreferencesRemove.mockResolvedValue(undefined);
+    window.history.pushState({}, '', '/');
     mockUpdateCurrentUserProfile.mockResolvedValue({ status: 204 });
     mockUpdateCurrentUserProfileWStatus.mockResolvedValue({ status: 204 });
     mockUpdateUsername.mockResolvedValue({ status: 204 });
@@ -517,20 +518,48 @@ describe('active onboarding pages', () => {
     expect(screen.getByText('age-verification-flow')).toBeInTheDocument();
   });
 
-  it('supports the onboarding branch actions from the ready slide', async () => {
+  it('opens the Refreshments Profile flow from the ready slide', async () => {
+    renderInApp(<OnboardingV2 />);
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.community.cta));
+
+    await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockPreferencesSet).toHaveBeenCalledWith({
+        key: 'community_onboarding_in_progress',
+        value: 'true',
+      });
+      expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding', 'root', 'replace');
+    });
+    expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('opens the Personal Profile flow from the ready slide', async () => {
     renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.personal.cta));
+
     await waitFor(() => {
       expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
       expect(mockPresentModal).toHaveBeenCalled();
     });
+    expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('opens the Refreshments Bar from the ready slide explore option', async () => {
+    renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.explore.cta));
+
     await waitFor(() => {
-      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(2);
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
     });
     expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('supports the non-ready onboarding slide actions', () => {
+    renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.welcome.primaryCta));
     expect(sharedSwiper.slideNext).toHaveBeenCalled();
@@ -1027,6 +1056,23 @@ describe('active onboarding pages', () => {
     });
   });
 
+  it('returns to create post after finishing refreshments onboarding from create-post intent', async () => {
+    window.history.pushState({}, '', '/community-onboarding?next=create-post');
+    mockCurrentProfile = {
+      ...mockCurrentProfile,
+      created_profile: true,
+      username: 'alex',
+    };
+
+    renderInApp(<CommunityOnboarding />);
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.communityOnboarding.ready.finish));
+
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith('/community?createPost=1', 'root', 'replace');
+    });
+  });
+
   it('routes to personal onboarding after refreshments onboarding instead of opening a modal', async () => {
     mockCurrentProfile = {
       ...mockCurrentProfile,
@@ -1319,6 +1365,10 @@ describe('active onboarding pages', () => {
 
     renderInApp(<PersonalProfile onDismiss={onDismiss} />);
 
+    await act(async () => {
+      await mockSwiperOnSlideChange({ activeIndex: 5 });
+    });
+
     fireEvent.click(screen.getAllByText(ONBOARDING_COPY.common.finishLater)[0]);
 
     await waitFor(() => {
@@ -1329,6 +1379,12 @@ describe('active onboarding pages', () => {
       });
       expect(onDismiss).toHaveBeenCalled();
     });
+    expect(mockPreferencesSet).toHaveBeenCalledWith({
+      key: 'personal_profile_onboarding_slide',
+      value: '5',
+    });
+    expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_in_progress' });
+    expect(mockPreferencesRemove).not.toHaveBeenCalledWith({ key: 'personal_profile_onboarding_slide' });
   });
 
   it('shows normal location-sharing UI in personal onboarding when Refreshments was declined first', () => {
