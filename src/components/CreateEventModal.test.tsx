@@ -95,6 +95,7 @@ vi.mock('../hooks/utilities', () => ({
   containsPii: vi.fn((value?: string) => /555-111-2222|test@example\.com|123 main street/i.test(value ?? '')),
   containsLinkShortener: vi.fn((value?: string) => /bit\.ly/i.test(value ?? '')),
   containsGoogleDocLink: vi.fn((value?: string) => /docs\.google\.com/i.test(value ?? '')),
+  containsLinktreeLink: vi.fn((value?: string) => /linktr\.ee|linktree\.com/i.test(value ?? '')),
   eventUploadPhoto: (...args: any[]) => mockEventUploadPhoto(...args),
   increaseStreak: vi.fn(),
   isCommunityPlus: vi.fn((level?: string) => level === 'communityplus'),
@@ -537,6 +538,28 @@ describe('CreateEventModal', () => {
     expect(screen.getByText('Submit event')).toBeDisabled();
   });
 
+  it('shows a notice but allows Linktree links in event submissions', async () => {
+    const { container } = renderModal();
+
+    fillRequiredEventFields(container, '2099-07-20T18:00', '2099-07-20T19:00');
+    setAnonymousPosting(container);
+    setIonInput(getItemControl(container, 'External link', 'ion-textarea'), 'https://linktr.ee/masked-meetup');
+
+    expect(
+      await screen.findByText(
+        'Choosing one link from Linktree is preferred.'
+      )
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Submit event'));
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith('/api/event/', expect.objectContaining({
+        external_link: 'https://linktr.ee/masked-meetup',
+      }));
+    });
+  });
+
   it('treats an address in the event body as blocked PII', async () => {
     const { container } = renderModal();
 
@@ -768,11 +791,18 @@ describe('CreateEventModal', () => {
       await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
       expect(screen.getByAltText('Event preview')).toHaveAttribute('src', fileReaderResult);
+      setIonInput(
+        getItemControl(container, 'Image alt text (optional)', 'ion-input'),
+        '  People sitting at a picnic table wearing masks.  ',
+        'ionChange'
+      );
 
       fireEvent.click(screen.getByText('Submit event'));
 
       await waitFor(() => {
-        expect(mockApiPost).toHaveBeenCalledTimes(1);
+        expect(mockApiPost).toHaveBeenCalledWith('/api/event/', expect.objectContaining({
+          image_alt: 'People sitting at a picnic table wearing masks.',
+        }));
       });
       expect(mockEventUploadPhoto).toHaveBeenCalledWith({ image: fileReaderResult }, 77);
       expect(await screen.findByText('Your event has been submitted and is now pending approval!')).toBeInTheDocument();

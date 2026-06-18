@@ -14,6 +14,7 @@ export const EVENT_FIELD_LIMITS = {
   description: 2000,
   location: 100,
   externalLink: 400,
+  imageAlt: 400,
   sensitiveDescription: 500,
 } as const;
 
@@ -21,7 +22,7 @@ export const PROFILE_FIELD_LIMITS = {
   nickname: 20,
   username: 24,
   pronouns: 20,
-  bio: 100,
+  bio: 1000,
   location: 100,
   job: 100,
   politics: 100,

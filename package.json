@@ -70,7 +70,7 @@
     "@capacitor/app": "^7.0.2",
     "@capacitor/browser": "^7.0.3",
     "@capacitor/camera": "^7",
-    "@capacitor/core": "7.4.2",
+    "@capacitor/core": "8.4.0",
     "@capacitor/device": "^7",
     "@capacitor/filesystem": "7.1.4",
     "@capacitor/geolocation": "^7",

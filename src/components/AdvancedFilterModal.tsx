@@ -270,7 +270,7 @@ const AdvancedFilterModal: React.FC<Props> = (props) => {
     .filter(option => allowedLivedExperienceValues.has(option.value));
   const hasEnabledLivedExperienceFilters = allowedLivedExperienceValues.size > 0;
   const shouldShowLivedExperiencesAccordion =
-    hasEnabledLivedExperienceFilters && livedExperiences.length > 0;
+    hasEnabledLivedExperienceFilters && availableLivedExperienceOptions.length > 0;
 
   const genderSexualityOptions = [
     { value: "straight", label: "Straight" },

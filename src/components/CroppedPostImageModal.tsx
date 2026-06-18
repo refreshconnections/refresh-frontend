@@ -248,7 +248,7 @@ const renderHandle = (handle: ResizeHandle) => (
 
 return (
   <IonPage id='text-page'>
-    <IonContent>
+    <IonContent className="submission-image-crop-content">
       <IonCard className="submission-image-crop-card">
         <div className="submission-image-cropper" ref={containerRef}>
           {imageSrc ? (

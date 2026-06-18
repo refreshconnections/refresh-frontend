@@ -250,7 +250,7 @@ const Profile: React.FC = () => {
               <IonRow className="unpause-profile">
                 {moderation?.moderator_deactivated? 
                 <>
-                <IonNote>Your account has been suspended for moderatoration.</IonNote>
+                <IonNote>Your account has been suspended for moderation.</IonNote>
                 <IonButton color="warning" onClick={async () => reactivateProfileHandler()}>What does this mean?</IonButton>
                 </>
                 :
