@@ -488,6 +488,37 @@ describe('EventsCalendar', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['events'] });
   });
 
+  it('returns the create-event modal dismiss promise so navigation waits for close', async () => {
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Add an event'));
+
+    const createEventConfig = mockModalConfigs[1];
+    const dismissResult = Promise.resolve(true);
+    mockDismissModal.mockReturnValueOnce(dismissResult);
+    const result = createEventConfig.onDismiss();
+
+    expect(result).toBe(dismissResult);
+    await result;
+  });
+
+  it('closes the calendar modal when create-event navigation asks to leave', async () => {
+    renderCalendar({ openOnLoad: true, initialDate: '2026-03-29' });
+
+    expect(await screen.findByText('Community events')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Add an event'));
+
+    const createEventConfig = mockModalConfigs[1];
+    await act(async () => {
+      await createEventConfig.onDismiss({ closeCalendar: true });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Community events')).not.toBeInTheDocument();
+    });
+  });
+
   it('supports week navigation and hides the byline row for anonymous events', async () => {
     mockEvents = [
       {

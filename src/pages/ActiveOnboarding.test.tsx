@@ -518,21 +518,48 @@ describe('active onboarding pages', () => {
     expect(screen.getByText('age-verification-flow')).toBeInTheDocument();
   });
 
-  it('supports the onboarding branch actions from the ready slide', async () => {
+  it('opens the Refreshments Profile flow from the ready slide', async () => {
+    renderInApp(<OnboardingV2 />);
+
+    fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.community.cta));
+
+    await waitFor(() => {
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockPreferencesSet).toHaveBeenCalledWith({
+        key: 'community_onboarding_in_progress',
+        value: 'true',
+      });
+      expect(mockRouterPush).toHaveBeenCalledWith('/community-onboarding', 'root', 'replace');
+    });
+    expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('opens the Personal Profile flow from the ready slide', async () => {
     renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.personal.cta));
+
     await waitFor(() => {
       expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
       expect(mockPresentModal).toHaveBeenCalled();
     });
+    expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('opens the Refreshments Bar from the ready slide explore option', async () => {
+    renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.ready.explore.cta));
+
     await waitFor(() => {
-      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(2);
+      expect(mockCompleteOnboardingMutateAsync).toHaveBeenCalledTimes(1);
       expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
     });
     expect(mockCompleteOnboardingMutate).not.toHaveBeenCalled();
+  });
+
+  it('supports the non-ready onboarding slide actions', () => {
+    renderInApp(<OnboardingV2 />);
 
     fireEvent.click(screen.getByText(ONBOARDING_COPY.onboardingV2.welcome.primaryCta));
     expect(sharedSwiper.slideNext).toHaveBeenCalled();

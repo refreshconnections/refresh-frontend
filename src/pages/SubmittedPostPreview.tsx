@@ -45,6 +45,7 @@ import { ModerationCopy } from '../enums/moderation';
 import GuidelinesButton from '../components/GuidelinesButton';
 import CitySelectorModal from '../components/CitySelectorModal';
 import { openExternalUrl } from '../hooks/utilities';
+import HousingPostGuidance from '../components/HousingPostGuidance';
 
 type SubmittedPost = {
   id: number;
@@ -59,6 +60,7 @@ type SubmittedPost = {
   comment_instructions?: string;
   byline?: string;
   category?: string;
+  bar?: string;
   location?: string;
   local_only?: boolean;
   location_point_lat?: number | string;
@@ -299,6 +301,7 @@ const SubmittedPostPreview: React.FC = () => {
   const hasRequestedEdit = !!requestedEdit;
   const canEdit = (status === 'needs_edit' || status === 'draft') && visible;
   const isDraft = status === 'draft';
+  const isHousingNeedsEdit = visible && status === 'needs_edit' && (post?.category ?? post?.bar) === 'housing';
   const rejectedReason = post?.moderator_edit_or_rejection_reason ?? post?.moderator_edit_reason;
   const bylineOptions = Array.from(new Set([
     ...(userHandle ? [userHandle] : []),
@@ -710,6 +713,8 @@ const SubmittedPostPreview: React.FC = () => {
             </IonItem>
           </IonCardContent>
         </IonCard>
+
+        {isHousingNeedsEdit && <HousingPostGuidance />}
 
         {allowInlineEdit && isDraft && (
           <IonRow class="ion-justify-content-center" style={{ marginTop: '12px' }}>

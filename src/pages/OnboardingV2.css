@@ -17,6 +17,13 @@
   min-height: calc(100vh - var(--onboarding-keyboard-offset, 0px));
 }
 
+.onboarding-v2__scroll-slide {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
 .onboarding-v2__slide {
   display: flex;
   flex-direction: column;
@@ -49,6 +56,29 @@
   .onboarding-v2__slide {
     padding-top: clamp(16px, 10vh, 40px);
     padding-bottom: clamp(24px, 8vh, 48px);
+  }
+}
+
+@media (max-height: 740px) {
+  .onboarding-v2__scroll-slide {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .onboarding-v2__scroll-slide .onboarding-v2__ready {
+    justify-content: flex-start;
+    min-height: auto;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .onboarding-v2__scroll-slide .onboarding-v2__card {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .onboarding-v2__scroll-slide .onboarding-v2__ready-options {
+    gap: 14px;
   }
 }
 

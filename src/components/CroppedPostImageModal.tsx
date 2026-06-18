@@ -40,6 +40,7 @@ type ImageBounds = CropRect & {
 type ResizeHandle = 'move' | 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 const MIN_CROP_SIZE = 48;
+const CROP_HANDLE_SIZE = 28;
 
 const CroppedImageModal: React.FC<Props> = (props) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
@@ -106,14 +107,16 @@ const CroppedImageModal: React.FC<Props> = (props) => {
     if (!element || !container || !element.naturalWidth || !element.naturalHeight) return;
 
     const containerRect = container.getBoundingClientRect();
+    const availableWidth = Math.max(containerRect.width - CROP_HANDLE_SIZE, MIN_CROP_SIZE);
+    const availableHeight = Math.max(containerRect.height - CROP_HANDLE_SIZE, MIN_CROP_SIZE);
     const imageAspect = element.naturalWidth / element.naturalHeight;
-    const containerAspect = containerRect.width / containerRect.height;
+    const containerAspect = availableWidth / availableHeight;
     const displayWidth = containerAspect > imageAspect
-      ? containerRect.height * imageAspect
-      : containerRect.width;
+      ? availableHeight * imageAspect
+      : availableWidth;
     const displayHeight = containerAspect > imageAspect
-      ? containerRect.height
-      : containerRect.width / imageAspect;
+      ? availableHeight
+      : availableWidth / imageAspect;
     const nextBounds: ImageBounds = {
       x: (containerRect.width - displayWidth) / 2,
       y: (containerRect.height - displayHeight) / 2,
@@ -246,7 +249,7 @@ const renderHandle = (handle: ResizeHandle) => (
 return (
   <IonPage id='text-page'>
     <IonContent>
-      <IonCard style={{ position: "relative", height: "350px" }}>
+      <IonCard className="submission-image-crop-card">
         <div className="submission-image-cropper" ref={containerRef}>
           {imageSrc ? (
             <img
@@ -255,6 +258,12 @@ return (
               alt=""
               className="submission-image-cropper-image"
               onLoad={handleImageLoad}
+              style={imageBounds ? {
+                left: imageBounds.x,
+                top: imageBounds.y,
+                width: imageBounds.width,
+                height: imageBounds.height,
+              } : undefined}
             />
           ) : null}
           {cropRect ? (

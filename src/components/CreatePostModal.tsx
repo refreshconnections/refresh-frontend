@@ -30,6 +30,7 @@ import SubmissionAgeGateCard from "./SubmissionAgeGateCard";
 import PostSuggestionMini from "./PostSuggestionMini";
 import { ANNOUNCEMENT_IMAGE_CONSTRAINTS } from "../constants/submissionImages";
 import { ANNOUNCEMENT_FIELD_LIMITS, EVENT_FIELD_LIMITS } from "../constants/fieldLimits";
+import HousingPostGuidance from "./HousingPostGuidance";
 
 const ATTENDEE_PRECAUTION_OPTIONS = [
     { value: 'not_specified', label: 'Not specified' },
@@ -557,16 +558,10 @@ const CreatePostModal: React.FC<Props> = (props) => {
 
     }
 
-    const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
-
     const handleCropDismiss = async (base64string: string | null) => {
         setImageLoading(true)
         setImageDataToUpload(base64string)
-        console.log("Dismissed cropper imagedatatoupload", base64string)
         cropDismiss()
-        console.log("Waiting 3 seconds to reload image ")
-        await delay(3000);
-        console.log("Dismissed cropper imagedatatoupload 2", base64string)
         setImageLoading(false)
     }
 
@@ -869,13 +864,13 @@ const CreatePostModal: React.FC<Props> = (props) => {
         if (!combinedPostText) return false;
         const platforms = '(signal|insta|instagram|ig|whatsapp|telegram|discord|facebook|messenger|twitter|\\bx\\b)';
         return new RegExp(`\\b(dm|message|text|contact|reach(?:\\s+out)?|find|follow|add|friend)\\s+(?:out\\s+)?(?:to\\s+)?(me|us)?\\s*(on|at|via)?\\s*${platforms}\\b`, 'i').test(combinedPostText)
+            || /\b(hit\s+me\s+up|hmu)(?=\s*(?:$|[,.!?;:]|\b(?:if|when|to|for|about|on|via)\b))/i.test(combinedPostText)
+            || /\bsend\s+(me|us)\s+your\s+email\b/i.test(combinedPostText)
             || new RegExp(`\\b(my|our)\\s+${platforms}\\s+(is|handle is|username is)\\b`, 'i').test(combinedPostText)
+            || new RegExp(`\\b(on|via)\\s+${platforms}\\b`, 'i').test(combinedPostText)
             || new RegExp(`\\b(on|at|via)\\s+@[a-z0-9._-]{2,}`, 'i').test(combinedPostText)
             || new RegExp(`${platforms}:\\s*@?[a-z0-9._-]{2,}`, 'i').test(combinedPostText);
     }, [combinedPostText]);
-
-
-
     const requiredMissing = {
         title: !title?.trim(),
         byline: !byline,
@@ -1203,52 +1198,7 @@ const CreatePostModal: React.FC<Props> = (props) => {
                             </IonItem>
                         </IonCard>
 
-                        {bar === "housing" && (
-                            <IonCard className="housing-post-guidance">
-                                <IonCardContent>
-                                    <IonText color="dark">
-                                        <strong>Housing post expectations</strong>
-                                        <p>
-                                            Provide enough information for people to determine whether they may be a good fit. For everyone's safety, share more specific details privately through Connect from Refreshments after connecting.
-                                        </p>
-                                    </IonText>
-                                    <IonAccordionGroup>
-                                        <IonAccordion value="housing-details">
-                                            <IonItem slot="header" lines="none">
-                                                <IonLabel>What to include and leave out</IonLabel>
-                                            </IonItem>
-                                            <div slot="content" className="housing-post-guidance-details">
-                                                <IonText color="dark">
-                                                    <strong>Include:</strong>
-                                                </IonText>
-                                                <ul>
-                                                    <li>General location (neighborhood or area)</li>
-                                                    <li>Approximate budget or rent range</li>
-                                                    <li>Timeline or expected lease length</li>
-                                                    <li>General COVID precautions</li>
-                                                    <li>Relevant household expectations and values, needs, pets, or dealbreakers</li>
-                                                </ul>
-                                                <IonText color="dark">
-                                                    <strong>Don't include:</strong>
-                                                </IonText>
-                                                <ul>
-                                                    <li>Exact address, cross streets, apartment numbers, or other identifying location details</li>
-                                                    <li>Exact rent amounts</li>
-                                                    <li>Detailed schedules or routines, like specific workdays, class schedules, or travel plans</li>
-                                                    <li>Sensitive personal information about yourself or others</li>
-                                                    <li>Derogatory labels or exclusionary language describing who is not welcome. Please describe who you hope to live with instead.</li>
-                                                </ul>
-                                                <IonText color="medium">
-                                                    <p>
-                                                        Please note: Due to our guidelines around getting to know people before meeting up, Refresh is intended for longer-term housing connections and does not support temporary or short-term housing posts or requests to crash.
-                                                    </p>
-                                                </IonText>
-                                            </div>
-                                        </IonAccordion>
-                                    </IonAccordionGroup>
-                                </IonCardContent>
-                            </IonCard>
-                        )}
+                        {bar === "housing" && <HousingPostGuidance />}
 
                         {bar === "events" && (
                             <IonCard>
@@ -1443,6 +1393,12 @@ const CreatePostModal: React.FC<Props> = (props) => {
                                             </IonButton>
                                         )}
                                     </IonItem>
+
+                                    {imageDataToUpload ? (
+                                        <IonItem color="white" lines="none" className="image-preview-item">
+                                            <img src={imageDataToUpload} alt={coverPhotoAlt || 'Post preview'} />
+                                        </IonItem>
+                                    ) : null}
 
                                     {imageDataToUpload &&
                                         <IonItem color="white" lines="none">

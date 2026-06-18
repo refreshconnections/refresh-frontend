@@ -29,6 +29,7 @@ type Props = {
   onRefreshResult?: (sessionId?: string | null) => void;
   fakeModeEnabled?: boolean;
   onSimulatePass?: () => void;
+  onSimulateDigitalIdPass?: () => void;
   onSimulateFail?: () => void;
   onSimulateInconclusive?: () => void;
   embedded?: boolean;
@@ -48,6 +49,7 @@ const AgeVerificationFlow: React.FC<Props> = ({
   onRefreshResult,
   fakeModeEnabled = false,
   onSimulatePass,
+  onSimulateDigitalIdPass,
   onSimulateFail,
   onSimulateInconclusive,
   embedded = false,
@@ -199,6 +201,11 @@ const AgeVerificationFlow: React.FC<Props> = ({
           <IonButton expand="block" color="success" onClick={onSimulatePass}>
             Simulate Pass
           </IonButton>
+          {onSimulateDigitalIdPass && (
+            <IonButton expand="block" color="success" onClick={onSimulateDigitalIdPass}>
+              Simulate Digital ID Pass
+            </IonButton>
+          )}
           <IonButton expand="block" color="danger" onClick={onSimulateFail}>
             Simulate Fail
           </IonButton>

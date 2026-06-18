@@ -94,4 +94,25 @@ describe('SubmittedPostPreview', () => {
     expect(screen.getByRole('button', { name: 'https://example.com/rules' })).toBeInTheDocument();
     expect(screen.getByText('guidelines-button')).toBeInTheDocument();
   });
+
+  it('shows housing guidance when a housing submission needs edits', async () => {
+    mockUseLocation.mockReturnValue({
+      state: {
+        post: {
+          id: 42,
+          title: 'Housing post',
+          content: 'Looking for a longer-term roommate.',
+          byline: 'Alex',
+          category: 'housing',
+          approval_status: 'needs_edit',
+          last_edited_at: new Date().toISOString(),
+        },
+      },
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Housing post expectations')).toBeInTheDocument();
+    expect(screen.getByText(/does not support temporary or short-term housing posts/i)).toBeInTheDocument();
+  });
 });

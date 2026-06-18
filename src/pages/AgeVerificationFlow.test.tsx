@@ -42,6 +42,7 @@ describe('AgeVerificationFlow', () => {
     const onLogout = vi.fn();
     const onRefreshResult = vi.fn();
     const onSimulatePass = vi.fn();
+    const onSimulateDigitalIdPass = vi.fn();
     const onSimulateFail = vi.fn();
     const onSimulateInconclusive = vi.fn();
 
@@ -56,6 +57,7 @@ describe('AgeVerificationFlow', () => {
         onRefreshResult={onRefreshResult}
         fakeModeEnabled
         onSimulatePass={onSimulatePass}
+        onSimulateDigitalIdPass={onSimulateDigitalIdPass}
         onSimulateFail={onSimulateFail}
         onSimulateInconclusive={onSimulateInconclusive}
       />
@@ -65,6 +67,7 @@ describe('AgeVerificationFlow', () => {
     fireEvent.click(screen.getByText('Check status'));
     fireEvent.click(screen.getByText('Refresh Fake Result'));
     fireEvent.click(screen.getByText('Simulate Pass'));
+    fireEvent.click(screen.getByText('Simulate Digital ID Pass'));
     fireEvent.click(screen.getByText('Simulate Fail'));
     fireEvent.click(screen.getByText('Simulate Try Again'));
     fireEvent.click(screen.getByText('How this works'));
@@ -78,6 +81,7 @@ describe('AgeVerificationFlow', () => {
     expect(onRefreshResult).toHaveBeenCalledTimes(2);
     expect(onRefreshResult).toHaveBeenCalledWith('session-123');
     expect(onSimulatePass).toHaveBeenCalledTimes(1);
+    expect(onSimulateDigitalIdPass).toHaveBeenCalledTimes(1);
     expect(onSimulateFail).toHaveBeenCalledTimes(1);
     expect(onSimulateInconclusive).toHaveBeenCalledTimes(1);
     expect(onLogout).toHaveBeenCalledTimes(1);

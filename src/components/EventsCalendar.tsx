@@ -167,12 +167,15 @@ const EventsCalendar: React.FC<EventsCalendarProps> = ({
   });
 
   const [presentCreateEventModal, dismissCreateEventModal] = useIonModal(CreateEventModal, {
-    onDismiss: (data?: { submitted?: boolean }) => {
+    onDismiss: (data?: { submitted?: boolean; closeCalendar?: boolean }) => {
       if (data?.submitted) {
         queryClient.invalidateQueries({ queryKey: ['events'] });
         queryClient.invalidateQueries({ queryKey: ['submitted-events'] });
       }
-      dismissCreateEventModal();
+      if (data?.closeCalendar) {
+        setIsCalendarOpen(false);
+      }
+      return dismissCreateEventModal();
     },
     selectedDate,
   });

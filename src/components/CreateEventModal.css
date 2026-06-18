@@ -176,8 +176,9 @@
 
 .image-preview-item img {
   width: 100%;
+  max-height: min(30vh, 240px);
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .create-event-actions {

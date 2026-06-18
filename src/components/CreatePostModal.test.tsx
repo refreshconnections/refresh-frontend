@@ -324,6 +324,25 @@ describe('CreatePostModal', () => {
     expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://www.refreshconnections.com/faqs#post');
   });
 
+  it('shows a preview of the attached post image and removes it with the photo action', async () => {
+    const imageData = 'data:image/png;base64,post123';
+    const { container } = renderModal();
+
+    await fillBasicPostFields(container, 'mingle');
+
+    await act(async () => {
+      await mockModalConfigs[1].onDismiss(imageData);
+    });
+
+    expect(await screen.findByText('Photo attached')).toBeInTheDocument();
+    expect(screen.getByAltText('Post preview')).toHaveAttribute('src', imageData);
+
+    fireEvent.click(container.querySelector('ion-button[color="danger"]') as HTMLElement);
+
+    expect(screen.queryByText('Photo attached')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('Post preview')).not.toBeInTheDocument();
+  });
+
   it('shows a refreshments profile gate and opens onboarding when the CTA is clicked', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
@@ -667,6 +686,13 @@ describe('CreatePostModal', () => {
     'This sounds fun, dm me on Signal or friend me on Discord.',
     'This sounds fun, reach out to me on Signal.',
     'This sounds fun, find me at @maskedfriend.',
+    'This sounds fun, hit me up if you want to go together.',
+    'This sounds fun, hit me up on Signal if you want to go together.',
+    'This sounds fun, hmu if you want to go together.',
+    'This sounds fun, hmu on Discord if you want to go together.',
+    'This sounds fun, I am on Signal.',
+    'This sounds fun, I am on Discord.',
+    'This sounds fun, send me your email if you want to go together.',
   ])('warns but allows posts that ask members to move to another messaging app: %s', async (postContent) => {
     const { container } = renderModal();
 
@@ -690,6 +716,27 @@ describe('CreatePostModal', () => {
     expect(mockCreateAnnouncement).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByText('Submit anyway'));
+
+    await waitFor(() => {
+      expect(mockCreateAnnouncement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: postContent,
+        })
+      );
+    });
+  });
+
+  it('does not warn for hit me up when it is part of another phrase', async () => {
+    const postContent = 'This is my hit me up plan for staying in touch with neighbors.';
+    const { container } = renderModal();
+
+    await fillBasicPostFields(container, 'mingle');
+    await setIonInput(getItemControl(container, 'Post Content*', 'ion-textarea'), postContent);
+    await setIonCheckbox(getItemControl(container, 'I understand.', 'ion-checkbox'), true);
+
+    expect(screen.queryByText(/asking to move off-platform/i)).not.toBeInTheDocument();
+
+    fireEvent.submit(container.querySelector('form')!);
 
     await waitFor(() => {
       expect(mockCreateAnnouncement).toHaveBeenCalledWith(

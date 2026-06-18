@@ -49,6 +49,8 @@ import PersonalProfile from './PersonalProfile';
 import { ONBOARDING_COPY } from '../constants/onboarding';
 import { useOnboardingKeyboardState } from '../hooks/useOnboardingKeyboardState';
 
+const COMMUNITY_ONBOARDING_IN_PROGRESS_KEY = 'community_onboarding_in_progress';
+
 const WelcomeSlide: React.FC = () => {
   const swiper = useSwiper();
   const copy = ONBOARDING_COPY.onboardingV2.welcome;
@@ -471,6 +473,7 @@ const AgeVerificationSlide: React.FC<{
   lastSessionId?: string | null;
   onRefreshResult?: () => void;
   onSimulatePass?: () => void;
+  onSimulateDigitalIdPass?: () => void;
   onSimulateFail?: () => void;
   onSimulateInconclusive?: () => void;
 }> = ({
@@ -487,6 +490,7 @@ const AgeVerificationSlide: React.FC<{
   lastSessionId,
   onRefreshResult,
   onSimulatePass,
+  onSimulateDigitalIdPass,
   onSimulateFail,
   onSimulateInconclusive,
 }) => (
@@ -506,6 +510,7 @@ const AgeVerificationSlide: React.FC<{
         lastSessionId={lastSessionId}
         onRefreshResult={onRefreshResult}
         onSimulatePass={onSimulatePass}
+        onSimulateDigitalIdPass={onSimulateDigitalIdPass}
         onSimulateFail={onSimulateFail}
         onSimulateInconclusive={onSimulateInconclusive}
         embedded
@@ -684,11 +689,11 @@ const OnboardingV2: React.FC = () => {
     }
   }, [ageCheckState, needsAgeVerification, completeAgeVerification]);
 
-  const completeOnboardingAndProceed = useCallback(async (afterComplete: () => void) => {
+  const completeOnboardingAndProceed = useCallback(async (afterComplete: () => void | Promise<void>) => {
     if (completeOnboarding.isPending) return;
     try {
       await completeOnboarding.mutateAsync();
-      afterComplete();
+      await afterComplete();
     } catch (error) {
       console.error('Failed to complete onboarding', error);
     }
@@ -699,7 +704,10 @@ const OnboardingV2: React.FC = () => {
     event?: React.MouseEvent<HTMLIonButtonElement>
   ) => {
     event?.preventDefault();
-    await completeOnboardingAndProceed(() => {
+    await completeOnboardingAndProceed(async () => {
+      if (destination === '/community-onboarding') {
+        await Preferences.set({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
+      }
       router.push(destination, 'root', 'replace');
     });
   };
@@ -789,7 +797,7 @@ const OnboardingV2: React.FC = () => {
   useYotiCallbackListener(handleYotiCallbackPayload);
 
   const simulateYotiResult = useCallback(
-    async (state: AgeCheckState) => {
+    async (state: AgeCheckState, method?: 'digital_id') => {
       const fakeStatusMap: Partial<Record<AgeCheckState, 'passed' | 'failed' | 'inconclusive'>> = {
         success: 'passed',
         failed: 'failed',
@@ -798,7 +806,7 @@ const OnboardingV2: React.FC = () => {
       const fakeStatus = fakeStatusMap[state];
       if (fakeModeEnabled && fakeStatus) {
         try {
-          const res = await simulateFakeYotiResultForUser(fakeStatus);
+          const res = await simulateFakeYotiResultForUser(fakeStatus, method);
           if (res.status === 'passed') {
             applyAgeCheckState('success');
             return;
@@ -888,12 +896,13 @@ const OnboardingV2: React.FC = () => {
                 lastSessionId={lastYotiSessionId}
                 onRefreshResult={refreshYotiResult}
                 onSimulatePass={() => simulateYotiResult('success')}
+                onSimulateDigitalIdPass={() => simulateYotiResult('success', 'digital_id')}
                 onSimulateFail={() => simulateYotiResult('failed')}
                 onSimulateInconclusive={() => simulateYotiResult('canceled')}
               />
             </SwiperSlide>
           )}
-          <SwiperSlide>
+          <SwiperSlide className="onboarding-v2__scroll-slide">
             <ReadySlide
               onFinish={handleFinish}
               isCompleting={completeOnboarding.isPending}

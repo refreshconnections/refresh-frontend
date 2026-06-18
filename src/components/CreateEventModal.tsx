@@ -104,7 +104,7 @@ type City = {
 type EventSubmissionFlow = 'quick' | 'details';
 
 type CreateEventModalProps = {
-  onDismiss: (data?: { submitted?: boolean }) => void;
+  onDismiss: (data?: { submitted?: boolean; closeCalendar?: boolean }) => void | Promise<unknown>;
   selectedDate?: Date;
 };
 
@@ -219,6 +219,12 @@ function isMoreThanTwoWeeksOld(registrationDate?: string | null): boolean {
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selectedDate }) => {
   const router = useIonRouter();
+  const navigateTo = async (path: string) => {
+    if (typeof window === 'undefined') return;
+    await onDismiss?.({ closeCalendar: true });
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -976,7 +982,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
             </IonText>
           </IonCard>
         ) : !isOldEnoughForEvents ? (
-          <SubmissionAgeGateCard noun="event" onUpgrade={() => { onDismiss?.(); router.push('/store'); }} />
+          <SubmissionAgeGateCard noun="event" onUpgrade={() => navigateTo("/store")} />
         ) : moderationSubmissionBlocked ? (
           <IonCard className="ion-padding ion-text-center">
             <IonText>
@@ -991,7 +997,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               <p>You've already submitted 5 events this month.</p>
               <p>Get Community+ or Refresh Pro to submit more events now.</p>
             </IonText>
-            <IonButton onClick={() => router.push('/store')}>Upgrade</IonButton>
+            <IonButton onClick={() => navigateTo("/store")}>Upgrade</IonButton>
           </IonCard>
         ) : (
           <>

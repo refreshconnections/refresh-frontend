@@ -246,30 +246,48 @@ describe('CreateEventModal', () => {
     mockEventUploadPhoto.mockResolvedValue(undefined);
   });
 
-  it('shows the age gate for new accounts and routes to the store on upgrade', () => {
+  it('shows the age gate for new accounts and routes to the store on upgrade', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       registrationDate: daysAgoIso(7),
     };
 
-    renderModal();
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    const popstateSpy = vi.fn();
+    window.addEventListener('popstate', popstateSpy);
+    const { onDismiss } = renderModal();
 
     expect(screen.getByText('age-gate-event')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Upgrade'));
-    expect(mockPush).toHaveBeenCalledWith('/store');
+    expect(onDismiss).toHaveBeenCalledWith({ closeCalendar: true });
+    await waitFor(() => {
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/store');
+      expect(popstateSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/store');
+    window.removeEventListener('popstate', popstateSpy);
+    pushStateSpy.mockRestore();
   });
 
-  it('blocks free and personal plus users after five event submissions this month', () => {
+  it('blocks free and personal plus users after five event submissions this month', async () => {
     mockGlobalProfile = {
       ...mockGlobalProfile,
       subscription_level: 'personalplus',
     };
     mockLimits = { events_submitted: 5 };
 
-    renderModal();
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    const { onDismiss } = renderModal();
 
     expect(screen.getByText("You've already submitted 5 events this month.")).toBeInTheDocument();
     expect(screen.getByText('Get Community+ or Refresh Pro to submit more events now.')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Upgrade'));
+    expect(onDismiss).toHaveBeenCalledWith({ closeCalendar: true });
+    await waitFor(() => {
+      expect(pushStateSpy).toHaveBeenCalledWith({}, '', '/store');
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/store');
+    pushStateSpy.mockRestore();
   });
 
   it('allows pro users after five event submissions this month', () => {
@@ -740,13 +758,16 @@ describe('CreateEventModal', () => {
       fireEvent.change(fileInput, { target: { files: [photo] } });
       await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
+      expect(screen.getByAltText('Event preview')).toHaveAttribute('src', fileReaderResult);
 
       fireEvent.click(container.querySelector('ion-button[color="danger"]') as HTMLElement);
       expect(screen.queryByText('Photo attached')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('Event preview')).not.toBeInTheDocument();
 
       fireEvent.change(fileInput, { target: { files: [photo] } });
       await act(async () => { mockModalConfigs[2].onDismiss(fileReaderResult); });
       expect(await screen.findByText('Photo attached')).toBeInTheDocument();
+      expect(screen.getByAltText('Event preview')).toHaveAttribute('src', fileReaderResult);
 
       fireEvent.click(screen.getByText('Submit event'));
 

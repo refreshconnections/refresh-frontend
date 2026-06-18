@@ -19,6 +19,13 @@ ion-content.create-post ion-grid.pics img {
     padding-right: 5px
 }
 
+ion-content.create-post .image-preview-item img {
+    width: 100%;
+    max-height: min(30vh, 240px);
+    border-radius: 12px;
+    object-fit: contain;
+}
+
 ion-content.create-post ion-button.onboarding-pic-upload {
     font-size: 15pt
 }
@@ -77,51 +84,6 @@ ion-row.moderator-submit {
   font-size: 0.875rem;
   color: var(--ion-color-medium);
   white-space: normal; 
-}
-
-.housing-post-guidance {
-    box-shadow: none;
-}
-
-.housing-post-guidance ion-card-content {
-    padding: 16px;
-}
-
-.housing-post-guidance p {
-    margin: 8px 0 0;
-    line-height: 1.45;
-}
-
-.housing-post-guidance ion-accordion-group {
-    margin-top: 12px;
-    background: var(--ion-color-white);
-    border: 1px dotted var(--ion-color-medium);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.housing-post-guidance ion-accordion {
-    background: var(--ion-color-white);
-}
-
-.housing-post-guidance ion-accordion ion-item {
-    --background: var(--ion-color-white);
-}
-
-.housing-post-guidance-details {
-    padding: 0 16px 14px;
-    background: var(--ion-color-white);
-}
-
-.housing-post-guidance-details ul {
-    margin: 6px 0 12px;
-    padding-left: 18px;
-}
-
-.housing-post-guidance-details li {
-    margin-bottom: 5px;
-    font-size: 0.875rem;
-    line-height: 1.3;
 }
 
 .post-safety-guidance {

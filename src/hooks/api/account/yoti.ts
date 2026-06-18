@@ -9,6 +9,7 @@ export type YotiSessionResponse = {
 
 export type YotiResultResponse = {
   status?: string;
+  method?: string;
   failed_result?: boolean;
   eligibility?: any;
 };
@@ -18,9 +19,13 @@ export async function startYotiSession() {
   return res.data;
 }
 
-export async function simulateFakeYotiResultForUser(status: 'passed' | 'failed' | 'inconclusive') {
+export async function simulateFakeYotiResultForUser(
+  status: 'passed' | 'failed' | 'inconclusive',
+  method?: 'digital_id'
+) {
   const res = await apiClient.post<YotiResultResponse>('/account/yoti/fake-user-result/', {
     status,
+    method,
   });
   return res.data;
 }
