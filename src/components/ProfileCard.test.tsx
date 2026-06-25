@@ -171,6 +171,16 @@ describe('ProfileCard', () => {
     expect(screen.getByText(/Chronic illness/)).toBeInTheDocument();
   });
 
+  it('hides spiritual from displayed lived experiences', () => {
+    renderCard({
+      lived_experiences: ['poc', 'spiritual', 'sober'],
+    });
+
+    expect(screen.getByText(/POC/)).toBeInTheDocument();
+    expect(screen.getByText(/Sober/)).toBeInTheDocument();
+    expect(screen.queryByText(/spiritual/i)).not.toBeInTheDocument();
+  });
+
   it('opens looking-for popovers for the enabled icon buttons', () => {
     const { container } = renderCard({
       looking_for: ['friendship', 'housing', 'families'],

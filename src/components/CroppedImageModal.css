@@ -7,6 +7,10 @@
     max-width: none;
 }
 
+.submission-image-crop-content {
+    --padding-top: max(20px, var(--ion-safe-area-top));
+}
+
 .submission-image-crop-card {
     height: min(58vh, 460px);
     min-height: 340px;

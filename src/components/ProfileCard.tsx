@@ -128,6 +128,10 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
         chronic_illness: 'Chronic illness',
         sober: 'Sober',
     };
+    const visibleLivedExperiences = (cardData.lived_experiences ?? [])
+        .filter((value: string) => value !== 'spiritual')
+        .map((value: string) => livedExperienceLabels[value])
+        .filter(Boolean);
     const preferredOrder = Array.isArray(cardData?.photo_order) && cardData.photo_order.length > 0
         ? cardData.photo_order
         : photoKeys;
@@ -320,13 +324,11 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
                                         </IonItem>
                                         {cardData.kids_info ?
                                             <IonItem> <IonLabel><p>Kids info:</p> <h2 className="wrap">{cardData.kids_info}</h2></IonLabel> </IonItem> : <></>}
-                                        {cardData.settings_show_lived_experiences && cardData.lived_experiences?.length ? (
+                                        {cardData.settings_show_lived_experiences && visibleLivedExperiences.length ? (
                                             <IonItem>
                                                 <IonLabel className="ion-text-wrap" style={{ textWrap: "balance" }}>
                                                     <p style={{ textAlign: "center" }}>
-                                                        {`• ${cardData.lived_experiences
-                                                            .map((value: string) => livedExperienceLabels[value] ?? value)
-                                                            .join(' • ')} •`}
+                                                        {`• ${visibleLivedExperiences.join(' • ')} •`}
                                                     </p>
                                                 </IonLabel>
                                             </IonItem>

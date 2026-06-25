@@ -2796,6 +2796,11 @@ const GOOGLE_DOC_HOSTS = new Set([
     "cryptpad.eu",
 ]);
 
+const LINKTREE_HOSTS = new Set([
+    "linktr.ee",
+    "linktree.com",
+]);
+
 const normalizeHost = (rawUrl) => {
     const trimmed = String(rawUrl ?? "").trim();
     if (!trimmed) return null;
@@ -2837,6 +2842,11 @@ export function containsGoogleDocLink(input) {
         if (GOOGLE_DOC_HOSTS.has(host)) return true;
         return host.endsWith(".docs.google.com") || host.endsWith(".drive.google.com");
     });
+}
+
+export function containsLinktreeLink(input) {
+    const hosts = extractHosts(input);
+    return hosts.some((host) => LINKTREE_HOSTS.has(host));
 }
 
 export async function openExternalUrl(url: string) {
@@ -2893,7 +2903,8 @@ export function getPrimaryPhoto(profile: any): string | null {
 // Version 5: Dec 4 2025
 // Version 6: May 2026
 // Version 7: Jun 11 2026
-export const CURRENT_APP_VERSION: number = 7;
+// Version 7: Jun 17 2026
+export const CURRENT_APP_VERSION: number = 8;
 
 export function maxBirthdateForAdult(): string {
     const date = new Date();

@@ -27,7 +27,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { apiClient } from '../hooks/api/api-client';
 import CitySelectorModal from './CitySelectorModal';
-import { containsGoogleDocLink, containsLinkShortener, containsPii, eventUploadPhoto, increaseStreak, isCommunityPlus, isPro } from '../hooks/utilities';
+import { containsGoogleDocLink, containsLinkShortener, containsLinktreeLink, containsPii, eventUploadPhoto, increaseStreak, isCommunityPlus, isPro } from '../hooks/utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/pro-solid-svg-icons/faImage';
 import { faCirclePlus } from '@fortawesome/pro-solid-svg-icons/faCirclePlus';
@@ -746,7 +746,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
         attendee_precaution_preference: attendeePrecautionPreference || null,
         external_link: externalLink || null,
         external_registration_required: externalRegistrationRequired ? 'true' : 'false',
-        image_alt: imageAlt,
+        image_alt: imageData ? imageAlt.trim() : '',
         recurrence_type: recurrenceType !== 'none' ? recurrenceType : null,
         recurrence_count: recurrenceType !== 'custom' ? recurrenceCount : null,
         recurrence_custom_datetimes: recurrenceType === 'custom' ? trimmedCustomDates.map(toUTCStr) : null,
@@ -1264,6 +1264,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               maxlength={EVENT_FIELD_LIMITS.externalLink}
               onIonInput={(event) => setExternalLink(event.detail.value ?? '')}
             />
+            {containsLinktreeLink(externalLink) ? (
+              <IonText color="danger">
+                Choosing one link from Linktree is preferred.
+              </IonText>
+            ) : null}
             <IonItem color="white" lines="none">
               <IonLabel>Photo (optional)</IonLabel>
               {imageData ? (
@@ -1299,6 +1304,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ onDismiss, selected
               label="Image alt text (optional)"
               value={imageAlt}
               name="image_alt"
+              maxlength={EVENT_FIELD_LIMITS.imageAlt}
+              counter
               onIonChange={(event) => setImageAlt(event.detail.value ?? '')}
             />
           ) : null}
