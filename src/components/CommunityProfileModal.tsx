@@ -285,6 +285,10 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       if (reportAndBlock) {
         setReportAndBlock(false);
         setReportRequiresDetails(false);
+      }
+    },
+    onReportSubmitted: () => {
+      if (reportAndBlock) {
         blockUser(true);
       }
     },

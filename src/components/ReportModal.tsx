@@ -12,7 +12,7 @@ type Props = {
     id: number,
     requireDetails?: boolean;
     hasExistingChat?: boolean;
-    onDismiss: () => void;
+    onDismiss: (data?: string, role?: string) => void;
     onReportSubmitted?: () => void;
 };
 
@@ -41,7 +41,7 @@ const ReportModal: React.FC<Props> = (props) => {
     function reportSubmitSuccessful() {
         setShowAlert(false)
         onReportSubmitted?.();
-        onDismiss();
+        onDismiss(undefined, 'submitted');
     }
 
     function formData() {
@@ -86,7 +86,7 @@ const ReportModal: React.FC<Props> = (props) => {
                 <IonToolbar color="danger" className="modal-title">
                     <IonTitle>Submit Report</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={onDismiss}>Cancel</IonButton>
+                        <IonButton onClick={() => onDismiss(undefined, 'cancel')}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
