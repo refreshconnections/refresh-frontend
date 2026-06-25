@@ -1052,7 +1052,7 @@ describe('active onboarding pages', () => {
     await waitFor(() => {
       expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_in_progress' });
       expect(mockPreferencesRemove).toHaveBeenCalledWith({ key: 'community_onboarding_slide' });
-      expect(mockRouterPush).toHaveBeenCalledWith('/community', 'root', 'replace');
+      expect(onDismiss).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -1481,7 +1481,7 @@ describe('active onboarding pages', () => {
   it('shows the finish-later branch on personal profile and not the connect toggle card mock', () => {
     renderInApp(<PersonalProfile />);
 
-    expect(screen.getByText(ONBOARDING_COPY.common.finishLater)).toBeInTheDocument();
+    expect(screen.getAllByText(ONBOARDING_COPY.common.finishLater).length).toBeGreaterThan(0);
     expect(screen.getByText('onboarding-card-done')).toBeInTheDocument();
   });
 

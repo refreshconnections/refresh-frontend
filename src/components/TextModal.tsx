@@ -873,6 +873,7 @@ const TextModal: React.FC<Props> = (props) => {
         pro: pro,
         settingsAlt: settingsAlt,
         yourName: from_name ?? "Someone",
+        hasExistingChat: Boolean(textModalData?.id),
         onDismiss: (data: string, role: string) => profileDismiss(data, role),
     });
 

@@ -13,8 +13,20 @@
   min-height: 100vh;
 }
 
+.onboarding-v2__swiper .swiper-slide {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .onboarding-v2__content--keyboard-open .onboarding-v2__swiper {
   min-height: calc(100vh - var(--onboarding-keyboard-offset, 0px));
+}
+
+.onboarding-v2__finish-later-row {
+  width: 90%;
+  max-width: 520px;
+  margin: 8px auto 0;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .onboarding-v2__scroll-slide {

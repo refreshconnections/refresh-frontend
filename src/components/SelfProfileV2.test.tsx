@@ -113,6 +113,7 @@ const requireElement = (element: Element | null, label: string) => {
 const baseProfile = {
   name: 'Alex',
   age: 34,
+  subscription_level: 'pro',
   location: 'Brooklyn, NY',
   height: "5'8",
   pronouns: 'they/them',
@@ -147,11 +148,12 @@ const baseProfile = {
   fixation_game: '',
   fixation_album: '',
   gender_sexuality_choices: ['queer'],
+  gender_and_sexuality_info: 'Queer and trans',
   settings_show_gender_sexuality: false,
-  settings_show_long_covid: false,
-  long_covid_choices: [],
   lived_experiences: ['poc'],
   settings_show_lived_experiences: false,
+  settings_profile_banner_bool: false,
+  settings_profile_banner: 'happy-pride',
   username: 'alex',
   pic1_main: '/img/1.jpg',
   pic2: '/img/2.jpg',
@@ -535,6 +537,76 @@ describe('SelfProfileV2', () => {
     });
   });
 
+  it('edits more gender and sexuality info', async () => {
+    const { container } = renderSelfProfile();
+
+    const section = Array.from(container.querySelectorAll('ion-accordion-group')).find(
+      group => group.textContent?.includes('Gender & Sexuality')
+    ) as HTMLElement;
+    const infoItem = Array.from(section.querySelectorAll('ion-item')).find(
+      item => item.textContent?.includes('More gender and sexuality info')
+    ) as HTMLElement;
+
+    fireEvent.click(requireElement(infoItem.querySelector('ion-button'), 'gender info edit button'));
+
+    fireEvent(
+      requireElement(infoItem.querySelector('ion-textarea'), 'gender info textarea'),
+      new CustomEvent('ionInput', { detail: { value: 'Queer, trans, and nonbinary.' }, bubbles: true })
+    );
+
+    await act(async () => {
+      fireEvent.click(requireElement(infoItem.querySelector('.save-button'), 'gender info save button'));
+    });
+
+    await waitFor(() => {
+      expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+        gender_and_sexuality_info: 'Queer, trans, and nonbinary.',
+      });
+    });
+
+    fireEvent.click(screen.getByText(/See how others see your Personal Profile/));
+
+    expect(mockPresentModal).toHaveBeenLastCalledWith(
+      'ProfileModal',
+      expect.objectContaining({
+        cardData: expect.objectContaining({
+          gender_and_sexuality_info: 'Queer, trans, and nonbinary.',
+        }),
+      })
+    );
+  });
+
+  it('persists profile banner settings immediately', async () => {
+    const { container } = renderSelfProfile();
+
+    const section = Array.from(container.querySelectorAll('ion-accordion-group')).find(
+      group => group.textContent?.includes('Profile Banner')
+    ) as HTMLElement;
+    const toggle = section.querySelector('ion-toggle') as HTMLElement;
+    const select = section.querySelector('ion-select') as HTMLElement;
+
+    await act(async () => {
+      fireEvent(
+        toggle,
+        new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true })
+      );
+    });
+
+    await act(async () => {
+      fireEvent(
+        select,
+        new CustomEvent('ionChange', { detail: { value: 'fresh-air' }, bubbles: true })
+      );
+    });
+
+    expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+      settings_profile_banner_bool: true,
+    });
+    expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+      settings_profile_banner: 'fresh-air',
+    });
+  });
+
   it('opens the support alert for locked name edits and routes to Help from the alert action', async () => {
     renderSelfProfile();
 
@@ -621,6 +693,60 @@ describe('SelfProfileV2', () => {
 
     expect(screen.queryByText('Create Refreshments Profile')).not.toBeInTheDocument();
     expect(screen.queryByText('community-profile-section')).not.toBeInTheDocument();
+  });
+
+  it('adds a gender or sexuality choice from the checkbox editor', async () => {
+    const { container } = renderSelfProfile();
+
+    const section = Array.from(container.querySelectorAll('ion-accordion-group')).find(
+      group => group.textContent?.includes('Gender & Sexuality')
+    ) as HTMLElement;
+
+    const editButton = Array.from(section.querySelectorAll('.field-header'))
+      .find(header => header.textContent?.includes('Your selections'))!
+      .querySelector('ion-button') as HTMLElement;
+    fireEvent.click(editButton);
+
+    const transItem = Array.from(section.querySelectorAll('ion-item'))
+      .find(item => item.textContent?.trim() === 'Trans') as HTMLElement;
+
+    await act(async () => {
+      fireEvent(
+        requireElement(transItem.querySelector('ion-checkbox'), 'trans checkbox'),
+        new CustomEvent('ionChange', { detail: { checked: true }, bubbles: true })
+      );
+    });
+
+    expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+      gender_sexuality_choices: ['queer', 'trans'],
+    });
+  });
+
+  it('removes a gender or sexuality choice from the checkbox editor', async () => {
+    const { container } = renderSelfProfile();
+
+    const section = Array.from(container.querySelectorAll('ion-accordion-group')).find(
+      group => group.textContent?.includes('Gender & Sexuality')
+    ) as HTMLElement;
+
+    const editButton = Array.from(section.querySelectorAll('.field-header'))
+      .find(header => header.textContent?.includes('Your selections'))!
+      .querySelector('ion-button') as HTMLElement;
+    fireEvent.click(editButton);
+
+    const queerItem = Array.from(section.querySelectorAll('ion-item'))
+      .find(item => item.textContent?.trim() === 'Queer') as HTMLElement;
+
+    await act(async () => {
+      fireEvent(
+        requireElement(queerItem.querySelector('ion-checkbox'), 'queer checkbox'),
+        new CustomEvent('ionChange', { detail: { checked: false }, bubbles: true })
+      );
+    });
+
+    expect(updateCurrentUserProfile).toHaveBeenCalledWith({
+      gender_sexuality_choices: [],
+    });
   });
 
   it('persists lived-experiences visibility toggle immediately', async () => {

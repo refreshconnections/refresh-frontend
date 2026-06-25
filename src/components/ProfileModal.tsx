@@ -30,6 +30,7 @@ type Props = {
     pro: boolean,
     settingsAlt: boolean,
     yourName?: string,
+    hasExistingChat?: boolean,
     onDismiss: () => void;
     onActionDismiss?: (action: 'NoAction' | 'ActionTaken') => void;
 };
@@ -37,7 +38,7 @@ type Props = {
 
 const ProfileModal: React.FC<Props> = (props) => {
 
-    const { cardData, profiletype, pro, settingsAlt, yourName, onDismiss, onActionDismiss = () => {} } = props;
+    const { cardData, profiletype, pro, settingsAlt, yourName, hasExistingChat = false, onDismiss, onActionDismiss = () => {} } = props;
 
     const [presentAlert] = useIonAlert();
     const blockProfile = useBlockProfile();
@@ -238,6 +239,7 @@ const ProfileModal: React.FC<Props> = (props) => {
         offender: "user",
         text: offendingName,
         id: offendingId,
+        hasExistingChat,
         onDismiss: (data: string, role: string) => createReportDismiss(data, role),
     });
 

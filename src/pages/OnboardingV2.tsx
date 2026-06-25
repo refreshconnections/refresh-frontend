@@ -594,6 +594,7 @@ const OnboardingV2: React.FC = () => {
   const [birthdayComplete, setBirthdayComplete] = useState(false);
   const [isAdult, setIsAdult] = useState(true);
   const swiperRef = useRef<any>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
   const [swiperReady, setSwiperReady] = useState(false);
   const [launchingYoti, setLaunchingYoti] = useState(false);
   const [ageCheckState, setAgeCheckState] = useState<AgeCheckState | null>(initialAgeResult);
@@ -836,6 +837,7 @@ const OnboardingV2: React.FC = () => {
   return (
     <IonPage>
       <IonContent
+        ref={contentRef}
         className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
@@ -844,10 +846,12 @@ const OnboardingV2: React.FC = () => {
             className="onboarding-v2__swiper"
             centeredSlides
             allowTouchMove={false}
+            onSlideChange={() => { contentRef.current?.scrollToTop(0); }}
             onSwiper={(swiperInstance) => {
               swiperRef.current = swiperInstance;
               setSwiperReady(true);
             }}
+
           >
           <SwiperSlide>
             <WelcomeSlide />

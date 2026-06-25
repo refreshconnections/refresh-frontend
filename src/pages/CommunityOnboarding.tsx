@@ -76,6 +76,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   const { data: communityProfile, refetch: refetchCommunityProfile } = useGetCommunityProfile();
 
   const swiperRef = useRef<any>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
   const [swiperReady, setSwiperReady] = useState(false);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
@@ -270,6 +271,20 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
     router.push('/community', 'root', 'replace');
   };
 
+  const finishLaterButton = !keyboardOpen ? (
+    <div className="onboarding-v2__finish-later-row">
+      <IonButton
+        size="small"
+        fill="clear"
+        expand="block"
+        className="onboarding-v2__finish-later"
+        onClick={handleFinishLater}
+      >
+        {ONBOARDING_COPY.common.finishLater}
+      </IonButton>
+    </div>
+  ) : null;
+
   const handleTogglePersonalPhoto = async (checked: boolean) => {
     if (!hasPersonalPhoto) {
       setUsePersonalPhoto(false);
@@ -348,6 +363,10 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
 
     await clearResumeState();
     const params = new URLSearchParams(window.location.search);
+    if (onDismiss && params.get('next') !== 'create-post') {
+      onDismiss();
+      return;
+    }
     router.push(
       params.get('next') === 'create-post' ? '/community?createPost=1' : '/community',
       'root',
@@ -411,6 +430,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
   return (
     <IonPage>
       <IonContent
+        ref={contentRef}
         className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
@@ -419,6 +439,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
           centeredSlides
           allowTouchMove={false}
           onSlideChange={async (swiperInstance) => {
+            contentRef.current?.scrollToTop(0);
             setActiveSlideIndex(swiperInstance.activeIndex);
             if (!onDismiss) {
               await Preferences.set({ key: COMMUNITY_ONBOARDING_IN_PROGRESS_KEY, value: 'true' });
@@ -454,6 +475,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
@@ -498,12 +520,13 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
           {hasPersonalProfile && (
             <SwiperSlide>
-              <OnboardingCardConnectFromRefreshments />
+              <OnboardingCardConnectFromRefreshments footer={finishLaterButton} />
             </SwiperSlide>
           )}
 
@@ -576,6 +599,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
@@ -599,6 +623,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   setCoordsavedThisSession(false);
                 }}
               />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
@@ -682,6 +707,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   )}
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
@@ -722,6 +748,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
@@ -767,6 +794,7 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
@@ -797,23 +825,6 @@ const CommunityOnboarding: React.FC<CommunityOnboardingProps> = ({ onDismiss }) 
             </div>
           </SwiperSlide>
         </Swiper>
-        {activeSlideIndex < totalSlides - 1 && !keyboardOpen && (
-          <IonButton
-            size="small"
-            fill="clear"
-            style={{
-              position: 'fixed',
-              bottom: '12px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '90%',
-              zIndex: 5,
-            }}
-            onClick={handleFinishLater}
-          >
-            {ONBOARDING_COPY.common.finishLater}
-          </IonButton>
-        )}
       </IonContent>
     </IonPage>
   );

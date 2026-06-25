@@ -170,6 +170,36 @@ ion-card.onboarding-slide .talkabout-selections {
     gap: 6px;
 }
 
+ion-card.onboarding-slide--talkabout {
+    max-height: calc(100vh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+}
+
+ion-card.onboarding-slide--talkabout ion-card-content.talkabouts {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+ion-card.onboarding-slide--talkabout .talkabout-selections {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+}
+
+ion-card.onboarding-slide--talkabout .onboarding-v2__card-footer {
+    flex: 0 0 auto;
+}
+
+ion-card.onboarding-slide--talkabout .onboarding-v2__nav {
+    flex-wrap: nowrap;
+}
+
+ion-card.onboarding-slide--talkabout .onboarding-v2__nav ion-button {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
 ion-card.onboarding-slide .talkabout-select {
     width: 100%;
     max-width: 100%;
@@ -216,6 +246,10 @@ ion-card.onboarding-slide .talkabout-answer-item ion-input {
 @media only screen and (max-height: 700px) {
     ion-card.onboarding-slide .talkabout-selections {
         max-height: 240px;
+    }
+
+    ion-card.onboarding-slide--talkabout .talkabout-selections {
+        max-height: none;
     }
 }
 

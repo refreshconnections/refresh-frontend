@@ -11,6 +11,7 @@ type Props = {
     text: string,
     id: number,
     requireDetails?: boolean;
+    hasExistingChat?: boolean;
     onDismiss: () => void;
     onReportSubmitted?: () => void;
 };
@@ -23,7 +24,7 @@ interface ReportDetails {
 }
 const ReportModal: React.FC<Props> = (props) => {
 
-    const { offender, text, id, onDismiss, requireDetails, onReportSubmitted } = props;
+    const { offender, text, id, onDismiss, requireDetails, hasExistingChat, onReportSubmitted } = props;
 
 
     const [reason, setReason] = useState("");
@@ -111,6 +112,7 @@ const ReportModal: React.FC<Props> = (props) => {
                         <IonSelect aria-label="Tags" placeholder="What's wrong with this?" onIonChange={e => setReason(e.detail.value!)}>
                             <IonSelectOption value="Covid Minimizing">Covid minimizing</IonSelectOption>
                             <IonSelectOption value="Safety Shaming">Safety shaming</IonSelectOption>
+                            <IonSelectOption value="No pictures">No pictures of a person</IonSelectOption>
                             <IonSelectOption value="Disinformation">Disinformation</IonSelectOption>
                             <IonSelectOption value="Hate/harassment">Hate/harassment</IonSelectOption>
                             <IonSelectOption value="Sexual content">Sexual content</IonSelectOption>
@@ -160,6 +162,16 @@ const ReportModal: React.FC<Props> = (props) => {
                             placeholder="Add specifics for the moderation team to check out."
                         />
                     </IonItem>
+                    {offender === "user" && (
+                        <IonItem lines="none">
+                            <IonText color="medium">
+                                <p>
+                                    Submitting this report will block this user.
+                                    {hasExistingChat ? ' You will both lose access to your Chat.' : ''}
+                                </p>
+                            </IonText>
+                        </IonItem>
+                    )}
                     
                     <IonButton
                         className="ion-margin-top"

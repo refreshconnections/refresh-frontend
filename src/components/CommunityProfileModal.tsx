@@ -92,12 +92,16 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
       }
     : null;
   const displayData = selfDisplayData ?? data;
+  const existingChat = chatsList?.find((chat: { other_user_id?: string | number }) => {
+    return String(chat?.other_user_id) === String(effectiveUserId);
+  });
   const [profilePresent, profileDismiss] = useIonModal(ProfileModal, {
     cardData: profileDetails.data,
     profiletype: isConnected ? 'connected-nodismiss' : 'unconnected-nodismiss',
     pro: isPersonalPlus(currentProfile?.subscription_level),
     settingsAlt: Boolean(currentProfile?.settings_alt_text),
     yourName: currentProfile?.name || '',
+    hasExistingChat: Boolean(existingChat),
     onDismiss: () => profileDismiss(),
   });
 
@@ -126,9 +130,6 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     onDismiss: () => editDismiss(),
   });
 
-  const existingChat = chatsList?.find((chat: { other_user_id?: string | number }) => {
-    return String(chat?.other_user_id) === String(effectiveUserId);
-  });
   const chatLabel = existingChat ? 'Continue your chat' : 'Start your chat with them';
   const viewerActive = Boolean(currentProfile && !currentProfile?.deactivated_profile);
   const otherActive = Boolean(profileDetails.data && !profileDetails.data?.deactivated_profile);
@@ -278,6 +279,7 @@ const CommunityProfileModal: React.FC<Props> = ({ userId, isAnonymous, avatarUrl
     text: connectName,
     id: effectiveUserId ?? undefined,
     requireDetails: reportRequiresDetails,
+    hasExistingChat: Boolean(existingChat),
     onDismiss: (data: string, role: string) => {
       createReportDismiss(data, role);
       if (reportAndBlock) {

@@ -592,6 +592,7 @@ describe('CommunityProfileModal', () => {
     const reportCall = mockPresentModal.mock.calls.find(call => call[0] === 'ReportModal');
     expect(reportCall?.[1]).toEqual(
       expect.objectContaining({
+        hasExistingChat: false,
         onDismiss: expect.any(Function),
       })
     );
@@ -603,6 +604,26 @@ describe('CommunityProfileModal', () => {
     expect(mockUpdateBlockedConnections).toHaveBeenCalledWith(42);
     expect(mockUpdateCommunityBlocked).toHaveBeenCalledWith(42);
     expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it('passes existing chat context to report modal', async () => {
+    mockChats = [{ id: 'chat-42', other_user_id: '42', unread_count: 0 }];
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    await act(async () => {
+      await sheetConfig.buttons.find((button: any) => button.text === 'Report and block').handler();
+    });
+
+    const reportCall = mockPresentModal.mock.calls.find(call => call[0] === 'ReportModal');
+    expect(reportCall?.[1]).toEqual(
+      expect.objectContaining({
+        hasExistingChat: true,
+      })
+    );
   });
 
   it('shows the viewer-settings guidance when the viewer has community connect turned off', async () => {

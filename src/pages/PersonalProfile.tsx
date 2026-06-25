@@ -67,6 +67,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     },
   });
   const swiperRef = useRef<any>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
   const currentProfile = useGetCurrentProfile().data;
   const moderation = useGetCurrentModeration().data;
   const { data: communityProfile } = useGetCommunityProfile();
@@ -174,6 +175,20 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
     router.push('/community', 'root', 'replace');
   };
 
+  const finishLaterButton = !keyboardOpen ? (
+    <div className="onboarding-v2__finish-later-row">
+      <IonButton
+        size="small"
+        fill="clear"
+        expand="block"
+        className="onboarding-v2__finish-later"
+        onClick={handleFinishLater}
+      >
+        {ONBOARDING_COPY.common.finishLater}
+      </IonButton>
+    </div>
+  ) : null;
+
   const ensureProfileCreatedBeforeConnect = async () => {
     if (!hasCommunityProfile || currentProfile?.created_profile || hasCreatedProfileForConnectStep) {
       return;
@@ -193,6 +208,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
   return (
     <IonPage>
       <IonContent
+        ref={contentRef}
         className={`onboarding-v2__content${keyboardOpen ? ' onboarding-v2__content--keyboard-open' : ''}`}
         style={{ '--onboarding-keyboard-offset': `${keyboardHeight}px` } as React.CSSProperties}
       >
@@ -204,6 +220,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
             swiperRef.current = swiperInstance;
           }}
           onSlideChange={async (swiperInstance) => {
+            contentRef.current?.scrollToTop(0);
             if (currentProfile?.created_profile) {
               await clearResumeState();
               return;
@@ -236,17 +253,20 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                   </IonRow>
                 </div>
               </IonCard>
+              {finishLaterButton}
             </div>
           </SwiperSlide>
 
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardName />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardPronouns />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
@@ -264,6 +284,7 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                   setLocationLabelDraftFromCoords(false);
                 }}
               />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
@@ -272,77 +293,69 @@ const PersonalProfile: React.FC<PersonalProfileProps> = ({ onDismiss }) => {
                 initialLocation={locationLabelDraft}
                 initialLocationIsDraft={locationLabelDraftFromCoords}
               />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardLookingFor />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardGenderIdentity />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardLivedExperiences />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardCovid />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardProfilePic />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardPictures />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardBio />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="onboarding-v2__slide">
               <OnboardingCardLetsTalkAbout onBeforeNext={ensureProfileCreatedBeforeConnect} />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
           {hasCommunityProfile && (
             <SwiperSlide>
-              {/* OnboardingCardConnectFromRefreshments renders its own onboarding-v2__slide wrapper */}
-              <OnboardingCardConnectFromRefreshments />
+              <OnboardingCardConnectFromRefreshments footer={finishLaterButton} />
             </SwiperSlide>
           )}
           <SwiperSlide>
             <div className="onboarding-v2__slide">
-              <OnboardingCardDone />
+              <OnboardingCardDone onDismiss={onDismiss} />
+              {finishLaterButton}
             </div>
           </SwiperSlide>
         </Swiper>
-        {!keyboardOpen && (
-          <IonButton
-            size="small"
-            fill="clear"
-            style={{
-              position: 'fixed',
-              bottom: '12px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '90%',
-              zIndex: 5,
-            }}
-            onClick={handleFinishLater}
-          >
-            {ONBOARDING_COPY.common.finishLater}
-          </IonButton>
-        )}
       </IonContent>
     </IonPage>
   );

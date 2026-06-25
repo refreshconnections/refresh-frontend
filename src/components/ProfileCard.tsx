@@ -124,12 +124,9 @@ const ProfileCard: React.FC<ContainerProps> = ({ cardData, pro, settingsAlt }) =
     const livedExperienceLabels: Record<string, string> = {
         poc: 'POC',
         neurodivergent: 'Neurodivergent',
-        disability: 'Disability',
-        chronic_illness: 'Chronic illness',
         sober: 'Sober',
     };
     const visibleLivedExperiences = (cardData.lived_experiences ?? [])
-        .filter((value: string) => value !== 'spiritual')
         .map((value: string) => livedExperienceLabels[value])
         .filter(Boolean);
     const preferredOrder = Array.isArray(cardData?.photo_order) && cardData.photo_order.length > 0
