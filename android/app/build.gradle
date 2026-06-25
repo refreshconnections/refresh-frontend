@@ -4,7 +4,7 @@ android {
     namespace "com.refreshconnections.app"
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.refreshconnections.app"
+        applicationId "com.refreshconnections.aphmm nop"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 46
