@@ -525,9 +525,9 @@ describe('Settings page', () => {
     });
   });
 
-  it('shows an unpause guard alert when required profile fields are missing', async () => {
+  it('shows an unpause guard alert when fewer than three photos are uploaded', async () => {
     mockCurrentProfile.mockReturnValue({
-      data: { ...baseProfile, paused_profile: true, pic1_main: null },
+      data: { ...baseProfile, paused_profile: true, pic1_main: null, pic2: null },
     } as any);
 
     renderSettings();
@@ -538,9 +538,28 @@ describe('Settings page', () => {
     expect(mockPresentAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         header: 'Uh oh. Your Personal Profile is not ready to be un-paused!',
-        subHeader: 'Make sure you have uploaded your first three pictures.',
+        subHeader: 'Make sure you have uploaded at least 3 photos.',
       })
     );
+  });
+
+  it('allows unpause when three photos are uploaded outside the first three slots', async () => {
+    mockCurrentProfile.mockReturnValue({
+      data: {
+        ...baseProfile,
+        paused_profile: true,
+        pic2: null,
+        pic4: '/img/4.jpg',
+      },
+    } as any);
+
+    renderSettings();
+    await screen.findByText('Unpause Profile');
+
+    fireEvent.click(screen.getByText('Unpause Profile').closest('ion-item')!.querySelector('ion-button') as HTMLElement);
+
+    const unpauseAlert = mockPresentAlert.mock.calls.at(-1)?.[0];
+    expect(unpauseAlert.header).toBe('Are you sure you want to unpause your Personal Profile?');
   });
 
   it('prompts before pausing a profile', async () => {

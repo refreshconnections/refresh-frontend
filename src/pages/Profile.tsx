@@ -23,6 +23,8 @@ import { useGetCurrentModeration } from '../hooks/api/profiles/current-moderatio
 import SelfProfileV2 from '../components/SelfProfileV2';
 import CommunityProfileSection from '../components/CommunityProfileSection';
 
+const PHOTO_KEYS = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
+
 const Profile: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -179,8 +181,10 @@ const Profile: React.FC = () => {
 
   const unPauseProfileHandler = async () => {
 
-    if (data?.pic1_main == null || data?.pic2 == null || data?.pic3 == null) {
-      cantUnpause("Make sure you have uploaded your first three pictures.")
+    const photoCount = PHOTO_KEYS.filter(key => data?.[key]).length;
+
+    if (photoCount < 3) {
+      cantUnpause("Make sure you have uploaded at least 3 photos.")
     }
     else if (data.bio == null || data.bio == "") {
       cantUnpause("Write something in your bio.")

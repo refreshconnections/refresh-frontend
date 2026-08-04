@@ -62,6 +62,7 @@ import SettingsSupportCard from '../components/SettingsSupportCard';
 
 const HIDDEN_CHAT_NEW_MESSAGE_BADGES_KEY = 'hidden_chat_new_message_badges';
 const HIDDEN_CHAT_NEW_MESSAGE_BADGES_CHANGED_EVENT = 'hidden_chat_new_message_badges_changed';
+const PHOTO_KEYS = ['pic1_main', 'pic2', 'pic3', 'pic4', 'pic5', 'pic6', 'pic7', 'pic8', 'pic9'];
 
 
 
@@ -314,8 +315,10 @@ const Settings: React.FC = () => {
 
   const unPauseProfileHandler = async () => {
 
-    if (data?.pic1_main == null || data?.pic2 == null || data?.pic3 == null) {
-      cantUnpause("Make sure you have uploaded your first three pictures.")
+    const photoCount = PHOTO_KEYS.filter(key => data?.[key]).length;
+
+    if (photoCount < 3) {
+      cantUnpause("Make sure you have uploaded at least 3 photos.")
     }
     else if (data?.bio == null || data?.bio == "") {
       cantUnpause("Write something in your bio.")
