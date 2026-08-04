@@ -825,9 +825,7 @@ const Store: React.FC = () => {
                 )}
 
                 <IonRow className="content-bottom">
-                    {(subscriptionsOfferings?.skus?.length == 0 || subscriptionsOfferings == null) ?
-                        <></> :
-                        <IonButton onClick={restorePurchases}>Restore Purchases</IonButton>}
+                    <IonButton onClick={restorePurchases}>Restore Purchases</IonButton>
                     <IonButton fill="outline" routerLink="/help">Help</IonButton>
                 </IonRow>
             </IonContent>

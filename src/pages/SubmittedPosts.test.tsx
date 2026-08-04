@@ -200,7 +200,7 @@ describe('SubmittedPosts', () => {
     expect(screen.getByRole('button', { name: 'Guidelines' })).toBeInTheDocument();
     expect(screen.getByText(/Shown in your time zone/)).toBeInTheDocument();
     fireEvent.click(document.querySelector('.info-button') as HTMLElement);
-    expect(screen.getByText('Moderation can take up to 3 business days.')).toBeInTheDocument();
+    expect(screen.getByText('Moderation usually takes about 3 business days.')).toBeInTheDocument();
   });
 
   it('pull-to-refresh invalidates post submissions while posts are selected', async () => {
