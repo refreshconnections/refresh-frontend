@@ -91,11 +91,12 @@ type SimpleFormState = {
   fixation_game: string;
   fixation_album: string;
   gender_sexuality_choices: string[];
+  gender_and_sexuality_info: string;
   settings_show_gender_sexuality: boolean;
-  settings_show_long_covid: boolean;
-  long_covid_choices: string[];
   lived_experiences: string[];
   settings_show_lived_experiences: boolean;
+  settings_profile_banner_bool: boolean;
+  settings_profile_banner: string;
 };
 
 const initialForm: SimpleFormState = {
@@ -133,11 +134,12 @@ const initialForm: SimpleFormState = {
   fixation_game: '',
   fixation_album: '',
   gender_sexuality_choices: [],
+  gender_and_sexuality_info: '',
   settings_show_gender_sexuality: false,
-  settings_show_long_covid: false,
-  long_covid_choices: [],
   lived_experiences: [],
   settings_show_lived_experiences: false,
+  settings_profile_banner_bool: false,
+  settings_profile_banner: '',
 };
 
 const pronounOptions = ['she/her', 'he/him', 'they/them'] as const;
@@ -174,6 +176,7 @@ const profileTextFieldLimits: Partial<Record<keyof SimpleFormState, number>> = {
   fixation_musicalartist: PROFILE_FIELD_LIMITS.shortAnswer,
   fixation_game: PROFILE_FIELD_LIMITS.shortAnswer,
   fixation_album: PROFILE_FIELD_LIMITS.shortAnswer,
+  gender_and_sexuality_info: 200,
 };
 
 type FieldLabels = Record<keyof SimpleFormState, { label: string; description: string }>;
@@ -583,12 +586,13 @@ const SelfProfileV2: React.FC = () => {
     fixation_musicalartist: false,
     fixation_game: false,
     fixation_album: false,
-    long_covid_choices: false,
+    gender_and_sexuality_info: false,
     gender_sexuality_choices: false,
     settings_show_gender_sexuality: false,
-    settings_show_long_covid: false,
     lived_experiences: false,
     settings_show_lived_experiences: false,
+    settings_profile_banner_bool: false,
+    settings_profile_banner: false,
   });
 
   const queryClient = useQueryClient();
@@ -647,12 +651,13 @@ const SelfProfileV2: React.FC = () => {
       fixation_musicalartist: currentUserProfile.fixation_musicalartist ?? '',
       fixation_game: currentUserProfile.fixation_game ?? '',
       fixation_album: currentUserProfile.fixation_album ?? '',
-      settings_show_long_covid: currentUserProfile.settings_show_long_covid ?? false,
-      long_covid_choices: currentUserProfile.long_covid_choices ?? [],
+      gender_and_sexuality_info: currentUserProfile.gender_and_sexuality_info ?? '',
       gender_sexuality_choices: currentUserProfile.gender_sexuality_choices ?? [],
       settings_show_gender_sexuality: currentUserProfile.settings_show_gender_sexuality ?? false,
       lived_experiences: currentUserProfile.lived_experiences ?? [],
       settings_show_lived_experiences: currentUserProfile.settings_show_lived_experiences ?? false,
+      settings_profile_banner_bool: currentUserProfile.settings_profile_banner_bool ?? false,
+      settings_profile_banner: currentUserProfile.settings_profile_banner ?? '',
     };
     setForm(nextForm);
     setOriginalForm(nextForm);
@@ -706,12 +711,13 @@ const SelfProfileV2: React.FC = () => {
       fixation_musicalartist: false,
       fixation_game: false,
       fixation_album: false,
+      gender_and_sexuality_info: false,
       gender_sexuality_choices: false,
       settings_show_gender_sexuality: false,
-      settings_show_long_covid: false,
-      long_covid_choices: false,
       lived_experiences: false,
       settings_show_lived_experiences: false,
+      settings_profile_banner_bool: false,
+      settings_profile_banner: false,
     });
   }, [currentUserProfile]);
 
@@ -876,6 +882,19 @@ const SelfProfileV2: React.FC = () => {
     setForm(prev => ({ ...prev, settings_show_lived_experiences: checked }));
     await updateCurrentUserProfile({ settings_show_lived_experiences: checked });
     setOriginalForm(prevOrg => ({ ...prevOrg, settings_show_lived_experiences: checked }));
+  };
+
+  const toggleProfileBannerShow = async (checked: boolean) => {
+    setForm(prev => ({ ...prev, settings_profile_banner_bool: checked }));
+    await updateCurrentUserProfile({ settings_profile_banner_bool: checked });
+    setOriginalForm(prevOrg => ({ ...prevOrg, settings_profile_banner_bool: checked }));
+  };
+
+  const updateProfileBanner = async (banner: string) => {
+    setForm(prev => ({ ...prev, settings_profile_banner: banner }));
+    await updateCurrentUserProfile({ settings_profile_banner: banner });
+    setOriginalForm(prevOrg => ({ ...prevOrg, settings_profile_banner: banner }));
+    refreshProfile();
   };
 
   const summaryKeys = ['pronouns', 'height', 'job', 'politics', 'school', 'kids_info', 'hometown'] as const;
@@ -1057,12 +1076,13 @@ const SelfProfileV2: React.FC = () => {
     fixation_musicalartist: { label: 'Current musical artist', description: 'Artist you have on repeat.' },
     fixation_game: { label: 'Current game', description: 'Game you’re playing.' },
     fixation_album: { label: 'Current album', description: 'Album you’re listening to.' },
+    gender_and_sexuality_info: { label: 'More gender and sexuality info', description: 'Optional free-text gender and sexuality details.' },
     gender_sexuality_choices: { label: 'Gender & sexuality choices', description: 'Filters other members see.' },
     settings_show_gender_sexuality: { label: 'Show gender/sexuality filters', description: 'Toggle visibility on your profile.' },
-    settings_show_long_covid: { label: 'Show Long Covid info', description: 'Display these choices on your profile.' },
-    long_covid_choices: { label: 'Long Covid choices', description: 'Support availability for Long Covid.' },
     settings_show_lived_experiences: { label: 'Show lived experiences', description: 'Display these choices on your profile.' },
     lived_experiences: { label: 'Lived experiences', description: 'Self-selected lived experience tags.' },
+    settings_profile_banner_bool: { label: 'Show profile banner', description: 'Toggle your profile banner.' },
+    settings_profile_banner: { label: 'Profile banner', description: 'Choose a banner for your profile.' },
   };
 
   const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
@@ -1497,6 +1517,47 @@ const SelfProfileV2: React.FC = () => {
           </IonAccordion>
         </IonAccordionGroup>
 
+        {currentUserProfile.subscription_level === 'pro' && (
+          <IonAccordionGroup className="profile-accordion-group">
+            <IonAccordion value="profileBanner">
+              <IonItem slot="header" lines="none" className="accordion-header">
+                <IonLabel>
+                  <h2>Profile Banner</h2>
+                </IonLabel>
+              </IonItem>
+              <IonCardContent slot="content" className="accordion-body">
+                <IonItem lines="none">
+                  <IonLabel>
+                    <p>Show banner on profile?</p>
+                  </IonLabel>
+                  <IonToggle slot="end" checked={form.settings_profile_banner_bool} onIonChange={e => toggleProfileBannerShow(e.detail.checked)} />
+                </IonItem>
+                <IonItem lines="none">
+                  <IonSelect
+                    label="Banner"
+                    labelPlacement="stacked"
+                    disabled={!form.settings_profile_banner_bool}
+                    placeholder="Select"
+                    value={form.settings_profile_banner}
+                    onIonChange={e => updateProfileBanner(e.detail.value ?? '')}
+                  >
+                    <IonSelectOption value="putting-money">Putting my money where my mask is</IonSelectOption>
+                    <IonSelectOption value="salting-the-vibes">Salting the Vibes</IonSelectOption>
+                    <IonSelectOption value="lc-aware">Long Covid Awareness</IonSelectOption>
+                    <IonSelectOption value="conscientious-sexy">Conscientious is the new sexy</IonSelectOption>
+                    <IonSelectOption value="happy-pride">Happy pride!</IonSelectOption>
+                    <IonSelectOption value="fresh-air">I heart fresh air</IonSelectOption>
+                    <IonSelectOption value="dream-big">Mask up, dream big</IonSelectOption>
+                    <IonSelectOption value="disability-pride">Disability Pride</IonSelectOption>
+                    <IonSelectOption value="ready-connect">Ready to connect</IonSelectOption>
+                    <IonSelectOption value="freshies">(freshies)</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              </IonCardContent>
+            </IonAccordion>
+          </IonAccordionGroup>
+        )}
+
         <IonAccordionGroup className="profile-accordion-group">
           <IonAccordion value="lookingFor">
             <IonItem slot="header" lines="none" className="accordion-header">
@@ -1602,6 +1663,8 @@ const SelfProfileV2: React.FC = () => {
                           ))}
                         </div>
                       )}
+
+                      <EditableField {...editableFieldProps} fieldKey="gender_and_sexuality_info" multiline />
                     </IonCardContent>
                   </IonCard>
                 </IonCol>

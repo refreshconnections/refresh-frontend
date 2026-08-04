@@ -127,7 +127,7 @@ const OnboardingCardLetsTalkAbout: React.FC<OnboardingCardLetsTalkAboutProps> = 
   };
 
   return (
-    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide">
+    <IonCard className="onboarding-v2__card onboarding-v2__card--shallow onboarding-slide onboarding-slide--talkabout">
       <IonCardContent className="talkabouts">
         <IonCardTitle>{copy.title}</IonCardTitle>
         <IonText>{copy.body}</IonText>

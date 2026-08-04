@@ -18,7 +18,11 @@ import { ONBOARDING_COPY } from '../constants/onboarding';
 
 import './OnboardingCard.css';
 
-const OnboardingCardConnectFromRefreshments: React.FC = () => {
+interface OnboardingCardConnectFromRefreshmentsProps {
+  footer?: React.ReactNode;
+}
+
+const OnboardingCardConnectFromRefreshments: React.FC<OnboardingCardConnectFromRefreshmentsProps> = ({ footer }) => {
   const swiper = useSwiper();
   const queryClient = useQueryClient();
   const currentProfile = useGetCurrentProfile().data;
@@ -59,6 +63,7 @@ const OnboardingCardConnectFromRefreshments: React.FC = () => {
           </IonRow>
         </div>
       </IonCard>
+      {footer}
     </div>
   );
 };

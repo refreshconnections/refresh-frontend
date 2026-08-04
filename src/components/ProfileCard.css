@@ -211,7 +211,7 @@ ion-popover ion-content.no-scroll {
   z-index: 10000000000000000 !important
 }
 
-.swiper-horizontal {
+.profile-grid .swiper-horizontal {
   max-height: 400px;
 }
 

@@ -576,6 +576,57 @@ describe('CommunityProfileModal', () => {
     sheetConfig.buttons.find((button: any) => button.text === 'Personal block').handler();
 
     expect(mockBlockProfile).toHaveBeenCalledWith(42, expect.any(Function));
+    expect(mockUpdateBlockedConnections).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await mockBlockProfile.mock.calls[0][1]();
+    });
+
+    expect(mockUpdateBlockedConnections).toHaveBeenCalledWith(42);
+  });
+
+  it('does not full community block when the confirmation alert is canceled', async () => {
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    await act(async () => {
+      await sheetConfig.buttons.find((button: any) => button.text === 'Full community block').handler();
+    });
+
+    const blockAlert = mockPresentAlert.mock.calls[0][0];
+    expect(blockAlert.buttons[0].text).toBe('Nevermind');
+    expect(blockAlert.buttons[0].role).toBe('cancel');
+
+    await act(async () => {
+      await blockAlert.buttons[0].handler?.();
+    });
+
+    expect(mockUpdateBlockedConnections).not.toHaveBeenCalled();
+    expect(mockUpdateCommunityBlocked).not.toHaveBeenCalled();
+  });
+
+  it('full community blocks after exact confirmation', async () => {
+    const { onDismiss } = renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    await act(async () => {
+      await sheetConfig.buttons.find((button: any) => button.text === 'Full community block').handler();
+    });
+
+    const blockAlert = mockPresentAlert.mock.calls[0][0];
+    await act(async () => {
+      await blockAlert.buttons[1].handler({ confirmation: 'block' });
+    });
+
+    expect(mockUpdateBlockedConnections).toHaveBeenCalledWith(42);
+    expect(mockUpdateCommunityBlocked).toHaveBeenCalledWith(42);
+    expect(onDismiss).toHaveBeenCalled();
   });
 
   it('reports and blocks the member when the report modal dismisses after report-and-block', async () => {
@@ -592,17 +643,61 @@ describe('CommunityProfileModal', () => {
     const reportCall = mockPresentModal.mock.calls.find(call => call[0] === 'ReportModal');
     expect(reportCall?.[1]).toEqual(
       expect.objectContaining({
+        hasExistingChat: false,
         onDismiss: expect.any(Function),
+        onReportSubmitted: expect.any(Function),
       })
     );
 
     await act(async () => {
-      await reportCall?.[1]?.onDismiss('done', 'confirm');
+      await reportCall?.[1]?.onReportSubmitted();
+      await reportCall?.[1]?.onDismiss('done', 'submitted');
     });
 
     expect(mockUpdateBlockedConnections).toHaveBeenCalledWith(42);
     expect(mockUpdateCommunityBlocked).toHaveBeenCalledWith(42);
     expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it('does not block the member when report-and-block is canceled', async () => {
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    await act(async () => {
+      await sheetConfig.buttons.find((button: any) => button.text === 'Report and block').handler();
+    });
+
+    const reportCall = mockPresentModal.mock.calls.find(call => call[0] === 'ReportModal');
+
+    await act(async () => {
+      await reportCall?.[1]?.onDismiss(undefined, 'cancel');
+    });
+
+    expect(mockUpdateBlockedConnections).not.toHaveBeenCalled();
+    expect(mockUpdateCommunityBlocked).not.toHaveBeenCalled();
+  });
+
+  it('passes existing chat context to report modal', async () => {
+    mockChats = [{ id: 'chat-42', other_user_id: '42', unread_count: 0 }];
+    renderModal();
+
+    await screen.findByText('jordan');
+    fireEvent.click(document.querySelector('.community-profile-ellipsis') as HTMLElement);
+
+    const sheetConfig = mockPresentActionSheet.mock.calls[0][0];
+    await act(async () => {
+      await sheetConfig.buttons.find((button: any) => button.text === 'Report and block').handler();
+    });
+
+    const reportCall = mockPresentModal.mock.calls.find(call => call[0] === 'ReportModal');
+    expect(reportCall?.[1]).toEqual(
+      expect.objectContaining({
+        hasExistingChat: true,
+      })
+    );
   });
 
   it('shows the viewer-settings guidance when the viewer has community connect turned off', async () => {

@@ -11,7 +11,8 @@ type Props = {
     text: string,
     id: number,
     requireDetails?: boolean;
-    onDismiss: () => void;
+    hasExistingChat?: boolean;
+    onDismiss: (data?: string, role?: string) => void;
     onReportSubmitted?: () => void;
 };
 
@@ -23,7 +24,7 @@ interface ReportDetails {
 }
 const ReportModal: React.FC<Props> = (props) => {
 
-    const { offender, text, id, onDismiss, requireDetails, onReportSubmitted } = props;
+    const { offender, text, id, onDismiss, requireDetails, hasExistingChat, onReportSubmitted } = props;
 
 
     const [reason, setReason] = useState("");
@@ -40,7 +41,7 @@ const ReportModal: React.FC<Props> = (props) => {
     function reportSubmitSuccessful() {
         setShowAlert(false)
         onReportSubmitted?.();
-        onDismiss();
+        onDismiss(undefined, 'submitted');
     }
 
     function formData() {
@@ -85,7 +86,7 @@ const ReportModal: React.FC<Props> = (props) => {
                 <IonToolbar color="danger" className="modal-title">
                     <IonTitle>Submit Report</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={onDismiss}>Cancel</IonButton>
+                        <IonButton onClick={() => onDismiss(undefined, 'cancel')}>Cancel</IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
@@ -111,6 +112,7 @@ const ReportModal: React.FC<Props> = (props) => {
                         <IonSelect aria-label="Tags" placeholder="What's wrong with this?" onIonChange={e => setReason(e.detail.value!)}>
                             <IonSelectOption value="Covid Minimizing">Covid minimizing</IonSelectOption>
                             <IonSelectOption value="Safety Shaming">Safety shaming</IonSelectOption>
+                            <IonSelectOption value="No pictures">No pictures of a person</IonSelectOption>
                             <IonSelectOption value="Disinformation">Disinformation</IonSelectOption>
                             <IonSelectOption value="Hate/harassment">Hate/harassment</IonSelectOption>
                             <IonSelectOption value="Sexual content">Sexual content</IonSelectOption>
@@ -160,6 +162,16 @@ const ReportModal: React.FC<Props> = (props) => {
                             placeholder="Add specifics for the moderation team to check out."
                         />
                     </IonItem>
+                    {offender === "user" && (
+                        <IonItem lines="none">
+                            <IonText color="medium">
+                                <p>
+                                    Submitting this report will block this user.
+                                    {hasExistingChat ? ' You will both lose access to your Chat.' : ''}
+                                </p>
+                            </IonText>
+                        </IonItem>
+                    )}
                     
                     <IonButton
                         className="ion-margin-top"

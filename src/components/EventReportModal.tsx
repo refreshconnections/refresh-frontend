@@ -26,6 +26,10 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const detailsPlaceholder =
+    reason === 'Correction'
+      ? "Add specifics for the moderation team to check out. If there's an updated link with corrected information, please include that."
+      : 'Add specifics for the moderation team to check out.';
 
   const handleSubmit = async () => {
     if (sending) return;
@@ -65,6 +69,7 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
             placeholder="What's wrong with this event?"
             onIonChange={(e) => setReason(e.detail.value)}
           >
+            <IonSelectOption value="Correction">Correction</IonSelectOption>
             <IonSelectOption value="Covid Minimizing">Covid minimizing</IonSelectOption>
             <IonSelectOption value="Safety Shaming">Safety shaming</IonSelectOption>
             <IonSelectOption value="Disinformation">Disinformation</IonSelectOption>
@@ -79,7 +84,7 @@ const EventReportModal: React.FC<EventReportModalProps> = ({ eventId, eventTitle
           <IonTextarea
             value={details}
             onIonInput={(e) => setDetails(e.detail.value ?? '')}
-            placeholder="Add specifics for the moderation team to check out."
+            placeholder={detailsPlaceholder}
             autoGrow
             autocapitalize="sentences"
             rows={5}

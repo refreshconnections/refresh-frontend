@@ -31,7 +31,11 @@ import { ONBOARDING_COPY } from '../constants/onboarding';
 
 
 
-const OnboardingCardDone: React.FC = () => {
+interface OnboardingCardDoneProps {
+  onDismiss?: () => void;
+}
+
+const OnboardingCardDone: React.FC<OnboardingCardDoneProps> = ({ onDismiss }) => {
   const copy = ONBOARDING_COPY.cards.done;
 
   const swiper = useSwiper();
@@ -100,7 +104,11 @@ const OnboardingCardDone: React.FC = () => {
       await delay(1000)
       setAppLoading(false)
 
-      router.push('/community', 'root', 'replace');
+      if (onDismiss) {
+        onDismiss();
+      } else {
+        router.push('/community', 'root', 'replace');
+      }
 
 
   }

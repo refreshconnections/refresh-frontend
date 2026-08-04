@@ -82,7 +82,7 @@ const baseCardData = {
   looking_for: ['friendship', 'families'],
   kids_info: 'Parent of one',
   settings_show_lived_experiences: true,
-  lived_experiences: ['poc', 'chronic_illness'],
+  lived_experiences: ['poc', 'neurodivergent', 'sober'],
   job: 'Designer',
   school: 'State University',
   politics: 'Left',
@@ -92,8 +92,6 @@ const baseCardData = {
   gender_sexuality_choices: ['queer', 'trans'],
   covid_precaution_info: 'I still take precautions seriously.',
   covid_precautions: [10, 1, 8, 5],
-  settings_show_long_covid: true,
-  long_covid_choices: ['I have LC', 'I could help remote'],
   freetime: 'Reading outside',
   hobby: 'Ceramics',
   together_idea: 'Museum trip',
@@ -160,7 +158,7 @@ describe('ProfileCard', () => {
     expect(slideImages.map(image => image.getAttribute('src'))).toEqual(['/img/1.jpg', '/img/2.jpg']);
   });
 
-  it('shows the new-here badge, banner art, lived experiences details', () => {
+  it('shows the new-here badge, banner art, and supported lived experiences details', () => {
     const { container } = renderCard({
       registrationDate: recentRegistrationDate,
     });
@@ -168,17 +166,20 @@ describe('ProfileCard', () => {
     expect(screen.getByText(/I'm new here!/)).toBeInTheDocument();
     expect(container.querySelector('img[alt="Happy pride banner"]')).toBeTruthy();
     expect(screen.getByText(/POC/)).toBeInTheDocument();
-    expect(screen.getByText(/Chronic illness/)).toBeInTheDocument();
+    expect(screen.getByText(/Neurodivergent/)).toBeInTheDocument();
+    expect(screen.getByText(/Sober/)).toBeInTheDocument();
   });
 
-  it('hides spiritual from displayed lived experiences', () => {
+  it('only displays supported lived experiences', () => {
     renderCard({
-      lived_experiences: ['poc', 'spiritual', 'sober'],
+      lived_experiences: ['poc', 'spiritual', 'disability', 'chronic_illness', 'sober'],
     });
 
     expect(screen.getByText(/POC/)).toBeInTheDocument();
     expect(screen.getByText(/Sober/)).toBeInTheDocument();
     expect(screen.queryByText(/spiritual/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Disability/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Chronic illness/)).not.toBeInTheDocument();
   });
 
   it('opens looking-for popovers for the enabled icon buttons', () => {
